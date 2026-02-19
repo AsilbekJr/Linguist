@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: linguist-ai-flow-backend
+    env: node
+    plan: free
+    rootDir: server
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_VERSION
+        value: 20.11.0
+      - key: MONGO_URI
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
