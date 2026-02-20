@@ -1,4 +1,7 @@
 import React, { useState } from 'react';
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Loader2, Plus, AlertTriangle } from "lucide-react";
 
 const WordForm = ({ onAddWord }) => {
   const [word, setWord] = useState('');
@@ -45,67 +48,77 @@ const WordForm = ({ onAddWord }) => {
   };
 
   return (
-    <div className="w-full max-w-2xl mx-auto mb-12">
+    <div className="w-full max-w-2xl mx-auto mb-12 px-4 md:px-0">
         <form onSubmit={(e) => handleSubmit(e, false)} className="relative w-full">
-        <div className="relative flex items-center">
-            <input
-            type="text"
-            value={word}
-            onChange={(e) => {
-                setWord(e.target.value);
-                setError(null);
-                setShowForceSave(false);
-            }}
-            placeholder="Type a word to add to your ecosystem..."
-            className={`w-full bg-gray-800/50 backdrop-blur-sm text-white text-lg px-6 py-4 rounded-full border ${error ? 'border-red-500' : 'border-gray-600'} focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all placeholder:text-gray-500`}
-            disabled={loading}
+        <div className="relative flex items-center gap-2">
+            <Input
+              type="text"
+              value={word}
+              onChange={(e) => {
+                  setWord(e.target.value);
+                  setError(null);
+                  setShowForceSave(false);
+              }}
+              placeholder="Type a word to add to your ecosystem..."
+              className={`bg-background/50 backdrop-blur-sm text-lg h-14 pl-6 pr-32 rounded-full border-border focus-visible:ring-primary/20 transition-all placeholder:text-muted-foreground shadow-lg ${error ? 'border-destructive ring-destructive/20' : ''}`}
+              disabled={loading}
             />
-            <button
-            type="submit"
-            disabled={loading || !word.trim()}
-            className="absolute right-2 bg-blue-600 hover:bg-blue-500 text-white px-6 py-2 rounded-full font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            <Button
+              type="submit"
+              disabled={loading || !word.trim()}
+              size="lg"
+              className="absolute right-1 top-1 bottom-1 rounded-full px-6 bg-primary hover:bg-primary/90 text-primary-foreground font-medium transition-all disabled:opacity-50"
             >
             {loading ? (
                 <span className="flex items-center gap-2">
-                    <span className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                    <Loader2 className="w-4 h-4 animate-spin" />
                     Stats
                 </span>
-            ) : 'Add Word'}
-            </button>
+            ) : (
+                <span className="flex items-center gap-2">
+                    <Plus className="w-5 h-5" />
+                    Add
+                </span>
+            )}
+            </Button>
         </div>
         
         {error && (
-            <div className="mt-4 p-4 bg-red-500/10 border border-red-500/30 rounded-xl animate-fade-in">
-                <p className="text-red-400 flex items-center gap-2">
-                    <span>⚠️</span> {error}
+            <div className="mt-4 p-4 bg-destructive/10 border border-destructive/30 rounded-xl animate-accordion-down">
+                <p className="text-destructive flex items-center gap-2 text-sm font-medium">
+                    <AlertTriangle className="w-4 h-4" /> {error}
                 </p>
                 
                 {showForceSave && (
                     <div className="mt-3 flex flex-col gap-2">
-                         <p className="text-gray-400 text-sm">You can still save this word, but definitions won't be generated right now.</p>
-                         <button 
+                         <p className="text-muted-foreground text-xs">You can still save this word, but definitions won't be generated right now.</p>
+                         <Button 
                             type="button"
+                            variant="destructive"
+                            size="sm"
                             onClick={() => handleSubmit(null, true)}
-                            className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-bold transition-colors w-fit text-sm"
+                            className="w-fit"
                          >
                              Save Without AI
-                         </button>
+                         </Button>
                     </div>
                 )}
 
                 {suggestions.length > 0 && (
                     <div className="mt-3">
-                        <p className="text-sm text-gray-400 mb-2">Did you mean:</p>
+                        <p className="text-xs text-muted-foreground mb-2">Did you mean:</p>
                         <div className="flex flex-wrap gap-2">
                             {suggestions.map((s, i) => (
-                                <button
+                                <Button
                                     key={i}
                                     type="button"
+                                    variant="outline"
+                                    size="sm"
                                     onClick={() => handleSuggestionClick(s)}
-                                    className="bg-gray-800 hover:bg-gray-700 text-blue-400 text-sm px-3 py-1 rounded-lg transition-colors border border-gray-700 hover:border-blue-500/50"
+                                    className="h-7 text-xs border-primary/20 text-primary hover:bg-primary/10"
                                 >
                                     {s}
-                                </button>
+                                </Button>
                             ))}
                         </div>
                     </div>
@@ -114,7 +127,8 @@ const WordForm = ({ onAddWord }) => {
         )}
 
         {!error && (
-            <p className="text-center text-gray-500 text-sm mt-3">
+            <p className="text-center text-muted-foreground text-xs mt-3 flex items-center justify-center gap-1">
+                <span className="w-1 h-1 bg-primary rounded-full"></span>
                 Enter a word, and AI will generate context, stories, and connections.
             </p>
         )}
