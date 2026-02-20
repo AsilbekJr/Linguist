@@ -1,91 +1,125 @@
 const express = require('express');
 const router = express.Router();
-const { protect } = require('../middleware/authMiddleware');
-
-// Mock Data Store
-let mockWords = [
-    {
-        _id: '1',
-        word: 'Serendipity',
-        definition: 'The occurrence and development of events by chance in a happy or beneficial way.',
-        examples: ['It was pure serendipity that we met.'],
-        mastered: false
-    },
-    {
-        _id: '2',
-        word: 'Ephemeral',
-        definition: 'Lasting for a very short time.',
-        examples: ['Fashions are ephemeral, changing with every season.'],
-        mastered: true
-    }
-];
+const Word = require('../models/Word');
+const { generateWordContext, validateWord } = require('../services/geminiService');
 
 // @desc    Get all words
 // @route   GET /api/words
-// @access  Public (Mock)
-router.get('/', (req, res) => {
-    // If DB is not connected, return mock data
-    if (mongoose.connection.readyState !== 1) {
-         return res.json(mockWords);
-    }
-    // Real DB logic would go here
-    res.json([]); 
-});
-
-const { generateWordContext } = require('../services/geminiService');
-
-// @desc    Add a word (with AI context)
-// @route   POST /api/words
-// @access  Public (for now)
-router.post('/', async (req, res) => {
-    const { word } = req.body;
-    
-    if (!word) {
-        return res.status(400).json({ message: 'Word is required' });
-    }
-
+router.get('/', async (req, res) => {
     try {
-        console.log(`Analyzing word: ${word}...`);
-        
-        // 1. Try to get AI context
-        const aiContext = await generateWordContext(word);
-        
-        // 2. Fallback if AI fails or no key
-        const newWordData = aiContext || {
-            word,
-            definition: "Definition unavailable (Mock or AI failed).",
-            examples: ["Please add your own example."],
-            collocations: [],
-            fun_fact: "Did you know? You can add your own notes here."
-        };
-
-        // 3. Save to DB (mock for now if no DB connection)
-        if (mongoose.connection.readyState !== 1) {
-            const newWord = {
-                _id: Date.now().toString(),
-                ...newWordData,
-                mastered: false
-            };
-            mockWords.unshift(newWord); // Add to beginning
-            return res.status(201).json(newWord);
-        }
-
-        // Real DB Save logic (Schema needs to be updated to match AI response fields if different)
-        // const wordDoc = await Word.create({ ...newWordData, user: req.user.id });
-        // res.status(201).json(wordDoc);
-        
-        // Return mock even if DB connected for this stage, to ensure UI works
-        return res.status(201).json({
-             _id: Date.now().toString(),
-             ...newWordData,
-             mastered: false
-        });
-
+        const words = await Word.find({}).sort({ createdAt: -1 });
+        res.json(words);
     } catch (error) {
-        console.error(error);
+        console.error("Error fetching words:", error);
         res.status(500).json({ message: 'Server Error' });
     }
 });
 
-const mongoose = require('mongoose');
+// @desc    Add a word (with AI context and validation)
+// @route   POST /api/words
+router.post('/', async (req, res) => {
+    try {
+        let { word } = req.body;
+
+        if (!word) {
+            return res.status(400).json({ message: 'Word is required' });
+        }
+
+        // 1. Title Case Convention (e.g., "apple" -> "Apple")
+        word = word.trim().charAt(0).toUpperCase() + word.trim().slice(1).toLowerCase();
+
+        // 2. Check Logic: Duplicate?
+        const existingWord = await Word.findOne({ word });
+        if (existingWord) {
+            return res.status(400).json({ 
+                message: `The word "${word}" is already in your list.`,
+                type: 'DUPLICATE'
+            });
+        }
+
+        // 3. AI Operations (Validation & Context)
+        let aiContext;
+        
+        if (req.body.skipAI) {
+            console.log("Skipping AI for:", word);
+            aiContext = {
+                word: word,
+                definition: "Definition unavailable (AI Limit Reached). You can edit this later.",
+                examples: ["Example unavailable."],
+                collocations: [],
+                fun_fact: "This word was saved without AI assistance."
+            };
+        } else {
+            // 3.1 AI Validation
+            console.log("Validating word:", word);
+            let validation;
+            try {
+                validation = await validateWord(word);
+            } catch (error) {
+                if (error.type === 'QUOTA_EXCEEDED') {
+                    return res.status(429).json({ message: error.message, type: 'QUOTA_EXCEEDED' });
+                }
+                throw error; // Rethrow for general catch
+            }
+            
+            if (validation && validation.isValid === false) {
+                 return res.status(400).json({
+                     message: `"${word}" doesn't seem to be a valid English word.`,
+                     type: 'INVALID',
+                     suggestions: validation.suggestions || []
+                 });
+            }
+
+            // 3.2 Generate Context (if valid)
+            console.log("Generating context for:", word);
+            try {
+                aiContext = await generateWordContext(word);
+            } catch (error) {
+                 if (error.type === 'QUOTA_EXCEEDED') {
+                    return res.status(429).json({ message: error.message, type: 'QUOTA_EXCEEDED' });
+                }
+                throw error;
+            }
+
+            if (!aiContext) {
+                 return res.status(500).json({ message: "Failed to generate AI context" });
+            }
+        }
+
+        const newWord = await Word.create({
+            word: aiContext.word || word, // Use AI's capitalization if it differs
+            definition: aiContext.definition,
+            examples: aiContext.examples,
+            collocations: aiContext.collocations,
+            fun_fact: aiContext.fun_fact,
+            mastered: false
+        });
+
+        console.log("Word saved to DB:", newWord.word);
+        res.status(201).json(newWord);
+
+    } catch (error) {
+        console.error("Add Word Error:", error);
+        res.status(500).json({ message: 'Server Error' });
+    }
+});
+
+// @desc    Delete a word
+// @route   DELETE /api/words/:id
+router.delete('/:id', async (req, res) => {
+    try {
+        const word = await Word.findById(req.params.id);
+
+        if (!word) {
+            return res.status(404).json({ message: 'Word not found' });
+        }
+
+        await word.deleteOne();
+        res.json({ message: 'Word removed', id: req.params.id });
+    } catch (error) {
+        console.error("Delete Error:", error);
+        res.status(500).json({ message: 'Server Error' });
+    }
+});
+
 module.exports = router;

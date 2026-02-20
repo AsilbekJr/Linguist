@@ -2,18 +2,21 @@ require('dotenv').config();
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 
 async function testGemini() {
-    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    const modelName = "gemini-flash-latest"; // Trying alternative model
-
-    console.log(`Testing: ${modelName}`);
+    console.log("Testing Gemini API...");
     try {
-        const model = genAI.getGenerativeModel({ model: modelName });
-        const result = await model.generateContent("Explain 'serendipity' in one sentence.");
-        const response = await result.response;
-        console.log(`✅ SUCCESS with ${modelName}`);
-        console.log("Response:", response.text());
+        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+        // Try gemini-flash-latest first
+        let modelName = "gemini-flash-latest";
+        console.log(`Using model: ${modelName}`);
+        let model = genAI.getGenerativeModel({ model: modelName });
+        
+        let prompt = "Explain the word 'serendipity' briefly.";
+        let result = await model.generateContent(prompt);
+        let response = await result.response;
+        console.log("Response from gemini-flash-latest:", response.text());
+        
     } catch (error) {
-        console.log(`❌ FAILED with ${modelName}:`, error.message);
+        console.error("Error with gemini-flash-latest:", error.message);
     }
 }
 

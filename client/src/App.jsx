@@ -3,19 +3,34 @@ import WordCard from './components/WordCard';
 import WordForm from './components/WordForm';
 import StoryEditor from './components/StoryEditor';
 import StoryLibrary from './components/StoryLibrary';
+import ReviewMode from './components/ReviewMode';
+import { groupWordsByDate } from './utils/dateUtils';
 
 function App() {
+  const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:5000';
   const [words, setWords] = useState([])
   const [error, setError] = useState(null)
-  const [activeTab, setActiveTab] = useState('word-lab'); // 'word-lab' | 'story-mode' | 'library'
+  const [activeTab, setActiveTab] = useState('word-lab'); // 'word-lab' | 'story-mode' | 'library' | 'review-mode'
+  const [reviewDueCount, setReviewDueCount] = useState(0);
 
   useEffect(() => {
     fetchwords();
+    fetchReviewCount();
   }, [])
+
+  const fetchReviewCount = async () => {
+      try {
+          const res = await fetch(`${API_URL}/api/review/due`);
+          const data = await res.json();
+          setReviewDueCount(data.length);
+      } catch (err) {
+          console.error("Failed to fetch review count", err);
+      }
+  };
 
   const fetchwords = () => {
     // Use environment variable for API URL in production
-    const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:5000';
+
     
     fetch(`${API_URL}/api/words`)
       .then(res => {
@@ -32,15 +47,15 @@ function App() {
       })
   };
 
-  const handleAddWord = async (newWord) => {
-    console.log("Adding word:", newWord);
+  const handleAddWord = async (newWord, skipAI = false) => {
+    console.log("Adding word:", newWord, "Skip AI:", skipAI);
     
     // Optimistic update
     const mockNewEntry = {
         _id: Date.now().toString(),
         word: newWord,
-        definition: "AI is generating definition...",
-        examples: ["Please wait..."],
+        definition: skipAI ? "Definition unavailable (AI Limit Reached)." : "AI is generating definition...",
+        examples: skipAI ? ["Example unavailable."] : ["Please wait..."],
         mastered: false
     };
     
@@ -50,10 +65,13 @@ function App() {
         const res = await fetch(`${API_URL}/api/words`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ word: newWord })
+            body: JSON.stringify({ word: newWord, skipAI })
         });
         
-        if (!res.ok) throw new Error("Server error");
+        if (!res.ok) {
+            const errorData = await res.json();
+            throw errorData;
+        }
         
         const savedWord = await res.json();
         
@@ -63,8 +81,25 @@ function App() {
 
      } catch (err) {
          console.error("Error adding word:", err);
-         setError("Failed to generate context. Is server running?");
+         // Remove optimistic update
+         setWords(prev => prev.filter(w => w._id !== mockNewEntry._id));
+
+         if (err.type === 'DUPLICATE' || err.type === 'INVALID' || err.type === 'QUOTA_EXCEEDED') {
+             throw err; // Pass to WordForm
+         }
+
+         setError("Failed to add word. Is server running?");
      }
+  };
+
+  const handleDeleteWord = async (id) => {
+      setWords(prev => prev.filter(w => w._id !== id)); // Optimistic delete
+      try {
+          await fetch(`${API_URL}/api/words/${id}`, { method: 'DELETE' });
+      } catch (err) {
+          console.error("Delete failed:", err);
+          fetchwords(); // Revert on failure
+      }
   };
 
   return (
@@ -119,6 +154,21 @@ function App() {
             >
                 📚 Library
             </button>
+            <button 
+                onClick={() => setActiveTab('review-mode')}
+                className={`px-6 py-2 rounded-full font-bold transition-all flex items-center gap-2 relative ${
+                    activeTab === 'review-mode' 
+                    ? 'bg-pink-600 text-white shadow-lg shadow-pink-500/25' 
+                    : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                }`}
+            >
+                🧠 Review
+                {reviewDueCount > 0 && (
+                    <span className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center text-xs text-white border-2 border-[#0a0a0a] animate-bounce">
+                        {reviewDueCount}
+                    </span>
+                )}
+            </button>
         </div>
 
         {/* Content Area */}
@@ -140,10 +190,28 @@ function App() {
                         </span>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {Array.isArray(words) && words.map(word => (
-                        <WordCard key={word._id} word={word} />
-                        ))}
+                    <div className="space-y-12">
+                        {(() => {
+                            const groupedWords = groupWordsByDate(words);
+                            return Object.entries(groupedWords).map(([dateLabel, groupWords]) => (
+                                <div key={dateLabel} className="animate-fade-in">
+                                    <h3 className="text-lg font-bold text-gray-400 mb-6 flex items-center gap-4 sticky top-0 bg-[#0a0a0a]/95 py-4 z-10 backdrop-blur-md">
+                                        <span className={`w-2 h-2 rounded-full ${dateLabel.includes('Today') ? 'bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]' : 'bg-gray-600'}`}></span>
+                                        {dateLabel}
+                                        <span className="text-xs font-mono bg-gray-800 text-gray-400 px-2 py-0.5 rounded-full border border-gray-700">
+                                            {groupWords.length}
+                                        </span>
+                                        <div className="h-[1px] flex-1 bg-gradient-to-r from-gray-800 to-transparent"></div>
+                                    </h3>
+                                    
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                        {groupWords.map(word => (
+                                            <WordCard key={word._id} word={word} onDelete={handleDeleteWord} />
+                                        ))}
+                                    </div>
+                                </div>
+                            ));
+                        })()}
                     </div>
                     
                     {words.length === 0 && (
@@ -158,6 +226,8 @@ function App() {
             {activeTab === 'story-mode' && <StoryEditor words={words} />}
             
             {activeTab === 'library' && <StoryLibrary />}
+
+            {activeTab === 'review-mode' && <ReviewMode />}
         </main>
       </div>
     </div>

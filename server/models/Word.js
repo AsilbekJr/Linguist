@@ -4,7 +4,7 @@ const wordSchema = new mongoose.Schema({
     user: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
-        required: true
+        required: false
     },
     word: {
         type: String,
@@ -18,6 +18,10 @@ const wordSchema = new mongoose.Schema({
     mastered: {
         type: Boolean,
         default: false
+    },
+    reviewStage: {
+        type: Number,
+        default: 0
     },
     nextReviewDate: Date,
     createdAt: {

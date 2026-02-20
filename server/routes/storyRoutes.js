@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const { analyzeStory } = require('../services/geminiService');
+const Story = require('../models/Story');
+const mongoose = require('mongoose');
 
 // @desc    Analyze a story
 // @route   POST /api/stories/analyze
@@ -30,28 +32,21 @@ router.post('/analyze', async (req, res) => {
     }
 });
 
-// Mock Storage for Stories
-let mockStories = [];
-
 // @desc    Save a story
 // @route   POST /api/stories
 router.post('/', async (req, res) => {
     try {
         const { title, content, wordsUsed, vibeScore, analysis } = req.body;
         
-        const newStory = {
-            _id: Date.now().toString(),
+        const newStory = await Story.create({
             title: title || "Untitled Flow",
             content,
             wordsUsed,
             vibeScore,
-            analysis,
-            createdAt: new Date()
-        };
-
-        // In real app: const story = await Story.create({...})
-        mockStories.unshift(newStory);
-
+            analysis
+        });
+        
+        console.log("Story saved to DB:", newStory.title);
         res.status(201).json(newStory);
     } catch (error) {
         console.error("Save Story Error:", error);
@@ -61,8 +56,14 @@ router.post('/', async (req, res) => {
 
 // @desc    Get all stories
 // @route   GET /api/stories
-router.get('/', (req, res) => {
-    res.json(mockStories);
+router.get('/', async (req, res) => {
+    try {
+        const stories = await Story.find({}).sort({ createdAt: -1 });
+        res.json(stories);
+    } catch (error) {
+        console.error("Fetch Stories Error:", error);
+        res.status(500).json({ message: "Failed to fetch stories" });
+    }
 });
 
 module.exports = router;
