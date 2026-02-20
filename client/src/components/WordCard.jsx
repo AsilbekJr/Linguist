@@ -1,9 +1,7 @@
 import React from 'react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge"; // We need to add badge if not present, but for now use custom span or just install badge. 
-// Actually, let's use a styled span for now as I didn't install badge yet. Or I can install it quickly.
-// Let's stick to standard span for now to avoid context switching, or install badge in background.
+import { Badge } from "@/components/ui/badge";
 import { Trash2, ExternalLink } from "lucide-react";
 
 const WordCard = ({ word, onDelete }) => {
@@ -15,9 +13,9 @@ const WordCard = ({ word, onDelete }) => {
         <CardTitle className="text-2xl font-bold capitalize bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent">
           {word.word}
         </CardTitle>
-        <span className={`text-[10px] font-mono px-2 py-1 rounded border ${word.mastered ? 'bg-primary/20 text-primary border-primary/20' : 'bg-muted text-muted-foreground border-border'}`}>
+        <Badge variant={word.mastered ? "default" : "secondary"} className="text-[10px] font-mono">
             {word.mastered ? 'MASTERED' : 'LEARNING'}
-        </span>
+        </Badge>
       </CardHeader>
       
       <CardContent className="space-y-4">
