@@ -19,9 +19,84 @@ function App() {
     fetchReviewCount();
   }, [])
   
-  // ... (keep existing fetch functions)
+  const fetchReviewCount = async () => {
+      try {
+          const res = await fetch(`${API_URL}/api/review/due`);
+          const data = await res.json();
+          setReviewDueCount(data.length);
+      } catch (err) {
+          console.error("Failed to fetch review count", err);
+      }
+  };
 
-  // ... (keep existing handlers)
+  const fetchwords = () => {
+    fetch(`${API_URL}/api/words`)
+      .then(res => {
+        if (!res.ok) throw new Error("Failed to connect to server");
+        return res.json();
+      })
+      .then(data => {
+        setWords(data);
+        setError(null);
+      })
+      .catch(err => {
+        console.error(err);
+        setError("Server unavailable. Please check backend.");
+      })
+  };
+
+  const handleAddWord = async (newWord, skipAI = false) => {
+    // Optimistic update
+    const mockNewEntry = {
+        _id: Date.now().toString(),
+        word: newWord,
+        definition: skipAI ? "Definition unavailable (AI Limit Reached)." : "AI is generating definition...",
+        examples: skipAI ? ["Example unavailable."] : ["Please wait..."],
+        mastered: false
+    };
+    
+    setWords(prev => [mockNewEntry, ...prev]);
+
+     try {
+        const res = await fetch(`${API_URL}/api/words`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ word: newWord, skipAI })
+        });
+        
+        if (!res.ok) {
+            const errorData = await res.json();
+            throw errorData;
+        }
+        
+        const savedWord = await res.json();
+        
+        // Update the optimistic entry with real data
+        setWords(prev => prev.map(w => w._id === mockNewEntry._id ? savedWord : w));
+        setError(null);
+
+     } catch (err) {
+         console.error("Error adding word:", err);
+         // Remove optimistic update
+         setWords(prev => prev.filter(w => w._id !== mockNewEntry._id));
+
+         if (err.type === 'DUPLICATE' || err.type === 'INVALID' || err.type === 'QUOTA_EXCEEDED') {
+             throw err; // Pass to WordForm
+         }
+
+         setError("Failed to add word. Is server running?");
+     }
+  };
+
+  const handleDeleteWord = async (id) => {
+      setWords(prev => prev.filter(w => w._id !== id)); // Optimistic delete
+      try {
+          await fetch(`${API_URL}/api/words/${id}`, { method: 'DELETE' });
+      } catch (err) {
+          console.error("Delete failed:", err);
+          fetchwords(); // Revert on failure
+      }
+  };
 
   return (
     <div className="min-h-screen bg-background text-foreground selection:bg-primary/30 font-sans">
