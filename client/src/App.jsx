@@ -174,6 +174,16 @@ function App() {
                     </span>
                 )}
             </button>
+            <button 
+                onClick={() => setActiveTab('dictionary')}
+                className={`px-6 py-2 rounded-full font-bold transition-all flex items-center gap-2 border ${
+                    activeTab === 'dictionary' 
+                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/25 border-blue-600' 
+                    : 'bg-card text-muted-foreground hover:bg-accent hover:text-accent-foreground border-border'
+                }`}
+            >
+                📖 Dictionary
+            </button>
         </div>
 
         {/* Content Area */}
