@@ -10,9 +10,16 @@ const WordCard = ({ word, onDelete }) => {
       <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-secondary/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
       
       <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
-        <CardTitle className="text-2xl font-bold capitalize bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent">
-          {word.word}
-        </CardTitle>
+        <div>
+          <CardTitle className="text-2xl font-bold capitalize bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent flex items-center gap-3">
+            {word.word}
+            {word.translation && (
+              <Badge variant="outline" className="text-sm font-normal text-primary border-primary/20 bg-primary/5 capitalize">
+                {word.translation}
+              </Badge>
+            )}
+          </CardTitle>
+        </div>
         <Badge variant={word.mastered ? "default" : "secondary"} className="text-[10px] font-mono">
             {word.mastered ? 'MASTERED' : 'LEARNING'}
         </Badge>

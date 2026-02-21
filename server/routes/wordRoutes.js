@@ -46,6 +46,7 @@ router.post('/', async (req, res) => {
                 word: word,
                 definition: req.body.manualDefinition || "Definition unavailable (AI Limit Reached). You can edit this later.",
                 examples: req.body.manualExamples && req.body.manualExamples.length > 0 ? req.body.manualExamples : ["Example unavailable."],
+                translation: req.body.manualTranslation || "",
                 collocations: [],
                 fun_fact: "This word was saved manually."
             };
@@ -89,6 +90,7 @@ router.post('/', async (req, res) => {
         const newWord = await Word.create({
             word: aiContext.word || word, // Use AI's capitalization if it differs
             definition: aiContext.definition,
+            translation: aiContext.translation || req.body.manualTranslation || "",
             examples: aiContext.examples,
             collocations: aiContext.collocations,
             fun_fact: aiContext.fun_fact,

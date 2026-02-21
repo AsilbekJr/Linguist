@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Menu, Home, BookOpen, Library, CheckCircle } from "lucide-react";
+import { Menu, Home, BookOpen, Library, CheckCircle, Book } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const Sidebar = ({ activeTab, onTabChange }) => {
@@ -12,6 +12,7 @@ const Sidebar = ({ activeTab, onTabChange }) => {
     { id: 'story-mode', label: 'Story Mode', icon: BookOpen },
     { id: 'library', label: 'Library', icon: Library },
     { id: 'review-mode', label: 'Review', icon: CheckCircle },
+    { id: 'dictionary', label: 'Dictionary', icon: Book },
   ];
 
   return (

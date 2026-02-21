@@ -4,6 +4,7 @@ import WordForm from './components/WordForm';
 import StoryEditor from './components/StoryEditor';
 import StoryLibrary from './components/StoryLibrary';
 import ReviewMode from './components/ReviewMode';
+import Dictionary from './components/Dictionary';
 import { groupWordsByDate } from './utils/dateUtils';
 import Sidebar from './components/Sidebar';
 
@@ -65,7 +66,8 @@ function App() {
                 word: newWord, 
                 skipAI,
                 manualDefinition: manualData.manualDefinition,
-                manualExamples: manualData.manualExample ? [manualData.manualExample] : []
+                manualExamples: manualData.manualExample ? [manualData.manualExample] : [],
+                manualTranslation: manualData.manualTranslation
             })
         });
         
@@ -231,6 +233,8 @@ function App() {
             {activeTab === 'library' && <StoryLibrary />}
 
             {activeTab === 'review-mode' && <ReviewMode />}
+
+            {activeTab === 'dictionary' && <Dictionary onAddWord={handleAddWord} userWords={words} />}
         </main>
       </div>
     </div>
