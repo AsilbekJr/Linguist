@@ -102,10 +102,10 @@ function App() {
     <div className="min-h-screen bg-background text-foreground selection:bg-primary/30 font-sans">
       <Sidebar activeTab={activeTab} onTabChange={setActiveTab} />
       
-      <div className="max-w-7xl mx-auto px-4 md:px-6 py-8 md:py-12">
+      <div className="max-w-7xl mx-auto px-4 md:px-6 py-8 md:py-12 pt-20 md:pt-12">
         
         {/* Header Section */}
-        <header className="mb-8 md:mb-12 text-center pt-8 md:pt-0">
+        <header className="mb-8 md:mb-12 text-center pt-2 md:pt-0">
           <h1 className="text-4xl md:text-6xl font-black bg-gradient-to-r from-primary via-purple-500 to-pink-500 bg-clip-text text-transparent mb-4 tracking-tight">
             Linguist AI-Flow
           </h1>
@@ -180,10 +180,10 @@ function App() {
 
                     <div className="flex justify-between items-center mb-8 mt-12">
                         <h2 className="text-2xl font-bold flex items-center gap-2">
-                        <span className="w-2 h-8 bg-blue-500 rounded-full inline-block"></span>
+                        <span className="w-2 h-8 bg-primary rounded-full inline-block"></span>
                         Your Ecosystem
                         </h2>
-                        <span className="text-gray-500 text-sm border border-gray-800 px-3 py-1 rounded-full">
+                        <span className="text-muted-foreground text-sm border border-border px-3 py-1 rounded-full">
                         {words.length} words collected
                         </span>
                     </div>
@@ -193,13 +193,13 @@ function App() {
                             const groupedWords = groupWordsByDate(words);
                             return Object.entries(groupedWords).map(([dateLabel, groupWords]) => (
                                 <div key={dateLabel} className="animate-fade-in">
-                                    <h3 className="text-lg font-bold text-gray-400 mb-6 flex items-center gap-4 sticky top-0 bg-[#0a0a0a]/95 py-4 z-10 backdrop-blur-md">
-                                        <span className={`w-2 h-2 rounded-full ${dateLabel.includes('Today') ? 'bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]' : 'bg-gray-600'}`}></span>
+                                    <h3 className="text-lg font-bold text-muted-foreground mb-6 flex items-center gap-4 sticky top-14 md:top-0 bg-background/95 py-4 z-10 backdrop-blur-md">
+                                        <span className={`w-2 h-2 rounded-full ${dateLabel.includes('Today') ? 'bg-primary shadow-lg shadow-primary/50' : 'bg-muted-foreground/50'}`}></span>
                                         {dateLabel}
-                                        <span className="text-xs font-mono bg-gray-800 text-gray-400 px-2 py-0.5 rounded-full border border-gray-700">
+                                        <span className="text-xs font-mono bg-muted text-muted-foreground px-2 py-0.5 rounded-full border border-border">
                                             {groupWords.length}
                                         </span>
-                                        <div className="h-[1px] flex-1 bg-gradient-to-r from-gray-800 to-transparent"></div>
+                                        <div className="h-[1px] flex-1 bg-gradient-to-r from-border to-transparent"></div>
                                     </h3>
                                     
                                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -213,7 +213,7 @@ function App() {
                     </div>
                     
                     {words.length === 0 && (
-                        <div className="text-center text-gray-500 py-20 bg-gray-900/50 rounded-3xl border border-gray-800 border-dashed">
+                        <div className="text-center text-muted-foreground py-20 bg-muted/30 rounded-3xl border border-border border-dashed">
                         <p className="text-xl">Your flow is empty.</p>
                         <p className="text-sm mt-2">Add a word to start building your universe.</p>
                         </div>

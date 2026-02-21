@@ -15,10 +15,13 @@ const Sidebar = ({ activeTab, onTabChange }) => {
   ];
 
   return (
-    <div className="md:hidden fixed top-4 left-4 z-50">
+    <div className="md:hidden fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-md border-b border-border py-3 px-4 flex items-center justify-between">
+      <div className="text-xl font-bold bg-gradient-to-r from-primary to-purple-500 bg-clip-text text-transparent">
+        Linguist
+      </div>
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetTrigger asChild>
-          <Button variant="outline" size="icon" className="bg-background/80 backdrop-blur-md border-primary/20 hover:bg-primary/20">
+          <Button variant="ghost" size="icon" className="h-9 w-9 border border-border bg-card">
             <Menu className="h-5 w-5" />
             <span className="sr-only">Toggle menu</span>
           </Button>
