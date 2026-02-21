@@ -2,7 +2,7 @@ import React from 'react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Trash2, ExternalLink } from "lucide-react";
+import { Trash2, ExternalLink, Repeat } from "lucide-react";
 
 const WordCard = ({ word, onDelete }) => {
   return (
@@ -20,9 +20,15 @@ const WordCard = ({ word, onDelete }) => {
             </p>
           )}
         </div>
-        <Badge variant={word.mastered ? "default" : "secondary"} className="text-[10px] font-mono">
-            {word.mastered ? 'MASTERED' : 'LEARNING'}
-        </Badge>
+        <div className="flex flex-col items-end gap-2">
+            <Badge variant={word.mastered ? "default" : "secondary"} className="text-[10px] font-mono">
+                {word.mastered ? 'MASTERED' : 'LEARNING'}
+            </Badge>
+            <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground bg-muted hover:bg-muted/80 px-2 py-0.5 rounded-md transition-colors border border-border/50 cursor-help" title="Muvaffaqiyatli takrorlash bosqichi">
+                <Repeat className="w-3 h-3 text-primary" />
+                <span>{word.reviewStage || 0}</span>
+            </div>
+        </div>
       </CardHeader>
       
       <CardContent className="space-y-4">

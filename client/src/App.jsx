@@ -52,8 +52,10 @@ function App() {
         _id: Date.now().toString(),
         word: newWord,
         definition: skipAI && manualData.manualDefinition ? manualData.manualDefinition : (skipAI ? "Definition unavailable." : "AI is generating definition..."),
+        translation: skipAI && manualData.manualTranslation ? manualData.manualTranslation : (skipAI ? "" : "Tarjima qilinmoqda..."),
         examples: skipAI && manualData.manualExample ? [manualData.manualExample] : (skipAI ? ["Example unavailable."] : ["Please wait..."]),
-        mastered: false
+        mastered: false,
+        reviewStage: 0
     };
     
     setWords(prev => [mockNewEntry, ...prev]);

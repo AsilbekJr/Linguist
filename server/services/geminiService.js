@@ -40,6 +40,7 @@ const generateWordContext = async (word) => {
         {
             "word": "${word}",
             "definition": "A clear, concise definition tailored for an intermediate learner.",
+            "translation": "The direct Uzbek (O'zbek tili) translation of this word.",
             "examples": ["Example sentence 1.", "Example sentence 2."],
             "collocations": ["collocation 1", "collocation 2", "collocation 3"],
             "fun_fact": "A short, interesting fact or memory aid about the word."
