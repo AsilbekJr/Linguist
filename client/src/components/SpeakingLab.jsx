@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
-import { Mic, MicOff, Volume2, Sparkles, Loader2, RefreshCw } from "lucide-react";
+import { Mic, MicOff, Volume2, Sparkles, Loader2, RefreshCw, AudioLines } from "lucide-react";
 
 const SpeakingLab = () => {
   const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:5000';
@@ -10,64 +10,93 @@ const SpeakingLab = () => {
   const [isTranslating, setIsTranslating] = useState(false);
   const [translations, setTranslations] = useState(null); // { casual: '', advanced: '' }
   const [error, setError] = useState("");
-  const [recognition, setRecognition] = useState(null);
+  const [uzbekRecognition, setUzbekRecognition] = useState(null);
 
-  // Initialize Web Speech API
+  // Phase 2 State
+  const [isPracticing, setIsPracticing] = useState(false);
+  const [practiceType, setPracticeType] = useState(null); // 'casual' or 'advanced'
+  const [spokenEnglish, setSpokenEnglish] = useState("");
+  const [isEvaluating, setIsEvaluating] = useState(false);
+  const [evaluationData, setEvaluationData] = useState(null); // { score, feedback, color }
+  const [englishRecognition, setEnglishRecognition] = useState(null);
+
+  // Initialize Web Speech APIs
   useEffect(() => {
     if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      const rec = new SpeechRecognition();
-      rec.continuous = false;
-      rec.interimResults = true;
-      rec.lang = 'uz-UZ'; // Listen in Uzbek
+      
+      // 1. Uzbek Listener (Phase 1)
+      const uzRec = new SpeechRecognition();
+      uzRec.continuous = false;
+      uzRec.interimResults = true;
+      uzRec.lang = 'uz-UZ';
 
-      rec.onresult = (event) => {
-        let finalTranscript = '';
-        let interimTranscript = '';
-
+      uzRec.onresult = (event) => {
+        let finalTrans = '';
+        let interimTrans = '';
         for (let i = event.resultIndex; i < event.results.length; ++i) {
-          if (event.results[i].isFinal) {
-            finalTranscript += event.results[i][0].transcript;
-          } else {
-            interimTranscript += event.results[i][0].transcript;
-          }
+          if (event.results[i].isFinal) finalTrans += event.results[i][0].transcript;
+          else interimTrans += event.results[i][0].transcript;
         }
-        
-        const currentText = finalTranscript || interimTranscript;
-        setUzbekText(currentText);
+        setUzbekText(finalTrans || interimTrans);
       };
 
-      rec.onend = () => {
+      uzRec.onend = () => {
         setIsListening(false);
-        // If we stopped listening and have text, trigger AI translation
         setUzbekText((currentText) => {
-            if (currentText.trim().length > 2) {
-                 handleTranslation(currentText);
+            if (currentText.trim().length > 2) handleTranslation(currentText);
+            return currentText;
+        });
+      };
+      uzRec.onerror = () => { setIsListening(false); setError("O'zbek mikrofoni bilan xatolik."); };
+      setUzbekRecognition(uzRec);
+
+      // 2. English Listener (Phase 2)
+      const enRec = new SpeechRecognition();
+      enRec.continuous = false;
+      enRec.interimResults = true;
+      enRec.lang = 'en-US';
+
+      enRec.onresult = (event) => {
+        let finalTrans = '';
+        let interimTrans = '';
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          if (event.results[i].isFinal) finalTrans += event.results[i][0].transcript;
+          else interimTrans += event.results[i][0].transcript;
+        }
+        setSpokenEnglish(finalTrans || interimTrans);
+      };
+
+      enRec.onend = () => {
+        setIsPracticing(false);
+        setSpokenEnglish((currentText) => {
+            if (currentText.trim().length > 1) {
+                // Must evaluate against the currently selected practice type
+                setPracticeType(pt => {
+                    if (pt) evaluateSpeech(currentText, pt);
+                    return pt;
+                });
             }
             return currentText;
         });
       };
-
-      rec.onerror = (event) => {
-        console.error("Speech recognition error", event.error);
-        setIsListening(false);
-        setError("Mikrofonda muammo yuz berdi. Iltimos tekshiring.");
-      };
-
-      setRecognition(rec);
+      enRec.onerror = () => { setIsPracticing(false); setError("Ingliz mikrofonida xatolik yuz berdi."); };
+      setEnglishRecognition(enRec);
+      
     } else {
-      setError("Sizning brauzeringiz Speech API ni qo'llab-quvvatlamaydi. Iltimos Google Chromedan foydalaning.");
+      setError("Brauzeringiz Speech API ni qo'llab-quvvatlamaydi.");
     }
   }, []);
 
-  const toggleListening = () => {
-    if (isListening) {
-      recognition.stop();
-    } else {
+  const toggleUzbekListening = () => {
+    if (isListening) uzbekRecognition.stop();
+    else {
       setUzbekText("");
       setTranslations(null);
+      setSpokenEnglish("");
+      setEvaluationData(null);
       setError("");
-      recognition.start();
+      uzbekRecognition.start();
       setIsListening(true);
     }
   };
@@ -75,36 +104,67 @@ const SpeakingLab = () => {
   const handleTranslation = async (textToTranslate) => {
       setIsTranslating(true);
       setError("");
-      
       try {
           const res = await fetch(`${API_URL}/api/speaking/translate`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ text: textToTranslate })
           });
-
-          if (!res.ok) throw new Error("Tarjima qilib bo'lmadi.");
-          
-          const data = await res.json();
-          setTranslations(data);
+          if (!res.ok) throw new Error("Tarjima kelmadi.");
+          setTranslations(await res.json());
       } catch (err) {
-          console.error(err);
-          setError("Tarjimada xatolik yuz berdi. Internetni tekshiring.");
+          setError("Tarjima qilishda xatolik yuz berdi.");
       } finally {
           setIsTranslating(false);
       }
   };
 
+  const toggleEnglishPractice = (type) => {
+      if (isPracticing) {
+          englishRecognition.stop();
+      } else {
+          setPracticeType(type);
+          setSpokenEnglish("");
+          setEvaluationData(null);
+          englishRecognition.start();
+          setIsPracticing(true);
+      }
+  };
+
+  const evaluateSpeech = async (spokenRawText, currentPracticeType) => {
+      setIsEvaluating(true);
+      const targetSentence = translations[currentPracticeType];
+
+      try {
+          const res = await fetch(`${API_URL}/api/speaking/evaluate`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ targetSentence, spokenText: spokenRawText })
+          });
+          if (!res.ok) throw new Error("Baho olinmadi");
+          const data = await res.json();
+          setEvaluationData(data);
+      } catch (err) {
+          setError("Sun'iy intellekt baholashda xatolik berdi.");
+      } finally {
+          setIsEvaluating(false);
+      }
+  };
+
   const playAudio = (text) => {
       if ('speechSynthesis' in window) {
-          window.speechSynthesis.cancel(); // Stop any currently playing audio
+          window.speechSynthesis.cancel();
           const msg = new SpeechSynthesisUtterance(text);
           msg.lang = 'en-US';
-          msg.rate = 0.9; // Slightly slower for clear learning
+          msg.rate = 0.85;
           window.speechSynthesis.speak(msg);
-      } else {
-          setError("Brauzerda ovozni o'qish imkoniyati yo'q.");
       }
+  };
+
+  const getEvaluationColor = (color) => {
+      if (color === 'green') return 'bg-green-500/10 border-green-500 text-green-600';
+      if (color === 'yellow') return 'bg-yellow-500/10 border-yellow-500 text-yellow-600';
+      return 'bg-red-500/10 border-red-500 text-red-600';
   };
 
   return (
@@ -114,7 +174,7 @@ const SpeakingLab = () => {
           Speaking Lab
         </h2>
         <p className="text-muted-foreground text-lg">
-          O'zbek tilida bemalol gapiring, tizim sizga uning Inglizcha mukammal ekvivalentini oydinlashtirib beradi.
+          O'zbek tilida gapiring, tarjimasini ko'ring va Ingliz tilida qaytarib AI orqali baholaning!
         </p>
       </div>
 
@@ -124,101 +184,126 @@ const SpeakingLab = () => {
          </div>
       )}
 
-      {/* STAGE 1: Listening AI */}
+      {/* STAGE 1: Uzbek Base Input */}
       <div className={`relative bg-card rounded-3xl p-8 border text-center transition-all duration-500 mb-8 ${isListening ? 'border-orange-500/50 shadow-lg shadow-orange-500/20' : 'border-border'}`}>
-          <div className="mb-8">
+          <div className="mb-8 flex justify-center flex-col items-center">
               <Button
-                 onClick={toggleListening}
+                 onClick={toggleUzbekListening}
                  size="lg"
-                 className={`w-24 h-24 rounded-full transition-all duration-300 ${isListening ? 'bg-destructive hover:bg-destructive/90 animate-pulse ring-8 ring-destructive/20' : 'bg-primary hover:bg-primary/90 hover:scale-105'}`}
+                 className={`w-24 h-24 rounded-full transition-all duration-300 mb-4 ${isListening ? 'bg-destructive hover:bg-destructive/90 animate-pulse ring-8 ring-destructive/20' : 'bg-primary hover:bg-primary/90 hover:scale-105'}`}
               >
                   {isListening ? <MicOff className="w-10 h-10" /> : <Mic className="w-10 h-10" />}
               </Button>
+              <h3 className="font-bold text-muted-foreground">O'zbekcha Ovoz 🇺🇿</h3>
           </div>
 
-          <div className="min-h-[100px] flex flex-col justify-center items-center">
-              {!isListening && !uzbekText && (
-                  <p className="text-muted-foreground text-lg italic">
-                      Mikrofonni bosing va O'zbek tilida biron gap ayting...
-                  </p>
-              )}
-              
-              {isListening && !uzbekText && (
-                   <p className="text-orange-500 font-medium animate-pulse">Eshitmoqdaman...</p>
-              )}
-
-              {uzbekText && (
-                  <h3 className="text-2xl font-bold text-card-foreground">
-                      "{uzbekText}"
-                  </h3>
-              )}
+          <div className="min-h-[60px] flex flex-col justify-center items-center">
+              {!isListening && !uzbekText && <p className="text-muted-foreground italic">Mikrofonni bosing va O'zbek tilida gapiring...</p>}
+              {isListening && !uzbekText && <p className="text-orange-500 font-medium animate-pulse">Eshitmoqdaman...</p>}
+              {uzbekText && <h3 className="text-2xl font-bold text-card-foreground">"{uzbekText}"</h3>}
           </div>
       </div>
 
-      {/* STAGE 2: AI Translations & Synthesis */}
       {isTranslating && (
-          <div className="flex flex-col items-center justify-center p-12 bg-card rounded-3xl border border-border mt-8">
+          <div className="flex flex-col items-center justify-center p-8 bg-card rounded-3xl border border-border mt-8">
               <Loader2 className="w-12 h-12 text-primary animate-spin mb-4" />
-              <p className="text-muted-foreground font-medium">Ingliz tiliga mukammal tarjima qilinmoqda...</p>
+              <p className="text-muted-foreground font-medium">Mukammal tarjima qilinmoqda...</p>
           </div>
       )}
 
+      {/* STAGE 2: English Output & Pronunciation Practice */}
       {!isTranslating && translations && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8 animate-fade-in">
-              {/* Casual Version */}
-              <div className="bg-background rounded-3xl p-6 border border-border hover:border-blue-500/50 transition-colors shadow-sm relative overflow-hidden group">
-                  <div className="absolute top-0 right-0 p-4 opacity-10">
-                      <Sparkles className="w-24 h-24 text-blue-500" />
-                  </div>
-                  <div className="flex justify-between items-start mb-4">
-                      <div>
-                          <h4 className="font-bold text-blue-500 text-lg">Kundalik (Casual)</h4>
-                          <p className="text-xs text-muted-foreground">Sodda ommabop tarjima</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-8 animate-fade-in">
+              
+              {/* Casual Column */}
+              <div className="flex flex-col gap-4">
+                  <div className="bg-background rounded-3xl p-6 border border-border shadow-sm flex flex-col h-full">
+                      <div className="flex justify-between items-start mb-4">
+                          <div>
+                              <h4 className="font-bold text-blue-500 text-lg flex items-center gap-2">
+                                 Sodda <Sparkles className="w-4 h-4" />
+                              </h4>
+                          </div>
+                          <Button variant="secondary" size="icon" onClick={() => playAudio(translations.casual)} className="rounded-full bg-blue-500/10 text-blue-500 hover:bg-blue-500 hover:text-white">
+                              <Volume2 className="w-5 h-5" />
+                          </Button>
                       </div>
+                      <p className="text-2xl font-black text-card-foreground mb-6 flex-grow">{translations.casual}</p>
+                      
+                      {/* Practice Button */}
                       <Button 
-                          variant="secondary" 
-                          size="icon" 
-                          onClick={() => playAudio(translations.casual)}
-                          className="rounded-full bg-blue-500/10 text-blue-500 hover:bg-blue-500 hover:text-white transition-all z-10"
+                          onClick={() => toggleEnglishPractice('casual')}
+                          className={`w-full font-bold ${isPracticing && practiceType === 'casual' ? 'bg-destructive animate-pulse' : 'bg-blue-500 hover:bg-blue-600 text-white'}`}
                       >
-                          <Volume2 className="w-5 h-5" />
+                         {isPracticing && practiceType === 'casual' ? 'Eshitmoqdaman...' : <><AudioLines className="w-4 h-4 mr-2" /> O'zim Aytib Ko'raman</>}
                       </Button>
                   </div>
-                  <p className="text-2xl font-black text-card-foreground leading-snug z-10 relative">
-                     {translations.casual}
-                  </p>
               </div>
 
-              {/* Advanced Version */}
-              <div className="bg-background rounded-3xl p-6 border border-border hover:border-purple-500/50 transition-colors shadow-sm relative overflow-hidden group">
-                  <div className="absolute top-0 right-0 p-4 opacity-10">
-                      <Sparkles className="w-24 h-24 text-purple-500" />
-                  </div>
-                  <div className="flex justify-between items-start mb-4">
-                      <div>
-                          <h4 className="font-bold text-purple-500 text-lg">Boyitilgan (Advanced)</h4>
-                          <p className="text-xs text-muted-foreground">Keng lug'at boyligi bilan</p>
+              {/* Advanced Column */}
+              <div className="flex flex-col gap-4">
+                  <div className="bg-background rounded-3xl p-6 border border-border shadow-sm flex flex-col h-full">
+                      <div className="flex justify-between items-start mb-4">
+                          <div>
+                              <h4 className="font-bold text-purple-500 text-lg flex items-center gap-2">
+                                  Murakkab <Sparkles className="w-4 h-4" />
+                              </h4>
+                          </div>
+                          <Button variant="secondary" size="icon" onClick={() => playAudio(translations.advanced)} className="rounded-full bg-purple-500/10 text-purple-500 hover:bg-purple-500 hover:text-white">
+                              <Volume2 className="w-5 h-5" />
+                          </Button>
                       </div>
+                      <p className="text-2xl font-black text-card-foreground mb-6 flex-grow">{translations.advanced}</p>
+                      
+                      {/* Practice Button */}
                       <Button 
-                          variant="secondary" 
-                          size="icon" 
-                          onClick={() => playAudio(translations.advanced)}
-                          className="rounded-full bg-purple-500/10 text-purple-500 hover:bg-purple-500 hover:text-white transition-all z-10"
+                          onClick={() => toggleEnglishPractice('advanced')}
+                          className={`w-full font-bold ${isPracticing && practiceType === 'advanced' ? 'bg-destructive animate-pulse' : 'bg-purple-500 hover:bg-purple-600 text-white'}`}
                       >
-                          <Volume2 className="w-5 h-5" />
+                          {isPracticing && practiceType === 'advanced' ? 'Eshitmoqdaman...' : <><AudioLines className="w-4 h-4 mr-2" /> O'zim Aytib Ko'raman</>}
                       </Button>
                   </div>
-                  <p className="text-2xl font-black text-card-foreground leading-snug z-10 relative">
-                     {translations.advanced}
-                  </p>
               </div>
+
           </div>
       )}
-      
+
+      {/* STAGE 3: Pronunciation Feedback Output */}
+      {isEvaluating && (
+          <div className="mt-8 p-6 text-center border border-border bg-card rounded-2xl">
+              <Loader2 className="w-8 h-8 text-orange-500 animate-spin mx-auto mb-2" />
+              <p className="text-muted-foreground font-medium">Talaffuzingiz AI orqali tekshirilmoqda...</p>
+          </div>
+      )}
+
+      {!isEvaluating && evaluationData && spokenEnglish && (
+          <div className={`mt-8 p-8 border-2 rounded-3xl shadow-lg transition-all animate-fade-in ${getEvaluationColor(evaluationData.color)}`}>
+              <div className="flex justify-between items-start mb-6">
+                 <div>
+                     <h3 className="text-3xl font-black mb-1">Natija: {evaluationData.score} / 100</h3>
+                     <p className="opacity-80 font-medium">Maqsadli gap: {translations[practiceType]}</p>
+                 </div>
+                 {evaluationData.score >= 90 && <span className="text-4xl">🔥</span>}
+                 {evaluationData.score >= 50 && evaluationData.score < 90 && <span className="text-4xl">💪</span>}
+                 {evaluationData.score < 50 && <span className="text-4xl">📚</span>}
+              </div>
+              
+              <div className="bg-background/50 rounded-xl p-4 mb-4 border border-black/10 dark:border-white/10">
+                  <span className="text-xs uppercase font-bold opacity-60 block mb-1">Siz Aytdingiz:</span>
+                  <p className="text-xl font-bold">"{spokenEnglish}"</p>
+              </div>
+
+              <p className="text-lg leading-relaxed mix-blend-multiply dark:mix-blend-lighten">
+                  <span className="font-bold">Izoh: </span> 
+                  {evaluationData.feedback}
+              </p>
+          </div>
+      )}
+
       {translations && !isTranslating && (
-          <div className="mt-8 flex justify-center">
-             <Button variant="outline" onClick={() => { setUzbekText(""); setTranslations(null); }} className="rounded-full">
-                 <RefreshCw className="w-4 h-4 mr-2" /> Yangi gap tuzish
+          <div className="mt-12 flex justify-center">
+             <Button variant="outline" onClick={() => { setUzbekText(""); setTranslations(null); setSpokenEnglish(""); setEvaluationData(null); }} className="rounded-full">
+                 <RefreshCw className="w-4 h-4 mr-2" /> Yangi gap boshlash
              </Button>
           </div>
       )}

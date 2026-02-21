@@ -219,4 +219,45 @@ const translateUzbekToEnglish = async (uzbekText) => {
     }
 };
 
-module.exports = { generateWordContext, analyzeStory, checkSentence, validateWord, translateUzbekToEnglish };
+const evaluatePronunciation = async (targetSentence, spokenText) => {
+    try {
+        if (!genAI) return null;
+
+        const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
+
+        const prompt = `
+        Act as a strict English pronunciation and speech accuracy coach.
+        You are evaluating how well a student read a target sentence out loud.
+        
+        Target Sentence (What they were supposed to say): "${targetSentence}"
+        Student's Audio Transcript (What they actually said): "${spokenText}"
+        
+        Compare the transcript to the target sentence. Ignore minor punctuation, but strictly penalize missing words, completely wrong words, or heavily mispronounced words that altered the transcript meaning.
+        
+        Return a JSON object with this EXACT structure (no markdown):
+        {
+            "score": 85, // Integer from 0 to 100 representing accuracy.
+            "feedback": "Short feedback in Uzbek explaining exactly what they got right, or what specific words they missed/mispronounced.",
+            "color": "green" // Use 'green' if score >= 90, 'yellow' if between 50-89, 'red' if < 50
+        }
+        `;
+
+        console.log("Speaking Validate: Calling Gemini API...");
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
+        const text = response.text();
+        
+        const jsonStr = text.replace(/```json/g, '').replace(/```/g, '').trim();
+        return JSON.parse(jsonStr);
+
+    } catch (error) {
+        console.error("Gemini Speaking Validate Error:", error);
+        logError("evaluatePronunciation", error);
+        if (error.message.includes("429") || error.message.includes("Quota exceeded")) {
+             throw { type: 'QUOTA_EXCEEDED', message: 'AI Quota Exceeded. Please try again later.' };
+        }
+        return null;
+    }
+};
+
+module.exports = { generateWordContext, analyzeStory, checkSentence, validateWord, translateUzbekToEnglish, evaluatePronunciation };
