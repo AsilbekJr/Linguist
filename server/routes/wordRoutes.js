@@ -44,10 +44,10 @@ router.post('/', async (req, res) => {
             console.log("Skipping AI for:", word);
             aiContext = {
                 word: word,
-                definition: "Definition unavailable (AI Limit Reached). You can edit this later.",
-                examples: ["Example unavailable."],
+                definition: req.body.manualDefinition || "Definition unavailable (AI Limit Reached). You can edit this later.",
+                examples: req.body.manualExamples && req.body.manualExamples.length > 0 ? req.body.manualExamples : ["Example unavailable."],
                 collocations: [],
-                fun_fact: "This word was saved without AI assistance."
+                fun_fact: "This word was saved manually."
             };
         } else {
             // 3.1 AI Validation

@@ -23,7 +23,7 @@ function App() {
       try {
           const res = await fetch(`${API_URL}/api/review/due`);
           const data = await res.json();
-          setReviewDueCount(data.length);
+          setReviewDueCount(Array.isArray(data) ? data.length : 0);
       } catch (err) {
           console.error("Failed to fetch review count", err);
       }
@@ -45,13 +45,13 @@ function App() {
       })
   };
 
-  const handleAddWord = async (newWord, skipAI = false) => {
+  const handleAddWord = async (newWord, skipAI = false, manualData = {}) => {
     // Optimistic update
     const mockNewEntry = {
         _id: Date.now().toString(),
         word: newWord,
-        definition: skipAI ? "Definition unavailable (AI Limit Reached)." : "AI is generating definition...",
-        examples: skipAI ? ["Example unavailable."] : ["Please wait..."],
+        definition: skipAI && manualData.manualDefinition ? manualData.manualDefinition : (skipAI ? "Definition unavailable." : "AI is generating definition..."),
+        examples: skipAI && manualData.manualExample ? [manualData.manualExample] : (skipAI ? ["Example unavailable."] : ["Please wait..."]),
         mastered: false
     };
     
@@ -61,7 +61,12 @@ function App() {
         const res = await fetch(`${API_URL}/api/words`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ word: newWord, skipAI })
+            body: JSON.stringify({ 
+                word: newWord, 
+                skipAI,
+                manualDefinition: manualData.manualDefinition,
+                manualExamples: manualData.manualExample ? [manualData.manualExample] : []
+            })
         });
         
         if (!res.ok) {

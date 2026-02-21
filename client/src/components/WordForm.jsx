@@ -9,6 +9,8 @@ const WordForm = ({ onAddWord }) => {
   const [error, setError] = useState(null);
   const [suggestions, setSuggestions] = useState([]);
   const [showForceSave, setShowForceSave] = useState(false);
+  const [manualDefinition, setManualDefinition] = useState('');
+  const [manualExample, setManualExample] = useState('');
 
   const handleSubmit = async (e, skipAI = false) => {
     if (e) e.preventDefault();
@@ -20,8 +22,10 @@ const WordForm = ({ onAddWord }) => {
     setShowForceSave(false);
 
     try {
-      await onAddWord(word, skipAI);
+      await onAddWord(word, skipAI, { manualDefinition, manualExample });
       setWord('');
+      setManualDefinition('');
+      setManualExample('');
     } catch (err) {
       console.error("Add Word Error:", err);
       if (err.type === 'INVALID') {
@@ -90,16 +94,33 @@ const WordForm = ({ onAddWord }) => {
                 </p>
                 
                 {showForceSave && (
-                    <div className="mt-3 flex flex-col gap-2">
-                         <p className="text-muted-foreground text-xs">You can still save this word, but definitions won't be generated right now.</p>
+                    <div className="mt-4 flex flex-col gap-3">
+                         <p className="text-muted-foreground text-xs font-medium">Add details manually to save without AI:</p>
+                         <Input
+                            type="text"
+                            value={manualDefinition}
+                            onChange={(e) => setManualDefinition(e.target.value)}
+                            placeholder="Definition (e.g., A sweet fruit)"
+                            className="bg-background"
+                            disabled={loading}
+                         />
+                         <Input
+                            type="text"
+                            value={manualExample}
+                            onChange={(e) => setManualExample(e.target.value)}
+                            placeholder="Example sentence (e.g., I ate an apple)"
+                            className="bg-background"
+                            disabled={loading}
+                         />
                          <Button 
                             type="button"
-                            variant="destructive"
+                            variant="primary"
                             size="sm"
+                            disabled={!manualDefinition.trim()}
                             onClick={() => handleSubmit(null, true)}
-                            className="w-fit"
+                            className="w-full mt-2"
                          >
-                             Save Without AI
+                             Save Manually
                          </Button>
                     </div>
                 )}

@@ -11,7 +11,7 @@ const Sidebar = ({ activeTab, onTabChange }) => {
     { id: 'word-lab', label: 'Word Lab', icon: Home },
     { id: 'story-mode', label: 'Story Mode', icon: BookOpen },
     { id: 'library', label: 'Library', icon: Library },
-    { id: 'review', label: 'Review', icon: CheckCircle },
+    { id: 'review-mode', label: 'Review', icon: CheckCircle },
   ];
 
   return (

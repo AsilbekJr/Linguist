@@ -18,7 +18,7 @@ const ReviewMode = () => {
         try {
             const res = await fetch(`${API_URL}/api/review/due`);
             const data = await res.json();
-            setDueWords(data);
+            setDueWords(Array.isArray(data) ? data : []);
         } catch (error) {
             console.error("Error fetching review words:", error);
         } finally {
@@ -60,18 +60,18 @@ const ReviewMode = () => {
 
     if (loading) return <div className="text-center py-20 animate-pulse">Loading reviews...</div>;
 
-    if (dueWords.length === 0) {
+    if (!Array.isArray(dueWords) || dueWords.length === 0) {
         return (
             <div className="text-center py-20">
                 <div className="text-6xl mb-4">🎉</div>
                 <h2 className="text-3xl font-bold bg-gradient-to-r from-green-400 to-blue-500 bg-clip-text text-transparent mb-4">
                     All Caught Up!
                 </h2>
-                <p className="text-gray-400">You've reviewed all your due words for today.</p>
+                <p className="text-muted-foreground">You've reviewed all your due words for today.</p>
                 <div className="mt-8">
                     <button 
                         onClick={() => window.location.reload()} 
-                        className="px-6 py-2 bg-gray-800 rounded-full hover:bg-gray-700 transition"
+                        className="px-6 py-2 bg-secondary text-secondary-foreground rounded-full hover:bg-secondary/80 transition"
                     >
                         Refresh Flow
                     </button>
@@ -89,27 +89,27 @@ const ReviewMode = () => {
                     <span className="w-2 h-8 bg-pink-500 rounded-full inline-block"></span>
                     Review Session
                 </h2>
-                <span className="text-sm bg-gray-800 px-3 py-1 rounded-full text-gray-400">
+                <span className="text-sm bg-muted text-muted-foreground px-3 py-1 rounded-full">
                     {currentIndex + 1} / {dueWords.length}
                 </span>
             </div>
 
-            <div className="bg-[#111] p-8 rounded-3xl border border-gray-800 shadow-2xl relative overflow-hidden group">
+            <div className="bg-card p-8 rounded-3xl border border-border shadow-2xl relative overflow-hidden group">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-pink-500/10 rounded-full blur-3xl -mr-16 -mt-16 transition duration-500 group-hover:bg-pink-500/20"></div>
 
                 <div className="text-center mb-8">
-                    <p className="text-gray-500 text-sm tracking-widest uppercase mb-2">Target Word</p>
-                    <h3 className="text-5xl font-black text-white mb-4 tracking-tight">{word.word}</h3>
-                    <p className="text-gray-400 italic">"{word.definition}"</p>
+                    <p className="text-muted-foreground text-sm tracking-widest uppercase mb-2">Target Word</p>
+                    <h3 className="text-5xl font-black text-card-foreground mb-4 tracking-tight capitalize">{word.word}</h3>
+                    <p className="text-muted-foreground italic">"{word.definition}"</p>
                 </div>
 
                 {!feedback ? (
                     <div className="space-y-4">
-                        <label className="block text-sm text-gray-400 ml-1">
+                        <label className="block text-sm text-card-foreground ml-1">
                             Use <strong>{word.word}</strong> in a sentence:
                         </label>
                         <textarea 
-                            className="w-full bg-black/50 border border-gray-700 rounded-xl p-4 text-lg focus:border-pink-500 focus:ring-1 focus:ring-pink-500 outline-none transition-all resize-none"
+                            className="w-full bg-background border border-border rounded-xl p-4 text-lg focus:border-pink-500 focus:ring-1 focus:ring-pink-500 outline-none transition-all resize-none text-foreground"
                             rows="3"
                             placeholder="Type your sentence here..."
                             value={userSentence}
@@ -125,14 +125,14 @@ const ReviewMode = () => {
                         </button>
                     </div>
                 ) : (
-                    <div className={`mt-6 p-6 rounded-2xl border ${feedback.isCorrect ? 'bg-green-500/10 border-green-500/30' : 'bg-red-500/10 border-red-500/30'} animate-fade-in`}>
+                    <div className={`mt-6 p-6 rounded-2xl border ${feedback.isCorrect ? 'bg-green-500/10 border-green-500/30' : 'bg-destructive/10 border-destructive/30'} animate-fade-in`}>
                         <div className="flex items-center gap-3 mb-3">
                             <span className="text-3xl">{feedback.isCorrect ? '✅' : '❌'}</span>
-                            <h4 className={`text-xl font-bold ${feedback.isCorrect ? 'text-green-400' : 'text-red-400'}`}>
+                            <h4 className={`text-xl font-bold ${feedback.isCorrect ? 'text-green-500' : 'text-destructive'}`}>
                                 {feedback.isCorrect ? 'Excellent!' : 'Needs Improvement'}
                             </h4>
                         </div>
-                        <p className="text-gray-300 mb-6 leading-relaxed">
+                        <p className="text-card-foreground mb-6 leading-relaxed">
                             {feedback.feedback}
                         </p>
                         
@@ -141,7 +141,7 @@ const ReviewMode = () => {
                             className={`w-full py-3 rounded-xl font-bold transition-all ${
                                 feedback.isCorrect 
                                 ? 'bg-green-600 hover:bg-green-500 text-white' 
-                                : 'bg-gray-700 hover:bg-gray-600 text-white'
+                                : 'bg-secondary hover:bg-secondary/80 text-secondary-foreground'
                             }`}
                         >
                             {currentIndex < dueWords.length - 1 ? 'Next Word →' : 'Finish Session 🎉'}
