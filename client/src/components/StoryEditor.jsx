@@ -87,20 +87,20 @@ const StoryEditor = ({ words }) => {
         
         {/* Left: Writing Area */}
         <div className="lg:col-span-2 space-y-6">
-          <div className="bg-gray-800 rounded-2xl p-6 border border-gray-700 shadow-xl">
+          <div className="bg-card rounded-2xl p-6 border border-border shadow-xl">
              <h2 className="text-2xl font-bold mb-4 flex items-center justify-between">
-              <span className="flex items-center gap-2 text-3xl">✍️ <span className="text-xl text-white">Vibe-Writing</span></span>
+              <span className="flex items-center gap-2 text-3xl">✍️ <span className="text-xl text-card-foreground">Vibe-Writing</span></span>
               <div className="flex gap-2">
                  <button 
                     onClick={handleDictate}
-                    className="p-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-xl transition-all"
+                    className="p-2 bg-secondary text-secondary-foreground hover:bg-secondary/80 rounded-lg text-xl transition-all"
                     title="Dictate (Speech-to-Text)"
                  >
                     🎤
                  </button>
                  <button 
                     onClick={handleListen}
-                    className="p-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-xl transition-all"
+                    className="p-2 bg-secondary text-secondary-foreground hover:bg-secondary/80 rounded-lg text-xl transition-all"
                     title="Listen (Text-to-Speech)"
                  >
                     🔊
@@ -113,18 +113,18 @@ const StoryEditor = ({ words }) => {
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Give your flow a title..."
-              className="w-full bg-transparent text-2xl font-bold text-white placeholder-gray-600 outline-none mb-4 border-b border-gray-700 focus:border-purple-500 pb-2 transition-all"
+              className="w-full bg-transparent text-2xl font-bold text-card-foreground placeholder-muted-foreground outline-none mb-4 border-b border-border focus:border-primary pb-2 transition-all"
             />
 
             <textarea
               value={story}
               onChange={(e) => setStory(e.target.value)}
               placeholder="Write a short story using your vocabulary... or click 🎤 to speak!"
-              className="w-full h-64 bg-gray-900/50 text-gray-200 p-4 rounded-xl border border-gray-600 focus:border-purple-500 focus:ring-1 focus:ring-purple-500 outline-none resize-none leading-relaxed text-lg"
+              className="w-full h-64 bg-background text-foreground p-4 rounded-xl border border-border focus:border-primary focus:ring-1 focus:ring-primary outline-none resize-none leading-relaxed text-lg"
             />
             
             <div className="mt-4 flex justify-between items-center">
-              <span className="text-gray-500 text-sm">
+              <span className="text-muted-foreground text-sm">
                 {story.trim().split(/\s+/).filter(w => w).length} words
               </span>
               <button
@@ -139,12 +139,12 @@ const StoryEditor = ({ words }) => {
 
           {/* Feedback Section */}
           {feedback && (
-            <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl p-8 border border-purple-500/30 animate-fade-in">
+            <div className="bg-gradient-to-br from-card to-background rounded-2xl p-8 border border-primary/30 shadow-lg animate-fade-in">
               <div className="flex items-center justify-between mb-6">
-                <h3 className="text-2xl font-bold text-white">AI Feedback</h3>
+                <h3 className="text-2xl font-bold text-card-foreground">AI Feedback</h3>
                 <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-2 bg-gray-900 px-4 py-2 rounded-full border border-gray-700">
-                        <span className="text-gray-400 text-sm">Vibe Score</span>
+                    <div className="flex items-center gap-2 bg-background px-4 py-2 rounded-full border border-border">
+                        <span className="text-muted-foreground text-sm">Vibe Score</span>
                         <span className={`text-xl font-black ${feedback.vibeScore > 80 ? 'text-green-400' : 'text-yellow-400'}`}>
                             {feedback.vibeScore}/100
                         </span>
@@ -154,16 +154,16 @@ const StoryEditor = ({ words }) => {
 
               <div className="space-y-6 mb-6">
                 <div>
-                  <h4 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-2">Tone Analysis</h4>
-                  <p className="text-purple-300 text-lg">{feedback.tone}</p>
+                  <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-2">Tone Analysis</h4>
+                  <p className="text-primary text-lg">{feedback.tone}</p>
                 </div>
 
                 <div>
-                  <h4 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-2">Suggestions</h4>
+                  <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-2">Suggestions</h4>
                   <ul className="space-y-3">
                     {feedback.suggestions.map((sug, i) => (
-                      <li key={i} className="flex gap-3 text-gray-300 bg-gray-800/50 p-3 rounded-lg border border-gray-700/50">
-                        <span className="text-purple-500">💡</span>
+                      <li key={i} className="flex gap-3 text-card-foreground bg-muted/50 p-3 rounded-lg border border-border/50">
+                        <span className="text-primary">💡</span>
                         {sug}
                       </li>
                     ))}
@@ -196,24 +196,24 @@ const StoryEditor = ({ words }) => {
 
         {/* Right: Sidebar / Target Words */}
         <div className="space-y-6">
-          <div className="bg-gray-800 rounded-2xl p-6 border border-gray-700">
-            <h3 className="text-xl font-bold mb-4 text-gray-300">Target Words</h3>
+          <div className="bg-card rounded-2xl p-6 border border-border">
+            <h3 className="text-xl font-bold mb-4 text-card-foreground">Target Words</h3>
             <div className="flex flex-wrap gap-2">
               {targetWords.length > 0 ? (
                 targetWords.map((word, i) => (
-                  <span key={i} className="px-3 py-1 bg-gray-900 border border-gray-700 rounded-lg text-sm text-gray-400">
+                  <span key={i} className="px-3 py-1 bg-background border border-border rounded-lg text-sm text-muted-foreground">
                     {word}
                   </span>
                 ))
               ) : (
-                <p className="text-gray-500 text-sm">Add words to your ecosystem first!</p>
+                <p className="text-muted-foreground text-sm">Add words to your ecosystem first!</p>
               )}
             </div>
           </div>
           
-          <div className="bg-blue-900/20 rounded-2xl p-6 border border-blue-500/20">
-             <h4 className="font-bold text-blue-400 mb-2">Daily Prompt</h4>
-             <p className="text-gray-300 italic">
+          <div className="bg-primary/10 rounded-2xl p-6 border border-primary/20">
+             <h4 className="font-bold text-primary mb-2">Daily Prompt</h4>
+             <p className="text-card-foreground italic">
                "Write about a time you found something valuable by accident."
              </p>
           </div>

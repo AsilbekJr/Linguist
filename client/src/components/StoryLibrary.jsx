@@ -18,7 +18,7 @@ const StoryLibrary = () => {
             });
     }, []);
 
-    if (loading) return <div className="text-center text-gray-400 py-10">Loading your universe...</div>;
+    if (loading) return <div className="text-center text-muted-foreground py-10">Loading your universe...</div>;
 
     return (
         <div className="max-w-4xl mx-auto animate-fade-in-up">
@@ -27,20 +27,20 @@ const StoryLibrary = () => {
             </h2>
 
             {stories.length === 0 ? (
-                <div className="text-center bg-gray-900/50 p-12 rounded-2xl border border-gray-800 border-dashed">
-                    <p className="text-xl text-gray-500">No stories found yet.</p>
-                    <p className="text-gray-600 mt-2">Go to Story Mode and let your imagination flow!</p>
+                <div className="text-center bg-muted/20 p-12 rounded-2xl border border-border border-dashed">
+                    <p className="text-xl text-muted-foreground">No stories found yet.</p>
+                    <p className="text-muted-foreground mt-2">Go to Story Mode and let your imagination flow!</p>
                 </div>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {stories.map(story => (
-                        <div key={story._id} className="bg-gray-800 rounded-xl p-6 border border-gray-700 hover:border-blue-500/50 transition-all hover:shadow-lg hover:shadow-blue-900/20 group">
+                        <div key={story._id} className="bg-card rounded-xl p-6 border border-border hover:border-primary/50 transition-all hover:shadow-lg hover:shadow-primary/10 group">
                             <div className="flex justify-between items-start mb-4">
                                 <div>
-                                    <h3 className="text-xl font-bold text-white group-hover:text-blue-400 transition-colors">
+                                    <h3 className="text-xl font-bold text-card-foreground group-hover:text-primary transition-colors">
                                         {story.title || "Untitled Flow"}
                                     </h3>
-                                    <p className="text-xs text-gray-500 mt-1">
+                                    <p className="text-xs text-muted-foreground mt-1">
                                         {new Date(story.createdAt).toLocaleDateString()}
                                     </p>
                                 </div>
@@ -53,13 +53,13 @@ const StoryLibrary = () => {
                                 </div>
                             </div>
                             
-                            <p className="text-gray-400 text-sm line-clamp-3 mb-4 font-serif leading-relaxed italic">
+                            <p className="text-muted-foreground text-sm line-clamp-3 mb-4 font-serif leading-relaxed italic">
                                 "{story.content}"
                             </p>
 
                             <div className="flex flex-wrap gap-2">
                                 {story.wordsUsed && story.wordsUsed.map((word, i) => (
-                                    <span key={i} className="text-xs bg-gray-900 text-gray-400 px-2 py-1 rounded border border-gray-800">
+                                    <span key={i} className="text-xs bg-muted text-muted-foreground px-2 py-1 rounded border border-border">
                                         {word}
                                     </span>
                                 ))}
