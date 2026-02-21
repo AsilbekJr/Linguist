@@ -7,6 +7,13 @@ dotenv.config();
 
 connectDB();
 
+const wordRoutes = require('./routes/wordRoutes');
+const reviewRoutes = require('./routes/reviewRoutes');
+const storyRoutes = require('./routes/storyRoutes');
+const authRoutes = require('./routes/authRoutes');
+const aiRoutes = require('./routes/aiRoutes');
+const speakingRoutes = require('./routes/speakingRoutes');
+
 const app = express();
 
 const allowedOrigin = process.env.ALLOWED_ORIGIN || '*';
@@ -19,9 +26,12 @@ app.get('/', (req, res) => {
     res.send('Linguist AI-Flow API is running (Mock Mode Available)...');
 });
 
-app.use('/api/words', require('./routes/wordRoutes'));
-app.use('/api/stories', require('./routes/storyRoutes'));
-app.use('/api/review', require('./routes/reviewRoutes'));
+app.use('/api/words', wordRoutes);
+app.use('/api/stories', storyRoutes);
+app.use('/api/review', reviewRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/api/ai', aiRoutes);
+app.use('/api/speaking', speakingRoutes);
 
 const PORT = process.env.PORT || 5000;
 

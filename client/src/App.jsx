@@ -5,6 +5,7 @@ import StoryEditor from './components/StoryEditor';
 import StoryLibrary from './components/StoryLibrary';
 import ReviewMode from './components/ReviewMode';
 import Dictionary from './components/Dictionary';
+import SpeakingLab from './components/SpeakingLab';
 import { groupWordsByDate } from './utils/dateUtils';
 import Sidebar from './components/Sidebar';
 
@@ -186,6 +187,16 @@ function App() {
             >
                 📖 Dictionary
             </button>
+            <button 
+                onClick={() => setActiveTab('speaking-lab')}
+                className={`px-6 py-2 rounded-full font-bold transition-all flex items-center gap-2 border ${
+                    activeTab === 'speaking-lab' 
+                    ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/25 border-orange-500' 
+                    : 'bg-card text-muted-foreground hover:bg-accent hover:text-accent-foreground border-border'
+                }`}
+            >
+                🎙️ Speaking Lab
+            </button>
         </div>
 
         {/* Content Area */}
@@ -247,6 +258,8 @@ function App() {
             {activeTab === 'review-mode' && <ReviewMode />}
 
             {activeTab === 'dictionary' && <Dictionary onAddWord={handleAddWord} userWords={words} />}
+
+            {activeTab === 'speaking-lab' && <SpeakingLab />}
         </main>
       </div>
     </div>

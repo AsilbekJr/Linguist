@@ -181,4 +181,42 @@ const validateWord = async (word) => {
     }
 };
 
-module.exports = { generateWordContext, analyzeStory, checkSentence, validateWord };
+const translateUzbekToEnglish = async (uzbekText) => {
+    try {
+        if (!genAI) return null;
+
+        const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
+
+        const prompt = `
+        Act as a professional Uzbek-to-English translator and language coach.
+        Translate this Uzbek text into natural English: "${uzbekText}"
+        Provide two English versions:
+        1. "casual": How a native speaker would naturally say this in everyday conversation.
+        2. "advanced": A more formal, vocabulary-rich version.
+
+        Return a JSON object with this EXACT structure (no markdown):
+        {
+            "casual": "...",
+            "advanced": "..."
+        }
+        `;
+
+        console.log("Speaking Translate: Calling Gemini API...");
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
+        const text = response.text();
+        
+        const jsonStr = text.replace(/```json/g, '').replace(/```/g, '').trim();
+        return JSON.parse(jsonStr);
+
+    } catch (error) {
+        console.error("Gemini Speaking Translate Error:", error);
+        logError("translateUzbekToEnglish", error);
+        if (error.message.includes("429") || error.message.includes("Quota exceeded")) {
+            throw { type: 'QUOTA_EXCEEDED', message: 'AI Quota Exceeded. Please try again later.' };
+        }
+        return null;
+    }
+};
+
+module.exports = { generateWordContext, analyzeStory, checkSentence, validateWord, translateUzbekToEnglish };
