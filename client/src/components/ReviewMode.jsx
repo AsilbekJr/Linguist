@@ -73,8 +73,11 @@ const ReviewMode = () => {
         if (groupsEntries.length === 0) {
             return (
                 <div className="text-center py-20 bg-card border border-border border-dashed rounded-3xl max-w-2xl mx-auto">
-                    <p className="text-xl text-muted-foreground">Flow is empty.</p>
-                    <p className="text-sm text-muted-foreground mt-2">Add words in Word Lab to start Review Mode!</p>
+                    <div className="text-6xl mb-4">🎉</div>
+                    <h2 className="text-3xl font-bold bg-gradient-to-r from-green-400 to-blue-500 bg-clip-text text-transparent mb-4">
+                        All Caught Up!
+                    </h2>
+                    <p className="text-muted-foreground text-lg mt-2">No words due for review right now. Come back later!</p>
                 </div>
             );
         }

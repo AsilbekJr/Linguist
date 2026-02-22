@@ -50,10 +50,6 @@ export const groupWordsByReviewInterval = (words) => {
     const groups = {
         "Overdue 🚨": [],
         "Due Today 🎯": [],
-        "Tomorrow 🌅": [],
-        "In 3 Days 🗓️": [],
-        "In 1 Week 📅": [],
-        "Mastered 🏆": [] // Added mastered group just in case
     };
 
     const now = new Date();
@@ -63,10 +59,7 @@ export const groupWordsByReviewInterval = (words) => {
     todayEnd.setHours(23, 59, 59, 999);
 
     words.forEach(word => {
-        if (word.mastered) {
-             groups["Mastered 🏆"].push(word);
-             return;
-        }
+        if (word.mastered) return; // Skip mastered words
 
         const reviewDate = new Date(word.nextReviewDate || Date.now());
         
@@ -78,13 +71,8 @@ export const groupWordsByReviewInterval = (words) => {
             groups["Overdue 🚨"].push(word);
         } else if (diffDays === 0) {
             groups["Due Today 🎯"].push(word);
-        } else if (diffDays === 1) {
-            groups["Tomorrow 🌅"].push(word);
-        } else if (diffDays <= 3) {
-            groups["In 3 Days 🗓️"].push(word);
-        } else {
-            groups["In 1 Week 📅"].push(word);
         }
+        // Future reviews (diffDays > 0) are ignored so they don't show up early
     });
 
     // Remove empty groups
