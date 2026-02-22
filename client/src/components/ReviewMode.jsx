@@ -15,6 +15,8 @@ const ReviewMode = () => {
     const [userSentence, setUserSentence] = useState('');
     const [feedback, setFeedback] = useState(null);
     const [checking, setChecking] = useState(false);
+    const [showHint, setShowHint] = useState(false);
+    const [sessionResults, setSessionResults] = useState({ correct: 0, incorrect: 0 });
     const [isListening, setIsListening] = useState(false);
     const [recognition, setRecognition] = useState(null);
     const [error, setError] = useState(null);
@@ -88,6 +90,8 @@ const ReviewMode = () => {
         setUserSentence('');
         setFeedback(null);
         setError(null);
+        setShowHint(false);
+        setSessionResults({ correct: 0, incorrect: 0 });
     };
 
     const handleCheck = async () => {
@@ -99,6 +103,10 @@ const ReviewMode = () => {
         try {
             const data = await checkReviewMutation({ id: currentWord._id, sentence: userSentence }).unwrap();
             setFeedback(data); // { isCorrect, feedback, nextReviewDate }
+            setSessionResults(prev => ({
+                ...prev,
+                [data.isCorrect ? 'correct' : 'incorrect']: prev[data.isCorrect ? 'correct' : 'incorrect'] + 1
+            }));
         } catch (err) {
             console.error("Check error:", err);
             setError("Tekshirishda xatolik yuz berdi. Iltimos qayta urinib ko'ring.");
@@ -111,6 +119,7 @@ const ReviewMode = () => {
         setFeedback(null);
         setUserSentence('');
         setError(null);
+        setShowHint(false);
         if (isListening && recognition) recognition.stop();
         if (currentIndex < sessionWords.length - 1) {
             setCurrentIndex(prev => prev + 1);
@@ -193,19 +202,40 @@ const ReviewMode = () => {
 
     // If session is done
     if (!word) {
+        const total = sessionResults.correct + sessionResults.incorrect;
+        const accuracy = total > 0 ? Math.round((sessionResults.correct / total) * 100) : 0;
+
         return (
-            <div className="text-center py-20 max-w-2xl mx-auto">
-                <div className="text-6xl mb-4">🎉</div>
-                <h2 className="text-3xl font-bold bg-gradient-to-r from-green-400 to-blue-500 bg-clip-text text-transparent mb-4">
-                    Guruh Tugallandi!
+            <div className="text-center py-16 max-w-2xl mx-auto bg-card border border-border rounded-3xl shadow-xl animate-fade-in mt-12">
+                <div className="text-6xl mb-6">🎉</div>
+                <h2 className="text-3xl md:text-5xl font-bold bg-gradient-to-r from-green-400 to-blue-500 bg-clip-text text-transparent mb-4">
+                    Takrorlash Yakunlandi!
                 </h2>
-                <p className="text-muted-foreground">Ajoyib natija! Siz "{selectedGroup}" guruhini muvaffaqiyatli yakunladingiz.</p>
-                <div className="mt-8 flex justify-center gap-4">
+                <p className="text-muted-foreground text-lg mb-8">Siz "{selectedGroup}" guruhidagi so'zlarni muvaffaqiyatli takrorladingiz.</p>
+                
+                <div className="flex justify-center gap-8 mb-10 max-w-md mx-auto bg-background p-6 rounded-2xl border border-border/50">
+                    <div className="text-center">
+                        <div className="text-4xl font-black text-green-500 mb-1">{sessionResults.correct}</div>
+                        <div className="text-xs text-muted-foreground font-bold uppercase tracking-wider">To'g'ri</div>
+                    </div>
+                    <div className="w-px bg-border"></div>
+                    <div className="text-center">
+                        <div className="text-4xl font-black text-primary mb-1">{accuracy}%</div>
+                        <div className="text-xs text-muted-foreground font-bold uppercase tracking-wider">Aniqlik</div>
+                    </div>
+                    <div className="w-px bg-border"></div>
+                    <div className="text-center">
+                        <div className="text-4xl font-black text-destructive mb-1">{sessionResults.incorrect}</div>
+                        <div className="text-xs text-muted-foreground font-bold uppercase tracking-wider">Xato</div>
+                    </div>
+                </div>
+
+                <div className="flex justify-center gap-4">
                     <button 
                         onClick={() => setSelectedGroup(null)} 
-                        className="px-6 py-2 bg-secondary text-secondary-foreground rounded-full hover:bg-secondary/80 transition"
+                        className="px-8 py-3 bg-secondary text-secondary-foreground font-bold rounded-full hover:bg-secondary/80 transition shadow-sm"
                     >
-                        Ortga Qaytish
+                        Bosh Menyu
                     </button>
                 </div>
             </div>
@@ -271,6 +301,24 @@ const ReviewMode = () => {
                                 {isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
                             </button>
                         </div>
+                        
+                        <div className="flex justify-start">
+                             {!showHint ? (
+                                <button 
+                                    type="button"
+                                    onClick={() => setShowHint(true)}
+                                    className="text-sm text-pink-500 hover:text-pink-600 font-bold flex items-center gap-1 transition-colors"
+                                >
+                                    💡 Yordam (Tarjimasi)
+                                </button>
+                             ) : (
+                                <div className="text-sm text-card-foreground bg-secondary px-4 py-2 rounded-lg font-medium animate-fade-in border border-border inline-flex items-center gap-2">
+                                    <span className="text-muted-foreground">Tarjimasi:</span> 
+                                    <span className="font-bold">{word.translation || "Mavjud emas"}</span>
+                                </div>
+                             )}
+                        </div>
+
                         <button 
                             onClick={handleCheck}
                             disabled={checking || !userSentence.trim()}
