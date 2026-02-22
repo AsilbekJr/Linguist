@@ -89,26 +89,40 @@ const ReviewMode = () => {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 text-left">
-                    {groupsEntries.map(([groupName, wordsInGroup]) => (
-                        <div 
-                            key={groupName} 
-                            onClick={() => startReviewSession(groupName, wordsInGroup)}
-                            className="bg-card rounded-3xl p-6 border border-border shadow-md hover:shadow-xl hover:-translate-y-1 hover:border-pink-500/50 transition-all cursor-pointer group"
-                        >
-                            <div className="w-14 h-14 rounded-2xl bg-pink-500/10 border border-pink-500/20 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform text-pink-500">
-                                <BookOpen className="w-8 h-8" />
+                    {groupsEntries.map(([groupName, wordsInGroup]) => {
+                        const isOverdue = groupName.includes("Overdue");
+                        
+                        return (
+                            <div 
+                                key={groupName} 
+                                onClick={() => startReviewSession(groupName, wordsInGroup)}
+                                className={`bg-card rounded-3xl p-6 border shadow-md transition-all cursor-pointer group ${
+                                    isOverdue 
+                                    ? 'border-destructive/50 hover:border-destructive shadow-destructive/10 hover:shadow-destructive/30 hover:-translate-y-1 animate-pulse hover:animate-none' 
+                                    : 'border-border hover:shadow-xl hover:-translate-y-1 hover:border-pink-500/50'
+                                }`}
+                            >
+                                <div className={`w-14 h-14 rounded-2xl border flex items-center justify-center mb-6 group-hover:scale-110 transition-transform ${
+                                    isOverdue
+                                    ? 'bg-destructive/10 border-destructive/20 text-destructive'
+                                    : 'bg-pink-500/10 border-pink-500/20 text-pink-500'
+                                }`}>
+                                    <BookOpen className="w-8 h-8" />
+                                </div>
+                                <h3 className="text-2xl font-bold text-card-foreground mb-2">
+                                    {groupName}
+                                </h3>
+                                <p className="text-muted-foreground text-sm mb-4">
+                                    {wordsInGroup.length} ta so'z
+                                </p>
+                                <div className={`flex items-center text-sm font-bold opacity-0 group-hover:opacity-100 transition-opacity ${
+                                    isOverdue ? 'text-destructive' : 'text-pink-500'
+                                }`}>
+                                    Start Session &rarr;
+                                </div>
                             </div>
-                            <h3 className="text-2xl font-bold text-card-foreground mb-2">
-                                {groupName}
-                            </h3>
-                            <p className="text-muted-foreground text-sm mb-4">
-                                {wordsInGroup.length} ta so'z
-                            </p>
-                            <div className="flex items-center text-pink-500 text-sm font-bold opacity-0 group-hover:opacity-100 transition-opacity">
-                                Start Session &rarr;
-                            </div>
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
             </div>
         );

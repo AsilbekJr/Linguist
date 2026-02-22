@@ -48,7 +48,8 @@ export const groupWordsByReviewInterval = (words) => {
     if (!Array.isArray(words)) return {};
 
     const groups = {
-        "Review Now ⚡": [],
+        "Overdue 🚨": [],
+        "Due Today 🎯": [],
         "Tomorrow 🌅": [],
         "In 3 Days 🗓️": [],
         "In 1 Week 📅": [],
@@ -73,8 +74,10 @@ export const groupWordsByReviewInterval = (words) => {
         const diffTime = reviewDate.getTime() - now.getTime();
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-        if (diffDays <= 0) {
-            groups["Review Now ⚡"].push(word);
+        if (diffDays < 0) {
+            groups["Overdue 🚨"].push(word);
+        } else if (diffDays === 0) {
+            groups["Due Today 🎯"].push(word);
         } else if (diffDays === 1) {
             groups["Tomorrow 🌅"].push(word);
         } else if (diffDays <= 3) {
