@@ -373,3 +373,12 @@ Please retry in 58.789930833s. [{"@type":"type.googleapis.com/google.rpc.Help","
     at async checkSentence (C:\Users\Asilbek\Desktop\vibe1\Linguist AI-Flow\server\services\geminiService.js:129:24)
     at async C:\Users\Asilbek\Desktop\vibe1\Linguist AI-Flow\server\routes\reviewRoutes.js:49:26
 
+[2026-02-22T03:45:24.644Z] evaluatePronunciation: [GoogleGenerativeAI Error]: Error fetching from https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent: [503 Service Unavailable] This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.
+Error: [GoogleGenerativeAI Error]: Error fetching from https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent: [503 Service Unavailable] This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.
+    at handleResponseNotOk (C:\Users\Asilbek\Desktop\vibe1\Linguist AI-Flow\server\node_modules\@google\generative-ai\dist\index.js:434:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async makeRequest (C:\Users\Asilbek\Desktop\vibe1\Linguist AI-Flow\server\node_modules\@google\generative-ai\dist\index.js:403:9)
+    at async generateContent (C:\Users\Asilbek\Desktop\vibe1\Linguist AI-Flow\server\node_modules\@google\generative-ai\dist\index.js:867:22)
+    at async evaluatePronunciation (C:\Users\Asilbek\Desktop\vibe1\Linguist AI-Flow\server\services\geminiService.js:246:24)
+    at async C:\Users\Asilbek\Desktop\vibe1\Linguist AI-Flow\server\routes\speakingRoutes.js:41:24
+

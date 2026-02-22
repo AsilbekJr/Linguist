@@ -1,24 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
+import { useGetStoriesQuery } from '../features/api/apiSlice';
 
 const StoryLibrary = () => {
-    const [stories, setStories] = useState([]);
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:5000';
-        fetch(`${API_URL}/api/stories`)
-            .then(res => res.json())
-            .then(data => {
-                setStories(data);
-                setLoading(false);
-            })
-            .catch(err => {
-                console.error("Failed to load stories:", err);
-                setLoading(false);
-            });
-    }, []);
+    const { data: stories = [], isLoading: loading, isError } = useGetStoriesQuery();
 
     if (loading) return <div className="text-center text-muted-foreground py-10">Loading your universe...</div>;
+    if (isError) return <div className="text-center text-destructive py-10">Failed to load stories.</div>;
 
     return (
         <div className="max-w-4xl mx-auto animate-fade-in-up">

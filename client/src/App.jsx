@@ -1,4 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
+import { setActiveTab } from './features/ui/uiSlice';
+import { 
+  useGetWordsQuery, 
+  useAddWordMutation, 
+  useDeleteWordMutation 
+} from './features/api/apiSlice';
 import WordCard from './components/WordCard';
 import WordForm from './components/WordForm';
 import StoryEditor from './components/StoryEditor';
@@ -11,16 +18,27 @@ import Sidebar from './components/Sidebar';
 
 function App() {
   const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:5000';
-  const [words, setWords] = useState([])
-  const [error, setError] = useState(null)
-  const [activeTab, setActiveTab] = useState('word-lab'); // 'word-lab' | 'story-mode' | 'library' | 'review-mode'
+  
+  // RTK UI State
+  const activeTab = useSelector((state) => state.ui.activeTab);
+  const dispatch = useDispatch();
+
+  // RTK Query State
+  const { data: words = [], isLoading, isError: isWordsError } = useGetWordsQuery();
+  const [addWordMutation] = useAddWordMutation();
+  const [deleteWordMutation] = useDeleteWordMutation();
+
+  const [error, setError] = useState(null);
   const [reviewDueCount, setReviewDueCount] = useState(0);
 
   useEffect(() => {
-    fetchwords();
     fetchReviewCount();
-  }, [])
+  }, []);
   
+  const handleTabChange = (tab) => {
+    dispatch(setActiveTab(tab));
+  };
+
   const fetchReviewCount = async () => {
       try {
           const res = await fetch(`${API_URL}/api/review/due`);
@@ -31,67 +49,26 @@ function App() {
       }
   };
 
-  const fetchwords = () => {
-    fetch(`${API_URL}/api/words`)
-      .then(res => {
-        if (!res.ok) throw new Error("Failed to connect to server");
-        return res.json();
-      })
-      .then(data => {
-        setWords(data);
-        setError(null);
-      })
-      .catch(err => {
-        console.error(err);
-        setError("Server unavailable. Please check backend.");
-      })
-  };
-
   const handleAddWord = async (newWord, skipAI = false, manualData = {}) => {
-    // Optimistic update
-    const mockNewEntry = {
-        _id: Date.now().toString(),
-        word: newWord,
-        definition: skipAI && manualData.manualDefinition ? manualData.manualDefinition : (skipAI ? "Definition unavailable." : "AI is generating definition..."),
-        translation: skipAI && manualData.manualTranslation ? manualData.manualTranslation : (skipAI ? "" : "Tarjima qilinmoqda..."),
-        examples: skipAI && manualData.manualExample ? [manualData.manualExample] : (skipAI ? ["Example unavailable."] : ["Please wait..."]),
-        mastered: false,
-        reviewStage: 0
-    };
-    
-    setWords(prev => [mockNewEntry, ...prev]);
-
      try {
-        const res = await fetch(`${API_URL}/api/words`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                word: newWord, 
-                skipAI,
-                manualDefinition: manualData.manualDefinition,
-                manualExamples: manualData.manualExample ? [manualData.manualExample] : [],
-                manualTranslation: manualData.manualTranslation
-            })
-        });
-        
-        if (!res.ok) {
-            const errorData = await res.json();
-            throw errorData;
-        }
-        
-        const savedWord = await res.json();
-        
-        // Update the optimistic entry with real data
-        setWords(prev => prev.map(w => w._id === mockNewEntry._id ? savedWord : w));
-        setError(null);
+        const payload = { 
+            word: newWord, 
+            skipAI,
+            manualDefinition: manualData.manualDefinition,
+            manualExamples: manualData.manualExample ? [manualData.manualExample] : [],
+            manualTranslation: manualData.manualTranslation
+        };
 
+        await addWordMutation(payload).unwrap();
+        setError(null);
      } catch (err) {
          console.error("Error adding word:", err);
-         // Remove optimistic update
-         setWords(prev => prev.filter(w => w._id !== mockNewEntry._id));
 
-         if (err.type === 'DUPLICATE' || err.type === 'INVALID' || err.type === 'QUOTA_EXCEEDED') {
-             throw err; // Pass to WordForm
+         // RTK Query wraps standard API errors in `err.data` when using `unwrap()`
+         const errorData = err.data || err;
+
+         if (errorData.type === 'DUPLICATE' || errorData.type === 'INVALID' || errorData.type === 'QUOTA_EXCEEDED') {
+             throw errorData; // Pass down to WordForm
          }
 
          setError("Failed to add word. Is server running?");
@@ -99,12 +76,11 @@ function App() {
   };
 
   const handleDeleteWord = async (id) => {
-      setWords(prev => prev.filter(w => w._id !== id)); // Optimistic delete
       try {
-          await fetch(`${API_URL}/api/words/${id}`, { method: 'DELETE' });
+          await deleteWordMutation(id).unwrap();
       } catch (err) {
           console.error("Delete failed:", err);
-          fetchwords(); // Revert on failure
+          setError("Failed to delete word.");
       }
   };
 

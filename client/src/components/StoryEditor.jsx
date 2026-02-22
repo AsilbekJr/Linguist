@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
+import { useAddStoryMutation } from '../features/api/apiSlice';
 
 const StoryEditor = ({ words }) => {
   const [story, setStory] = useState('');
   const [title, setTitle] = useState('');
   const [feedback, setFeedback] = useState(null);
   const [loading, setLoading] = useState(false);
+  
+  const [addStoryMutation, { isLoading: isAddingStory }] = useAddStoryMutation();
 
   // Filter only mastered or learning words to suggest
   const targetWords = words.map(w => w.word);
@@ -172,23 +175,30 @@ const StoryEditor = ({ words }) => {
               </div>
               
               <button 
-                onClick={() => {
-                   const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:5000';
-                   fetch(`${API_URL}/api/stories`, {
-                       method: 'POST',
-                       headers: { 'Content-Type': 'application/json' },
-                       body: JSON.stringify({
-                           title,
-                           content: story,
-                           wordsUsed: targetWords.filter(w => story.toLowerCase().includes(w.toLowerCase())),
-                           vibeScore: feedback.vibeScore,
-                           analysis: feedback
-                       })
-                   }).then(() => alert("Story Saved to Library! (Mock)"));
+                onClick={async () => {
+                   const payload = {
+                       title,
+                       content: story,
+                       wordsUsed: targetWords.filter(w => story.toLowerCase().includes(w.toLowerCase())),
+                       vibeScore: feedback.vibeScore,
+                       analysis: feedback
+                   };
+                   
+                   try {
+                       await addStoryMutation(payload).unwrap();
+                       alert("Story Saved to Library!");
+                       setStory('');
+                       setTitle('');
+                       setFeedback(null);
+                   } catch (err) {
+                       console.error("Failed to save story:", err);
+                       alert("Failed to save story.");
+                   }
                 }}
-                className="w-full bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 border border-blue-500/50 py-3 rounded-xl font-bold transition-all"
+                disabled={isAddingStory}
+                className="w-full bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 border border-blue-500/50 py-3 rounded-xl font-bold transition-all disabled:opacity-50"
               >
-                  💾 Save to Library
+                  {isAddingStory ? 'Saving...' : '💾 Save to Library'}
               </button>
             </div>
           )}

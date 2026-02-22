@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Mic, MicOff, Volume2, Sparkles, Loader2, RefreshCw, AudioLines } from "lucide-react";
+import { useTranslateSpeakingMutation, useEvaluateSpeakingMutation } from '../features/api/apiSlice';
 
 const SpeakingLab = () => {
   const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:5000';
@@ -19,6 +20,10 @@ const SpeakingLab = () => {
   const [isEvaluating, setIsEvaluating] = useState(false);
   const [evaluationData, setEvaluationData] = useState(null); // { score, feedback, color }
   const [englishRecognition, setEnglishRecognition] = useState(null);
+
+  // RTK Query Mutations
+  const [translateSpeaking] = useTranslateSpeakingMutation();
+  const [evaluateSpeakingMutation] = useEvaluateSpeakingMutation();
 
   // Use refs to avoid stale closures in Web Speech API event listeners
   const translationsRef = React.useRef(null);
@@ -45,13 +50,7 @@ const SpeakingLab = () => {
           const targetSentence = currentTranslations[currentPracticeType];
 
           try {
-              const res = await fetch(`${API_URL}/api/speaking/evaluate`, {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ targetSentence, spokenText: spokenRawText })
-              });
-              if (!res.ok) throw new Error("Baho olinmadi");
-              const data = await res.json();
+              const data = await evaluateSpeakingMutation({ targetSentence, spokenText: spokenRawText }).unwrap();
               setEvaluationData(data);
           } catch (err) {
               setError("Sun'iy intellekt baholashda xatolik berdi.");
@@ -144,13 +143,8 @@ const SpeakingLab = () => {
       setIsTranslating(true);
       setError("");
       try {
-          const res = await fetch(`${API_URL}/api/speaking/translate`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ text: textToTranslate })
-          });
-          if (!res.ok) throw new Error("Tarjima kelmadi.");
-          setTranslations(await res.json());
+          const data = await translateSpeaking(textToTranslate).unwrap();
+          setTranslations(data);
       } catch (err) {
           setError("Tarjima qilishda xatolik yuz berdi.");
       } finally {
@@ -175,13 +169,7 @@ const SpeakingLab = () => {
       const targetSentence = translations[currentPracticeType];
 
       try {
-          const res = await fetch(`${API_URL}/api/speaking/evaluate`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ targetSentence, spokenText: spokenRawText })
-          });
-          if (!res.ok) throw new Error("Baho olinmadi");
-          const data = await res.json();
+          const data = await evaluateSpeakingMutation({ targetSentence, spokenText: spokenRawText }).unwrap();
           setEvaluationData(data);
       } catch (err) {
           setError("Sun'iy intellekt baholashda xatolik berdi.");
