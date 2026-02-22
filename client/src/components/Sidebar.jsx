@@ -8,10 +8,10 @@ const Sidebar = ({ activeTab, onTabChange }) => {
   const [open, setOpen] = useState(false);
 
   const menuItems = [
-    { id: 'word-lab', label: 'Word Lab', icon: Home },
     { id: 'review-mode', label: 'Review', icon: CheckCircle },
     { id: 'dictionary', label: 'Dictionary', icon: Book },
     { id: 'speaking-lab', label: 'Speaking Lab', icon: Mic },
+    { id: 'roleplay', label: 'Immersion', icon: Mic },
   ];
 
   return (

@@ -49,6 +49,13 @@ export const apiSlice = createApi({
         body: { targetSentence, spokenText },
       }),
     }),
+    chatRoleplay: builder.mutation({
+      query: (payload) => ({
+        url: '/api/roleplay/chat',
+        method: 'POST',
+        body: payload,
+      }),
+    }),
   }),
 });
 
@@ -59,4 +66,5 @@ export const {
   useCheckReviewMutation,
   useTranslateSpeakingMutation,
   useEvaluateSpeakingMutation,
+  useChatRoleplayMutation,
 } = apiSlice;

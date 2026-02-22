@@ -260,4 +260,51 @@ const evaluatePronunciation = async (targetSentence, spokenText) => {
     }
 };
 
-module.exports = { generateWordContext, analyzeStory, checkSentence, validateWord, translateUzbekToEnglish, evaluatePronunciation };
+const generateRoleplayResponse = async (scenario, targetWords, chatHistory, userMessage) => {
+    try {
+        if (!genAI) return null;
+
+        const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
+        
+        // Format chat history for context
+        const historyText = chatHistory.map(msg => `${msg.role === 'user' ? 'User' : 'You'}: ${msg.content}`).join('\n');
+        const wordsList = targetWords.join(", ");
+
+        const prompt = `
+        You are an AI actor participating in an immersive English learning roleplay.
+        
+        Scenario: ${scenario}
+        Target Vocabulary Words the user is currently learning: [${wordsList}]
+        
+        Your Instructions:
+        1. Adopt a persona that fits the Scenario (e.g., if Cafe, you are the barista).
+        2. Keep the conversation natural, engaging, and relatively short (1-3 sentences per turn).
+        3. ALWAYS respond in English.
+        4. CRITICAL: Try your best to seamlessly weave at least ONE of the Target Vocabulary Words into your response to expose the user to it in context.
+        5. If the user makes a major grammatical error in their last message, provide a very concise, friendly correction at the end of your response inside parentheses in UZBEK (e.g., "(Maslahat: I am going dedingiz, I go deyish tabiiyroq)").
+
+        Current Conversation History:
+        ${historyText}
+
+        User's Latest Message:
+        "${userMessage}"
+        
+        Reply naturally to the user's latest message as your character. Do not use JSON, just return the raw text response.
+        `;
+
+        console.log("Roleplay: Calling Gemini API...");
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
+        return response.text();
+
+    } catch (error) {
+        console.error("Gemini Roleplay Error:", error);
+        logError("generateRoleplayResponse", error);
+        if (error.message.includes("429") || error.message.includes("Quota exceeded")) {
+             throw { type: 'QUOTA_EXCEEDED', message: 'AI Quota Exceeded. Please try again later.' };
+        }
+        return "Kechirasiz, men hozir javob bera olmayman. Keling boshqatdan urinib ko'ramiz (AI Error).";
+    }
+};
+
+module.exports = { generateWordContext, analyzeStory, checkSentence, validateWord, translateUzbekToEnglish, evaluatePronunciation, generateRoleplayResponse };

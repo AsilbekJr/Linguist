@@ -10,6 +10,7 @@ connectDB();
 const wordRoutes = require('./routes/wordRoutes');
 const reviewRoutes = require('./routes/reviewRoutes');
 const speakingRoutes = require('./routes/speakingRoutes');
+const roleplayRoutes = require('./routes/roleplayRoutes');
 
 const app = express();
 
@@ -26,6 +27,7 @@ app.get('/', (req, res) => {
 app.use('/api/words', wordRoutes);
 app.use('/api/review', reviewRoutes);
 app.use('/api/speaking', speakingRoutes);
+app.use('/api/roleplay', roleplayRoutes);
 
 const PORT = process.env.PORT || 5000;
 
