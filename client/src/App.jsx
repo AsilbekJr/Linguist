@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { setActiveTab } from './features/ui/uiSlice';
 import { 
@@ -8,8 +8,6 @@ import {
 } from './features/api/apiSlice';
 import WordCard from './components/WordCard';
 import WordForm from './components/WordForm';
-import StoryEditor from './components/StoryEditor';
-import StoryLibrary from './components/StoryLibrary';
 import ReviewMode from './components/ReviewMode';
 import Dictionary from './components/Dictionary';
 import SpeakingLab from './components/SpeakingLab';
@@ -134,26 +132,6 @@ function App() {
                 🧪 Word Lab
             </button>
             <button 
-                onClick={() => handleTabChange('story-mode')}
-                className={`px-6 py-2 rounded-full font-bold transition-all flex items-center gap-2 border ${
-                    activeTab === 'story-mode' 
-                    ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/25 border-purple-600' 
-                    : 'bg-card text-muted-foreground hover:bg-accent hover:text-accent-foreground border-border'
-                }`}
-            >
-                📝 Story Mode
-            </button>
-            <button 
-                onClick={() => handleTabChange('library')}
-                className={`px-6 py-2 rounded-full font-bold transition-all flex items-center gap-2 border ${
-                    activeTab === 'library' 
-                    ? 'bg-green-600 text-white shadow-lg shadow-green-500/25 border-green-600' 
-                    : 'bg-card text-muted-foreground hover:bg-accent hover:text-accent-foreground border-border'
-                }`}
-            >
-                📚 Library
-            </button>
-            <button 
                 onClick={() => handleTabChange('review-mode')}
                 className={`px-6 py-2 rounded-full font-bold transition-all flex items-center gap-2 relative border ${
                     activeTab === 'review-mode' 
@@ -191,7 +169,7 @@ function App() {
         </div>
 
         {/* Search Bar - Hidden on Mobile if active is review-mode, or active date group is null (so we only search inside groups for now, or you can leave it out) */}
-        <div className={`mb-12 ${(activeTab === 'review-mode' || activeTab === 'speaking-lab' || activeTab === 'story-mode' || activeTab === 'dictionary') ? 'hidden' : 'block'}`}>
+        <div className={`mb-12 ${(activeTab === 'review-mode' || activeTab === 'speaking-lab' || activeTab === 'dictionary') ? 'hidden' : 'block'}`}>
             {(!activeDateGroup && activeTab === 'word-lab') ? null : (
             <div className="relative group max-w-2xl mx-auto">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -291,10 +269,6 @@ function App() {
                     )}
                 </section>
             )}
-            
-            {activeTab === 'story-mode' && <StoryEditor words={words} />}
-            
-            {activeTab === 'library' && <StoryLibrary />}
 
             {activeTab === 'review-mode' && <ReviewMode />}
 

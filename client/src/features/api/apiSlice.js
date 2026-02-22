@@ -5,7 +5,7 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:5000';
 export const apiSlice = createApi({
   reducerPath: 'api',
   baseQuery: fetchBaseQuery({ baseUrl: API_URL }),
-  tagTypes: ['Word', 'Story'],
+  tagTypes: ['Word'],
   endpoints: (builder) => ({
     getWords: builder.query({
       query: () => '/api/words',
@@ -25,19 +25,6 @@ export const apiSlice = createApi({
         method: 'DELETE',
       }),
       invalidatesTags: ['Word'],
-    }),
-    
-    getStories: builder.query({
-      query: () => '/api/stories',
-      providesTags: ['Story'],
-    }),
-    addStory: builder.mutation({
-      query: (newStory) => ({
-        url: '/api/stories',
-        method: 'POST',
-        body: newStory,
-      }),
-      invalidatesTags: ['Story'],
     }),
 
     translateSpeaking: builder.mutation({
@@ -61,8 +48,6 @@ export const {
   useGetWordsQuery,
   useAddWordMutation,
   useDeleteWordMutation,
-  useGetStoriesQuery,
-  useAddStoryMutation,
   useTranslateSpeakingMutation,
   useEvaluateSpeakingMutation,
 } = apiSlice;

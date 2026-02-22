@@ -9,7 +9,6 @@ connectDB();
 
 const wordRoutes = require('./routes/wordRoutes');
 const reviewRoutes = require('./routes/reviewRoutes');
-const storyRoutes = require('./routes/storyRoutes');
 const speakingRoutes = require('./routes/speakingRoutes');
 
 const app = express();
@@ -25,7 +24,6 @@ app.get('/', (req, res) => {
 });
 
 app.use('/api/words', wordRoutes);
-app.use('/api/stories', storyRoutes);
 app.use('/api/review', reviewRoutes);
 app.use('/api/speaking', speakingRoutes);
 
