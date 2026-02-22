@@ -139,11 +139,11 @@ const ReviewMode = () => {
         if (groupsEntries.length === 0) {
             return (
                 <div className="text-center py-20 bg-card border border-border border-dashed rounded-3xl max-w-2xl mx-auto">
-                    <div className="text-6xl mb-4">🎉</div>
-                    <h2 className="text-3xl font-bold bg-gradient-to-r from-green-400 to-blue-500 bg-clip-text text-transparent mb-4">
+                    <div className="text-5xl md:text-6xl mb-4">🎉</div>
+                    <h2 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-green-400 to-blue-500 bg-clip-text text-transparent mb-4">
                         Hammasi Bajarildi!
                     </h2>
-                    <p className="text-muted-foreground text-lg mt-2">Hozircha takrorlash uchun so'zlar yo'q. Keyinroq qaytib ko'ring!</p>
+                    <p className="text-base md:text-lg text-muted-foreground mt-2">Hozircha takrorlash uchun so'zlar yo'q. Keyinroq qaytib ko'ring!</p>
                 </div>
             );
         }
@@ -151,10 +151,10 @@ const ReviewMode = () => {
         return (
             <div className="max-w-4xl mx-auto animate-fade-in text-center">
                 <div className="mb-12">
-                   <h2 className="text-3xl md:text-5xl font-bold bg-gradient-to-r from-pink-500 to-purple-500 bg-clip-text text-transparent mb-4">
+                   <h2 className="text-2xl md:text-5xl font-bold bg-gradient-to-r from-pink-500 to-purple-500 bg-clip-text text-transparent mb-4">
                       Takrorlash ✨
                    </h2>
-                   <p className="text-muted-foreground text-lg">Xotirangizni mustahkamlash uchun guruhlardan birini tanlang.</p>
+                   <p className="text-base md:text-lg text-muted-foreground">Xotirangizni mustahkamlash uchun guruhlardan birini tanlang.</p>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 text-left">
@@ -178,10 +178,10 @@ const ReviewMode = () => {
                                 }`}>
                                     <BookOpen className="w-8 h-8" />
                                 </div>
-                                <h3 className="text-2xl font-bold text-card-foreground mb-2">
+                                <h3 className="text-xl md:text-2xl font-bold text-card-foreground mb-2">
                                     {groupName}
                                 </h3>
-                                <p className="text-muted-foreground text-sm mb-4">
+                                <p className="text-muted-foreground text-xs md:text-sm mb-4">
                                     {wordsInGroup.length} ta so'z
                                 </p>
                                 <div className={`flex items-center text-sm font-bold opacity-0 group-hover:opacity-100 transition-opacity ${
@@ -207,11 +207,11 @@ const ReviewMode = () => {
 
         return (
             <div className="text-center py-16 max-w-2xl mx-auto bg-card border border-border rounded-3xl shadow-xl animate-fade-in mt-12">
-                <div className="text-6xl mb-6">🎉</div>
-                <h2 className="text-3xl md:text-5xl font-bold bg-gradient-to-r from-green-400 to-blue-500 bg-clip-text text-transparent mb-4">
+                <div className="text-5xl md:text-6xl mb-6">🎉</div>
+                <h2 className="text-2xl md:text-5xl font-bold bg-gradient-to-r from-green-400 to-blue-500 bg-clip-text text-transparent mb-4">
                     Takrorlash Yakunlandi!
                 </h2>
-                <p className="text-muted-foreground text-lg mb-8">Siz "{selectedGroup}" guruhidagi so'zlarni muvaffaqiyatli takrorladingiz.</p>
+                <p className="text-muted-foreground text-base md:text-lg mb-8">Siz "{selectedGroup}" guruhidagi so'zlarni muvaffaqiyatli takrorladingiz.</p>
                 
                 <div className="flex justify-center gap-8 mb-10 max-w-md mx-auto bg-background p-6 rounded-2xl border border-border/50">
                     <div className="text-center">
@@ -252,11 +252,11 @@ const ReviewMode = () => {
             </button>
 
             <div className="flex justify-between items-center mb-4">
-                <h2 className="text-2xl font-bold flex items-center gap-2">
-                    <span className="w-2 h-8 bg-pink-500 rounded-full inline-block"></span>
+                <h2 className="text-xl md:text-2xl font-bold flex items-center gap-2">
+                    <span className="w-2 h-6 md:h-8 bg-pink-500 rounded-full inline-block"></span>
                     {selectedGroup} Review
                 </h2>
-                <span className="text-sm bg-muted text-muted-foreground px-3 py-1 rounded-full border border-border font-bold">
+                <span className="text-xs md:text-sm bg-muted text-muted-foreground px-3 py-1 rounded-full border border-border font-bold">
                     {currentIndex + 1} / {sessionWords.length}
                 </span>
             </div>
@@ -274,9 +274,9 @@ const ReviewMode = () => {
 
                 <div className="text-center mb-8">
                     {error && <div className="text-destructive mb-4 text-sm animate-pulse">{error}</div>}
-                    <p className="text-muted-foreground text-sm tracking-widest uppercase mb-2 font-bold">Maqsadli So'z</p>
-                    <h3 className="text-5xl font-black text-card-foreground mb-4 tracking-tight capitalize">{word.word}</h3>
-                    <p className="text-muted-foreground italic">"{word.definition}"</p>
+                    <p className="text-muted-foreground text-xs md:text-sm tracking-widest uppercase mb-2 font-bold">Maqsadli So'z</p>
+                    <h3 className="text-4xl md:text-5xl font-black text-card-foreground mb-4 tracking-tight capitalize">{word.word}</h3>
+                    <p className="text-muted-foreground text-sm md:text-base italic">"{word.definition}"</p>
                 </div>
 
                 {!feedback ? (
@@ -286,7 +286,7 @@ const ReviewMode = () => {
                         </label>
                         <div className="relative group">
                             <textarea 
-                                className={`w-full bg-background border rounded-xl p-4 pr-16 text-lg outline-none transition-all resize-none text-foreground ${isListening ? 'border-orange-500 ring-2 ring-orange-500/20' : 'border-border focus:border-pink-500 focus:ring-1 focus:ring-pink-500'}`}
+                                className={`w-full bg-background border rounded-xl p-4 pr-16 text-base md:text-lg outline-none transition-all resize-none text-foreground placeholder:text-sm md:placeholder:text-base ${isListening ? 'border-orange-500 ring-2 ring-orange-500/20' : 'border-border focus:border-pink-500 focus:ring-1 focus:ring-pink-500'}`}
                                 rows="3"
                                 placeholder="Gapingizni yozing yoki mikrofondan foydalaning (ingliz tilida)..."
                                 value={userSentence}

@@ -197,10 +197,10 @@ const SpeakingLab = () => {
   return (
     <div className="max-w-4xl mx-auto animate-fade-in-up py-8 px-4">
       <div className="text-center mb-12">
-        <h2 className="text-4xl md:text-5xl font-black bg-gradient-to-r from-orange-400 to-rose-500 bg-clip-text text-transparent mb-4">
+        <h2 className="text-3xl md:text-5xl font-black bg-gradient-to-r from-orange-400 to-rose-500 bg-clip-text text-transparent mb-4">
           Speaking Lab
         </h2>
-        <p className="text-muted-foreground text-lg">
+        <p className="text-muted-foreground text-base md:text-lg">
           O'zbek tilida gapiring, tarjimasini ko'ring va Ingliz tilida qaytarib AI orqali baholaning!
         </p>
       </div>
@@ -227,7 +227,7 @@ const SpeakingLab = () => {
           <div className="min-h-[60px] flex flex-col justify-center items-center">
               {!isListening && !uzbekText && <p className="text-muted-foreground italic">Mikrofonni bosing va O'zbek tilida gapiring...</p>}
               {isListening && !uzbekText && <p className="text-orange-500 font-medium animate-pulse">Eshitmoqdaman...</p>}
-              {uzbekText && <h3 className="text-2xl font-bold text-card-foreground">"{uzbekText}"</h3>}
+              {uzbekText && <h3 className="text-xl md:text-2xl font-bold text-card-foreground">"{uzbekText}"</h3>}
           </div>
       </div>
 
@@ -255,7 +255,7 @@ const SpeakingLab = () => {
                               <Volume2 className="w-5 h-5" />
                           </Button>
                       </div>
-                      <p className="text-2xl font-black text-card-foreground mb-6 flex-grow">{translations.casual}</p>
+                      <p className="text-xl md:text-2xl font-black text-card-foreground mb-6 flex-grow">{translations.casual}</p>
                       
                       {/* Practice Button */}
                       <Button 
@@ -280,7 +280,7 @@ const SpeakingLab = () => {
                               <Volume2 className="w-5 h-5" />
                           </Button>
                       </div>
-                      <p className="text-2xl font-black text-card-foreground mb-6 flex-grow">{translations.advanced}</p>
+                      <p className="text-xl md:text-2xl font-black text-card-foreground mb-6 flex-grow">{translations.advanced}</p>
                       
                       {/* Practice Button */}
                       <Button 

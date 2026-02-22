@@ -110,10 +110,10 @@ function App() {
         
         {/* Header Section */}
         <header className="mb-8 md:mb-12 text-center pt-2 md:pt-0">
-          <h1 className="text-4xl md:text-6xl font-black text-primary mb-4 tracking-tight drop-shadow-sm">
+          <h1 className="text-3xl md:text-6xl font-black text-primary mb-4 tracking-tight drop-shadow-sm">
             Linguist AI-Flow
           </h1>
-          <p className="text-lg md:text-xl text-muted-foreground mb-8 text-balance">
+          <p className="text-base md:text-xl text-muted-foreground mb-8 text-balance">
             Don't just memorize. <span className="text-foreground font-semibold">Feel. Contextualize. Master.</span>
           </p>
           
@@ -195,7 +195,7 @@ function App() {
                     placeholder="Search your vocabulary..."
                      value={searchQuery}
                      onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-12 pr-4 py-4 rounded-2xl bg-card border-2 border-border focus:border-primary focus:ring-4 focus:ring-primary/20 outline-none transition-all shadow-sm focus:shadow-md text-foreground placeholder:text-muted-foreground text-lg"
+                    className="w-full pl-12 pr-4 py-3 md:py-4 rounded-2xl bg-card border-2 border-border focus:border-primary focus:ring-4 focus:ring-primary/20 outline-none transition-all shadow-sm focus:shadow-md text-foreground placeholder:text-muted-foreground text-base md:text-lg placeholder:text-sm md:placeholder:text-base"
                 />
             </div>
             )}
@@ -210,10 +210,10 @@ function App() {
                     </div>
 
                     <div className="flex justify-between items-center mb-6">
-                        <h2 className="text-2xl font-bold flex items-center gap-2">
-                           <span className="text-3xl">🧪</span> Your Word Lab
+                        <h2 className="text-xl md:text-2xl font-bold flex items-center gap-2">
+                           <span className="text-2xl md:text-3xl">🧪</span> Your Word Lab
                         </h2>
-                        <span className="text-sm bg-primary/10 text-primary px-4 py-2 rounded-full font-bold border border-primary/20">
+                        <span className="text-xs md:text-sm bg-primary/10 text-primary px-4 py-2 rounded-full font-bold border border-primary/20">
                             {filteredWords.length} Words Total
                         </span>
                     </div>
@@ -230,7 +230,7 @@ function App() {
                                     <div className="w-14 h-14 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform text-primary">
                                         <Calendar className="w-8 h-8" />
                                     </div>
-                                    <h3 className="text-2xl font-bold text-card-foreground mb-2">
+                                    <h3 className="text-xl md:text-2xl font-bold text-card-foreground mb-2">
                                         {date}
                                     </h3>
                                     <p className="text-muted-foreground text-sm mb-4">
@@ -243,8 +243,8 @@ function App() {
                             ))}
                             {Object.keys(groupedWords).length === 0 && (
                                 <div className="col-span-full text-center py-16 bg-card border border-border border-dashed rounded-3xl">
-                                    <p className="text-xl text-muted-foreground">Flow is empty.</p>
-                                    <p className="text-sm text-muted-foreground mt-2">Start adding words above!</p>
+                                    <p className="text-lg md:text-xl text-muted-foreground">Flow is empty.</p>
+                                    <p className="text-xs md:text-sm text-muted-foreground mt-2">Start adding words above!</p>
                                 </div>
                             )}
                         </div>

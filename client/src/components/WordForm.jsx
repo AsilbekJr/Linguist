@@ -66,7 +66,7 @@ const WordForm = ({ onAddWord }) => {
                   setShowForceSave(false);
               }}
               placeholder="Type a word to add to your ecosystem..."
-              className={`bg-background/50 backdrop-blur-sm text-lg h-14 pl-6 pr-32 rounded-full border-border focus-visible:ring-primary/20 transition-all placeholder:text-muted-foreground shadow-lg ${error ? 'border-destructive ring-destructive/20' : ''}`}
+              className={`bg-background/50 backdrop-blur-sm text-base md:text-lg h-12 md:h-14 pl-6 pr-32 rounded-full border-border focus-visible:ring-primary/20 transition-all placeholder:text-muted-foreground placeholder:text-sm md:placeholder:text-base shadow-lg ${error ? 'border-destructive ring-destructive/20' : ''}`}
               disabled={loading}
             />
             <Button

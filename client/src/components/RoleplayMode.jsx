@@ -171,10 +171,10 @@ const RoleplayMode = () => {
         return (
             <div className="max-w-4xl mx-auto px-4 animate-fade-in text-center">
                 <div className="mb-12">
-                   <h2 className="text-3xl md:text-5xl font-black bg-gradient-to-r from-teal-400 to-blue-500 bg-clip-text text-transparent mb-4">
+                   <h2 className="text-2xl md:text-5xl font-black bg-gradient-to-r from-teal-400 to-blue-500 bg-clip-text text-transparent mb-4">
                       Immersion Mode 🎭
                    </h2>
-                   <p className="text-muted-foreground text-lg">Haqiqiy holatlarda AI bilan gaplashib amaliyot qiling va yodlagan so'zlaringizni ishlating.</p>
+                   <p className="text-muted-foreground text-base md:text-lg">Haqiqiy holatlarda AI bilan gaplashib amaliyot qiling va yodlagan so'zlaringizni ishlating.</p>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
@@ -189,7 +189,7 @@ const RoleplayMode = () => {
                             <div className="w-16 h-16 rounded-2xl bg-white/20 backdrop-blur-sm border border-white/20 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                                 {s.icon}
                             </div>
-                            <h3 className="text-2xl font-bold mb-2">
+                            <h3 className="text-xl md:text-2xl font-bold mb-2">
                                 {s.title}
                             </h3>
                             <p className="text-white/80 text-sm mb-4 leading-relaxed font-medium">
@@ -291,7 +291,7 @@ const RoleplayMode = () => {
                     </button>
                     
                     <textarea 
-                        className={`flex-1 bg-background border rounded-2xl py-3 px-4 outline-none transition-all resize-none text-foreground ${isListening ? 'border-orange-500 ring-2 ring-orange-500/20 placeholder-orange-500/50' : 'border-border focus:border-primary focus:ring-1 focus:ring-primary'}`}
+                        className={`flex-1 bg-background border rounded-2xl py-3 px-4 outline-none transition-all resize-none text-foreground text-sm md:text-base placeholder:text-sm md:placeholder:text-base ${isListening ? 'border-orange-500 ring-2 ring-orange-500/20 placeholder-orange-500/50' : 'border-border focus:border-primary focus:ring-1 focus:ring-primary'}`}
                         rows="1"
                         style={{ minHeight: '52px', maxHeight: '120px' }}
                         placeholder={isListening ? "Eshitmoqdaman (Ingliz tilida gapiring)..." : "Xabar yozing..."}
