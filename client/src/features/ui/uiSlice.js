@@ -1,7 +1,7 @@
 import { createSlice } from '@reduxjs/toolkit';
 
 const initialState = {
-  activeTab: 'words',
+  activeTab: 'word-lab',
 };
 
 const uiSlice = createSlice({

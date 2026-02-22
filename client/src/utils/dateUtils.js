@@ -43,3 +43,47 @@ export const groupWordsByDate = (words) => {
 
     return groups;
 };
+
+export const groupWordsByReviewInterval = (words) => {
+    if (!Array.isArray(words)) return {};
+
+    const groups = {
+        "Review Now ⚡": [],
+        "Tomorrow 🌅": [],
+        "In 3 Days 🗓️": [],
+        "In 1 Week 📅": [],
+        "Mastered 🏆": [] // Added mastered group just in case
+    };
+
+    const now = new Date();
+    // Normalize now to start of day for easier day-based grouping if desired, 
+    // but the backend stores precise timestamps.
+    const todayEnd = new Date(now);
+    todayEnd.setHours(23, 59, 59, 999);
+
+    words.forEach(word => {
+        if (word.mastered) {
+             groups["Mastered 🏆"].push(word);
+             return;
+        }
+
+        const reviewDate = new Date(word.nextReviewDate || Date.now());
+        
+        // Calculate diff in days
+        const diffTime = reviewDate.getTime() - now.getTime();
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+        if (diffDays <= 0) {
+            groups["Review Now ⚡"].push(word);
+        } else if (diffDays === 1) {
+            groups["Tomorrow 🌅"].push(word);
+        } else if (diffDays <= 3) {
+            groups["In 3 Days 🗓️"].push(word);
+        } else {
+            groups["In 1 Week 📅"].push(word);
+        }
+    });
+
+    // Remove empty groups
+    return Object.fromEntries(Object.entries(groups).filter(([_, groupWords]) => groupWords.length > 0));
+};

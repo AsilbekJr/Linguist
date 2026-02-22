@@ -15,12 +15,14 @@ import Dictionary from './components/Dictionary';
 import SpeakingLab from './components/SpeakingLab';
 import { groupWordsByDate } from './utils/dateUtils';
 import Sidebar from './components/Sidebar';
+import { CheckCircle2, ChevronLeft, Calendar } from 'lucide-react';
 
 function App() {
   const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:5000';
   
   // RTK UI State
   const activeTab = useSelector((state) => state.ui.activeTab);
+  const [activeDateGroup, setActiveDateGroup] = useState(null);
   const dispatch = useDispatch();
 
   // RTK Query State
@@ -30,6 +32,7 @@ function App() {
 
   const [error, setError] = useState(null);
   const [reviewDueCount, setReviewDueCount] = useState(0);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     fetchReviewCount();
@@ -37,6 +40,7 @@ function App() {
   
   const handleTabChange = (tab) => {
     dispatch(setActiveTab(tab));
+    setActiveDateGroup(null); // Reset date group when changing tabs
   };
 
   const fetchReviewCount = async () => {
@@ -84,9 +88,20 @@ function App() {
       }
   };
 
+  const groupedWords = useMemo(() => groupWordsByDate(words), [words]);
+
+  const filteredWords = useMemo(() => {
+    if (!searchQuery) return words;
+    return words.filter(word => 
+      word.word.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (word.translation && word.translation.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (word.definition && word.definition.toLowerCase().includes(searchQuery.toLowerCase()))
+    );
+  }, [words, searchQuery]);
+
   return (
     <div className="min-h-screen bg-background text-foreground selection:bg-primary/30 font-sans">
-      <Sidebar activeTab={activeTab} onTabChange={setActiveTab} />
+      <Sidebar activeTab={activeTab} onTabChange={handleTabChange} />
       
       <div className="max-w-7xl mx-auto px-4 md:px-6 py-8 md:py-12 pt-20 md:pt-12">
         
@@ -109,7 +124,7 @@ function App() {
         {/* Desktop Navigation Tabs (Hidden on Mobile) */}
         <div className="hidden md:flex justify-center gap-4 mb-12">
             <button 
-                onClick={() => setActiveTab('word-lab')}
+                onClick={() => handleTabChange('word-lab')}
                 className={`px-6 py-2 rounded-full font-bold transition-all flex items-center gap-2 border ${
                     activeTab === 'word-lab' 
                     ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/25 border-primary' 
@@ -119,7 +134,7 @@ function App() {
                 🧪 Word Lab
             </button>
             <button 
-                onClick={() => setActiveTab('story-mode')}
+                onClick={() => handleTabChange('story-mode')}
                 className={`px-6 py-2 rounded-full font-bold transition-all flex items-center gap-2 border ${
                     activeTab === 'story-mode' 
                     ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/25 border-purple-600' 
@@ -129,7 +144,7 @@ function App() {
                 📝 Story Mode
             </button>
             <button 
-                onClick={() => setActiveTab('library')}
+                onClick={() => handleTabChange('library')}
                 className={`px-6 py-2 rounded-full font-bold transition-all flex items-center gap-2 border ${
                     activeTab === 'library' 
                     ? 'bg-green-600 text-white shadow-lg shadow-green-500/25 border-green-600' 
@@ -139,7 +154,7 @@ function App() {
                 📚 Library
             </button>
             <button 
-                onClick={() => setActiveTab('review-mode')}
+                onClick={() => handleTabChange('review-mode')}
                 className={`px-6 py-2 rounded-full font-bold transition-all flex items-center gap-2 relative border ${
                     activeTab === 'review-mode' 
                     ? 'bg-pink-600 text-white shadow-lg shadow-pink-500/25 border-pink-600' 
@@ -154,7 +169,7 @@ function App() {
                 )}
             </button>
             <button 
-                onClick={() => setActiveTab('dictionary')}
+                onClick={() => handleTabChange('dictionary')}
                 className={`px-6 py-2 rounded-full font-bold transition-all flex items-center gap-2 border ${
                     activeTab === 'dictionary' 
                     ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/25 border-blue-600' 
@@ -164,7 +179,7 @@ function App() {
                 📖 Dictionary
             </button>
             <button 
-                onClick={() => setActiveTab('speaking-lab')}
+                onClick={() => handleTabChange('speaking-lab')}
                 className={`px-6 py-2 rounded-full font-bold transition-all flex items-center gap-2 border ${
                     activeTab === 'speaking-lab' 
                     ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/25 border-orange-500' 
@@ -175,56 +190,106 @@ function App() {
             </button>
         </div>
 
+        {/* Search Bar - Hidden on Mobile if active is review-mode, or active date group is null (so we only search inside groups for now, or you can leave it out) */}
+        <div className={`mb-12 ${(activeTab === 'review-mode' || activeTab === 'speaking-lab' || activeTab === 'story-mode' || activeTab === 'dictionary') ? 'hidden' : 'block'}`}>
+            {(!activeDateGroup && activeTab === 'word-lab') ? null : (
+            <div className="relative group max-w-2xl mx-auto">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <span className="text-muted-foreground group-focus-within:text-primary transition-colors">🔍</span>
+                </div>
+                <input 
+                    type="text" 
+                    placeholder="Search your vocabulary..."
+                     value={searchQuery}
+                     onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-12 pr-4 py-4 rounded-2xl bg-card border-2 border-border focus:border-primary focus:ring-4 focus:ring-primary/20 outline-none transition-all shadow-sm focus:shadow-md text-foreground placeholder:text-muted-foreground text-lg"
+                />
+            </div>
+            )}
+        </div>
+
         {/* Content Area */}
         <main className="animate-fade-in-up">
             {activeTab === 'word-lab' && (
-                <>
-                    {/* Word Lab Content */}
-                    <div className="max-w-2xl mx-auto">
+                <section className="animate-fade-in-up">
+                    <div className="max-w-2xl mx-auto mb-12">
                         <WordForm onAddWord={handleAddWord} />
                     </div>
 
-                    <div className="flex justify-between items-center mb-8 mt-12">
+                    <div className="flex justify-between items-center mb-6">
                         <h2 className="text-2xl font-bold flex items-center gap-2">
-                        <span className="w-2 h-8 bg-primary rounded-full inline-block"></span>
-                        Your Ecosystem
+                           <span className="text-3xl">🧪</span> Your Word Lab
                         </h2>
-                        <span className="text-muted-foreground text-sm border border-border px-3 py-1 rounded-full">
-                        {words.length} words collected
+                        <span className="text-sm bg-primary/10 text-primary px-4 py-2 rounded-full font-bold border border-primary/20">
+                            {filteredWords.length} Words Total
                         </span>
                     </div>
 
-                    <div className="space-y-12">
-                        {(() => {
-                            const groupedWords = groupWordsByDate(words);
-                            return Object.entries(groupedWords).map(([dateLabel, groupWords]) => (
-                                <div key={dateLabel} className="animate-fade-in">
-                                    <h3 className="text-lg font-bold text-muted-foreground mb-6 flex items-center gap-4 sticky top-14 md:top-0 bg-background/95 py-4 z-10 backdrop-blur-md">
-                                        <span className={`w-2 h-2 rounded-full ${dateLabel.includes('Today') ? 'bg-primary shadow-lg shadow-primary/50' : 'bg-muted-foreground/50'}`}></span>
-                                        {dateLabel}
-                                        <span className="text-xs font-mono bg-muted text-muted-foreground px-2 py-0.5 rounded-full border border-border">
-                                            {groupWords.length}
-                                        </span>
-                                        <div className="h-[1px] flex-1 bg-gradient-to-r from-border to-transparent"></div>
+                    {!activeDateGroup ? (
+                        /* DATE GROUP CARDS VIEW */
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
+                            {Object.entries(groupedWords).map(([date, wordsInGroup]) => (
+                                <div 
+                                    key={date} 
+                                    onClick={() => setActiveDateGroup(date)}
+                                    className="bg-card rounded-3xl p-6 border border-border shadow-md hover:shadow-xl hover:-translate-y-1 hover:border-primary/50 transition-all cursor-pointer group"
+                                >
+                                    <div className="w-14 h-14 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform text-primary">
+                                        <Calendar className="w-8 h-8" />
+                                    </div>
+                                    <h3 className="text-2xl font-bold text-card-foreground mb-2">
+                                        {date}
                                     </h3>
-                                    
-                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                        {groupWords.map(word => (
-                                            <WordCard key={word._id} word={word} onDelete={handleDeleteWord} />
-                                        ))}
+                                    <p className="text-muted-foreground text-sm mb-4">
+                                        {wordsInGroup.length} ta so'z
+                                    </p>
+                                    <div className="flex items-center text-primary text-sm font-bold opacity-0 group-hover:opacity-100 transition-opacity">
+                                        View words &rarr;
                                     </div>
                                 </div>
-                            ));
-                        })()}
-                    </div>
-                    
-                    {words.length === 0 && (
-                        <div className="text-center text-muted-foreground py-20 bg-muted/30 rounded-3xl border border-border border-dashed">
-                        <p className="text-xl">Your flow is empty.</p>
-                        <p className="text-sm mt-2">Add a word to start building your universe.</p>
+                            ))}
+                            {Object.keys(groupedWords).length === 0 && (
+                                <div className="col-span-full text-center py-16 bg-card border border-border border-dashed rounded-3xl">
+                                    <p className="text-xl text-muted-foreground">Flow is empty.</p>
+                                    <p className="text-sm text-muted-foreground mt-2">Start adding words above!</p>
+                                </div>
+                            )}
+                        </div>
+                    ) : (
+                        /* WORD CARDS IN SELECTED DATE GROUP */
+                        <div className="animate-fade-in">
+                            <button 
+                                onClick={() => setActiveDateGroup(null)}
+                                className="mb-8 text-muted-foreground hover:text-foreground flex items-center gap-2 transition-colors font-medium bg-secondary px-4 py-2 rounded-lg"
+                            >
+                                <ChevronLeft className="w-4 h-4" /> Back to Dates
+                            </button>
+                            
+                            <h3 className="text-xl font-bold mb-6 text-card-foreground flex items-center gap-2">
+                                <Calendar className="w-5 h-5 text-primary" /> {activeDateGroup}
+                            </h3>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                {groupedWords[activeDateGroup]
+                                    .filter(word => word.word.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                                                    (word.translation && word.translation.toLowerCase().includes(searchQuery.toLowerCase())))
+                                    .map((word) => (
+                                    <WordCard 
+                                        key={word._id} 
+                                        word={word} 
+                                        onDelete={handleDeleteWord}
+                                    />
+                                ))}
+                                {groupedWords[activeDateGroup].filter(word => word.word.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                                                    (word.translation && word.translation.toLowerCase().includes(searchQuery.toLowerCase()))).length === 0 && (
+                                    <div className="col-span-full py-16 text-center text-muted-foreground">
+                                        No words match your search in this group.
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     )}
-                </>
+                </section>
             )}
             
             {activeTab === 'story-mode' && <StoryEditor words={words} />}
@@ -242,4 +307,4 @@ function App() {
   )
 }
 
-export default App
+export default App;
