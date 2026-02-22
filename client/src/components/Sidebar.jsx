@@ -17,17 +17,17 @@ const Sidebar = ({ activeTab, onTabChange }) => {
   ];
 
   return (
-    <div className="md:hidden fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-md border-b border-border py-3 px-4 flex items-center justify-between">
-      <div className="text-xl font-bold bg-gradient-to-r from-primary to-purple-500 bg-clip-text text-transparent">
-        Linguist
-      </div>
+    <div className="md:hidden fixed top-0 left-0 right-0 h-16 bg-background/95 backdrop-blur-md border-b border-border z-50 flex items-center px-4">
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetTrigger asChild>
-          <Button variant="ghost" size="icon" className="h-9 w-9 border border-border bg-card">
+          <Button variant="outline" size="icon" className="border-primary/20 hover:bg-primary/20 shrink-0">
             <Menu className="h-5 w-5" />
             <span className="sr-only">Toggle menu</span>
           </Button>
         </SheetTrigger>
+        <div className="ml-4 font-black flex items-center text-lg bg-gradient-to-r from-primary via-purple-500 to-pink-500 bg-clip-text text-transparent">
+          Linguist AI-Flow
+        </div>
         <SheetContent side="left" className="w-[80%] max-w-[300px] bg-background/95 backdrop-blur-xl border-r-primary/20">
           <SheetHeader className="mb-8">
             <SheetTitle className="text-2xl font-bold bg-gradient-to-r from-primary to-purple-500 bg-clip-text text-transparent text-left pl-4">

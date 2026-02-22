@@ -11,6 +11,7 @@ const WordForm = ({ onAddWord }) => {
   const [showForceSave, setShowForceSave] = useState(false);
   const [manualDefinition, setManualDefinition] = useState('');
   const [manualExample, setManualExample] = useState('');
+  const [manualTranslation, setManualTranslation] = useState('');
 
   const handleSubmit = async (e, skipAI = false) => {
     if (e) e.preventDefault();
@@ -22,10 +23,11 @@ const WordForm = ({ onAddWord }) => {
     setShowForceSave(false);
 
     try {
-      await onAddWord(word, skipAI, { manualDefinition, manualExample });
+      await onAddWord(word, skipAI, { manualDefinition, manualExample, manualTranslation });
       setWord('');
       setManualDefinition('');
       setManualExample('');
+      setManualTranslation('');
     } catch (err) {
       console.error("Add Word Error:", err);
       if (err.type === 'INVALID') {
@@ -109,6 +111,14 @@ const WordForm = ({ onAddWord }) => {
                             value={manualExample}
                             onChange={(e) => setManualExample(e.target.value)}
                             placeholder="Example sentence (e.g., I ate an apple)"
+                            className="bg-background"
+                            disabled={loading}
+                         />
+                         <Input
+                            type="text"
+                            value={manualTranslation}
+                            onChange={(e) => setManualTranslation(e.target.value)}
+                            placeholder="Translation (e.g., Olma)"
                             className="bg-background"
                             disabled={loading}
                          />

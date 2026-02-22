@@ -46,7 +46,7 @@ const WordCard = ({ word, onDelete }) => {
         </div>
       </CardContent>
 
-      <CardFooter className="pt-2 flex justify-between opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+      <CardFooter className="pt-2 flex justify-between opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
         <Button variant="ghost" size="sm" className="text-xs h-8 text-primary hover:text-primary hover:bg-primary/10">
             <ExternalLink className="w-3 h-3 mr-2" /> Context
         </Button>

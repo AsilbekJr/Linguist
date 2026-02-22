@@ -20,6 +20,47 @@ const SpeakingLab = () => {
   const [evaluationData, setEvaluationData] = useState(null); // { score, feedback, color }
   const [englishRecognition, setEnglishRecognition] = useState(null);
 
+  // Use refs to avoid stale closures in Web Speech API event listeners
+  const translationsRef = React.useRef(null);
+  const practiceTypeRef = React.useRef(null);
+  const spokenEnglishRef = React.useRef("");
+  const apiCallRef = React.useRef(null);
+
+  useEffect(() => {
+      translationsRef.current = translations;
+      practiceTypeRef.current = practiceType;
+  }, [translations, practiceType]);
+
+  // We define the evaluate function in a ref so listeners can call the latest version
+  useEffect(() => {
+      apiCallRef.current = async (spokenRawText, currentPracticeType) => {
+          setIsEvaluating(true);
+          const currentTranslations = translationsRef.current;
+          
+          if (!currentTranslations) {
+              setIsEvaluating(false);
+              return;
+          }
+
+          const targetSentence = currentTranslations[currentPracticeType];
+
+          try {
+              const res = await fetch(`${API_URL}/api/speaking/evaluate`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ targetSentence, spokenText: spokenRawText })
+              });
+              if (!res.ok) throw new Error("Baho olinmadi");
+              const data = await res.json();
+              setEvaluationData(data);
+          } catch (err) {
+              setError("Sun'iy intellekt baholashda xatolik berdi.");
+          } finally {
+              setIsEvaluating(false);
+          }
+      };
+  });
+
   // Initialize Web Speech APIs
   useEffect(() => {
     if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
@@ -64,21 +105,19 @@ const SpeakingLab = () => {
           if (event.results[i].isFinal) finalTrans += event.results[i][0].transcript;
           else interimTrans += event.results[i][0].transcript;
         }
-        setSpokenEnglish(finalTrans || interimTrans);
+        const newText = finalTrans || interimTrans;
+        spokenEnglishRef.current = newText;
+        setSpokenEnglish(newText);
       };
 
       enRec.onend = () => {
         setIsPracticing(false);
-        setSpokenEnglish((currentText) => {
-            if (currentText.trim().length > 1) {
-                // Must evaluate against the currently selected practice type
-                setPracticeType(pt => {
-                    if (pt) evaluateSpeech(currentText, pt);
-                    return pt;
-                });
-            }
-            return currentText;
-        });
+        const finalSpoken = spokenEnglishRef.current;
+        const pt = practiceTypeRef.current;
+        
+        if (finalSpoken.trim().length > 1 && pt && apiCallRef.current) {
+            apiCallRef.current(finalSpoken, pt);
+        }
       };
       enRec.onerror = () => { setIsPracticing(false); setError("Ingliz mikrofonida xatolik yuz berdi."); };
       setEnglishRecognition(enRec);

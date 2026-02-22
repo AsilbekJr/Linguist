@@ -116,7 +116,7 @@ function App() {
         
         {/* Header Section */}
         <header className="mb-8 md:mb-12 text-center pt-2 md:pt-0">
-          <h1 className="text-4xl md:text-6xl font-black bg-gradient-to-r from-primary via-purple-500 to-pink-500 bg-clip-text text-transparent mb-4 tracking-tight">
+          <h1 className="text-4xl md:text-6xl font-black text-primary mb-4 tracking-tight drop-shadow-sm">
             Linguist AI-Flow
           </h1>
           <p className="text-lg md:text-xl text-muted-foreground mb-8 text-balance">
