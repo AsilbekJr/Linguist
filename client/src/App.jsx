@@ -32,15 +32,6 @@ function App() {
   const [reviewDueCount, setReviewDueCount] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
 
-  useEffect(() => {
-    fetchReviewCount();
-  }, []);
-  
-  const handleTabChange = (tab) => {
-    dispatch(setActiveTab(tab));
-    setActiveDateGroup(null); // Reset date group when changing tabs
-  };
-
   const fetchReviewCount = async () => {
       try {
           const res = await fetch(`${API_URL}/api/review/due`);
@@ -50,6 +41,19 @@ function App() {
           console.error("Failed to fetch review count", err);
       }
   };
+
+  // Re-fetch review count whenever the RTK Query 'words' data updates 
+  // (e.g. after a checkReviewMutation invalidates the Word tag)
+  useEffect(() => {
+    fetchReviewCount();
+  }, [words]);
+
+  const handleTabChange = (tab) => {
+    dispatch(setActiveTab(tab));
+    setActiveDateGroup(null); // Reset date group when changing tabs
+  };
+
+  // fetchReviewCount moved up
 
   const handleAddWord = async (newWord, skipAI = false, manualData = {}) => {
      try {
@@ -139,9 +143,9 @@ function App() {
                     : 'bg-card text-muted-foreground hover:bg-accent hover:text-accent-foreground border-border'
                 }`}
             >
-                🧠 Review
+                🧠 Takrorlash
                 {reviewDueCount > 0 && (
-                    <span className="absolute -top-2 -right-2 w-6 h-6 bg-destructive rounded-full flex items-center justify-center text-xs text-white border-2 border-background animate-bounce">
+                    <span className="absolute -top-2 -right-2 w-6 h-6 bg-destructive rounded-full flex items-center justify-center text-xs text-white border-2 border-background animate-bounce font-black shadow-md shadow-destructive/50">
                         {reviewDueCount}
                     </span>
                 )}

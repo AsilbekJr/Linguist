@@ -122,7 +122,7 @@ const checkSentence = async (word, sentence) => {
         Return a JSON object with this EXACT structure (no markdown):
         {
             "isCorrect": true, // or false
-            "feedback": "A short, encouraging explanation of why it is correct or incorrect."
+            "feedback": "A short, encouraging explanation in **Uzbek** (O'zbek tili) of why it is correct or incorrect. MUST BE IN UZBEK."
         }
         `;
 

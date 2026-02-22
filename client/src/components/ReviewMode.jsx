@@ -121,7 +121,7 @@ const ReviewMode = () => {
         }
     };
 
-    if (isLoading) return <div className="text-center py-20 animate-pulse">Loading reviews...</div>;
+    if (isLoading) return <div className="text-center py-20 animate-pulse">Yuklanmoqda...</div>;
 
     if (!selectedGroup) {
         // VIEW 1: Spaced Repetition Buckets / Cards
@@ -132,9 +132,9 @@ const ReviewMode = () => {
                 <div className="text-center py-20 bg-card border border-border border-dashed rounded-3xl max-w-2xl mx-auto">
                     <div className="text-6xl mb-4">🎉</div>
                     <h2 className="text-3xl font-bold bg-gradient-to-r from-green-400 to-blue-500 bg-clip-text text-transparent mb-4">
-                        All Caught Up!
+                        Hammasi Bajarildi!
                     </h2>
-                    <p className="text-muted-foreground text-lg mt-2">No words due for review right now. Come back later!</p>
+                    <p className="text-muted-foreground text-lg mt-2">Hozircha takrorlash uchun so'zlar yo'q. Keyinroq qaytib ko'ring!</p>
                 </div>
             );
         }
@@ -143,9 +143,9 @@ const ReviewMode = () => {
             <div className="max-w-4xl mx-auto animate-fade-in text-center">
                 <div className="mb-12">
                    <h2 className="text-3xl md:text-5xl font-bold bg-gradient-to-r from-pink-500 to-purple-500 bg-clip-text text-transparent mb-4">
-                      Spaced Repetition ✨
+                      Takrorlash ✨
                    </h2>
-                   <p className="text-muted-foreground text-lg">Choose a deck to review based on optimal recall intervals.</p>
+                   <p className="text-muted-foreground text-lg">Xotirangizni mustahkamlash uchun guruhlardan birini tanlang.</p>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 text-left">
@@ -178,7 +178,7 @@ const ReviewMode = () => {
                                 <div className={`flex items-center text-sm font-bold opacity-0 group-hover:opacity-100 transition-opacity ${
                                     isOverdue ? 'text-destructive' : 'text-pink-500'
                                 }`}>
-                                    Start Session &rarr;
+                                    Boshlash &rarr;
                                 </div>
                             </div>
                         );
@@ -197,15 +197,15 @@ const ReviewMode = () => {
             <div className="text-center py-20 max-w-2xl mx-auto">
                 <div className="text-6xl mb-4">🎉</div>
                 <h2 className="text-3xl font-bold bg-gradient-to-r from-green-400 to-blue-500 bg-clip-text text-transparent mb-4">
-                    Deck Completed!
+                    Guruh Tugallandi!
                 </h2>
-                <p className="text-muted-foreground">Amazing job, you've reviewed the "{selectedGroup}" deck.</p>
+                <p className="text-muted-foreground">Ajoyib natija! Siz "{selectedGroup}" guruhini muvaffaqiyatli yakunladingiz.</p>
                 <div className="mt-8 flex justify-center gap-4">
                     <button 
                         onClick={() => setSelectedGroup(null)} 
                         className="px-6 py-2 bg-secondary text-secondary-foreground rounded-full hover:bg-secondary/80 transition"
                     >
-                        Back to Decks
+                        Ortga Qaytish
                     </button>
                 </div>
             </div>
@@ -218,7 +218,7 @@ const ReviewMode = () => {
                 onClick={() => setSelectedGroup(null)}
                 className="mb-8 text-muted-foreground hover:text-foreground flex items-center gap-2 transition-colors font-medium bg-secondary px-4 py-2 rounded-lg inline-flex"
             >
-                <ChevronLeft className="w-4 h-4" /> Exit Session
+                <ChevronLeft className="w-4 h-4" /> Chiqish
             </button>
 
             <div className="flex justify-between items-center mb-4">
@@ -244,7 +244,7 @@ const ReviewMode = () => {
 
                 <div className="text-center mb-8">
                     {error && <div className="text-destructive mb-4 text-sm animate-pulse">{error}</div>}
-                    <p className="text-muted-foreground text-sm tracking-widest uppercase mb-2 font-bold">Target Word</p>
+                    <p className="text-muted-foreground text-sm tracking-widest uppercase mb-2 font-bold">Maqsadli So'z</p>
                     <h3 className="text-5xl font-black text-card-foreground mb-4 tracking-tight capitalize">{word.word}</h3>
                     <p className="text-muted-foreground italic">"{word.definition}"</p>
                 </div>
@@ -252,13 +252,13 @@ const ReviewMode = () => {
                 {!feedback ? (
                     <div className="space-y-4">
                         <label className="block text-sm text-card-foreground ml-1">
-                            Use <strong>{word.word}</strong> in a sentence:
+                            <strong>{word.word}</strong> so'zini gap ichida ishlating:
                         </label>
                         <div className="relative group">
                             <textarea 
                                 className={`w-full bg-background border rounded-xl p-4 pr-16 text-lg outline-none transition-all resize-none text-foreground ${isListening ? 'border-orange-500 ring-2 ring-orange-500/20' : 'border-border focus:border-pink-500 focus:ring-1 focus:ring-pink-500'}`}
                                 rows="3"
-                                placeholder="Type your sentence here or use the microphone..."
+                                placeholder="Gapingizni yozing yoki mikrofondan foydalaning (ingliz tilida)..."
                                 value={userSentence}
                                 onChange={(e) => setUserSentence(e.target.value)}
                                 onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleCheck()}
@@ -266,7 +266,7 @@ const ReviewMode = () => {
                             <button 
                                 onClick={toggleListening}
                                 className={`absolute bottom-4 right-4 p-3 rounded-full transition-all ${isListening ? 'bg-destructive text-white animate-pulse shadow-lg shadow-destructive/40' : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'}`}
-                                title="Speak (English)"
+                                title="Gapirish (Ingliz)"
                             >
                                 {isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
                             </button>
@@ -274,9 +274,9 @@ const ReviewMode = () => {
                         <button 
                             onClick={handleCheck}
                             disabled={checking || !userSentence.trim()}
-                            className="w-full py-4 bg-gradient-to-r from-pink-600 to-purple-600 rounded-xl font-bold text-lg hover:opacity-90 transition-all disabled:opacity-50 flex justify-center items-center gap-2"
+                            className="w-full py-4 bg-gradient-to-r from-pink-600 to-purple-600 rounded-xl font-bold text-lg hover:opacity-90 transition-all disabled:opacity-50 flex justify-center items-center gap-2 text-white"
                         >
-                            {checking ? 'Analyzing...' : 'Check My Flow ✨'}
+                            {checking ? 'Tekshirilmoqda...' : 'Tekshirish ✨'}
                         </button>
                     </div>
                 ) : (
@@ -284,7 +284,7 @@ const ReviewMode = () => {
                         <div className="flex items-center gap-3 mb-3">
                             <span className="text-3xl">{feedback.isCorrect ? '✅' : '❌'}</span>
                             <h4 className={`text-xl font-bold ${feedback.isCorrect ? 'text-green-500' : 'text-destructive'}`}>
-                                {feedback.isCorrect ? 'Excellent!' : 'Needs Improvement'}
+                                {feedback.isCorrect ? 'Ajoyib!' : 'Xato ketib qoldi'}
                             </h4>
                         </div>
                         <p className="text-card-foreground mb-6 leading-relaxed">
@@ -299,7 +299,7 @@ const ReviewMode = () => {
                                 : 'bg-secondary hover:bg-secondary/80 text-secondary-foreground'
                             }`}
                         >
-                            {currentIndex < sessionWords.length - 1 ? 'Next Word →' : 'Finish Session 🎉'}
+                            {currentIndex < sessionWords.length - 1 ? 'Keyingi So\'z →' : 'Sessiyani Yakunlash 🎉'}
                         </button>
                     </div>
                 )}
