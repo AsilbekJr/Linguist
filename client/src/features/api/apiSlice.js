@@ -26,6 +26,14 @@ export const apiSlice = createApi({
       }),
       invalidatesTags: ['Word'],
     }),
+    checkReview: builder.mutation({
+      query: ({ id, sentence }) => ({
+        url: `/api/review/${id}/check`,
+        method: 'POST',
+        body: { sentence },
+      }),
+      invalidatesTags: ['Word'],
+    }),
 
     translateSpeaking: builder.mutation({
       query: (text) => ({
@@ -48,6 +56,7 @@ export const {
   useGetWordsQuery,
   useAddWordMutation,
   useDeleteWordMutation,
+  useCheckReviewMutation,
   useTranslateSpeakingMutation,
   useEvaluateSpeakingMutation,
 } = apiSlice;
