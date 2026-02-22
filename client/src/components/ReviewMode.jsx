@@ -1,7 +1,7 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useGetWordsQuery } from '../features/api/apiSlice';
 import { groupWordsByReviewInterval } from '../utils/dateUtils';
-import { BookOpen, ChevronLeft } from 'lucide-react';
+import { BookOpen, ChevronLeft, Mic, MicOff } from 'lucide-react';
 
 const ReviewMode = () => {
     const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:5000';
@@ -14,6 +14,63 @@ const ReviewMode = () => {
     const [userSentence, setUserSentence] = useState('');
     const [feedback, setFeedback] = useState(null);
     const [checking, setChecking] = useState(false);
+    const [isListening, setIsListening] = useState(false);
+    const [recognition, setRecognition] = useState(null);
+    const [error, setError] = useState(null);
+
+    const userSentenceRef = useRef('');
+
+    useEffect(() => {
+        userSentenceRef.current = userSentence;
+    }, [userSentence]);
+
+    useEffect(() => {
+        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            const rec = new SpeechRecognition();
+            rec.continuous = false;
+            rec.interimResults = true;
+            rec.lang = 'en-US';
+
+            rec.onresult = (event) => {
+                let finalTrans = '';
+                let interimTrans = '';
+                for (let i = event.resultIndex; i < event.results.length; ++i) {
+                    if (event.results[i].isFinal) finalTrans += event.results[i][0].transcript;
+                    else interimTrans += event.results[i][0].transcript;
+                }
+                const newText = finalTrans || interimTrans;
+                setUserSentence(newText);
+            };
+
+            rec.onend = () => {
+                setIsListening(false);
+            };
+
+            rec.onerror = (e) => { 
+                setIsListening(false); 
+                console.error("Speech recognition error:", e);
+                setError("Microphone error. Please try again or type.");
+            };
+            
+            setRecognition(rec);
+        }
+    }, []);
+
+    const toggleListening = () => {
+        if (!recognition) {
+            setError("Your browser doesn't support speech recognition.");
+            return;
+        }
+
+        if (isListening) {
+            recognition.stop();
+        } else {
+            setError(null);
+            recognition.start();
+            setIsListening(true);
+        }
+    };
 
     const groupedWords = useMemo(() => {
         return groupWordsByReviewInterval(words);
@@ -29,6 +86,7 @@ const ReviewMode = () => {
         setCurrentIndex(0);
         setUserSentence('');
         setFeedback(null);
+        setError(null);
     };
 
     const handleCheck = async () => {
@@ -55,6 +113,8 @@ const ReviewMode = () => {
     const handleNext = () => {
         setFeedback(null);
         setUserSentence('');
+        setError(null);
+        if (isListening && recognition) recognition.stop();
         if (currentIndex < sessionWords.length - 1) {
             setCurrentIndex(prev => prev + 1);
         } else {
@@ -164,21 +224,30 @@ const ReviewMode = () => {
                 <ChevronLeft className="w-4 h-4" /> Exit Session
             </button>
 
-            <div className="flex justify-between items-center mb-8">
+            <div className="flex justify-between items-center mb-4">
                 <h2 className="text-2xl font-bold flex items-center gap-2">
                     <span className="w-2 h-8 bg-pink-500 rounded-full inline-block"></span>
                     {selectedGroup} Review
                 </h2>
-                <span className="text-sm bg-muted text-muted-foreground px-3 py-1 rounded-full border border-border">
+                <span className="text-sm bg-muted text-muted-foreground px-3 py-1 rounded-full border border-border font-bold">
                     {currentIndex + 1} / {sessionWords.length}
                 </span>
+            </div>
+
+            {/* Progress Bar */}
+            <div className="w-full h-3 bg-secondary rounded-full overflow-hidden mb-8 border border-border/50">
+                <div 
+                    className="h-full bg-gradient-to-r from-pink-500 to-purple-500 transition-all duration-500 ease-out"
+                    style={{ width: `${((currentIndex + (feedback ? 1 : 0)) / sessionWords.length) * 100}%` }}
+                ></div>
             </div>
 
             <div className="bg-card p-8 rounded-3xl border border-border shadow-2xl relative overflow-hidden group">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-pink-500/10 rounded-full blur-3xl -mr-16 -mt-16 transition duration-500 group-hover:bg-pink-500/20"></div>
 
                 <div className="text-center mb-8">
-                    <p className="text-muted-foreground text-sm tracking-widest uppercase mb-2">Target Word</p>
+                    {error && <div className="text-destructive mb-4 text-sm animate-pulse">{error}</div>}
+                    <p className="text-muted-foreground text-sm tracking-widest uppercase mb-2 font-bold">Target Word</p>
                     <h3 className="text-5xl font-black text-card-foreground mb-4 tracking-tight capitalize">{word.word}</h3>
                     <p className="text-muted-foreground italic">"{word.definition}"</p>
                 </div>
@@ -188,14 +257,23 @@ const ReviewMode = () => {
                         <label className="block text-sm text-card-foreground ml-1">
                             Use <strong>{word.word}</strong> in a sentence:
                         </label>
-                        <textarea 
-                            className="w-full bg-background border border-border rounded-xl p-4 text-lg focus:border-pink-500 focus:ring-1 focus:ring-pink-500 outline-none transition-all resize-none text-foreground"
-                            rows="3"
-                            placeholder="Type your sentence here..."
-                            value={userSentence}
-                            onChange={(e) => setUserSentence(e.target.value)}
-                            onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleCheck()}
-                        />
+                        <div className="relative group">
+                            <textarea 
+                                className={`w-full bg-background border rounded-xl p-4 pr-16 text-lg outline-none transition-all resize-none text-foreground ${isListening ? 'border-orange-500 ring-2 ring-orange-500/20' : 'border-border focus:border-pink-500 focus:ring-1 focus:ring-pink-500'}`}
+                                rows="3"
+                                placeholder="Type your sentence here or use the microphone..."
+                                value={userSentence}
+                                onChange={(e) => setUserSentence(e.target.value)}
+                                onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleCheck()}
+                            />
+                            <button 
+                                onClick={toggleListening}
+                                className={`absolute bottom-4 right-4 p-3 rounded-full transition-all ${isListening ? 'bg-destructive text-white animate-pulse shadow-lg shadow-destructive/40' : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'}`}
+                                title="Speak (English)"
+                            >
+                                {isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
+                            </button>
+                        </div>
                         <button 
                             onClick={handleCheck}
                             disabled={checking || !userSentence.trim()}
