@@ -61,8 +61,8 @@ const generateWordContext = async (word) => {
     } catch (error) {
         console.error("Gemini API Error:", error);
         logError("generateWordContext", error);
-        if (error.message.includes("429") || error.message.includes("Quota exceeded")) {
-            throw { type: 'QUOTA_EXCEEDED', message: 'AI Quota Exceeded. Please try again later.' };
+        if (error.message.includes("429") || error.message.includes("Quota exceeded") || error.message.includes("503") || error.message.includes("Service Unavailable") || error.message.includes("Overloaded")) {
+            throw { type: 'QUOTA_EXCEEDED', message: 'AI xizmatiga ulanib bo‘lmadi (Bandlik). Iltimos keyinroq qayta urinib ko‘ring yoki AI-siz saqlang.' };
         }
         return null;
     }
@@ -174,8 +174,8 @@ const validateWord = async (word) => {
     } catch (error) {
         console.error("Gemini Validation Error:", error);
         logError("validateWord", error);
-        if (error.message.includes("429") || error.message.includes("Quota exceeded")) {
-            throw { type: 'QUOTA_EXCEEDED', message: 'AI Quota Exceeded. Please try again later.' };
+        if (error.message.includes("429") || error.message.includes("Quota exceeded") || error.message.includes("503") || error.message.includes("Service Unavailable") || error.message.includes("Overloaded")) {
+            throw { type: 'QUOTA_EXCEEDED', message: 'AI xizmatiga ulanib bo‘lmadi (Bandlik). Iltimos keyinroq qayta urinib ko‘ring yoki AI-siz saqlang.' };
         }
         return null; 
     }
@@ -212,8 +212,8 @@ const translateUzbekToEnglish = async (uzbekText) => {
     } catch (error) {
         console.error("Gemini Speaking Translate Error:", error);
         logError("translateUzbekToEnglish", error);
-        if (error.message.includes("429") || error.message.includes("Quota exceeded")) {
-            throw { type: 'QUOTA_EXCEEDED', message: 'AI Quota Exceeded. Please try again later.' };
+        if (error.message.includes("429") || error.message.includes("Quota exceeded") || error.message.includes("503") || error.message.includes("Service Unavailable") || error.message.includes("Overloaded")) {
+            throw { type: 'QUOTA_EXCEEDED', message: 'AI xizmatiga ulanib bo‘lmadi (Bandlik). Iltimos keyinroq qayta urinib ko‘ring yoki AI-siz saqlang.' };
         }
         return null;
     }
@@ -253,8 +253,8 @@ const evaluatePronunciation = async (targetSentence, spokenText) => {
     } catch (error) {
         console.error("Gemini Speaking Validate Error:", error);
         logError("evaluatePronunciation", error);
-        if (error.message.includes("429") || error.message.includes("Quota exceeded")) {
-             throw { type: 'QUOTA_EXCEEDED', message: 'AI Quota Exceeded. Please try again later.' };
+        if (error.message.includes("429") || error.message.includes("Quota exceeded") || error.message.includes("503") || error.message.includes("Service Unavailable") || error.message.includes("Overloaded")) {
+             throw { type: 'QUOTA_EXCEEDED', message: 'AI xizmatiga ulanib bo‘lmadi (Bandlik). Iltimos keyinroq qayta urinib ko‘ring yoki AI-siz saqlang.' };
         }
         return null;
     }
@@ -300,8 +300,8 @@ const generateRoleplayResponse = async (scenario, targetWords, chatHistory, user
     } catch (error) {
         console.error("Gemini Roleplay Error:", error);
         logError("generateRoleplayResponse", error);
-        if (error.message.includes("429") || error.message.includes("Quota exceeded")) {
-             throw { type: 'QUOTA_EXCEEDED', message: 'AI Quota Exceeded. Please try again later.' };
+        if (error.message.includes("429") || error.message.includes("Quota exceeded") || error.message.includes("503") || error.message.includes("Service Unavailable") || error.message.includes("Overloaded")) {
+             throw { type: 'QUOTA_EXCEEDED', message: 'AI xizmatiga ulanib bo‘lmadi (Bandlik). Iltimos keyinroq qayta urinib ko‘ring yoki AI-siz saqlang.' };
         }
         return "Kechirasiz, men hozir javob bera olmayman. Keling boshqatdan urinib ko'ramiz (AI Error).";
     }
@@ -339,8 +339,8 @@ const generateChallengeText = async (topic, targetWords, dayNumber = 1) => {
     } catch (error) {
         console.error("Gemini Challenge Generation Error:", error);
         logError("generateChallengeText", error);
-        if (error.message && (error.message.includes("429") || error.message.includes("Quota exceeded"))) {
-             throw { type: 'QUOTA_EXCEEDED', message: 'AI Quota Exceeded. Please try again later.' };
+        if (error.message && (error.message.includes("429") || error.message.includes("Quota exceeded") || error.message.includes("503") || error.message.includes("Service Unavailable") || error.message.includes("Overloaded"))) {
+             throw { type: 'QUOTA_EXCEEDED', message: 'AI xizmatiga ulanib bo‘lmadi (Bandlik). Iltimos keyinroq qayta urinib ko‘ring yoki AI-siz saqlang.' };
         }
         return "Failed to generate text. Please try again.";
     }
