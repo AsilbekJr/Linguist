@@ -304,7 +304,7 @@ function App() {
 
             {activeTab === 'roleplay' && <RoleplayMode />}
 
-            {activeTab === 'challenge-mode' && <ChallengeMode />}
+            {activeTab === 'challenge-mode' && <ChallengeMode onAddWord={handleAddWord} />}
         </main>
       </div>
     </div>

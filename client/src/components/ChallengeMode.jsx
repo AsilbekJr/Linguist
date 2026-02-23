@@ -1,13 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useGetCurrentChallengeQuery, useGetChallengeHistoryQuery, useCompleteChallengeMutation, useAddWordMutation } from '../features/api/apiSlice';
+import { useGetCurrentChallengeQuery, useGetChallengeHistoryQuery, useCompleteChallengeMutation } from '../features/api/apiSlice';
 import { Button } from "@/components/ui/button";
 import { Mic, Square, Play, Send, Loader2, CheckCircle2, PlusCircle, X } from "lucide-react";
 
-const ChallengeMode = () => {
+const ChallengeMode = ({ onAddWord }) => {
   const { data: history, isLoading: isHistoryLoading, refetch: refetchHistory } = useGetChallengeHistoryQuery();
   const { data: currentChallenge, isLoading: isCurrentLoading, refetch: refetchCurrent } = useGetCurrentChallengeQuery();
   const [completeChallenge, { isLoading: isCompleting }] = useCompleteChallengeMutation();
-  const [addWord, { isLoading: isAddingWord }] = useAddWordMutation();
 
   const [isRecording, setIsRecording] = useState(false);
   const [audioUrl, setAudioUrl] = useState(null);
@@ -15,6 +14,7 @@ const ChallengeMode = () => {
   const [error, setError] = useState("");
   const [selectedWord, setSelectedWord] = useState(null);
   const [addWordSuccess, setAddWordSuccess] = useState(false);
+  const [isAddingWord, setIsAddingWord] = useState(false);
 
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
@@ -83,15 +83,24 @@ const ChallengeMode = () => {
 
   const handleQuickAddWord = async () => {
     if (!selectedWord) return;
+    setIsAddingWord(true);
     try {
-      await addWord({ word: selectedWord, skipAI: false }).unwrap();
+      await onAddWord(selectedWord, false);
       setAddWordSuccess(true);
       setTimeout(() => {
         setAddWordSuccess(false);
         setSelectedWord(null);
       }, 2000);
     } catch (err) {
-      setError("So'zni qo'shishda xatolik yuz berdi. Internetni tekshiring.");
+      let errorMessage = "So'zni qo'shishda xatolik yuz berdi. Internetni tekshiring.";
+      if (err && err.type === 'DUPLICATE') {
+          errorMessage = err.message || "Bu so'z allaqachon lug'atingizda bor.";
+      } else if (err && err.type === 'QUOTA_EXCEEDED') {
+          errorMessage = "AI band. Iltimos keyinroq urinib ko'ring yoki Word Lab orqali qo'lda qo'shing.";
+      }
+      setError(errorMessage);
+    } finally {
+      setIsAddingWord(false);
     }
   };
 
