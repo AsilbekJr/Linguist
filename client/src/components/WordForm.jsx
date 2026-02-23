@@ -73,7 +73,7 @@ const WordForm = ({ onAddWord }) => {
               type="submit"
               disabled={loading || !word.trim()}
               size="lg"
-              className="absolute right-1 top-1 bottom-1 rounded-full px-6 bg-primary hover:bg-primary/90 text-primary-foreground font-medium transition-all disabled:opacity-50"
+              className="absolute right-1 top-1 bottom-1 rounded-full px-6 bg-primary hover:bg-primary/90 text-white font-medium transition-all disabled:opacity-50"
             >
             {loading ? (
                 <span className="flex items-center gap-2">

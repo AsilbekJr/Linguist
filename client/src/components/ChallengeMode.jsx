@@ -266,8 +266,8 @@ const ChallengeMode = ({ onAddWord }) => {
                              </div>
                              <div className="flex gap-3">
                                  <Button variant="outline" onClick={() => setSelectedWord(null)}>Yo'q</Button>
-                                 <Button onClick={handleQuickAddWord} disabled={isAddingWord} className="min-w-[100px]">
-                                     {isAddingWord ? <Loader2 className="w-4 h-4 animate-spin" /> : <><PlusCircle className="w-4 h-4 mr-2" /> Qo'shish</>}
+                                 <Button onClick={handleQuickAddWord} disabled={isAddingWord} className="min-w-[100px] text-white">
+                                     {isAddingWord ? <Loader2 className="w-4 h-4 animate-spin text-white" /> : <><PlusCircle className="w-4 h-4 mr-2 text-white" /> Qo'shish</>}
                                  </Button>
                              </div>
                            </>
@@ -290,7 +290,7 @@ const ChallengeMode = ({ onAddWord }) => {
                             size="lg"
                             className={`w-20 h-20 rounded-full transition-all duration-300 ${isRecording ? 'bg-destructive hover:bg-destructive/90 animate-pulse ring-8 ring-destructive/20' : 'bg-primary hover:bg-primary/90 hover:scale-105 shadow-xl shadow-primary/20'}`}
                         >
-                            {isRecording ? <Square className="w-8 h-8" /> : <Mic className="w-8 h-8" />}
+                            {isRecording ? <Square className="w-8 h-8 text-white" /> : <Mic className="w-8 h-8 text-white" />}
                         </Button>
                         <p className="text-sm font-medium text-muted-foreground">
                             {isRecording ? 'Yozib olinmoqda... To\'xtatish uchun bosing' : 'Yoddan aytishni boshlash uchun bosing'}
@@ -305,7 +305,7 @@ const ChallengeMode = ({ onAddWord }) => {
                                      Qayta Yozish
                                  </Button>
                                  <Button className="flex-1 rounded-full bg-green-500 hover:bg-green-600 text-white" onClick={handleSubmit} disabled={isCompleting}>
-                                     {isCompleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Send className="w-4 h-4 mr-2" /> Jo'natish</>}
+                                     {isCompleting ? <Loader2 className="w-4 h-4 animate-spin text-white" /> : <><Send className="w-4 h-4 mr-2 text-white" /> Jo'natish</>}
                                  </Button>
                              </div>
                         </div>

@@ -111,8 +111,8 @@ function App() {
       <div className="max-w-7xl mx-auto px-4 md:px-6 py-8 md:py-12 pt-20 md:pt-12">
         
         {/* Header Section */}
-        <header className="mb-8 md:mb-12 text-center pt-2 md:pt-0 relative">
-          <div className="absolute top-0 right-0 hidden md:block">
+        <header className="mb-8 md:mb-12 text-center pt-2 md:pt-0 relative z-20">
+          <div className="absolute top-0 right-0 hidden md:block z-50 pointer-events-auto">
             <ThemeToggle />
           </div>
           <h1 className="text-3xl md:text-6xl font-black text-primary mb-4 tracking-tight drop-shadow-sm">
