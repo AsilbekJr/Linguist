@@ -52,11 +52,16 @@ router.get('/current', async (req, res) => {
         const randomTopic = TOPICS[Math.floor(Math.random() * TOPICS.length)];
 
         // 2. Fetch some target words from the user's vocabulary (e.g. 5 random words that are not 'Mastered')
-        const activeWords = await Word.aggregate([
-            { $match: { srsStage: { $lt: 5 } } },
-            { $sample: { size: 5 } }
-        ]);
-        const targetWords = activeWords.map(w => w.word);
+        let targetWords = [];
+        try {
+            const activeWords = await Word.aggregate([
+                { $match: { srsStage: { $lt: 5 } } },
+                { $sample: { size: 5 } }
+            ]);
+            targetWords = activeWords.map(w => w.word);
+        } catch (e) {
+            console.warn("Could not fetch target words for challenge:", e);
+        }
 
         // 3. Generate text using Gemini
         const generatedText = await generateChallengeText(randomTopic, targetWords);
@@ -65,7 +70,8 @@ router.get('/current', async (req, res) => {
         const newChallenge = new Challenge({
             dayNumber: nextDaynum,
             topic: randomTopic,
-            text: generatedText
+            text: generatedText || "This is a fallback text because AI generation failed. Welcome to your challenge! Read this text aloud to practice.",
+            status: 'pending'
         });
         await newChallenge.save();
 

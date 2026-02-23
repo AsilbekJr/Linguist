@@ -57,16 +57,16 @@ export const apiSlice = createApi({
       }),
     }),
     getCurrentChallenge: builder.query({
-      query: () => '/challenge/current',
+      query: () => '/api/challenge/current',
       providesTags: ['Challenge'],
     }),
     getChallengeHistory: builder.query({
-      query: () => '/challenge/history',
+      query: () => '/api/challenge/history',
       providesTags: ['Challenge'],
     }),
     completeChallenge: builder.mutation({
       query: (data) => ({
-        url: '/challenge/complete',
+        url: '/api/challenge/complete',
         method: 'POST',
         body: data,
       }),
@@ -79,8 +79,7 @@ export const {
   useGetWordsQuery,
   useAddWordMutation,
   useDeleteWordMutation,
-  useGetWordsForReviewQuery,
-  useProcessReviewResultMutation,
+  useCheckReviewMutation,
   useTranslateSpeakingMutation,
   useEvaluateSpeakingMutation,
   useChatRoleplayMutation,
