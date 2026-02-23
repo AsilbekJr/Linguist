@@ -1,0 +1,260 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { useGetCurrentChallengeQuery, useGetChallengeHistoryQuery, useCompleteChallengeMutation } from '../features/api/apiSlice';
+import { Button } from "@/components/ui/button";
+import { Mic, Square, Play, Send, Loader2, CheckCircle2 } from "lucide-react";
+import WordForm from './WordForm';
+
+const ChallengeMode = ({ onAddWord }) => {
+  const { data: history, isLoading: isHistoryLoading, refetch: refetchHistory } = useGetChallengeHistoryQuery();
+  const { data: currentChallenge, isLoading: isCurrentLoading, refetch: refetchCurrent } = useGetCurrentChallengeQuery();
+  const [completeChallenge, { isLoading: isCompleting }] = useCompleteChallengeMutation();
+
+  const [isRecording, setIsRecording] = useState(false);
+  const [audioUrl, setAudioUrl] = useState(null);
+  const [audioBase64, setAudioBase64] = useState(null);
+  const [error, setError] = useState("");
+  const [selectedWord, setSelectedWord] = useState(null);
+
+  const mediaRecorderRef = useRef(null);
+  const audioChunksRef = useRef([]);
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+
+      mediaRecorder.onstop = () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        const url = URL.createObjectURL(audioBlob);
+        setAudioUrl(url);
+
+        // Convert blob to base64 for database
+        const reader = new FileReader();
+        reader.readAsDataURL(audioBlob);
+        reader.onloadend = () => {
+          setAudioBase64(reader.result);
+        };
+      };
+
+      mediaRecorder.start();
+      setIsRecording(true);
+      setError("");
+    } catch (err) {
+      console.error("Error accessing microphone:", err);
+      setError("Mikrofonga ulanishda xatolik. Ruxsat berilganligini tekshiring.");
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+      // Stop all tracks to release microphone
+      mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (!audioBase64 || !currentChallenge) return;
+
+    try {
+      await completeChallenge({ 
+        challengeId: currentChallenge._id, 
+        audioData: audioBase64 
+      }).unwrap();
+      
+      setAudioUrl(null);
+      setAudioBase64(null);
+      refetchHistory();
+      refetchCurrent();
+    } catch (err) {
+      setError("Saqlashda xatolik yuz berdi. Iltimos qayta urinib ko'ring.");
+    }
+  };
+
+  // Render Grid
+  const renderGrid = () => {
+    if (isHistoryLoading) return <div className="text-center py-10"><Loader2 className="w-8 h-8 animate-spin mx-auto text-primary" /></div>;
+    
+    // We need 100 days
+    const days = Array.from({ length: 100 }, (_, i) => i + 1);
+    
+    // Create a map of completed days
+    const completedDaysMap = {};
+    if (history) {
+      history.forEach(h => {
+        if (h.status === 'completed') {
+           completedDaysMap[h.dayNumber] = true;
+        }
+      });
+    }
+
+    return (
+      <div className="grid grid-cols-10 gap-2 md:gap-3 mb-12 max-w-2xl mx-auto bg-card p-6 rounded-3xl border shadow-sm">
+        {days.map(day => (
+          <div 
+            key={day}
+            className={`w-full aspect-square rounded-md md:rounded-lg flex items-center justify-center text-xs md:text-sm font-bold transition-all ${
+              completedDaysMap[day] 
+              ? 'bg-green-500 text-white shadow-md shadow-green-500/20' 
+              : 'bg-muted text-muted-foreground border border-border/50'
+            }`}
+            title={`Day ${day}`}
+          >
+            {day}
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  // Convert text with markdown asterisks to JSX highlighting
+  const renderTextContent = (text) => {
+    if (!text) return null;
+    const parts = text.split(/(\*\*.*?\*\*)/g);
+    return parts.map((part, i) => {
+        if (part.startsWith('**') && part.endsWith('**')) {
+            const word = part.substring(2, part.length - 2);
+            return (
+              <strong 
+                key={i} 
+                onClick={() => setSelectedWord(word)}
+                className="text-primary font-black bg-primary/10 px-1 rounded mx-0.5 cursor-pointer hover:bg-primary/20 transition-colors"
+                title="Click to add to Word Lab"
+              >
+                {word}
+              </strong>
+            );
+        }
+        return <span key={i}>{part}</span>;
+    });
+  };
+
+  if (isCurrentLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh]">
+         <Loader2 className="w-12 h-12 animate-spin text-primary mb-4" />
+         <p className="text-muted-foreground font-medium">Bugungi mashg'ulot yuklanmoqda...</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-4xl mx-auto px-4 py-8 animate-fade-in">
+      <div className="text-center mb-10">
+        <h2 className="text-3xl md:text-5xl font-black bg-gradient-to-r from-emerald-400 to-cyan-500 bg-clip-text text-transparent mb-4">
+          100 Days Challenge 🎯
+        </h2>
+        <p className="text-base md:text-lg text-muted-foreground">
+          Har kuni bitta matn o'qing va nutqingizni yozib qoldiring. Izchillik - muvaffaqiyat kaliti!
+        </p>
+      </div>
+
+      {renderGrid()}
+
+      {currentChallenge && currentChallenge.isFinished ? (
+         <div className="text-center bg-card p-12 rounded-3xl border-2 border-green-500/30">
+             <div className="text-6xl mb-6">🏆</div>
+             <h3 className="text-3xl font-black text-foreground mb-4">Tabriklaymiz!</h3>
+             <p className="text-xl text-muted-foreground">Siz 100 kunlik challenge'ni muvaffaqiyatli yakunladingiz!</p>
+         </div>
+      ) : currentChallenge && currentChallenge.isCompleteForToday ? (
+        <div className="text-center bg-card p-12 rounded-3xl border border-border shadow-sm">
+             <div className="text-6xl mb-6">✅</div>
+             <h3 className="text-2xl font-bold text-foreground mb-2">Bugungi vazifa bajarildi!</h3>
+             <p className="text-muted-foreground">Ertaga yangi matn bilan qayting. Xotirjam dam oling!</p>
+             
+             {currentChallenge.lastChallenge && currentChallenge.lastChallenge.audioData && (
+                 <div className="mt-8">
+                     <p className="text-sm font-bold uppercase tracking-widest text-muted-foreground mb-4">Bugungi yozuvingiz</p>
+                     <audio src={currentChallenge.lastChallenge.audioData} controls className="mx-auto w-full max-w-md rounded-2xl" />
+                 </div>
+             )}
+         </div>
+      ) : currentChallenge ? (
+        <div className="bg-card rounded-3xl p-6 md:p-10 border border-border shadow-md">
+            <div className="flex justify-between items-center mb-6">
+                <span className="bg-primary/10 text-primary px-4 py-1.5 rounded-full text-sm font-bold">
+                    Day {currentChallenge.dayNumber}
+                </span>
+                <span className="text-muted-foreground text-sm font-medium">
+                    {currentChallenge.topic}
+                </span>
+            </div>
+            
+            <div className="bg-background rounded-2xl p-6 md:p-8 mb-8 border border-border">
+                <p className="text-lg md:text-xl leading-relaxed text-card-foreground">
+                    {renderTextContent(currentChallenge.text)}
+                </p>
+            </div>
+
+            {selectedWord && (
+                <div className="mb-8 p-6 bg-secondary/30 rounded-2xl border border-primary/20 animate-fade-in-up">
+                    <div className="flex justify-between items-center mb-4">
+                        <h4 className="font-bold text-lg">"{selectedWord}" ni saqlash</h4>
+                        <Button variant="ghost" size="sm" onClick={() => setSelectedWord(null)}>Yopish</Button>
+                    </div>
+                    {/* We pass in the selected word to the WordForm by using a key to remount it, 
+                        or we can just let WordForm be empty and user types it, but let's pre-fill if possible. 
+                        WordForm currently manages its own state, so a wrapper or just instructions is easier.
+                        Let's render WordForm and tell them to add it. */}
+                    <div className="bg-background p-4 rounded-xl border">
+                        <p className="text-sm text-muted-foreground mb-4">Ushbu so'zni o'z lug'atingizga qo'shib qo'ying:</p>
+                        <WordForm onAddWord={onAddWord} />
+                    </div>
+                </div>
+            )}
+
+            {error && (
+                <div className="bg-destructive/10 text-destructive text-sm font-bold p-3 rounded-xl text-center mb-6">
+                    {error}
+                </div>
+            )}
+
+            <div className="flex flex-col items-center justify-center gap-6">
+                {!audioUrl ? (
+                    <div className="flex flex-col items-center gap-4">
+                        <Button 
+                            onClick={isRecording ? stopRecording : startRecording}
+                            size="lg"
+                            className={`w-20 h-20 rounded-full transition-all duration-300 ${isRecording ? 'bg-destructive hover:bg-destructive/90 animate-pulse ring-8 ring-destructive/20' : 'bg-primary hover:bg-primary/90 hover:scale-105 shadow-xl shadow-primary/20'}`}
+                        >
+                            {isRecording ? <Square className="w-8 h-8" /> : <Mic className="w-8 h-8" />}
+                        </Button>
+                        <p className="text-sm font-medium text-muted-foreground">
+                            {isRecording ? 'Yozib olinmoqda... To\'xtatish uchun bosing' : 'O\'qishni boshlash uchun bosing'}
+                        </p>
+                    </div>
+                ) : (
+                    <div className="w-full flex justify-center mt-4">
+                        <div className="flex flex-col items-center gap-6 w-full max-w-md bg-secondary/30 p-6 border rounded-3xl">
+                             <audio src={audioUrl} controls className="w-full rounded-2xl" />
+                             <div className="flex gap-4 w-full">
+                                 <Button variant="outline" className="flex-1 rounded-full" onClick={() => setAudioUrl(null)}>
+                                     Qayta Yozish
+                                 </Button>
+                                 <Button className="flex-1 rounded-full bg-green-500 hover:bg-green-600 text-white" onClick={handleSubmit} disabled={isCompleting}>
+                                     {isCompleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Send className="w-4 h-4 mr-2" /> Jo'natish</>}
+                                 </Button>
+                             </div>
+                        </div>
+                    </div>
+                )}
+            </div>
+        </div>
+      ) : (
+        <div className="text-center p-12">Nimadir xato ketdi. Sahifani yangilab ko'ring.</div>
+      )}
+    </div>
+  );
+};
+
+export default ChallengeMode;

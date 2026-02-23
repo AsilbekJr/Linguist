@@ -50,11 +50,27 @@ export const apiSlice = createApi({
       }),
     }),
     chatRoleplay: builder.mutation({
-      query: (payload) => ({
-        url: '/api/roleplay/chat',
+      query: (data) => ({
+        url: '/roleplay/chat',
         method: 'POST',
-        body: payload,
+        body: data,
       }),
+    }),
+    getCurrentChallenge: builder.query({
+      query: () => '/challenge/current',
+      providesTags: ['Challenge'],
+    }),
+    getChallengeHistory: builder.query({
+      query: () => '/challenge/history',
+      providesTags: ['Challenge'],
+    }),
+    completeChallenge: builder.mutation({
+      query: (data) => ({
+        url: '/challenge/complete',
+        method: 'POST',
+        body: data,
+      }),
+      invalidatesTags: ['Challenge'],
     }),
   }),
 });
@@ -63,8 +79,12 @@ export const {
   useGetWordsQuery,
   useAddWordMutation,
   useDeleteWordMutation,
-  useCheckReviewMutation,
+  useGetWordsForReviewQuery,
+  useProcessReviewResultMutation,
   useTranslateSpeakingMutation,
   useEvaluateSpeakingMutation,
   useChatRoleplayMutation,
+  useGetCurrentChallengeQuery,
+  useGetChallengeHistoryQuery,
+  useCompleteChallengeMutation,
 } = apiSlice;

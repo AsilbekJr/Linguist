@@ -12,6 +12,7 @@ const Sidebar = ({ activeTab, onTabChange }) => {
     { id: 'dictionary', label: 'Dictionary', icon: Book },
     { id: 'speaking-lab', label: 'Speaking Lab', icon: Mic },
     { id: 'roleplay', label: 'Immersion', icon: Mic },
+    { id: 'challenge-mode', label: '100 Days 🎯', icon: CheckCircle }, // Reused CheckCircle 
   ];
 
   return (

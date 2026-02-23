@@ -307,4 +307,38 @@ const generateRoleplayResponse = async (scenario, targetWords, chatHistory, user
     }
 };
 
-module.exports = { generateWordContext, analyzeStory, checkSentence, validateWord, translateUzbekToEnglish, evaluatePronunciation, generateRoleplayResponse };
+const generateChallengeText = async (topic, targetWords) => {
+    try {
+        if (!genAI) return null;
+
+        const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
+        const wordsList = targetWords && targetWords.length > 0 ? targetWords.join(", ") : "none";
+
+        const prompt = `
+        Act as an expert English curriculum designer.
+        Write a short, engaging conversational text (around 100-150 words) about the topic: "${topic}".
+        
+        CRITICAL RULES:
+        1. The text must be natural, easy to read aloud, and targeted at an intermediate (B1/B2) English learner.
+        2. You MUST seamlessly incorporate as many of these target vocabulary words into the text as naturally possible: [${wordsList}].
+        3. Bold the target words you used by surrounding them with double asterisks (e.g., **word**).
+        
+        Return ONLY the raw text. Do not add any introductory or concluding remarks. Just the reading text itself.
+        `;
+
+        console.log("Challenge generation: Calling Gemini API...");
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
+        return response.text().trim();
+
+    } catch (error) {
+        console.error("Gemini Challenge Generation Error:", error);
+        logError("generateChallengeText", error);
+        if (error.message && (error.message.includes("429") || error.message.includes("Quota exceeded"))) {
+             throw { type: 'QUOTA_EXCEEDED', message: 'AI Quota Exceeded. Please try again later.' };
+        }
+        return "Failed to generate text. Please try again.";
+    }
+};
+
+module.exports = { generateWordContext, analyzeStory, checkSentence, validateWord, translateUzbekToEnglish, evaluatePronunciation, generateRoleplayResponse, generateChallengeText };
