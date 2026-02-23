@@ -1,19 +1,20 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useGetCurrentChallengeQuery, useGetChallengeHistoryQuery, useCompleteChallengeMutation } from '../features/api/apiSlice';
+import { useGetCurrentChallengeQuery, useGetChallengeHistoryQuery, useCompleteChallengeMutation, useAddWordMutation } from '../features/api/apiSlice';
 import { Button } from "@/components/ui/button";
-import { Mic, Square, Play, Send, Loader2, CheckCircle2 } from "lucide-react";
-import WordForm from './WordForm';
+import { Mic, Square, Play, Send, Loader2, CheckCircle2, PlusCircle, X } from "lucide-react";
 
-const ChallengeMode = ({ onAddWord }) => {
+const ChallengeMode = () => {
   const { data: history, isLoading: isHistoryLoading, refetch: refetchHistory } = useGetChallengeHistoryQuery();
   const { data: currentChallenge, isLoading: isCurrentLoading, refetch: refetchCurrent } = useGetCurrentChallengeQuery();
   const [completeChallenge, { isLoading: isCompleting }] = useCompleteChallengeMutation();
+  const [addWord, { isLoading: isAddingWord }] = useAddWordMutation();
 
   const [isRecording, setIsRecording] = useState(false);
   const [audioUrl, setAudioUrl] = useState(null);
   const [audioBase64, setAudioBase64] = useState(null);
   const [error, setError] = useState("");
   const [selectedWord, setSelectedWord] = useState(null);
+  const [addWordSuccess, setAddWordSuccess] = useState(false);
 
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
@@ -77,6 +78,20 @@ const ChallengeMode = ({ onAddWord }) => {
       refetchCurrent();
     } catch (err) {
       setError("Saqlashda xatolik yuz berdi. Iltimos qayta urinib ko'ring.");
+    }
+  };
+
+  const handleQuickAddWord = async () => {
+    if (!selectedWord) return;
+    try {
+      await addWord({ word: selectedWord, skipAI: false }).unwrap();
+      setAddWordSuccess(true);
+      setTimeout(() => {
+        setAddWordSuccess(false);
+        setSelectedWord(null);
+      }, 2000);
+    } catch (err) {
+      setError("So'zni qo'shishda xatolik yuz berdi. Internetni tekshiring.");
     }
   };
 
@@ -220,16 +235,34 @@ const ChallengeMode = ({ onAddWord }) => {
             {selectedWord && (
                 <div className="mb-8 p-6 bg-secondary/30 rounded-2xl border border-primary/20 animate-fade-in-up">
                     <div className="flex justify-between items-center mb-4">
-                        <h4 className="font-bold text-lg">"{selectedWord}" ni saqlash</h4>
-                        <Button variant="ghost" size="sm" onClick={() => setSelectedWord(null)}>Yopish</Button>
+                        <h4 className="font-bold text-lg">Lug'atga qo'shish</h4>
+                        <Button variant="ghost" size="sm" onClick={() => { setSelectedWord(null); setAddWordSuccess(false); }} className="h-8 w-8 p-0">
+                           <X className="w-5 h-5 text-muted-foreground" />
+                        </Button>
                     </div>
-                    {/* We pass in the selected word to the WordForm by using a key to remount it, 
-                        or we can just let WordForm be empty and user types it, but let's pre-fill if possible. 
-                        WordForm currently manages its own state, so a wrapper or just instructions is easier.
-                        Let's render WordForm and tell them to add it. */}
-                    <div className="bg-background p-4 rounded-xl border">
-                        <p className="text-sm text-muted-foreground mb-4">Ushbu so'zni o'z lug'atingizga qo'shib qo'ying:</p>
-                        <WordForm onAddWord={onAddWord} />
+                    
+                    <div className="bg-background p-6 rounded-xl border flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
+                        {addWordSuccess ? (
+                           <div className="flex items-center text-green-500 font-bold gap-2 w-full justify-center">
+                               <CheckCircle2 className="w-6 h-6" />
+                               "{selectedWord}" Word Lab'ga muvaffaqiyatli qo'shildi! AI uni avtomatik tarjima qildi.
+                           </div>
+                        ) : (
+                           <>
+                             <div>
+                                 <p className="text-base text-card-foreground font-medium"> 
+                                     <strong className="text-primary text-xl">"{selectedWord}"</strong> so'zini lug'atingizga qo'shmoqchimisiz?
+                                 </p>
+                                 <p className="text-sm text-muted-foreground mt-1">AI avtomatik tarzda tarjima, ta'rif va misollarni topadi.</p>
+                             </div>
+                             <div className="flex gap-3">
+                                 <Button variant="outline" onClick={() => setSelectedWord(null)}>Yo'q</Button>
+                                 <Button onClick={handleQuickAddWord} disabled={isAddingWord} className="min-w-[100px]">
+                                     {isAddingWord ? <Loader2 className="w-4 h-4 animate-spin" /> : <><PlusCircle className="w-4 h-4 mr-2" /> Qo'shish</>}
+                                 </Button>
+                             </div>
+                           </>
+                        )}
                     </div>
                 </div>
             )}
