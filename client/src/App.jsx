@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { setActiveTab } from './features/ui/uiSlice';
+import { logout } from './features/auth/authSlice';
 import { 
   useGetWordsQuery, 
   useAddWordMutation, 
-  useDeleteWordMutation 
+  useDeleteWordMutation,
+  useGetReviewDueQuery 
 } from './features/api/apiSlice';
 import WordCard from './components/WordCard';
 import WordForm from './components/WordForm';
@@ -34,29 +36,15 @@ function App() {
   const dispatch = useDispatch();
 
   // RTK Query State
-  const { data: words = [], isLoading, isError: isWordsError } = useGetWordsQuery();
+  const { data: words = [], isLoading, isError: isWordsError } = useGetWordsQuery(undefined, { skip: !isAuthenticated });
+  const { data: reviewDueList } = useGetReviewDueQuery(undefined, { skip: !isAuthenticated });
+  const reviewDueCount = reviewDueList ? reviewDueList.length : 0;
+  
   const [addWordMutation] = useAddWordMutation();
   const [deleteWordMutation] = useDeleteWordMutation();
 
   const [error, setError] = useState(null);
-  const [reviewDueCount, setReviewDueCount] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
-
-  const fetchReviewCount = async () => {
-      try {
-          const res = await fetch(`${API_URL}/api/review/due`);
-          const data = await res.json();
-          setReviewDueCount(Array.isArray(data) ? data.length : 0);
-      } catch (err) {
-          console.error("Failed to fetch review count", err);
-      }
-  };
-
-  // Re-fetch review count whenever the RTK Query 'words' data updates 
-  // (e.g. after a checkReviewMutation invalidates the Word tag)
-  useEffect(() => {
-    fetchReviewCount();
-  }, [words]);
 
   const handleTabChange = (tab) => {
     dispatch(setActiveTab(tab));
@@ -134,7 +122,19 @@ function App() {
         
         {/* Header Section */}
         <header className="mb-8 md:mb-12 text-center pt-2 md:pt-0 relative z-20">
-          <div className="absolute top-0 right-0 hidden md:block z-50 pointer-events-auto">
+          <div className="absolute top-0 right-0 hidden md:flex items-center gap-4 z-50 pointer-events-auto">
+            {user && (
+              <div className="flex items-center gap-3 bg-secondary px-4 py-2 rounded-full border border-border shadow-sm">
+                <span className="text-sm font-medium text-foreground">{user.name}</span>
+                <span className="w-px h-4 bg-border"></span>
+                <button 
+                  onClick={() => dispatch(logout())}
+                  className="text-xs text-destructive hover:underline font-bold"
+                >
+                  Logout
+                </button>
+              </div>
+            )}
             <ThemeToggle />
           </div>
           <h1 className="text-3xl md:text-6xl font-black text-primary mb-4 tracking-tight drop-shadow-sm">

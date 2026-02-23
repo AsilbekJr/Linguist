@@ -2,7 +2,6 @@ const express = require('express');
 const router = express.Router();
 const Challenge = require('../models/Challenge');
 const Word = require('../models/Word');
-const Word = require('../models/Word');
 const { generateChallengeText } = require('../services/geminiService');
 const { protect } = require('../middleware/authMiddleware');
 
@@ -66,7 +65,12 @@ router.get('/current', protect, async (req, res) => {
         }
 
         // 3. Generate text using Gemini
-        const generatedText = await generateChallengeText(randomTopic, targetWords, nextDaynum);
+        let generatedText = null;
+        try {
+            generatedText = await generateChallengeText(randomTopic, targetWords, nextDaynum);
+        } catch (err) {
+            console.error("AI Generation failed for challenge, using fallback:", err.message);
+        }
 
         // 4. Save to DB
         const newChallenge = new Challenge({

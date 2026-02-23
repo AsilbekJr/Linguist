@@ -35,6 +35,10 @@ export const apiSlice = createApi({
       }),
       invalidatesTags: ['Word'],
     }),
+    getReviewDue: builder.query({
+      query: () => '/api/review/due',
+      providesTags: ['Word'],
+    }),
     checkReview: builder.mutation({
       query: ({ id, sentence }) => ({
         url: `/api/review/${id}/check`,
@@ -117,4 +121,5 @@ export const {
   useLoginMutation,
   useRegisterMutation,
   useGetMeQuery,
+  useGetReviewDueQuery,
 } = apiSlice;
