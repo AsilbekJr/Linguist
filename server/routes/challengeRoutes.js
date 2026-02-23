@@ -64,7 +64,7 @@ router.get('/current', async (req, res) => {
         }
 
         // 3. Generate text using Gemini
-        const generatedText = await generateChallengeText(randomTopic, targetWords);
+        const generatedText = await generateChallengeText(randomTopic, targetWords, nextDaynum);
 
         // 4. Save to DB
         const newChallenge = new Challenge({

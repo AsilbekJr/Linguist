@@ -116,25 +116,46 @@ const ChallengeMode = ({ onAddWord }) => {
     );
   };
 
-  // Convert text with markdown asterisks to JSX highlighting
+  // Convert text with markdown asterisks to JSX highlighting, making every word clickable
   const renderTextContent = (text) => {
     if (!text) return null;
-    const parts = text.split(/(\*\*.*?\*\*)/g);
-    return parts.map((part, i) => {
-        if (part.startsWith('**') && part.endsWith('**')) {
-            const word = part.substring(2, part.length - 2);
-            return (
-              <strong 
-                key={i} 
-                onClick={() => setSelectedWord(word)}
-                className="text-primary font-black bg-primary/10 px-1 rounded mx-0.5 cursor-pointer hover:bg-primary/20 transition-colors"
-                title="Click to add to Word Lab"
-              >
-                {word}
-              </strong>
-            );
-        }
-        return <span key={i}>{part}</span>;
+    
+    // Split text by boundaries (spaces or newlines) to process word by word
+    const wordsAndSpaces = text.split(/(\s+)/);
+    
+    return wordsAndSpaces.map((segment, i) => {
+      // If it's just whitespace, return as is
+      if (/^\s+$/.test(segment)) {
+        return <span key={i}>{segment}</span>;
+      }
+      
+      let isTarget = false;
+      let cleanWord = segment;
+      
+      if (cleanWord.startsWith('**') && cleanWord.endsWith('**')) {
+        isTarget = true;
+        cleanWord = cleanWord.substring(2, cleanWord.length - 2);
+      }
+      
+      // Strip punctuation for the word to save
+      const wordToSave = cleanWord.replace(/[.,/#!$%^&*;:{}=\-_`~()]/g, "").trim();
+
+      return (
+        <span 
+          key={i}
+          onClick={() => {
+            if (wordToSave.length > 0) setSelectedWord(wordToSave);
+          }}
+          className={`cursor-pointer transition-colors ${
+            isTarget 
+              ? 'text-primary font-black bg-primary/10 px-1 rounded mx-0.5 hover:bg-primary/20' 
+              : 'hover:bg-muted-foreground/20 hover:text-primary rounded px-0.5'
+          }`}
+          title="Lug'atga qo'shish uchun bosing"
+        >
+          {cleanWord}
+        </span>
+      );
     });
   };
 
@@ -154,7 +175,7 @@ const ChallengeMode = ({ onAddWord }) => {
           100 Days Challenge 🎯
         </h2>
         <p className="text-base md:text-lg text-muted-foreground">
-          Har kuni bitta matn o'qing va nutqingizni yozib qoldiring. Izchillik - muvaffaqiyat kaliti!
+          Har kuni berilgan matnni yodlang va yoddan aytib yozib qoldiring. Izchillik - muvaffaqiyat kaliti!
         </p>
       </div>
 
@@ -230,7 +251,7 @@ const ChallengeMode = ({ onAddWord }) => {
                             {isRecording ? <Square className="w-8 h-8" /> : <Mic className="w-8 h-8" />}
                         </Button>
                         <p className="text-sm font-medium text-muted-foreground">
-                            {isRecording ? 'Yozib olinmoqda... To\'xtatish uchun bosing' : 'O\'qishni boshlash uchun bosing'}
+                            {isRecording ? 'Yozib olinmoqda... To\'xtatish uchun bosing' : 'Yoddan aytishni boshlash uchun bosing'}
                         </p>
                     </div>
                 ) : (

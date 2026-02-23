@@ -307,21 +307,26 @@ const generateRoleplayResponse = async (scenario, targetWords, chatHistory, user
     }
 };
 
-const generateChallengeText = async (topic, targetWords) => {
+const generateChallengeText = async (topic, targetWords, dayNumber = 1) => {
     try {
         if (!genAI) return null;
 
         const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
         const wordsList = targetWords && targetWords.length > 0 ? targetWords.join(", ") : "none";
+        
+        // Calculate target word count based on dayNumber (Day 1: ~30 words, Day 100: ~200 words)
+        const minWords = Math.min(20 + (dayNumber * 1.5), 180);
+        const maxWords = minWords + 30;
 
         const prompt = `
         Act as an expert English curriculum designer.
-        Write a short, engaging conversational text (around 100-150 words) about the topic: "${topic}".
+        Write a short, engaging conversational text about the topic: "${topic}".
         
         CRITICAL RULES:
-        1. The text must be natural, easy to read aloud, and targeted at an intermediate (B1/B2) English learner.
-        2. You MUST seamlessly incorporate as many of these target vocabulary words into the text as naturally possible: [${wordsList}].
-        3. Bold the target words you used by surrounding them with double asterisks (e.g., **word**).
+        1. The text MUST be approximately between ${Math.floor(minWords)} and ${Math.floor(maxWords)} words long. It is day ${dayNumber} out of 100, so the length must appropriately match this limit. Day 1 should be very short, and day 100 should be the longest.
+        2. The text must be natural, easy to memorize, and targeted at an intermediate (B1/B2) English learner. The purpose is for the user to commit this to memory and recite it.
+        3. You MUST seamlessly incorporate as many of these target vocabulary words into the text as naturally possible: [${wordsList}].
+        4. Bold the target words you used by surrounding them with double asterisks (e.g., **word**).
         
         Return ONLY the raw text. Do not add any introductory or concluding remarks. Just the reading text itself.
         `;
