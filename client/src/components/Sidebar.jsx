@@ -1,14 +1,21 @@
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Menu, Home, CheckCircle, Book, Mic } from "lucide-react";
+import { Menu, CheckCircle, Book, Mic, GraduationCap, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "./ThemeToggle";
+import { useDispatch } from 'react-redux';
+import { logout } from '../features/auth/authSlice';
 
-const Sidebar = ({ activeTab, onTabChange }) => {
-  const [open, setOpen] = useState(false);
+const Sidebar = ({ activeTab, onTabChange, user }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const dispatch = useDispatch();
 
-  const menuItems = [
+  const handleLogout = () => {
+    dispatch(logout());
+  };
+
+  const navItems = [
     { id: 'review-mode', label: 'Review', icon: CheckCircle },
     { id: 'dictionary', label: 'Dictionary', icon: Book },
     { id: 'speaking-lab', label: 'Speaking Lab', icon: Mic },
@@ -19,7 +26,7 @@ const Sidebar = ({ activeTab, onTabChange }) => {
   return (
     <div className="md:hidden fixed top-0 left-0 right-0 h-16 bg-background/95 backdrop-blur-md border-b border-border z-50 flex items-center px-4 justify-between">
       <div className="flex items-center">
-        <Sheet open={open} onOpenChange={setOpen}>
+        <Sheet open={isOpen} onOpenChange={setIsOpen}>
           <SheetTrigger asChild>
             <Button variant="outline" size="icon" className="border-primary/20 hover:bg-primary/20 shrink-0">
               <Menu className="h-5 w-5" />
@@ -36,23 +43,37 @@ const Sidebar = ({ activeTab, onTabChange }) => {
             </SheetTitle>
           </SheetHeader>
           <div className="flex flex-col gap-2">
-            {menuItems.map((item) => (
+            {navItems.map((item) => (
               <Button
                 key={item.id}
                 variant={activeTab === item.id ? "secondary" : "ghost"}
-                className={cn(
-                  "justify-start gap-4 text-lg h-12 font-normal pl-4",
-                  activeTab === item.id && "bg-primary/10 text-primary font-medium"
-                )}
+                className={`w-full justify-start text-left font-medium ${activeTab === item.id ? 'bg-primary/10 text-primary' : 'hover:bg-accent hover:text-accent-foreground'}`}
                 onClick={() => {
                   onTabChange(item.id);
-                  setOpen(false);
+                  setIsOpen(false);
                 }}
               >
-                <item.icon className="h-5 w-5" />
+                <item.icon className="mr-2 h-4 w-4" />
                 {item.label}
               </Button>
             ))}
+            
+            <div className="mt-8 pt-4 border-t">
+               {user && (
+                 <div className="mb-4 px-2">
+                    <p className="text-sm font-medium text-foreground">{user.name}</p>
+                    <p className="text-xs text-muted-foreground">{user.email}</p>
+                 </div>
+               )}
+               <Button
+                  variant="destructive"
+                  className="w-full justify-start"
+                  onClick={handleLogout}
+               >
+                 <LogOut className="mr-2 h-4 w-4" />
+                 Dasturdan chiqish
+               </Button>
+            </div>
           </div>
         </SheetContent>
       </Sheet>

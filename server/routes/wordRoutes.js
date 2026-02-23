@@ -2,12 +2,13 @@ const express = require('express');
 const router = express.Router();
 const Word = require('../models/Word');
 const { generateWordContext, validateWord } = require('../services/geminiService');
+const { protect } = require('../middleware/authMiddleware');
 
 // @desc    Get all words
 // @route   GET /api/words
-router.get('/', async (req, res) => {
+router.get('/', protect, async (req, res) => {
     try {
-        const words = await Word.find({}).sort({ createdAt: -1 });
+        const words = await Word.find({ user: req.user._id }).sort({ createdAt: -1 });
         res.json(words);
     } catch (error) {
         console.error("Error fetching words:", error);
@@ -17,7 +18,7 @@ router.get('/', async (req, res) => {
 
 // @desc    Add a word (with AI context and validation)
 // @route   POST /api/words
-router.post('/', async (req, res) => {
+router.post('/', protect, async (req, res) => {
     try {
         let { word } = req.body;
 
@@ -29,7 +30,7 @@ router.post('/', async (req, res) => {
         word = word.trim().charAt(0).toUpperCase() + word.trim().slice(1).toLowerCase();
 
         // 2. Check Logic: Duplicate?
-        const existingWord = await Word.findOne({ word });
+        const existingWord = await Word.findOne({ word, user: req.user._id });
         if (existingWord) {
             return res.status(400).json({ 
                 message: `The word "${word}" is already in your list.`,
@@ -88,6 +89,7 @@ router.post('/', async (req, res) => {
         }
 
         const newWord = await Word.create({
+            user: req.user._id,
             word: aiContext.word || word, // Use AI's capitalization if it differs
             definition: aiContext.definition,
             translation: aiContext.translation || req.body.manualTranslation || "",
@@ -108,9 +110,9 @@ router.post('/', async (req, res) => {
 
 // @desc    Delete a word
 // @route   DELETE /api/words/:id
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', protect, async (req, res) => {
     try {
-        const word = await Word.findById(req.params.id);
+        const word = await Word.findOne({ _id: req.params.id, user: req.user._id });
 
         if (!word) {
             return res.status(404).json({ message: 'Word not found' });

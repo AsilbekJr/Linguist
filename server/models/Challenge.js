@@ -1,6 +1,11 @@
 const mongoose = require('mongoose');
 
 const challengeSchema = new mongoose.Schema({
+  user: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true,
+  },
   dayNumber: {
     type: Number,
     required: true,
@@ -25,7 +30,6 @@ const challengeSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 // A user should only have exactly one record per dayNumber.
-// If multi-user auth is added later, this should be a compound index with userId.
-challengeSchema.index({ dayNumber: 1 }, { unique: true });
+challengeSchema.index({ user: 1, dayNumber: 1 }, { unique: true });
 
 module.exports = mongoose.model('Challenge', challengeSchema);

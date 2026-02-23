@@ -12,6 +12,7 @@ const reviewRoutes = require('./routes/reviewRoutes');
 const speakingRoutes = require('./routes/speakingRoutes');
 const roleplayRoutes = require('./routes/roleplayRoutes');
 const challengeRoutes = require('./routes/challengeRoutes');
+const authRoutes = require('./routes/authRoutes');
 
 const app = express();
 
@@ -30,6 +31,7 @@ app.use('/api/review', reviewRoutes);
 app.use('/api/speaking', speakingRoutes);
 app.use('/api/roleplay', roleplayRoutes);
 app.use('/api/challenge', challengeRoutes);
+app.use('/api/auth', authRoutes);
 
 const PORT = process.env.PORT || 5000;
 

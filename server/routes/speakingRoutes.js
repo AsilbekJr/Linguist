@@ -1,10 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const { translateUzbekToEnglish, evaluatePronunciation } = require('../services/geminiService');
+const { protect } = require('../middleware/authMiddleware');
 
 // POST /api/speaking/translate
 // Accepts an Uzbek text, returns structured English translations
-router.post('/translate', async (req, res) => {
+router.post('/translate', protect, async (req, res) => {
     try {
         const { text } = req.body;
         
@@ -30,7 +31,7 @@ router.post('/translate', async (req, res) => {
 
 // POST /api/speaking/evaluate
 // Compares spoken transcript against the actual target English sentence
-router.post('/evaluate', async (req, res) => {
+router.post('/evaluate', protect, async (req, res) => {
     try {
         const { targetSentence, spokenText } = req.body;
         

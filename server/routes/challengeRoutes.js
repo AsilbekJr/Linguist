@@ -2,7 +2,9 @@ const express = require('express');
 const router = express.Router();
 const Challenge = require('../models/Challenge');
 const Word = require('../models/Word');
+const Word = require('../models/Word');
 const { generateChallengeText } = require('../services/geminiService');
+const { protect } = require('../middleware/authMiddleware');
 
 const TOPICS = [
     "A Memorable Travel Experience",
@@ -23,10 +25,10 @@ const TOPICS = [
 ];
 
 // Get current pending challenge (or create a new one for today)
-router.get('/current', async (req, res) => {
+router.get('/current', protect, async (req, res) => {
     try {
         // Find the latest challenge
-        const lastChallenge = await Challenge.findOne().sort({ dayNumber: -1 });
+        const lastChallenge = await Challenge.findOne({ user: req.user._id }).sort({ dayNumber: -1 });
         
         // If there's a pending challenge today or from a previous day, return it so they can complete it
         if (lastChallenge && lastChallenge.status === 'pending') {
@@ -55,7 +57,7 @@ router.get('/current', async (req, res) => {
         let targetWords = [];
         try {
             const activeWords = await Word.aggregate([
-                { $match: { srsStage: { $lt: 5 } } },
+                { $match: { user: req.user._id, srsStage: { $lt: 5 } } },
                 { $sample: { size: 5 } }
             ]);
             targetWords = activeWords.map(w => w.word);
@@ -68,6 +70,7 @@ router.get('/current', async (req, res) => {
 
         // 4. Save to DB
         const newChallenge = new Challenge({
+            user: req.user._id,
             dayNumber: nextDaynum,
             topic: randomTopic,
             text: generatedText || "This is a fallback text because AI generation failed. Welcome to your challenge! Read this text aloud to practice.",
@@ -84,10 +87,10 @@ router.get('/current', async (req, res) => {
 });
 
 // Get all challenges history
-router.get('/history', async (req, res) => {
+router.get('/history', protect, async (req, res) => {
     try {
         // Find all challenges and sort by dayNumber
-        const history = await Challenge.find().sort({ dayNumber: 1 });
+        const history = await Challenge.find({ user: req.user._id }).sort({ dayNumber: 1 });
         res.json(history);
     } catch (error) {
         console.error("Error fetching challenge history:", error);
@@ -96,7 +99,7 @@ router.get('/history', async (req, res) => {
 });
 
 // Complete a challenge (upload audio)
-router.post('/complete', async (req, res) => {
+router.post('/complete', protect, async (req, res) => {
     try {
         const { challengeId, audioData } = req.body;
 
@@ -104,7 +107,7 @@ router.post('/complete', async (req, res) => {
             return res.status(400).json({ error: 'Challenge ID and audio data are required' });
         }
 
-        const challenge = await Challenge.findById(challengeId);
+        const challenge = await Challenge.findOne({ _id: challengeId, user: req.user._id });
         
         if (!challenge) {
             return res.status(404).json({ error: 'Challenge not found' });

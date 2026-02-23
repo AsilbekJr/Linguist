@@ -1,10 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const { generateRoleplayResponse } = require('../services/geminiService');
+const { protect } = require('../middleware/authMiddleware');
 
 // @desc    Handle chat interaction for Roleplay Immersion mode
 // @route   POST /api/roleplay/chat
-router.post('/chat', async (req, res) => {
+router.post('/chat', protect, async (req, res) => {
     const { scenario, targetWords = [], chatHistory = [], message } = req.body;
 
     if (!scenario || !message) {

@@ -16,6 +16,8 @@ import ChallengeMode from './components/ChallengeMode';
 import { groupWordsByDate } from './utils/dateUtils';
 import Sidebar from './components/Sidebar';
 import { ThemeToggle } from './components/ThemeToggle';
+import Login from './components/Auth/Login';
+import Register from './components/Auth/Register';
 import { CheckCircle2, ChevronLeft, Calendar } from 'lucide-react';
 
 function App() {
@@ -23,7 +25,12 @@ function App() {
   
   // RTK UI State
   const activeTab = useSelector((state) => state.ui.activeTab);
+  const isAuthenticated = useSelector((state) => state.auth.isAuthenticated);
+  const user = useSelector((state) => state.auth.user);
+  
   const [activeDateGroup, setActiveDateGroup] = useState(null);
+  const [showRegister, setShowRegister] = useState(false);
+  
   const dispatch = useDispatch();
 
   // RTK Query State
@@ -104,9 +111,24 @@ function App() {
     );
   }, [words, searchQuery]);
 
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-background text-foreground selection:bg-primary/30 font-sans flex items-center justify-center p-4">
+        <div className="absolute top-4 right-4 z-50 pointer-events-auto">
+            <ThemeToggle />
+        </div>
+        {showRegister ? (
+           <Register onSwitchToLogin={() => setShowRegister(false)} />
+        ) : (
+           <Login onSwitchToRegister={() => setShowRegister(true)} />
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background text-foreground selection:bg-primary/30 font-sans">
-      <Sidebar activeTab={activeTab} onTabChange={handleTabChange} />
+      <Sidebar activeTab={activeTab} onTabChange={handleTabChange} user={user} />
       
       <div className="max-w-7xl mx-auto px-4 md:px-6 py-8 md:py-12 pt-20 md:pt-12">
         

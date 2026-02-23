@@ -2,18 +2,16 @@ const express = require('express');
 const router = express.Router();
 const Word = require('../models/Word');
 const { checkSentence } = require('../services/geminiService');
+const { protect } = require('../middleware/authMiddleware');
 
 // @desc    Get words due for review
 // @route   GET /api/review/due
-router.get('/due', async (req, res) => {
+router.get('/due', protect, async (req, res) => {
     try {
         const now = new Date();
-        // Find words where nextReviewDate exists AND is less than or equal to now (or null/undefined yet to be set)
-        // For simplicity in this iteration, we treat null nextReviewDate as "due now" or handle it on creation.
-        // Actually, let's just find all words where nextReviewDate <= now 
-        // OR words that don't have a nextReviewDate yet (legacy data)
         
         const dueWords = await Word.find({
+            user: req.user._id,
             $or: [
                 { nextReviewDate: { $lte: now } },
                 { nextReviewDate: { $exists: false } },
@@ -31,7 +29,7 @@ router.get('/due', async (req, res) => {
 
 // @desc    Check a sentence for a word and update SRS stage
 // @route   POST /api/review/:id/check
-router.post('/:id/check', async (req, res) => {
+router.post('/:id/check', protect, async (req, res) => {
     const { sentence } = req.body;
     const wordId = req.params.id;
 
@@ -40,7 +38,7 @@ router.post('/:id/check', async (req, res) => {
     }
 
     try {
-        const wordDoc = await Word.findById(wordId);
+        const wordDoc = await Word.findOne({ _id: wordId, user: req.user._id });
         if (!wordDoc) {
             return res.status(404).json({ message: "Word not found" });
         }

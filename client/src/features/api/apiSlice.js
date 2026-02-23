@@ -4,8 +4,17 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:5000';
 
 export const apiSlice = createApi({
   reducerPath: 'api',
-  baseQuery: fetchBaseQuery({ baseUrl: API_URL }),
-  tagTypes: ['Word'],
+  baseQuery: fetchBaseQuery({ 
+    baseUrl: API_URL,
+    prepareHeaders: (headers, { getState }) => {
+      const token = getState().auth.token;
+      if (token) {
+        headers.set('authorization', `Bearer ${token}`);
+      }
+      return headers;
+    },
+  }),
+  tagTypes: ['Word', 'Challenge'],
   endpoints: (builder) => ({
     getWords: builder.query({
       query: () => '/api/words',
@@ -72,6 +81,25 @@ export const apiSlice = createApi({
       }),
       invalidatesTags: ['Challenge'],
     }),
+
+    // Auth
+    login: builder.mutation({
+      query: (credentials) => ({
+        url: '/api/auth/login',
+        method: 'POST',
+        body: credentials,
+      }),
+    }),
+    register: builder.mutation({
+      query: (userData) => ({
+        url: '/api/auth/register',
+        method: 'POST',
+        body: userData,
+      }),
+    }),
+    getMe: builder.query({
+      query: () => '/api/auth/me',
+    }),
   }),
 });
 
@@ -86,4 +114,7 @@ export const {
   useGetCurrentChallengeQuery,
   useGetChallengeHistoryQuery,
   useCompleteChallengeMutation,
+  useLoginMutation,
+  useRegisterMutation,
+  useGetMeQuery,
 } = apiSlice;
