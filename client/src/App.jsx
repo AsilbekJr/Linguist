@@ -15,6 +15,7 @@ import RoleplayMode from './components/RoleplayMode';
 import ChallengeMode from './components/ChallengeMode';
 import { groupWordsByDate } from './utils/dateUtils';
 import Sidebar from './components/Sidebar';
+import { ThemeToggle } from './components/ThemeToggle';
 import { CheckCircle2, ChevronLeft, Calendar } from 'lucide-react';
 
 function App() {
@@ -110,7 +111,10 @@ function App() {
       <div className="max-w-7xl mx-auto px-4 md:px-6 py-8 md:py-12 pt-20 md:pt-12">
         
         {/* Header Section */}
-        <header className="mb-8 md:mb-12 text-center pt-2 md:pt-0">
+        <header className="mb-8 md:mb-12 text-center pt-2 md:pt-0 relative">
+          <div className="absolute top-0 right-0 hidden md:block">
+            <ThemeToggle />
+          </div>
           <h1 className="text-3xl md:text-6xl font-black text-primary mb-4 tracking-tight drop-shadow-sm">
             Linguist AI-Flow
           </h1>

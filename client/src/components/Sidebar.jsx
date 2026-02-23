@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Menu, Home, CheckCircle, Book, Mic } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ThemeToggle } from "./ThemeToggle";
 
 const Sidebar = ({ activeTab, onTabChange }) => {
   const [open, setOpen] = useState(false);
@@ -16,18 +17,19 @@ const Sidebar = ({ activeTab, onTabChange }) => {
   ];
 
   return (
-    <div className="md:hidden fixed top-0 left-0 right-0 h-16 bg-background/95 backdrop-blur-md border-b border-border z-50 flex items-center px-4">
-      <Sheet open={open} onOpenChange={setOpen}>
-        <SheetTrigger asChild>
-          <Button variant="outline" size="icon" className="border-primary/20 hover:bg-primary/20 shrink-0">
-            <Menu className="h-5 w-5" />
-            <span className="sr-only">Toggle menu</span>
-          </Button>
-        </SheetTrigger>
-        <div className="ml-4 font-black flex items-center text-lg bg-gradient-to-r from-primary via-purple-500 to-pink-500 bg-clip-text text-transparent">
-          Linguist AI-Flow
-        </div>
-        <SheetContent side="left" className="w-[80%] max-w-[300px] bg-background/95 backdrop-blur-xl border-r-primary/20">
+    <div className="md:hidden fixed top-0 left-0 right-0 h-16 bg-background/95 backdrop-blur-md border-b border-border z-50 flex items-center px-4 justify-between">
+      <div className="flex items-center">
+        <Sheet open={open} onOpenChange={setOpen}>
+          <SheetTrigger asChild>
+            <Button variant="outline" size="icon" className="border-primary/20 hover:bg-primary/20 shrink-0">
+              <Menu className="h-5 w-5" />
+              <span className="sr-only">Toggle menu</span>
+            </Button>
+          </SheetTrigger>
+          <div className="ml-4 font-black flex items-center text-lg bg-gradient-to-r from-primary via-purple-500 to-pink-500 bg-clip-text text-transparent">
+            Linguist AI-Flow
+          </div>
+          <SheetContent side="left" className="w-[80%] max-w-[300px] bg-background/95 backdrop-blur-xl border-r-primary/20">
           <SheetHeader className="mb-8">
             <SheetTitle className="text-2xl font-bold bg-gradient-to-r from-primary to-purple-500 bg-clip-text text-transparent text-left pl-4">
               Linguist AI
@@ -54,6 +56,8 @@ const Sidebar = ({ activeTab, onTabChange }) => {
           </div>
         </SheetContent>
       </Sheet>
+      </div>
+      <ThemeToggle />
     </div>
   );
 };
