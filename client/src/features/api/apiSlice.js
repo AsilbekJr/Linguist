@@ -64,7 +64,7 @@ export const apiSlice = createApi({
     }),
     chatRoleplay: builder.mutation({
       query: (data) => ({
-        url: '/roleplay/chat',
+        url: '/api/roleplay/chat',
         method: 'POST',
         body: data,
       }),

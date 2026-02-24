@@ -52,7 +52,6 @@ router.get('/current', protect, async (req, res) => {
         // 1. Pick a topic
         const randomTopic = TOPICS[Math.floor(Math.random() * TOPICS.length)];
 
-        // 2. Fetch some target words from the user's vocabulary (e.g. 5 random words that are not 'Mastered')
         let targetWords = [];
         try {
             const activeWords = await Word.aggregate([
@@ -72,12 +71,18 @@ router.get('/current', protect, async (req, res) => {
             console.error("AI Generation failed for challenge, using fallback:", err.message);
         }
 
+        // Generate dynamic fallback text if target words exist
+        let fallbackText = "This is a fallback text because AI generation failed. Welcome to your challenge! Read this text aloud to practice.";
+        if (targetWords.length > 0) {
+            fallbackText = `AI API is currently busy (Quota limit). Please manually read and practice these target words for your daily challenge:\n\n**${targetWords.join('**\n**')}**\n\nTry to create your own short story or sentences using these words.`;
+        }
+
         // 4. Save to DB
         const newChallenge = new Challenge({
             user: req.user._id,
             dayNumber: nextDaynum,
             topic: randomTopic,
-            text: generatedText || "This is a fallback text because AI generation failed. Welcome to your challenge! Read this text aloud to practice.",
+            text: generatedText || fallbackText,
             status: 'pending'
         });
         await newChallenge.save();

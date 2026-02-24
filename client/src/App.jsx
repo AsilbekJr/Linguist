@@ -36,9 +36,16 @@ function App() {
   const dispatch = useDispatch();
 
   // RTK Query State
-  const { data: words = [], isLoading, isError: isWordsError } = useGetWordsQuery(undefined, { skip: !isAuthenticated });
-  const { data: reviewDueList } = useGetReviewDueQuery(undefined, { skip: !isAuthenticated });
+  const { data: words = [], isLoading, isError: isWordsError, error: wordsError } = useGetWordsQuery(undefined, { skip: !isAuthenticated });
+  const { data: reviewDueList, isError: isReviewError, error: reviewError } = useGetReviewDueQuery(undefined, { skip: !isAuthenticated });
   const reviewDueCount = reviewDueList ? reviewDueList.length : 0;
+
+  // Auto-logout on 401 Unauthorized
+  useEffect(() => {
+    if ((isWordsError && wordsError?.status === 401) || (isReviewError && reviewError?.status === 401)) {
+      dispatch(logout());
+    }
+  }, [isWordsError, wordsError, isReviewError, reviewError, dispatch]);
   
   const [addWordMutation] = useAddWordMutation();
   const [deleteWordMutation] = useDeleteWordMutation();
