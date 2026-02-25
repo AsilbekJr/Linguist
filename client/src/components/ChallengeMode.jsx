@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useGetCurrentChallengeQuery, useGetChallengeHistoryQuery, useCompleteChallengeMutation } from '../features/api/apiSlice';
 import { Button } from "@/components/ui/button";
-import { Mic, Square, Play, Send, Loader2, CheckCircle2, PlusCircle, X } from "lucide-react";
+import { Mic, Square, Play, Send, Loader2, CheckCircle2, PlusCircle, X, Volume2 } from "lucide-react";
 
 const ChallengeMode = ({ onAddWord }) => {
   const { data: history, isLoading: isHistoryLoading, refetch: refetchHistory } = useGetChallengeHistoryQuery();
@@ -15,6 +15,12 @@ const ChallengeMode = ({ onAddWord }) => {
   const [selectedWord, setSelectedWord] = useState(null);
   const [addWordSuccess, setAddWordSuccess] = useState(false);
   const [isAddingWord, setIsAddingWord] = useState(false);
+
+  const playPronunciation = (text) => {
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'en-GB';
+    window.speechSynthesis.speak(utterance);
+  };
 
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
@@ -264,7 +270,10 @@ const ChallengeMode = ({ onAddWord }) => {
                                  </p>
                                  <p className="text-sm text-muted-foreground mt-1">AI avtomatik tarzda tarjima, ta'rif va misollarni topadi.</p>
                              </div>
-                             <div className="flex gap-3">
+                             <div className="flex gap-3 mt-4 sm:mt-0">
+                                 <Button variant="secondary" onClick={() => playPronunciation(selectedWord)} title="Tinglash (UK)">
+                                     <Volume2 className="w-4 h-4 mr-2" /> Tinglash
+                                 </Button>
                                  <Button variant="outline" onClick={() => setSelectedWord(null)}>Yo'q</Button>
                                  <Button onClick={handleQuickAddWord} disabled={isAddingWord} className="min-w-[100px] text-white">
                                      {isAddingWord ? <Loader2 className="w-4 h-4 animate-spin text-white" /> : <><PlusCircle className="w-4 h-4 mr-2 text-white" /> Qo'shish</>}
