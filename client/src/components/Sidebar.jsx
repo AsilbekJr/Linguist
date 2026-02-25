@@ -62,9 +62,9 @@ const Sidebar = ({ user }) => {
         )}
         <button
           onClick={handleLogout}
-          className="w-full flex items-center justify-center gap-2 px-4 py-3 text-sm font-bold text-destructive hover:bg-destructive/10 rounded-xl transition-colors"
+          className="w-full group flex items-center justify-center gap-3 px-4 py-3.5 text-sm font-bold text-red-500 hover:text-white bg-red-500/10 hover:bg-red-500 rounded-xl transition-all duration-300 shadow-sm hover:shadow-red-500/25 mt-2"
         >
-          <LogOut className="w-5 h-5" />
+          <LogOut className="w-5 h-5 transition-transform group-hover:-translate-x-1" />
           Chiqish
         </button>
       </div>

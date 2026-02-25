@@ -30,4 +30,8 @@ const wordSchema = new mongoose.Schema({
     }
 });
 
+// Add indexes for performance
+wordSchema.index({ user: 1, createdAt: -1 });
+wordSchema.index({ user: 1, nextReviewDate: 1, reviewStage: 1 });
+
 module.exports = mongoose.model('Word', wordSchema);

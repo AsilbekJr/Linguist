@@ -4,6 +4,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { logout } from '../../features/auth/authSlice';
 import { ThemeToggle } from '../ThemeToggle';
 import Sidebar from '../Sidebar';
+import { LogOut } from 'lucide-react';
 
 const DashboardLayout = () => {
   const user = useSelector((state) => state.auth.user);
@@ -25,9 +26,10 @@ const DashboardLayout = () => {
               <span className="w-px h-4 bg-border"></span>
               <button 
                 onClick={() => dispatch(logout())}
-                className="text-xs text-destructive hover:underline font-bold"
+                className="group flex items-center gap-2 px-4 py-2 text-xs font-bold text-red-500 hover:text-white bg-red-500/10 hover:bg-red-500 rounded-lg transition-all duration-300 shadow-sm hover:shadow-red-500/25"
               >
-                Logout
+                Chiqish
+                <LogOut className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
               </button>
             </div>
           )}
