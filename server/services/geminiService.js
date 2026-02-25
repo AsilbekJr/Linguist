@@ -39,6 +39,7 @@ const generateWordContext = async (word) => {
         Return a JSON object with this EXACT structure (no markdown, just raw JSON):
         {
             "word": "${word}",
+            "phonetic": "The UK phonetic transcription of this word (e.g. /hɑːt/).",
             "definition": "A clear, concise definition tailored for an intermediate learner.",
             "translation": "The direct Uzbek (O'zbek tili) translation of this word.",
             "examples": ["Example sentence 1.", "Example sentence 2."],

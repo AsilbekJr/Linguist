@@ -17,8 +17,11 @@ const WordCard = ({ word, onDelete }) => {
       <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
         <div className="flex flex-col">
           <CardTitle className="text-2xl font-bold capitalize flex items-center gap-3">
-            <span className="bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent">{word.word}</span>
-            <Button variant="ghost" size="icon" className="h-8 w-8 text-primary hover:bg-primary/10 rounded-full" onClick={(e) => { e.stopPropagation(); playPronunciation(word.word); }} title="Tinglash (UK)">
+            <div className="flex flex-col">
+               <span className="bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent">{word.word}</span>
+               {word.phonetic && <span className="text-sm font-normal text-muted-foreground normal-case mt-0.5">{word.phonetic}</span>}
+            </div>
+            <Button variant="ghost" size="icon" className="h-8 w-8 text-primary hover:bg-primary/10 rounded-full shrink-0" onClick={(e) => { e.stopPropagation(); playPronunciation(word.word); }} title="Tinglash (UK)">
                <Volume2 className="w-4 h-4" />
             </Button>
           </CardTitle>

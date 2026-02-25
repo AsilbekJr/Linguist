@@ -91,6 +91,7 @@ router.post('/', protect, async (req, res) => {
         const newWord = await Word.create({
             user: req.user._id,
             word: aiContext.word || word, // Use AI's capitalization if it differs
+            phonetic: aiContext.phonetic || "",
             definition: aiContext.definition,
             translation: aiContext.translation || req.body.manualTranslation || "",
             examples: aiContext.examples,

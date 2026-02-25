@@ -10,6 +10,7 @@ const wordSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    phonetic: String,
     definition: String,
     translation: String,
     examples: [String],
