@@ -128,11 +128,11 @@ const ChallengeMode = ({ onAddWord }) => {
     }
 
     return (
-      <div className="grid grid-cols-10 gap-2 md:gap-3 mb-12 max-w-2xl mx-auto bg-card p-6 rounded-3xl border shadow-sm">
+      <div className="grid grid-cols-5 sm:grid-cols-10 gap-1.5 md:gap-3 mb-8 md:mb-12 max-w-2xl mx-auto bg-card p-4 md:p-6 rounded-2xl md:rounded-3xl border shadow-sm">
         {days.map(day => (
           <div 
             key={day}
-            className={`w-full aspect-square rounded-md md:rounded-lg flex items-center justify-center text-xs md:text-sm font-bold transition-all ${
+            className={`w-full aspect-square rounded flex items-center justify-center text-[10px] sm:text-xs md:text-sm font-bold transition-all ${
               completedDaysMap[day] 
               ? 'bg-green-500 text-white shadow-md shadow-green-500/20' 
               : 'bg-muted text-muted-foreground border border-border/50'
@@ -212,13 +212,13 @@ const ChallengeMode = ({ onAddWord }) => {
       {renderGrid()}
 
       {currentChallenge && currentChallenge.isFinished ? (
-         <div className="text-center bg-card p-12 rounded-3xl border-2 border-green-500/30">
+         <div className="text-center bg-card p-6 md:p-12 rounded-3xl border-2 border-green-500/30">
              <div className="text-6xl mb-6">🏆</div>
              <h3 className="text-3xl font-black text-foreground mb-4">Tabriklaymiz!</h3>
              <p className="text-xl text-muted-foreground">Siz 100 kunlik challenge'ni muvaffaqiyatli yakunladingiz!</p>
          </div>
       ) : currentChallenge && currentChallenge.isCompleteForToday ? (
-        <div className="text-center bg-card p-12 rounded-3xl border border-border shadow-sm">
+        <div className="text-center bg-card p-6 md:p-12 rounded-3xl border border-border shadow-sm">
              <div className="text-6xl mb-6">✅</div>
              <h3 className="text-2xl font-bold text-foreground mb-2">Bugungi vazifa bajarildi!</h3>
              <p className="text-muted-foreground">Ertaga yangi matn bilan qayting. Xotirjam dam oling!</p>
@@ -231,7 +231,7 @@ const ChallengeMode = ({ onAddWord }) => {
              )}
          </div>
       ) : currentChallenge ? (
-        <div className="bg-card rounded-3xl p-6 md:p-10 border border-border shadow-md">
+        <div className="bg-card rounded-2xl md:rounded-3xl p-5 md:p-10 border border-border shadow-md">
             <div className="flex justify-between items-center mb-6">
                 <span className="bg-primary/10 text-primary px-4 py-1.5 rounded-full text-sm font-bold">
                     Day {currentChallenge.dayNumber}
@@ -241,14 +241,14 @@ const ChallengeMode = ({ onAddWord }) => {
                 </span>
             </div>
             
-            <div className="bg-background rounded-2xl p-6 md:p-8 mb-8 border border-border">
+            <div className="bg-background rounded-2xl p-4 sm:p-6 md:p-8 mb-6 md:mb-8 border border-border">
                 <p className="text-lg md:text-xl leading-relaxed text-card-foreground">
                     {renderTextContent(currentChallenge.text)}
                 </p>
             </div>
 
             {selectedWord && (
-                <div className="mb-8 p-6 bg-secondary/30 rounded-2xl border border-primary/20 animate-fade-in-up">
+                <div className="mb-6 md:mb-8 p-4 sm:p-6 bg-secondary/30 rounded-2xl border border-primary/20 animate-fade-in-up">
                     <div className="flex justify-between items-center mb-4">
                         <h4 className="font-bold text-lg">Lug'atga qo'shish</h4>
                         <Button variant="ghost" size="sm" onClick={() => { setSelectedWord(null); setAddWordSuccess(false); }} className="h-8 w-8 p-0">
@@ -256,7 +256,7 @@ const ChallengeMode = ({ onAddWord }) => {
                         </Button>
                     </div>
                     
-                    <div className="bg-background p-6 rounded-xl border flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
+                    <div className="bg-background p-4 sm:p-6 rounded-xl border flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left overflow-hidden">
                         {addWordSuccess ? (
                            <div className="flex items-center text-green-500 font-bold gap-2 w-full justify-center">
                                <CheckCircle2 className="w-6 h-6" />
@@ -270,12 +270,12 @@ const ChallengeMode = ({ onAddWord }) => {
                                  </p>
                                  <p className="text-sm text-muted-foreground mt-1">AI avtomatik tarzda tarjima, ta'rif va misollarni topadi.</p>
                              </div>
-                             <div className="flex gap-3 mt-4 sm:mt-0">
-                                 <Button variant="secondary" onClick={() => playPronunciation(selectedWord)} title="Tinglash (UK)">
-                                     <Volume2 className="w-4 h-4 mr-2" /> Tinglash
+                             <div className="flex flex-wrap sm:flex-nowrap justify-center sm:justify-end w-full sm:w-auto gap-2 sm:gap-3 mt-4 sm:mt-0">
+                                 <Button variant="secondary" onClick={() => playPronunciation(selectedWord)} title="Tinglash (UK)" className="flex-1 sm:flex-none">
+                                     <Volume2 className="w-4 h-4 mr-2 shrink-0" /> Tinglash
                                  </Button>
-                                 <Button variant="outline" onClick={() => setSelectedWord(null)}>Yo'q</Button>
-                                 <Button onClick={handleQuickAddWord} disabled={isAddingWord} className="min-w-[100px] text-white">
+                                 <Button variant="outline" onClick={() => setSelectedWord(null)} className="flex-1 sm:flex-none">Yo'q</Button>
+                                 <Button onClick={handleQuickAddWord} disabled={isAddingWord} className="min-w-[100px] text-white flex-1 sm:flex-none w-full sm:w-auto mt-2 sm:mt-0">
                                      {isAddingWord ? <Loader2 className="w-4 h-4 animate-spin text-white" /> : <><PlusCircle className="w-4 h-4 mr-2 text-white" /> Qo'shish</>}
                                  </Button>
                              </div>
@@ -297,9 +297,9 @@ const ChallengeMode = ({ onAddWord }) => {
                         <Button 
                             onClick={isRecording ? stopRecording : startRecording}
                             size="lg"
-                            className={`w-20 h-20 rounded-full transition-all duration-300 ${isRecording ? 'bg-destructive hover:bg-destructive/90 animate-pulse ring-8 ring-destructive/20' : 'bg-primary hover:bg-primary/90 hover:scale-105 shadow-xl shadow-primary/20'}`}
+                            className={`w-16 h-16 sm:w-20 sm:h-20 rounded-full transition-all duration-300 ${isRecording ? 'bg-destructive hover:bg-destructive/90 animate-pulse ring-8 ring-destructive/20' : 'bg-primary hover:bg-primary/90 hover:scale-105 shadow-xl shadow-primary/20'}`}
                         >
-                            {isRecording ? <Square className="w-8 h-8 text-white" /> : <Mic className="w-8 h-8 text-white" />}
+                            {isRecording ? <Square className="w-6 h-6 sm:w-8 sm:h-8 text-white" /> : <Mic className="w-6 h-6 sm:w-8 sm:h-8 text-white" />}
                         </Button>
                         <p className="text-sm font-medium text-muted-foreground">
                             {isRecording ? 'Yozib olinmoqda... To\'xtatish uchun bosing' : 'Yoddan aytishni boshlash uchun bosing'}
