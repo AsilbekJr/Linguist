@@ -28,7 +28,7 @@ const Dashboard = () => {
       </section>
 
       {/* Primary Action Needs */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         
         {/* Priority 1: Review */}
         <div className="bg-card border border-border p-6 rounded-3xl shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
@@ -57,7 +57,7 @@ const Dashboard = () => {
         </div>
 
         {/* Priority 2: Challenge */}
-        <div className="bg-card border border-border p-6 rounded-3xl shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
+        <div className="bg-card border border-border p-6 rounded-3xl shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group flex flex-col">
           <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500/5 rounded-full blur-3xl group-hover:bg-orange-500/10 transition-colors"></div>
           <div className="flex items-start justify-between mb-4 relative z-10">
             <div className="w-12 h-12 rounded-2xl bg-orange-500/10 text-orange-500 flex items-center justify-center">
@@ -66,13 +66,33 @@ const Dashboard = () => {
           </div>
           <h2 className="text-2xl font-bold mb-2 relative z-10">100 Days Challenge</h2>
           <p className="text-muted-foreground text-sm mb-6 relative z-10">
-            Kichik qadamlar, katta natijalar. Bugungi vazifangizni bajardingizmi?
+            Kichik qadamlar, katta natijalar. Bugungi yodlash mashqini bajaring.
           </p>
           <Link 
             to="/challenge" 
             className="w-full inline-flex items-center justify-center gap-2 bg-secondary hover:bg-secondary/80 text-secondary-foreground py-3 rounded-xl font-bold transition-all mt-auto z-10 relative"
           >
             Vazifalarni ko'rish
+          </Link>
+        </div>
+
+        {/* Priority 3: Daily Topics */}
+        <div className="bg-card border border-border p-6 rounded-3xl shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group flex flex-col">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/5 rounded-full blur-3xl group-hover:bg-purple-500/10 transition-colors"></div>
+          <div className="flex items-start justify-between mb-4 relative z-10">
+            <div className="w-12 h-12 rounded-2xl bg-purple-500/10 text-purple-500 flex items-center justify-center">
+              <BookOpen className="w-6 h-6" />
+            </div>
+          </div>
+          <h2 className="text-2xl font-bold mb-2 relative z-10">Daily Topics</h2>
+          <p className="text-muted-foreground text-sm mb-6 relative z-10">
+            Har kuni bitta aniq mavzu doirasida yangi 5ta eng kerakli so'zni o'rganing.
+          </p>
+          <Link 
+            to="/topic" 
+            className="w-full inline-flex items-center justify-center gap-2 bg-purple-500 hover:bg-purple-600 text-white py-3 rounded-xl font-bold transition-all mt-auto z-10 relative"
+          >
+            Lug'atni boshlash
           </Link>
         </div>
       </div>

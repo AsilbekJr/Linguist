@@ -14,7 +14,7 @@ export const apiSlice = createApi({
       return headers;
     },
   }),
-  tagTypes: ['Word', 'Challenge'],
+  tagTypes: ['Word', 'Challenge', 'Topic'],
   endpoints: (builder) => ({
     getWords: builder.query({
       query: () => '/api/words',
@@ -86,6 +86,19 @@ export const apiSlice = createApi({
       invalidatesTags: ['Challenge'],
     }),
 
+    // Topic Vocab
+    getCurrentTopic: builder.query({
+      query: () => '/api/topics/current',
+      providesTags: ['Topic'],
+    }),
+    completeTopic: builder.mutation({
+      query: () => ({
+        url: '/api/topics/complete',
+        method: 'POST',
+      }),
+      invalidatesTags: ['Topic'],
+    }),
+
     // Auth
     login: builder.mutation({
       query: (credentials) => ({
@@ -122,4 +135,6 @@ export const {
   useRegisterMutation,
   useGetMeQuery,
   useGetReviewDueQuery,
+  useGetCurrentTopicQuery,
+  useCompleteTopicMutation,
 } = apiSlice;

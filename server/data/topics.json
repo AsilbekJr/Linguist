@@ -1,0 +1,383 @@
+[
+    {
+        "day": 1,
+        "topic": "Essential Daily Life Vocabulary",
+        "description": "Fundamental words for everyday situations.",
+        "words": [
+            {
+                "word": "Alleviate",
+                "translation": "Yengillashtirmoq",
+                "definition": "To make suffering, deficiency, or a problem less severe.",
+                "phonetic": "/əˈliːvieɪt/",
+                "partOfSpeech": "verb",
+                "example": "He couldn't cure her disease, but tried to alleviate her pain."
+            },
+            {
+                "word": "Diligent",
+                "translation": "Tirishqoq",
+                "definition": "Having or showing care and conscientiousness in one's work or duties.",
+                "phonetic": "/ˈdɪlɪdʒ(ə)nt/",
+                "partOfSpeech": "adjective",
+                "example": "The discovery was made after years of diligent research."
+            },
+            {
+                "word": "Procrastinate",
+                "translation": "Paysalga solmoq",
+                "definition": "Delay or postpone action; put off doing something.",
+                "phonetic": "/prəˈkrastɪneɪt/",
+                "partOfSpeech": "verb",
+                "example": "It is tempting to procrastinate when faced with a difficult task."
+            },
+            {
+                "word": "Resilient",
+                "translation": "Chidamli",
+                "definition": "Able to withstand or recover quickly from difficult conditions.",
+                "phonetic": "/rɪˈzɪlɪənt/",
+                "partOfSpeech": "adjective",
+                "example": "Babies are generally far more resilient than new parents realize."
+            },
+            {
+                "word": "Meticulous",
+                "translation": "Sinchkov",
+                "definition": "Showing great attention to detail; very careful and precise.",
+                "phonetic": "/mɪˈtɪkjʊləs/",
+                "partOfSpeech": "adjective",
+                "example": "The designs are hand-glazed with meticulous care."
+            },
+            {
+                "word": "Inevitable",
+                "translation": "Muqarrar",
+                "definition": "Certain to happen; unavoidable.",
+                "phonetic": "/ɪnˈɛvɪtəbəl/",
+                "partOfSpeech": "adjective",
+                "example": "War was inevitable."
+            },
+            {
+                "word": "Ubiquitous",
+                "translation": "Hamma joyda mavjud",
+                "definition": "Present, appearing, or found everywhere.",
+                "phonetic": "/juːˈbɪkwɪtəs/",
+                "partOfSpeech": "adjective",
+                "example": "His ubiquitous influence was felt by all the family."
+            },
+            {
+                "word": "Obsolete",
+                "translation": "Eskargan",
+                "definition": "No longer produced or used; out of date.",
+                "phonetic": "/ˈɒbsəliːt/",
+                "partOfSpeech": "adjective",
+                "example": "The disposal of old and obsolete machinery."
+            },
+            {
+                "word": "Ponder",
+                "translation": "Chuqur o'ylamoq",
+                "definition": "Think about (something) carefully.",
+                "phonetic": "/ˈpɒndə/",
+                "partOfSpeech": "verb",
+                "example": "I pondered the question of what clothes to wear for the occasion."
+            },
+            {
+                "word": "Reluctant",
+                "translation": "Istar-istamas",
+                "definition": "Unwilling and hesitant; disinclined.",
+                "phonetic": "/rɪˈlʌkt(ə)nt/",
+                "partOfSpeech": "adjective",
+                "example": "She seemed reluctant to discuss the matter."
+            },
+            {
+                "word": "Thrive",
+                "translation": "Gullab-yashnamoq",
+                "definition": "Grow or develop well or vigorously.",
+                "phonetic": "/θrʌɪv/",
+                "partOfSpeech": "verb",
+                "example": "Education groups thrive on organization."
+            },
+            {
+                "word": "Vulnerable",
+                "translation": "Zaif",
+                "definition": "Susceptible to physical or emotional attack or harm.",
+                "phonetic": "/ˈvʌln(ə)rəb(ə)l/",
+                "partOfSpeech": "adjective",
+                "example": "We were in a vulnerable position."
+            },
+            {
+                "word": "Exaggerate",
+                "translation": "Bo'rttirmoq",
+                "definition": "Represent (something) as being larger, better, or worse than it really is.",
+                "phonetic": "/ɪɡˈzadʒəreɪt/",
+                "partOfSpeech": "verb",
+                "example": "He was apt to exaggerate any aches and pains."
+            },
+            {
+                "word": "Candid",
+                "translation": "Samimiy, ochiq",
+                "definition": "Truthful and straightforward; frank.",
+                "phonetic": "/ˈkandɪd/",
+                "partOfSpeech": "adjective",
+                "example": "His responses were remarkably candid."
+            },
+            {
+                "word": "Adequate",
+                "translation": "Yetarli",
+                "definition": "Satisfactory or acceptable in quality or quantity.",
+                "phonetic": "/ˈadɪkwət/",
+                "partOfSpeech": "adjective",
+                "example": "This office is perfectly adequate for my needs."
+            }
+        ]
+    },
+    {
+        "day": 2,
+        "topic": "Work & Business Idioms",
+        "description": "Common expressions used in professional environments.",
+        "words": [
+            {
+                "word": "Innovate",
+                "translation": "Yangilik kiritmoq",
+                "definition": "Make changes in something established, especially by introducing new methods, ideas, or products.",
+                "phonetic": "/ˈɪnəveɪt/",
+                "partOfSpeech": "verb",
+                "example": "The company's failure to innovate caused its downfall."
+            },
+            {
+                "word": "Lucrative",
+                "translation": "Daromadli",
+                "definition": "Producing a great deal of profit.",
+                "phonetic": "/ˈluːkrətɪv/",
+                "partOfSpeech": "adjective",
+                "example": "She has a lucrative career as a stand-up comedian."
+            },
+            {
+                "word": "Pragmatic",
+                "translation": "Amaliy",
+                "definition": "Dealing with things sensibly and realistically in a way that is based on practical rather than theoretical considerations.",
+                "phonetic": "/praɡˈmatɪk/",
+                "partOfSpeech": "adjective",
+                "example": "We need to adopt a pragmatic approach to solve this issue."
+            },
+            {
+                "word": "Collaborate",
+                "translation": "Hamkorlik qilmoq",
+                "definition": "Work jointly on an activity or project.",
+                "phonetic": "/kəˈlabəreɪt/",
+                "partOfSpeech": "verb",
+                "example": "They collaborated on the project to ensure its success."
+            },
+            {
+                "word": "Redundant",
+                "translation": "Ortiqcha",
+                "definition": "Not or no longer needed or useful; superfluous.",
+                "phonetic": "/rɪˈdʌnd(ə)nt/",
+                "partOfSpeech": "adjective",
+                "example": "Many of the old skills had become redundant."
+            },
+            {
+                "word": "Delegate",
+                "translation": "Vakolat bermoq",
+                "definition": "Entrust a task or responsibility to another person, typically one who is less senior than oneself.",
+                "phonetic": "/ˈdɛlɪɡeɪt/",
+                "partOfSpeech": "verb",
+                "example": "He delegates routine tasks to his assistant."
+            },
+            {
+                "word": "Implement",
+                "translation": "Amalga oshirmoq",
+                "definition": "Put a decision, plan, agreement, etc. into effect.",
+                "phonetic": "/ˈɪmplɪm(ə)nt/",
+                "partOfSpeech": "verb",
+                "example": "The regulations implement a 1956 treaty."
+            },
+            {
+                "word": "Versatile",
+                "translation": "Ko'p qirrali",
+                "definition": "Able to adapt or be adapted to many different functions or activities.",
+                "phonetic": "/ˈvəːsətʌɪl/",
+                "partOfSpeech": "adjective",
+                "example": "A versatile sewing machine."
+            },
+            {
+                "word": "Negotiate",
+                "translation": "Muzokara olib bormoq",
+                "definition": "Obtain or bring about by discussion.",
+                "phonetic": "/nɪˈɡəʊʃɪeɪt/",
+                "partOfSpeech": "verb",
+                "example": "He negotiated a new contract with the sellers."
+            },
+            {
+                "word": "Unprecedented",
+                "translation": "Misl ko'rilmagan",
+                "definition": "Never done or known before.",
+                "phonetic": "/ʌnˈprɛsɪdɛntɪd/",
+                "partOfSpeech": "adjective",
+                "example": "The government faces an unprecedented crisis."
+            },
+            {
+                "word": "Feasible",
+                "translation": "Muvofiq, bajarish mumkin",
+                "definition": "Possible to do easily or conveniently.",
+                "phonetic": "/ˈfiːzɪb(ə)l/",
+                "partOfSpeech": "adjective",
+                "example": "It is not feasible to put most finds from excavations on public display."
+            },
+            {
+                "word": "Incentive",
+                "translation": "Rag'batlantiruvchi, turtki",
+                "definition": "A thing that motivates or encourages one to do something.",
+                "phonetic": "/ɪnˈsɛntɪv/",
+                "partOfSpeech": "noun",
+                "example": "Give farmers an incentive to improve their land."
+            },
+            {
+                "word": "Consensus",
+                "translation": "Kelishuv",
+                "definition": "A general agreement.",
+                "phonetic": "/kənˈsɛnsəs/",
+                "partOfSpeech": "noun",
+                "example": "There is a growing consensus that the current regime has failed."
+            },
+            {
+                "word": "Stagnant",
+                "translation": "To'xtab qolgan",
+                "definition": "Showing no activity; dull and sluggish.",
+                "phonetic": "/ˈstaɡnənt/",
+                "partOfSpeech": "adjective",
+                "example": "A stagnant economy."
+            },
+            {
+                "word": "Liability",
+                "translation": "Majburiyat",
+                "definition": "The state of being legally responsible for something.",
+                "phonetic": "/lʌɪəˈbɪlɪti/",
+                "partOfSpeech": "noun",
+                "example": "Once you contact the card protection scheme your liability for any loss ends."
+            }
+        ]
+    },
+    {
+        "day": 3,
+        "topic": "Academic Expressions",
+        "description": "Words frequently encountered in academic reading and writing.",
+        "words": [
+            {
+                "word": "Ambiguous",
+                "translation": "Mavhum",
+                "definition": "Open to more than one interpretation; not having one obvious meaning.",
+                "phonetic": "/amˈbɪɡjʊəs/",
+                "partOfSpeech": "adjective",
+                "example": "The election result was ambiguous."
+            },
+            {
+                "word": "Empirical",
+                "translation": "Tajribaga asoslangan",
+                "definition": "Based on, concerned with, or verifiable by observation or experience rather than theory or pure logic.",
+                "phonetic": "/ɛmˈpɪrɪk(ə)l/",
+                "partOfSpeech": "adjective",
+                "example": "They provided considerable empirical evidence to support their argument."
+            },
+            {
+                "word": "Synthesize",
+                "translation": "Sintez qilmoq",
+                "definition": "Combine (a number of things) into a coherent whole.",
+                "phonetic": "/ˈsɪnθəsʌɪz/",
+                "partOfSpeech": "verb",
+                "example": "Students must learn how to synthesize information from various sources."
+            },
+            {
+                "word": "Paradigm",
+                "translation": "Namuna",
+                "definition": "A typical example or pattern of something; a pattern or model.",
+                "phonetic": "/ˈparədʌɪm/",
+                "partOfSpeech": "noun",
+                "example": "There is a new paradigm for public art in this country."
+            },
+            {
+                "word": "Inherent",
+                "translation": "Tug'ma, ajralmas",
+                "definition": "Existing in something as a permanent, essential, or characteristic attribute.",
+                "phonetic": "/ɪnˈhɪər(ə)nt/",
+                "partOfSpeech": "adjective",
+                "example": "Any form of mountaineering has its inherent dangers."
+            },
+            {
+                "word": "Hypothesis",
+                "translation": "Faraz, gipoteza",
+                "definition": "A supposition or proposed explanation made on the basis of limited evidence as a starting point for further investigation.",
+                "phonetic": "/hʌɪˈpɒθɪsɪs/",
+                "partOfSpeech": "noun",
+                "example": "His steady state hypothesis of the origin of the universe."
+            },
+            {
+                "word": "Validate",
+                "translation": "Tasdiqlamoq",
+                "definition": "Check or prove the validity or accuracy of.",
+                "phonetic": "/ˈvalɪdeɪt/",
+                "partOfSpeech": "verb",
+                "example": "These clinical trials go a long way to validating the medical claims."
+            },
+            {
+                "word": "Correlate",
+                "translation": "Bog'liq bo'lmoq",
+                "definition": "Have a mutual relationship or connection.",
+                "phonetic": "/ˈkɒrɪleɪt/",
+                "partOfSpeech": "verb",
+                "example": "The study found that success in the educational system correlates highly with class."
+            },
+            {
+                "word": "Qualitative",
+                "translation": "Sifat",
+                "definition": "Relating to, measuring, or measured by the quality of something rather than its quantity.",
+                "phonetic": "/ˈkwɒlɪtətɪv/",
+                "partOfSpeech": "adjective",
+                "example": "A qualitative change in the undergraduate curriculum."
+            },
+            {
+                "word": "Quantitative",
+                "translation": "Miqdoriy",
+                "definition": "Relating to, measuring, or measured by the quantity of something rather than its quality.",
+                "phonetic": "/ˈkwɒntɪtətɪv/",
+                "partOfSpeech": "adjective",
+                "example": "Quantitative analysis of the data."
+            },
+            {
+                "word": "Proponent",
+                "translation": "Tarafdor",
+                "definition": "A person who advocates a theory, proposal, or project.",
+                "phonetic": "/prəˈpəʊnənt/",
+                "partOfSpeech": "noun",
+                "example": "A collection of essays by both critics and proponents of graphology."
+            },
+            {
+                "word": "Critique",
+                "translation": "Tanqidiy baho",
+                "definition": "A detailed analysis and assessment of something, especially a literary, philosophical, or political theory.",
+                "phonetic": "/krɪˈtiːk/",
+                "partOfSpeech": "noun",
+                "example": "A critique of Marxist historicism."
+            },
+            {
+                "word": "Inference",
+                "translation": "Xulosa",
+                "definition": "A conclusion reached on the basis of evidence and reasoning.",
+                "phonetic": "/ˈɪnf(ə)rəns/",
+                "partOfSpeech": "noun",
+                "example": "Researchers are entrusted with drawing inferences from the data."
+            },
+            {
+                "word": "Coherent",
+                "translation": "Mantiqiy, tutash",
+                "definition": "(Of an argument, theory, or policy) logical and consistent.",
+                "phonetic": "/kə(ʊ)ˈhɪər(ə)nt/",
+                "partOfSpeech": "adjective",
+                "example": "They failed to develop a coherent economic strategy."
+            },
+            {
+                "word": "Encompass",
+                "translation": "Qamrab olmoq",
+                "definition": "Surround and have or hold within.",
+                "phonetic": "/ɪnˈkʌmpəs/",
+                "partOfSpeech": "verb",
+                "example": "A vast halo encompassing the Milky Way galaxy."
+            }
+        ]
+    }
+]

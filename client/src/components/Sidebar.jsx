@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Menu, CheckCircle, Book, Mic, LogOut, Home, Flame } from "lucide-react";
+import { Menu, CheckCircle, Book, Mic, LogOut, Home, Flame, BookHeart } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "./ThemeToggle";
 import { useDispatch } from 'react-redux';
@@ -20,6 +20,7 @@ const Sidebar = ({ user }) => {
     { id: '/', label: 'Asosiy', icon: Home },
     { id: '/review', label: 'Takrorlash', icon: CheckCircle },
     { id: '/challenge', label: '100 Days 🎯', icon: Flame },
+    { id: '/topic', label: 'Daily Topics', icon: BookHeart },
     { id: '/speaking', label: 'Speaking Lab', icon: Mic },
     { id: '/roleplay', label: 'Immersion', icon: Mic }, // Kept same icon or can use user-supplied
     { id: '/vocabulary', label: 'Mening Lug\'atim', icon: Book },

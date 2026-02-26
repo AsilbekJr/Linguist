@@ -31,6 +31,7 @@ app.use('/api/review', reviewRoutes);
 app.use('/api/speaking', speakingRoutes);
 app.use('/api/roleplay', roleplayRoutes);
 app.use('/api/challenge', challengeRoutes);
+app.use('/api/topics', require('./routes/topicVocabRoutes'));
 app.use('/api/auth', authRoutes);
 
 const PORT = process.env.PORT || 5000;

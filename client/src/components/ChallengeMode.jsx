@@ -232,11 +232,11 @@ const ChallengeMode = ({ onAddWord }) => {
          </div>
       ) : currentChallenge ? (
         <div className="bg-card rounded-2xl md:rounded-3xl p-5 md:p-10 border border-border shadow-md">
-            <div className="flex justify-between items-center mb-6">
-                <span className="bg-primary/10 text-primary px-4 py-1.5 rounded-full text-sm font-bold">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4 mb-6">
+                <span className="bg-primary/10 text-primary px-4 py-1.5 rounded-full text-sm font-bold shrink-0">
                     Day {currentChallenge.dayNumber}
                 </span>
-                <span className="text-muted-foreground text-sm font-medium">
+                <span className="text-muted-foreground text-sm font-medium sm:text-right">
                     {currentChallenge.topic}
                 </span>
             </div>
@@ -309,11 +309,11 @@ const ChallengeMode = ({ onAddWord }) => {
                     <div className="w-full flex justify-center mt-4">
                         <div className="flex flex-col items-center gap-6 w-full max-w-md bg-secondary/30 p-6 border rounded-3xl">
                              <audio src={audioUrl} controls className="w-full rounded-2xl" />
-                             <div className="flex gap-4 w-full">
-                                 <Button variant="outline" className="flex-1 rounded-full" onClick={() => setAudioUrl(null)}>
+                             <div className="flex flex-col sm:flex-row justify-between gap-3 sm:gap-4 w-full">
+                                 <Button variant="outline" className="flex-1 w-full rounded-full" onClick={() => setAudioUrl(null)}>
                                      Qayta Yozish
                                  </Button>
-                                 <Button className="flex-1 rounded-full bg-green-500 hover:bg-green-600 text-white" onClick={handleSubmit} disabled={isCompleting}>
+                                 <Button className="flex-1 w-full rounded-full bg-green-500 hover:bg-green-600 text-white" onClick={handleSubmit} disabled={isCompleting}>
                                      {isCompleting ? <Loader2 className="w-4 h-4 animate-spin text-white" /> : <><Send className="w-4 h-4 mr-2 text-white" /> Jo'natish</>}
                                  </Button>
                              </div>

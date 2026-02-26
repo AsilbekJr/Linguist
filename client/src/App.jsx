@@ -15,6 +15,7 @@ import Review from './pages/Review';
 import SpeakingLab from './pages/SpeakingLab';
 import Roleplay from './pages/Roleplay';
 import Challenge from './pages/Challenge';
+import TopicVocabulary from './pages/TopicVocabulary';
 
 function App() {
   const isAuthenticated = useSelector((state) => state.auth.isAuthenticated);
@@ -58,6 +59,7 @@ function App() {
         <Route path="speaking" element={<SpeakingLab />} />
         <Route path="roleplay" element={<Roleplay />} />
         <Route path="challenge" element={<Challenge />} />
+        <Route path="topic" element={<TopicVocabulary />} />
         
         {/* Catch-all to redirect back to Dashboard if not found */}
         <Route path="*" element={<Navigate to="/" replace />} />
