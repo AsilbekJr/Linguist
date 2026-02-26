@@ -17,9 +17,12 @@ const ChallengeMode = ({ onAddWord }) => {
   const [isAddingWord, setIsAddingWord] = useState(false);
 
   const playPronunciation = (text) => {
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = 'en-GB';
-    window.speechSynthesis.speak(utterance);
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'en-GB';
+      window.speechSynthesis.speak(utterance);
+    }
   };
 
   const mediaRecorderRef = useRef(null);

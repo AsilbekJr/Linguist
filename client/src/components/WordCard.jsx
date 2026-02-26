@@ -6,9 +6,12 @@ import { Trash2, ExternalLink, Repeat, Volume2 } from "lucide-react";
 
 const WordCard = ({ word, onDelete }) => {
   const playPronunciation = (text) => {
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = 'en-GB';
-    window.speechSynthesis.speak(utterance);
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'en-GB';
+      window.speechSynthesis.speak(utterance);
+    }
   };
   return (
     <Card className="group relative overflow-hidden transition-all duration-300 hover:shadow-lg hover:shadow-primary/5 hover:border-primary/50 bg-card/50 backdrop-blur-sm">

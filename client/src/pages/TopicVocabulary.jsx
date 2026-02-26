@@ -27,9 +27,12 @@ const TopicVocabulary = () => {
     };
 
     const playPronunciation = (wordText) => {
-        const utterance = new SpeechSynthesisUtterance(wordText);
-        utterance.lang = 'en-GB';
-        window.speechSynthesis.speak(utterance);
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(wordText);
+            utterance.lang = 'en-GB';
+            window.speechSynthesis.speak(utterance);
+        }
     };
 
     const handleAddWordToDict = async (wordObj) => {
