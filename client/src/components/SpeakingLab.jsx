@@ -180,12 +180,43 @@ const SpeakingLab = () => {
       }
   };
 
+  // Helper to find the best available English voice
+  const getBestVoice = () => {
+      const voices = window.speechSynthesis.getVoices();
+      if (!voices.length) return null;
+      
+      const enVoices = voices.filter(v => v.lang.startsWith('en'));
+      
+      // Prioritize natural or premium sounding voices
+      const preferredVoices = [
+          'Google UK English Female',
+          'Google UK English Male',
+          'Google US English',
+          'Microsoft Sonia Online',
+          'Microsoft Aria Online',
+          'Microsoft Guy Online',
+          'Samantha', // Mac premium
+          'Daniel',   // Mac premium
+          'Alex'
+      ];
+
+      for (const pref of preferredVoices) {
+          const match = enVoices.find(v => v.name.includes(pref));
+          if (match) return match;
+      }
+      
+      // Fallback to any english voice
+      return enVoices[0] || voices[0];
+  };
+
   const playAudio = (text) => {
       if ('speechSynthesis' in window) {
           window.speechSynthesis.cancel();
           const msg = new SpeechSynthesisUtterance(text);
           msg.lang = 'en-US';
           msg.rate = 0.85;
+          const bestVoice = getBestVoice();
+          if (bestVoice) msg.voice = bestVoice;
           window.speechSynthesis.speak(msg);
       }
   };
@@ -282,6 +313,8 @@ const SpeakingLab = () => {
           const msg = new SpeechSynthesisUtterance(text);
           msg.lang = 'en-US';
           msg.rate = 0.85; // slightly slower for better listening
+          const bestVoice = getBestVoice();
+          if (bestVoice) msg.voice = bestVoice;
           window.speechSynthesis.speak(msg);
       }
   };
