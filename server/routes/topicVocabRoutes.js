@@ -67,10 +67,10 @@ router.get('/current', protect, async (req, res) => {
     }
 
     if (isCompleteForToday) {
+       const completedTopic = topicsData.find(t => t.day === progress.currentDay - 1);
        return res.json({
-           message: "You have completed today's topic. Come back tomorrow!",
+           ...(completedTopic || currentTopic),
            isCompleteForToday: true,
-           currentDay: progress.currentDay,
            history
        });
     }

@@ -21,26 +21,7 @@ const TopicVocabulary = () => {
     const [addingWords, setAddingWords] = React.useState({});
     const [addedWords, setAddedWords] = React.useState({});
 
-    const handleComplete = async () => {
-        try {
-            await completeTopic().unwrap();
-            
-            // Sync Daily Quest for completing a topic
-            try {
-                const res = await syncDailyQuest({ type: 'topic' }).unwrap();
-                if (res.streakUpdated) {
-                    toast.success(res.message, { icon: '🔥' });
-                }
-            } catch (sqErr) {
-                console.error("Failed to sync daily quest", sqErr);
-            }
 
-            toast.success("Bugungi mavzu muvaffaqiyatli yakunlandi!");
-            refetch();
-        } catch (error) {
-            toast.error("Xatolik yuz berdi. Iltimos qayta urinib ko'ring.");
-        }
-    };
 
     const playPronunciation = (wordText) => {
         playTTSAudio(wordText, 'en-GB', 1.0);
@@ -64,6 +45,27 @@ const TopicVocabulary = () => {
              await addWord(payload).unwrap();
              setAddedWords(prev => ({ ...prev, [wordObj.word]: true }));
              toast.success(`"${wordObj.word}" lug'atingizga qo'shildi!`);
+
+             // Auto complete daily quest if 5 words added
+             const currentAddedCount = topicData?.words?.filter(w => 
+                 userWords.some(uw => uw.word.toLowerCase() === w.word.toLowerCase())
+             ).length || 0;
+             
+             if (currentAddedCount + 1 === 5) {
+                 try {
+                     const res = await syncDailyQuest({ type: 'topic' }).unwrap();
+                     if (!topicData.isCompleteForToday) {
+                          await completeTopic().unwrap();
+                     }
+                     if (res.streakUpdated) {
+                         toast.success(res.message, { icon: '🔥' });
+                     } else {
+                         toast.success("🔥 Yangi Qon vazifasi bajarildi!");
+                     }
+                 } catch (sqErr) {
+                     console.error("Failed to sync daily quest automatically", sqErr);
+                 }
+             }
         } catch (error) {
              let errorMessage = "So'zni qo'shishda xatolik yuz berdi.";
              if (error && error.data && error.data.error === "Bu so'z allaqachon lug'atingizga qo'shilgan!") {
@@ -105,12 +107,6 @@ const TopicVocabulary = () => {
                    <div className="text-6xl mb-6">🏆</div>
                    <h3 className="text-3xl font-black text-foreground mb-4">Tabriklaymiz!</h3>
                    <p className="text-xl text-muted-foreground">Siz barcha mavzulashtirilgan lug'atlarni o'zlashtirdingiz!</p>
-               </div>
-            ) : topicData && topicData.isCompleteForToday ? (
-               <div className="text-center bg-card p-6 md:p-12 rounded-3xl border border-border shadow-sm">
-                   <div className="text-6xl mb-6">✅</div>
-                   <h3 className="text-2xl font-bold text-foreground mb-2">Bugungi bo'lim yakunlandi!</h3>
-                   <p className="text-muted-foreground">Ertaga yangi mavzu bilan qayting. Xotirjam dam oling!</p>
                </div>
             ) : topicData ? (
                <div className="space-y-6">
@@ -182,17 +178,7 @@ const TopicVocabulary = () => {
                            ))}
                        </div>
 
-                       <div className="mt-12 flex justify-center relative z-10 border-t pt-8">
-                           <Button 
-                               onClick={handleComplete} 
-                               disabled={isCompleting}
-                               size="lg"
-                               className="bg-purple-600 hover:bg-purple-700 text-white rounded-full px-8 py-6 text-lg font-bold shadow-lg shadow-purple-500/20"
-                           >
-                               {isCompleting ? <Loader2 className="w-6 h-6 animate-spin mr-2" /> : <CheckCircle2 className="w-6 h-6 mr-2" />}
-                               Barcha so'zlarni o'zlashtirdim
-                           </Button>
-                       </div>
+
                    </div>
                </div>
             ) : (
