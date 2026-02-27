@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { translateUzbekToEnglish, evaluatePronunciation } = require('../services/geminiService');
+const { translateUzbekToEnglish, evaluatePronunciation, translateText } = require('../services/geminiService');
 const { protect } = require('../middleware/authMiddleware');
 
 // POST /api/speaking/translate
@@ -26,6 +26,28 @@ router.post('/translate', protect, async (req, res) => {
             return res.status(429).json({ error: err.message });
         }
         res.status(500).json({ error: "Server error during translation" });
+    }
+});
+
+// POST /api/speaking/translate-text
+// Generic text-to-text translation
+router.post('/translate-text', protect, async (req, res) => {
+    try {
+        const { text, from, to } = req.body;
+        if (!text || !from || !to) {
+            return res.status(400).json({ error: "Missing required fields: text, from, to" });
+        }
+        const translatedResult = await translateText(text, from, to);
+        if (!translatedResult) {
+             return res.status(503).json({ error: "Translation service unavailable." });
+        }
+        res.json({ translatedText: translatedResult });
+    } catch (err) {
+        console.error("Text Translation Route Error:", err);
+        if (err.type === 'QUOTA_EXCEEDED') {
+            return res.status(429).json({ error: err.message });
+        }
+        res.status(500).json({ error: "Server error during text translation." });
     }
 });
 

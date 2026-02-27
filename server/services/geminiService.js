@@ -220,6 +220,22 @@ const translateUzbekToEnglish = async (uzbekText) => {
     }
 };
 
+const translateText = async (text, fromLang, toLang) => {
+    try {
+        if (!genAI) return null;
+        const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
+        const prompt = `Act as a professional bilingual translator. Translate the following text from ${fromLang} to ${toLang}. Maintain the original tone and format as closely as possible. Only provide the translated text without any other conversational filler or markdown markers.\nText to translate:\n"${text}"`;
+        const result = await model.generateContent(prompt);
+        return (await result.response).text().trim();
+    } catch (error) {
+        logError("translateText", error);
+        if (error.message && (error.message.includes("429") || error.message.includes("Quota exceeded"))) {
+             throw { type: 'QUOTA_EXCEEDED', message: 'AI xizmatiga ulanib bo‘lmadi.' };
+        }
+        return "Failed to translate text. Please try again.";
+    }
+};
+
 const evaluatePronunciation = async (targetSentence, spokenText) => {
     try {
         if (!genAI) return null;
@@ -347,4 +363,4 @@ const generateChallengeText = async (topic, targetWords, dayNumber = 1) => {
     }
 };
 
-module.exports = { generateWordContext, analyzeStory, checkSentence, validateWord, translateUzbekToEnglish, evaluatePronunciation, generateRoleplayResponse, generateChallengeText };
+module.exports = { generateWordContext, analyzeStory, checkSentence, validateWord, translateUzbekToEnglish, translateText, evaluatePronunciation, generateRoleplayResponse, generateChallengeText };

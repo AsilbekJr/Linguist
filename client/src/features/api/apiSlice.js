@@ -55,6 +55,13 @@ export const apiSlice = createApi({
         body: { text },
       }),
     }),
+    translateText: builder.mutation({
+      query: (data) => ({
+        url: '/api/speaking/translate-text',
+        method: 'POST',
+        body: data,
+      }),
+    }),
     evaluateSpeaking: builder.mutation({
       query: ({ targetSentence, spokenText }) => ({
         url: '/api/speaking/evaluate',
@@ -126,6 +133,7 @@ export const {
   useDeleteWordMutation,
   useCheckReviewMutation,
   useTranslateSpeakingMutation,
+  useTranslateTextMutation,
   useEvaluateSpeakingMutation,
   useChatRoleplayMutation,
   useGetCurrentChallengeQuery,

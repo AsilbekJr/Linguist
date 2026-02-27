@@ -16,13 +16,50 @@ const ChallengeMode = ({ onAddWord }) => {
   const [addWordSuccess, setAddWordSuccess] = useState(false);
   const [isAddingWord, setIsAddingWord] = useState(false);
 
+  const getBestVoice = () => {
+      const voices = window.speechSynthesis.getVoices();
+      if (!voices.length) return null;
+      const enVoices = voices.filter(v => v.lang.startsWith('en'));
+      const preferredVoices = [
+          'Google UK English Female',
+          'Google UK English Male',
+          'Google US English',
+          'Microsoft Sonia Online',
+          'Microsoft Aria Online',
+          'Microsoft Guy Online',
+          'Samantha', 
+          'Daniel',   
+          'Alex'
+      ];
+      for (const pref of preferredVoices) {
+          const match = enVoices.find(v => v.name.includes(pref));
+          if (match) return match;
+      }
+      return enVoices[0] || voices[0];
+  };
+
   const playPronunciation = (text) => {
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = 'en-GB';
+      utterance.lang = 'en-US';
+      const bestVoice = getBestVoice();
+      if (bestVoice) utterance.voice = bestVoice;
       window.speechSynthesis.speak(utterance);
     }
+  };
+
+  const playChallengeAudio = (text) => {
+      if ('speechSynthesis' in window) {
+          window.speechSynthesis.cancel();
+          const cleanText = text.replace(/\*\*/g, '');
+          const msg = new SpeechSynthesisUtterance(cleanText);
+          msg.lang = 'en-US';
+          msg.rate = 0.85; 
+          const bestVoice = getBestVoice();
+          if (bestVoice) msg.voice = bestVoice;
+          window.speechSynthesis.speak(msg);
+      }
   };
 
   const mediaRecorderRef = useRef(null);
@@ -236,12 +273,17 @@ const ChallengeMode = ({ onAddWord }) => {
       ) : currentChallenge ? (
         <div className="bg-card rounded-2xl md:rounded-3xl p-5 md:p-10 border border-border shadow-md">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4 mb-6">
-                <span className="bg-primary/10 text-primary px-4 py-1.5 rounded-full text-sm font-bold shrink-0">
-                    Day {currentChallenge.dayNumber}
-                </span>
-                <span className="text-muted-foreground text-sm font-medium sm:text-right">
-                    {currentChallenge.topic}
-                </span>
+                <div className="flex items-center gap-3">
+                    <span className="bg-primary/10 text-primary px-4 py-1.5 rounded-full text-sm font-bold shrink-0">
+                        Day {currentChallenge.dayNumber}
+                    </span>
+                    <span className="text-muted-foreground text-sm font-medium">
+                        {currentChallenge.topic}
+                    </span>
+                </div>
+                <Button size="sm" onClick={() => playChallengeAudio(currentChallenge.text)} className="rounded-full bg-blue-500 hover:bg-blue-600 text-white w-full sm:w-auto">
+                    <Volume2 className="w-4 h-4 mr-2" /> Eshitish
+                </Button>
             </div>
             
             <div className="bg-background rounded-2xl p-4 sm:p-6 md:p-8 mb-6 md:mb-8 border border-border">
