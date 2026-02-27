@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useGetCurrentChallengeQuery, useGetChallengeHistoryQuery, useCompleteChallengeMutation } from '../features/api/apiSlice';
 import { Button } from "@/components/ui/button";
 import { Mic, Square, Play, Send, Loader2, CheckCircle2, PlusCircle, X, Volume2 } from "lucide-react";
+import { playTTSAudio } from '../utils/audio';
 
 const ChallengeMode = ({ onAddWord }) => {
   const { data: history, isLoading: isHistoryLoading, refetch: refetchHistory } = useGetChallengeHistoryQuery();
@@ -16,50 +17,12 @@ const ChallengeMode = ({ onAddWord }) => {
   const [addWordSuccess, setAddWordSuccess] = useState(false);
   const [isAddingWord, setIsAddingWord] = useState(false);
 
-  const getBestVoice = () => {
-      const voices = window.speechSynthesis.getVoices();
-      if (!voices.length) return null;
-      const enVoices = voices.filter(v => v.lang.startsWith('en'));
-      const preferredVoices = [
-          'Google UK English Female',
-          'Google UK English Male',
-          'Google US English',
-          'Microsoft Sonia Online',
-          'Microsoft Aria Online',
-          'Microsoft Guy Online',
-          'Samantha', 
-          'Daniel',   
-          'Alex'
-      ];
-      for (const pref of preferredVoices) {
-          const match = enVoices.find(v => v.name.includes(pref));
-          if (match) return match;
-      }
-      return enVoices[0] || voices[0];
-  };
-
   const playPronunciation = (text) => {
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = 'en-US';
-      const bestVoice = getBestVoice();
-      if (bestVoice) utterance.voice = bestVoice;
-      window.speechSynthesis.speak(utterance);
-    }
+    playTTSAudio(text, 'en-US', 1.0);
   };
 
   const playChallengeAudio = (text) => {
-      if ('speechSynthesis' in window) {
-          window.speechSynthesis.cancel();
-          const cleanText = text.replace(/\*\*/g, '');
-          const msg = new SpeechSynthesisUtterance(cleanText);
-          msg.lang = 'en-US';
-          msg.rate = 0.85; 
-          const bestVoice = getBestVoice();
-          if (bestVoice) msg.voice = bestVoice;
-          window.speechSynthesis.speak(msg);
-      }
+    playTTSAudio(text, 'en-US', 0.85);
   };
 
   const mediaRecorderRef = useRef(null);

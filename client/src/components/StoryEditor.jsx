@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAddStoryMutation } from '../features/api/apiSlice';
+import { playTTSAudio } from '../utils/audio';
 
 const StoryEditor = ({ words }) => {
   const [story, setStory] = useState('');
@@ -71,17 +72,9 @@ const StoryEditor = ({ words }) => {
     recognition.start();
   };
 
-  // Text-to-Speech Setup
   const handleListen = () => {
     if (!story.trim()) return;
-    
-    const utterance = new SpeechSynthesisUtterance(story);
-    utterance.lang = 'en-US';
-    utterance.rate = 0.9; // Slightly slower for learning
-    utterance.pitch = 1.1; // Slightly higher for clarity
-    
-    window.speechSynthesis.cancel(); // Stop previous
-    window.speechSynthesis.speak(utterance);
+    playTTSAudio(story, 'en-US', 0.9);
   };
 
   return (

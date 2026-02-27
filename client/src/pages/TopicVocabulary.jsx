@@ -7,6 +7,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Loader2, CheckCircle2, BookOpen, Volume2, PlusCircle, ArrowRight } from "lucide-react";
 import { toast } from "react-hot-toast";
+import { playTTSAudio } from '../utils/audio';
 
 const TopicVocabulary = () => {
     const { data: topicData, isLoading, refetch } = useGetCurrentTopicQuery();
@@ -27,12 +28,7 @@ const TopicVocabulary = () => {
     };
 
     const playPronunciation = (wordText) => {
-        if ('speechSynthesis' in window) {
-            window.speechSynthesis.cancel();
-            const utterance = new SpeechSynthesisUtterance(wordText);
-            utterance.lang = 'en-GB';
-            window.speechSynthesis.speak(utterance);
-        }
+        playTTSAudio(wordText, 'en-GB', 1.0);
     };
 
     const handleAddWordToDict = async (wordObj) => {

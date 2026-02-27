@@ -3,15 +3,11 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Trash2, ExternalLink, Repeat, Volume2 } from "lucide-react";
+import { playTTSAudio } from '../utils/audio';
 
 const WordCard = ({ word, onDelete }) => {
   const playPronunciation = (text) => {
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = 'en-GB';
-      window.speechSynthesis.speak(utterance);
-    }
+    playTTSAudio(text, 'en-GB', 1.0);
   };
   return (
     <Card className="group relative overflow-hidden transition-all duration-300 hover:shadow-lg hover:shadow-primary/5 hover:border-primary/50 bg-card/50 backdrop-blur-sm">

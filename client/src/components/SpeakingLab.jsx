@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Mic, MicOff, Volume2, Sparkles, Loader2, RefreshCw, AudioLines, ArrowRightLeft } from "lucide-react";
 import { useTranslateSpeakingMutation, useEvaluateSpeakingMutation, useTranslateTextMutation } from '../features/api/apiSlice';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { playTTSAudio } from '../utils/audio';
 
 const SpeakingLab = () => {
   const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:5000';
@@ -180,46 +181,7 @@ const SpeakingLab = () => {
       }
   };
 
-  // Helper to find the best available English voice
-  const getBestVoice = () => {
-      const voices = window.speechSynthesis.getVoices();
-      if (!voices.length) return null;
-      
-      const enVoices = voices.filter(v => v.lang.startsWith('en'));
-      
-      // Prioritize natural or premium sounding voices
-      const preferredVoices = [
-          'Google UK English Female',
-          'Google UK English Male',
-          'Google US English',
-          'Microsoft Sonia Online',
-          'Microsoft Aria Online',
-          'Microsoft Guy Online',
-          'Samantha', // Mac premium
-          'Daniel',   // Mac premium
-          'Alex'
-      ];
 
-      for (const pref of preferredVoices) {
-          const match = enVoices.find(v => v.name.includes(pref));
-          if (match) return match;
-      }
-      
-      // Fallback to any english voice
-      return enVoices[0] || voices[0];
-  };
-
-  const playAudio = (text) => {
-      if ('speechSynthesis' in window) {
-          window.speechSynthesis.cancel();
-          const msg = new SpeechSynthesisUtterance(text);
-          msg.lang = 'en-US';
-          msg.rate = 0.85;
-          const bestVoice = getBestVoice();
-          if (bestVoice) msg.voice = bestVoice;
-          window.speechSynthesis.speak(msg);
-      }
-  };
 
   const getEvaluationColor = (color) => {
       if (color === 'green') return 'bg-green-500/10 border-green-500 text-green-600';
@@ -264,19 +226,7 @@ const SpeakingLab = () => {
       }
   };
 
-  const playTranslatorAudio = (text, isUzbek) => {
-      if ('speechSynthesis' in window) {
-          window.speechSynthesis.cancel();
-          const msg = new SpeechSynthesisUtterance(text);
-          msg.lang = isUzbek ? 'uz-UZ' : 'en-US';
-          msg.rate = 0.85;
-          if (!isUzbek) {
-             const bestVoice = getBestVoice();
-             if (bestVoice) msg.voice = bestVoice;
-          }
-          window.speechSynthesis.speak(msg);
-      }
-  };
+
 
   return (
     <div className="max-w-4xl mx-auto animate-fade-in-up py-8 px-4">
@@ -345,7 +295,7 @@ const SpeakingLab = () => {
                                      Sodda <Sparkles className="w-4 h-4" />
                                   </h4>
                               </div>
-                              <Button variant="secondary" size="icon" onClick={() => playAudio(translations.casual)} className="rounded-full bg-blue-500/10 text-blue-500 hover:bg-blue-500 hover:text-white">
+                              <Button variant="secondary" size="icon" onClick={() => playTTSAudio(translations.casual, 'en-US')} className="rounded-full bg-blue-500/10 text-blue-500 hover:bg-blue-500 hover:text-white">
                                   <Volume2 className="w-5 h-5" />
                               </Button>
                           </div>
@@ -370,7 +320,7 @@ const SpeakingLab = () => {
                                       Murakkab <Sparkles className="w-4 h-4" />
                                   </h4>
                               </div>
-                              <Button variant="secondary" size="icon" onClick={() => playAudio(translations.advanced)} className="rounded-full bg-purple-500/10 text-purple-500 hover:bg-purple-500 hover:text-white">
+                              <Button variant="secondary" size="icon" onClick={() => playTTSAudio(translations.advanced, 'en-US')} className="rounded-full bg-purple-500/10 text-purple-500 hover:bg-purple-500 hover:text-white">
                                   <Volume2 className="w-5 h-5" />
                               </Button>
                           </div>
@@ -448,7 +398,7 @@ const SpeakingLab = () => {
                     <div className="flex flex-col gap-2">
                         <div className="flex justify-between items-center mb-1 px-1">
                              <span className="text-sm font-bold text-muted-foreground uppercase">{translateFrom === 'uz' ? "O'zbekcha" : "English"} matn</span>
-                             {translatorText && <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full" onClick={() => playTranslatorAudio(translatorText, translateFrom === 'uz')}><Volume2 className="w-4 h-4 text-blue-500" /></Button>}
+                             {translatorText && <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full" onClick={() => playTTSAudio(translatorText, translateFrom === 'uz' ? 'uz-UZ' : 'en-US')}><Volume2 className="w-4 h-4 text-blue-500" /></Button>}
                         </div>
                         <textarea 
                             value={translatorText}
@@ -462,7 +412,7 @@ const SpeakingLab = () => {
                     <div className="flex flex-col gap-2">
                         <div className="flex justify-between items-center mb-1 px-1">
                              <span className="text-sm font-bold text-muted-foreground uppercase">{translateFrom === 'uz' ? "English" : "O'zbekcha"} tarjima</span>
-                             {translatedResult && <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full" onClick={() => playTranslatorAudio(translatedResult, translateFrom === 'en')}><Volume2 className="w-4 h-4 text-blue-500" /></Button>}
+                             {translatedResult && <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full" onClick={() => playTTSAudio(translatedResult, translateFrom === 'en' ? 'uz-UZ' : 'en-US')}><Volume2 className="w-4 h-4 text-blue-500" /></Button>}
                         </div>
                         <div className={`w-full bg-secondary/30 border border-border rounded-2xl p-4 min-h-[200px] text-lg ${!translatedResult ? 'text-muted-foreground/50' : 'text-foreground font-medium'}`}>
                             {isTranslatingText ? (

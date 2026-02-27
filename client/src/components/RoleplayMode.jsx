@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useGetWordsQuery, useChatRoleplayMutation } from '../features/api/apiSlice';
 import { groupWordsByReviewInterval } from '../utils/dateUtils';
 import { Loader2, Mic, MicOff, SendHorizontal, ChevronLeft, Volume2, Coffee, PlaneTakeoff, Briefcase, MapPin } from 'lucide-react';
+import { playTTSAudio } from '../utils/audio';
 
 const SCENARIOS = [
     { id: 'cafe', title: 'Qahvaxona', icon: <Coffee className="w-8 h-8" />, desc: 'Barista bilan qahva va shirinliklar buyurtma qilish.', bg: 'from-orange-400 to-amber-600' },
@@ -78,16 +79,7 @@ const RoleplayMode = () => {
         }
     };
 
-    // Text-to-Speech
-    const playAudio = (text) => {
-        if ('speechSynthesis' in window) {
-            window.speechSynthesis.cancel(); // Stop current playing
-            const msg = new SpeechSynthesisUtterance(text);
-            msg.lang = 'en-US';
-            msg.rate = 0.95; // Slightly slower for clarity
-            window.speechSynthesis.speak(msg);
-        }
-    };
+
 
     // Get Target Words for AI
     const getTargetWords = () => {
@@ -117,7 +109,7 @@ const RoleplayMode = () => {
             }).unwrap();
 
             setMessages([{ role: 'ai', content: data.reply }]);
-            playAudio(data.reply);
+            playTTSAudio(data.reply, 'en-US', 0.95);
         } catch (err) {
             setError("Server tarmog'ida xatolik yuz berdi.");
         } finally {
@@ -150,7 +142,7 @@ const RoleplayMode = () => {
             }).unwrap();
 
             setMessages(prev => [...prev, { role: 'ai', content: data.reply }]);
-            playAudio(data.reply);
+            playTTSAudio(data.reply, 'en-US', 0.95);
         } catch (err) {
              setMessages(prev => [...prev, { role: 'ai', content: "Muloqot uzildi, iltimos qayta yuboring." }]);
         } finally {
@@ -247,7 +239,7 @@ const RoleplayMode = () => {
                             
                             {msg.role === 'ai' && (
                                 <button 
-                                    onClick={() => playAudio(msg.content)}
+                                    onClick={() => playTTSAudio(msg.content, 'en-US', 0.95)}
                                     className="mb-2 p-1.5 bg-secondary text-secondary-foreground rounded-full hover:bg-secondary/80 flex items-center gap-1 text-xs font-bold"
                                     title="Eshitish"
                                 >
