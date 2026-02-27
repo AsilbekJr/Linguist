@@ -51,7 +51,7 @@ const TopicVocabulary = () => {
                  userWords.some(uw => uw.word.toLowerCase() === w.word.toLowerCase())
              ).length || 0;
              
-             if (currentAddedCount + 1 === 5) {
+             if (currentAddedCount + 1 >= 5) {
                  try {
                      const res = await syncDailyQuest({ type: 'topic' }).unwrap();
                      if (!topicData.isCompleteForToday) {
