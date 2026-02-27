@@ -21,7 +21,7 @@ const Sidebar = ({ user }) => {
     { id: '/review', label: 'Takrorlash', icon: CheckCircle },
     { id: '/challenge', label: '100 Days 🎯', icon: Flame },
     { id: '/topic', label: 'Daily Topics', icon: BookHeart },
-    { id: '/movie-lab', label: 'Movie Lab 🎬', icon: Mic },
+
     { id: '/speaking', label: 'Speaking Lab', icon: Mic },
     { id: '/roleplay', label: 'Immersion', icon: Mic }, // Kept same icon or can use user-supplied
     { id: '/vocabulary', label: 'Mening Lug\'atim', icon: Book },

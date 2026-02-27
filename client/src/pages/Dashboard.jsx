@@ -111,15 +111,7 @@ const Dashboard = () => {
            </div>
         </Link>
         
-        <Link to="/movie-lab" className="bg-card border border-border p-6 rounded-3xl hover:border-primary/50 transition-colors flex items-center gap-4 group">
-           <div className="w-10 h-10 rounded-xl bg-red-500/10 text-red-500 flex items-center justify-center group-hover:scale-110 transition-transform">
-              <Play className="w-5 h-5" />
-           </div>
-           <div>
-              <h4 className="font-bold">Movie Lab</h4>
-              <p className="text-xs text-muted-foreground mt-1">Kinolar orqali Shadowing</p>
-           </div>
-        </Link>
+
         
         <Link to="/roleplay" className="bg-card border border-border p-6 rounded-3xl hover:border-primary/50 transition-colors flex items-center gap-4 group">
            <div className="w-10 h-10 rounded-xl bg-teal-500/10 text-teal-500 flex items-center justify-center group-hover:scale-110 transition-transform">
