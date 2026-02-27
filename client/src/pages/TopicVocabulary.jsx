@@ -3,7 +3,8 @@ import {
   useGetCurrentTopicQuery, 
   useCompleteTopicMutation, 
   useAddWordMutation,
-  useSyncDailyQuestMutation
+  useSyncDailyQuestMutation,
+  useGetWordsQuery
 } from '../features/api/apiSlice';
 import { Button } from "@/components/ui/button";
 import { Loader2, CheckCircle2, BookOpen, Volume2, PlusCircle, ArrowRight } from "lucide-react";
@@ -15,6 +16,7 @@ const TopicVocabulary = () => {
     const [completeTopic, { isLoading: isCompleting }] = useCompleteTopicMutation();
     const [addWord] = useAddWordMutation();
     const [syncDailyQuest] = useSyncDailyQuestMutation();
+    const { data: userWords = [] } = useGetWordsQuery();
 
     const [addingWords, setAddingWords] = React.useState({});
     const [addedWords, setAddedWords] = React.useState({});
@@ -51,9 +53,10 @@ const TopicVocabulary = () => {
              // Create standard payload for the word lab
              const payload = {
                 word: wordObj.word,
-                translation: wordObj.translation,
-                definition: wordObj.definition,
-                example: wordObj.example,
+                skipAI: true,
+                manualTranslation: wordObj.translation,
+                manualDefinition: wordObj.definition,
+                manualExamples: [wordObj.example],
                 partOfSpeech: wordObj.partOfSpeech,
                 synonyms: [] // basic fallback 
              };
@@ -125,7 +128,10 @@ const TopicVocabulary = () => {
                        </div>
 
                        <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 gap-6">
-                           {topicData.words && topicData.words.map((w, index) => (
+                           {topicData.words && topicData.words.filter((w) => {
+                               // Also filter out words that are already in userWords
+                               return !userWords.some(userWord => userWord.word.toLowerCase() === w.word.toLowerCase());
+                           }).map((w, index) => (
                                <div key={index} className="bg-background rounded-2xl p-5 border border-border flex flex-col hover:border-purple-500/50 transition-colors group">
                                    <div className="flex justify-between items-start mb-4">
                                        <div>
