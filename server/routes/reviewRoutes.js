@@ -46,6 +46,16 @@ router.post('/:id/check', protect, async (req, res) => {
         // 1. Check with AI
         const aiResult = await checkSentence(wordDoc.word, sentence); // { isCorrect, feedback }
         
+        // If AI failed due to quota/network, do not penalize the user or update SRS stages
+        if (aiResult && aiResult.feedback === "AI service unavailable. Please try again.") {
+            return res.json({
+                ...aiResult,
+                wordId: wordDoc._id,
+                nextReviewDate: wordDoc.nextReviewDate,
+                mastered: wordDoc.mastered
+            });
+        }
+        
         // 2. SRS Logic
         let nextReview = new Date();
         let isMastered = false;
