@@ -14,7 +14,7 @@ export const apiSlice = createApi({
       return headers;
     },
   }),
-  tagTypes: ['Word', 'Challenge', 'Topic'],
+  tagTypes: ['Word', 'Challenge', 'Topic', 'User'],
   endpoints: (builder) => ({
     getWords: builder.query({
       query: () => '/api/words',
@@ -123,6 +123,7 @@ export const apiSlice = createApi({
     }),
     getMe: builder.query({
       query: () => '/api/auth/me',
+      providesTags: ['User'],
     }),
     onboardUser: builder.mutation({
       query: (data) => ({
@@ -130,6 +131,7 @@ export const apiSlice = createApi({
         method: 'POST',
         body: data,
       }),
+      invalidatesTags: ['User'],
     }),
     syncDailyQuest: builder.mutation({
       query: (data) => ({
@@ -137,6 +139,7 @@ export const apiSlice = createApi({
         method: 'POST',
         body: data,
       }),
+      invalidatesTags: ['User'],
     }),
   }),
 });

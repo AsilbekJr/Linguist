@@ -24,6 +24,7 @@ const ReviewMode = () => {
     const [error, setError] = useState(null);
 
     const userSentenceRef = useRef('');
+    const autoAdvanceTimeoutRef = useRef(null);
 
     useEffect(() => {
         userSentenceRef.current = userSentence;
@@ -109,15 +110,27 @@ const ReviewMode = () => {
                 ...prev,
                 [data.isCorrect ? 'correct' : 'incorrect']: prev[data.isCorrect ? 'correct' : 'incorrect'] + 1
             }));
+            
+            // Auto advance on correct answer
+            if (data.isCorrect) {
+                 autoAdvanceTimeoutRef.current = setTimeout(() => {
+                     handleNext();
+                 }, 2500); // 2.5 seconds to see the positive feedback
+            }
         } catch (err) {
             console.error("Check error:", err);
-            setError("Tekshirishda xatolik yuz berdi. Iltimos qayta urinib ko'ring.");
+            setError("Server xatosi: Javob olib bo'lmadi. Qayta urinib ko'ring.");
         } finally {
             setChecking(false);
         }
     };
 
     const handleNext = () => {
+        if (autoAdvanceTimeoutRef.current) {
+            clearTimeout(autoAdvanceTimeoutRef.current);
+            autoAdvanceTimeoutRef.current = null;
+        }
+
         setFeedback(null);
         setUserSentence('');
         setError(null);
@@ -331,13 +344,23 @@ const ReviewMode = () => {
                              )}
                         </div>
 
-                        <button 
-                            onClick={handleCheck}
-                            disabled={checking || !userSentence.trim()}
-                            className="w-full py-4 bg-gradient-to-r from-pink-600 to-purple-600 rounded-xl font-bold text-lg hover:opacity-90 transition-all disabled:opacity-50 flex justify-center items-center gap-2 text-white"
-                        >
-                            {checking ? 'Tekshirilmoqda...' : 'Tekshirish ✨'}
-                        </button>
+                        {error ? (
+                             <button 
+                                 onClick={handleCheck}
+                                 disabled={checking || !userSentence.trim()}
+                                 className="w-full py-4 bg-destructive hover:bg-destructive/90 rounded-xl font-bold text-lg hover:opacity-90 transition-all disabled:opacity-50 flex justify-center items-center gap-2 text-white"
+                             >
+                                 {checking ? 'Urinib ko\'rilmoqda...' : 'Qayta urinish (Retry) ↻'}
+                             </button>
+                        ) : (
+                             <button 
+                                 onClick={handleCheck}
+                                 disabled={checking || !userSentence.trim()}
+                                 className="w-full py-4 bg-gradient-to-r from-pink-600 to-purple-600 rounded-xl font-bold text-lg hover:opacity-90 transition-all disabled:opacity-50 flex justify-center items-center gap-2 text-white"
+                             >
+                                 {checking ? 'Tekshirilmoqda...' : 'Tekshirish ✨'}
+                             </button>
+                        )}
                     </div>
                 ) : (
                     <div className={`mt-6 p-6 rounded-2xl border ${feedback.isCorrect ? 'bg-green-500/10 border-green-500/30' : 'bg-destructive/10 border-destructive/30'} animate-fade-in`}>

@@ -1,12 +1,14 @@
 import React, { useMemo } from 'react';
 import { useSelector } from 'react-redux';
-import { useGetWordsQuery, useGetReviewDueQuery } from '../features/api/apiSlice';
+import { useGetWordsQuery, useGetReviewDueQuery, useGetMeQuery } from '../features/api/apiSlice';
 import { Link } from 'react-router-dom';
 import { Play, Flame, BookOpen, Brain, Mic, CheckCircle2, Circle, Trophy, Star } from 'lucide-react';
 import { groupWordsByDate } from '../utils/dateUtils';
 
 const Dashboard = () => {
-  const user = useSelector((state) => state.auth.user);
+  const authUser = useSelector((state) => state.auth.user);
+  const { data: fetchedUser } = useGetMeQuery();
+  const user = fetchedUser || authUser;
   
   const { data: words = [] } = useGetWordsQuery();
   const { data: reviewDueList } = useGetReviewDueQuery();
