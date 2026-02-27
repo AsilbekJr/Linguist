@@ -140,7 +140,26 @@ const ReviewMode = () => {
             setCurrentIndex(prev => prev + 1);
         } else {
             // Finished all reviews in this session
-            syncDailyQuest({ type: 'review' }).catch(err => console.error("Failed to sync quest:", err));
+            syncDailyQuest({ type: 'review' })
+                .then(async (res) => {
+                    // User request: If Takrorlash is completed with >= 5 words, trigger Yangi Qon (topic)
+                    if (sessionWords.length >= 5) {
+                        try {
+                            const topicRes = await syncDailyQuest({ type: 'topic' }).unwrap();
+                            if (topicRes.streakUpdated) {
+                               toast.success(topicRes.message, { icon: '🔥' });
+                            } else {
+                               toast.success("🔥 Yangi Qon vazifasi ham avtomatik bajarildi!");
+                            }
+                        } catch (err) {
+                            console.error("Failed to auto-sync topic quest:", err);
+                        }
+                    } else if (res.data?.streakUpdated) {
+                        toast.success(res.data.message, { icon: '🔥' });
+                    }
+                })
+                .catch(err => console.error("Failed to sync quest:", err));
+
             setSessionWords([]); 
             setSelectedGroup(null);
         }
