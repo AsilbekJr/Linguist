@@ -1,7 +1,8 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useGetWordsQuery, useCheckReviewMutation } from '../features/api/apiSlice';
 import { groupWordsByReviewInterval } from '../utils/dateUtils';
-import { BookOpen, ChevronLeft, Mic, MicOff } from 'lucide-react';
+import { BookOpen, ChevronLeft, Mic, MicOff, Volume2 } from 'lucide-react';
+import { playTTSAudio } from '../utils/audio';
 
 const ReviewMode = () => {
     const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:5000';
@@ -275,7 +276,16 @@ const ReviewMode = () => {
                 <div className="text-center mb-8">
                     {error && <div className="text-destructive mb-4 text-sm animate-pulse">{error}</div>}
                     <p className="text-muted-foreground text-xs md:text-sm tracking-widest uppercase mb-2 font-bold">Maqsadli So'z</p>
-                    <h3 className="text-4xl md:text-5xl font-black text-card-foreground mb-4 tracking-tight capitalize">{word.word}</h3>
+                    <div className="flex justify-center items-center gap-4 mb-4">
+                        <h3 className="text-4xl md:text-5xl font-black text-card-foreground tracking-tight capitalize">{word.word}</h3>
+                        <button 
+                            onClick={() => playTTSAudio(word.word, 'en-GB', 1.0)} 
+                            className="p-2 bg-pink-500/10 text-pink-500 hover:bg-pink-500 hover:text-white rounded-full transition-all flex items-center justify-center shadow-sm"
+                            title="Tinglash (UK)"
+                        >
+                            <Volume2 className="w-6 h-6" />
+                        </button>
+                    </div>
                     <p className="text-muted-foreground text-sm md:text-base italic">"{word.definition}"</p>
                 </div>
 
