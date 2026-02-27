@@ -393,16 +393,25 @@ const ReviewMode = () => {
                             {feedback.feedback}
                         </p>
                         
-                        <button 
-                            onClick={handleNext}
-                            className={`w-full py-3 rounded-xl font-bold transition-all ${
-                                feedback.isCorrect 
-                                ? 'bg-green-600 hover:bg-green-500 text-white shadow-lg shadow-green-500/20' 
-                                : 'bg-secondary hover:bg-secondary/80 text-secondary-foreground'
-                            }`}
-                        >
-                            {currentIndex < sessionWords.length - 1 ? 'Keyingi So\'z →' : 'Sessiyani Yakunlash 🎉'}
-                        </button>
+                        {feedback.feedback === "AI service unavailable. Please try again." ? (
+                            <button 
+                                onClick={() => setFeedback(null)}
+                                className="w-full py-3 rounded-xl font-bold transition-all bg-destructive hover:bg-destructive/90 text-white shadow-lg shadow-destructive/20"
+                            >
+                                Yana urinib ko'rish ↻
+                            </button>
+                        ) : (
+                            <button 
+                                onClick={handleNext}
+                                className={`w-full py-3 rounded-xl font-bold transition-all ${
+                                    feedback.isCorrect 
+                                    ? 'bg-green-600 hover:bg-green-500 text-white shadow-lg shadow-green-500/20' 
+                                    : 'bg-secondary hover:bg-secondary/80 text-secondary-foreground'
+                                }`}
+                            >
+                                {currentIndex < sessionWords.length - 1 ? 'Keyingi So\'z →' : 'Sessiyani Yakunlash 🎉'}
+                            </button>
+                        )}
                     </div>
                 )}
             </div>
