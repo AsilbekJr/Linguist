@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { useGetWordsQuery, useCheckReviewMutation } from '../features/api/apiSlice';
+import { useGetWordsQuery, useCheckReviewMutation, useSyncDailyQuestMutation } from '../features/api/apiSlice';
 import { groupWordsByReviewInterval } from '../utils/dateUtils';
 import { BookOpen, ChevronLeft, Mic, MicOff, Volume2 } from 'lucide-react';
 import { playTTSAudio } from '../utils/audio';
@@ -8,6 +8,7 @@ const ReviewMode = () => {
     const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:5000';
     const { data: words = [], isLoading } = useGetWordsQuery();
     const [checkReviewMutation] = useCheckReviewMutation();
+    const [syncDailyQuest] = useSyncDailyQuestMutation();
 
     const [selectedGroup, setSelectedGroup] = useState(null); // String: "Review Now ⚡", etc.
     const [sessionWords, setSessionWords] = useState([]); // Words ready for review in this session
@@ -126,6 +127,7 @@ const ReviewMode = () => {
             setCurrentIndex(prev => prev + 1);
         } else {
             // Finished all reviews in this session
+            syncDailyQuest({ type: 'review' }).catch(err => console.error("Failed to sync quest:", err));
             setSessionWords([]); 
             setSelectedGroup(null);
         }

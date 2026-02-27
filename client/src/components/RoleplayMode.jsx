@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useGetWordsQuery, useChatRoleplayMutation } from '../features/api/apiSlice';
+import { useGetWordsQuery, useChatRoleplayMutation, useSyncDailyQuestMutation } from '../features/api/apiSlice';
 import { groupWordsByReviewInterval } from '../utils/dateUtils';
 import { Loader2, Mic, MicOff, SendHorizontal, ChevronLeft, Volume2, Coffee, PlaneTakeoff, Briefcase, MapPin } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 import { playTTSAudio } from '../utils/audio';
 
 const SCENARIOS = [
@@ -14,6 +15,7 @@ const SCENARIOS = [
 const RoleplayMode = () => {
     const { data: words = [] } = useGetWordsQuery();
     const [chatRoleplay] = useChatRoleplayMutation();
+    const [syncDailyQuest] = useSyncDailyQuestMutation();
 
     const [activeScenario, setActiveScenario] = useState(null);
     const [messages, setMessages] = useState([]); // { role: 'user' | 'ai', content: '...' }
@@ -132,6 +134,16 @@ const RoleplayMode = () => {
         setMessages(newMessages);
         setInputText("");
         setIsTyping(true);
+
+        // Sync Immersion quest after a reasonable exchange (e.g., 3 user lines + 2 AI lines + 1 initial = 6)
+        if (newMessages.length === 6) {
+           syncDailyQuest({ type: 'immersion' })
+              .unwrap()
+              .then(res => {
+                  if (res.streakUpdated) toast.success(res.message, { icon: '🔥' });
+              })
+              .catch(err => console.error("Immersion quest sync failed", err));
+        }
 
         try {
             const data = await chatRoleplay({

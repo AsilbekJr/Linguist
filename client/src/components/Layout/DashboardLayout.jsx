@@ -5,6 +5,7 @@ import { logout } from '../../features/auth/authSlice';
 import { ThemeToggle } from '../ThemeToggle';
 import Sidebar from '../Sidebar';
 import { LogOut, ChevronDown } from 'lucide-react';
+import OnboardingModal from '../Onboarding/OnboardingModal';
 
 const DashboardLayout = () => {
   const user = useSelector((state) => state.auth.user);
@@ -24,6 +25,7 @@ const DashboardLayout = () => {
   
   return (
     <div className="min-h-screen bg-background text-foreground flex">
+      <OnboardingModal />
       {/* Desktop Sidebar (Optional: Keep Sidebar logic clean here or in Sidebar.jsx itself) */}
       <Sidebar user={user} />
       

@@ -2,7 +2,8 @@ import React from 'react';
 import { 
   useGetCurrentTopicQuery, 
   useCompleteTopicMutation, 
-  useAddWordMutation 
+  useAddWordMutation,
+  useSyncDailyQuestMutation
 } from '../features/api/apiSlice';
 import { Button } from "@/components/ui/button";
 import { Loader2, CheckCircle2, BookOpen, Volume2, PlusCircle, ArrowRight } from "lucide-react";
@@ -13,6 +14,7 @@ const TopicVocabulary = () => {
     const { data: topicData, isLoading, refetch } = useGetCurrentTopicQuery();
     const [completeTopic, { isLoading: isCompleting }] = useCompleteTopicMutation();
     const [addWord] = useAddWordMutation();
+    const [syncDailyQuest] = useSyncDailyQuestMutation();
 
     const [addingWords, setAddingWords] = React.useState({});
     const [addedWords, setAddedWords] = React.useState({});
@@ -20,6 +22,17 @@ const TopicVocabulary = () => {
     const handleComplete = async () => {
         try {
             await completeTopic().unwrap();
+            
+            // Sync Daily Quest for completing a topic
+            try {
+                const res = await syncDailyQuest({ type: 'topic' }).unwrap();
+                if (res.streakUpdated) {
+                    toast.success(res.message, { icon: '🔥' });
+                }
+            } catch (sqErr) {
+                console.error("Failed to sync daily quest", sqErr);
+            }
+
             toast.success("Bugungi mavzu muvaffaqiyatli yakunlandi!");
             refetch();
         } catch (error) {

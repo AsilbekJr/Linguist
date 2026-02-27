@@ -16,6 +16,34 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  xp: {
+    type: Number,
+    default: 0,
+  },
+  currentStreak: {
+    type: Number,
+    default: 0,
+  },
+  longestStreak: {
+    type: Number,
+    default: 0,
+  },
+  lastActiveDate: {
+    type: Date,
+    default: null,
+  },
+  onboarding: {
+    completed: { type: Boolean, default: false },
+    level: { type: String, default: 'beginner' }, // beginner, intermediate, advanced
+    goal: { type: String, default: 'speaking' }, // speaking, vocabulary, grammar
+    planType: { type: String, default: 'standard' } // sprint, foundation, fluency
+  },
+  dailyQuests: {
+    date: { type: String, default: '' }, // YYYY-MM-DD
+    reviewCompleted: { type: Boolean, default: false },
+    topicCompleted: { type: Boolean, default: false },
+    immersionCompleted: { type: Boolean, default: false },
+  },
   createdAt: {
     type: Date,
     default: Date.now,

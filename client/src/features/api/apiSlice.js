@@ -124,6 +124,20 @@ export const apiSlice = createApi({
     getMe: builder.query({
       query: () => '/api/auth/me',
     }),
+    onboardUser: builder.mutation({
+      query: (data) => ({
+        url: '/api/auth/onboard',
+        method: 'POST',
+        body: data,
+      }),
+    }),
+    syncDailyQuest: builder.mutation({
+      query: (data) => ({
+        url: '/api/auth/sync-quest',
+        method: 'POST',
+        body: data,
+      }),
+    }),
   }),
 });
 
@@ -145,4 +159,6 @@ export const {
   useGetReviewDueQuery,
   useGetCurrentTopicQuery,
   useCompleteTopicMutation,
+  useOnboardUserMutation,
+  useSyncDailyQuestMutation,
 } = apiSlice;

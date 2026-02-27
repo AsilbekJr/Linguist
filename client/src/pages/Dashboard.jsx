@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { useSelector } from 'react-redux';
 import { useGetWordsQuery, useGetReviewDueQuery } from '../features/api/apiSlice';
 import { Link } from 'react-router-dom';
-import { Play, Flame, BookOpen, Brain, Mic } from 'lucide-react';
+import { Play, Flame, BookOpen, Brain, Mic, CheckCircle2, Circle, Trophy, Star } from 'lucide-react';
 import { groupWordsByDate } from '../utils/dateUtils';
 
 const Dashboard = () => {
@@ -14,86 +14,111 @@ const Dashboard = () => {
   const reviewDueCount = reviewDueList ? reviewDueList.length : 0;
   const totalWords = words.length;
 
+  const quests = user?.dailyQuests || {};
+  const today = new Date().toISOString().split('T')[0];
+  
+  // Checking if they are actually active today
+  const isReviewDone = quests.date === today && quests.reviewCompleted;
+  const isTopicDone = quests.date === today && quests.topicCompleted;
+  const isImmersionDone = quests.date === today && quests.immersionCompleted;
+
+  const completedCount = [isReviewDone, isTopicDone, isImmersionDone].filter(Boolean).length;
+  const progressPercent = (completedCount / 3) * 100;
+
   return (
     <div className="max-w-5xl mx-auto space-y-8 animate-fade-in-up">
       
-      {/* Welcome Section */}
-      <section className="bg-gradient-to-br from-card to-card/50 p-8 rounded-3xl border border-border shadow-sm">
-        <h1 className="text-3xl md:text-5xl font-black mb-4">
-          Xush kelibsiz, <span className="bg-gradient-to-r from-primary to-purple-500 bg-clip-text text-transparent">{user?.name}</span> 👋
-        </h1>
-        <p className="text-muted-foreground text-lg mb-8 max-w-2xl text-balance">
-          Bugun ingliz tilida erkin gapirish sari yana bir qadam tashlaymiz. Asosiy vazifalaringiz tayyor!
-        </p>
+      {/* Welcome & Stats Section */}
+      <section className="bg-gradient-to-br from-card to-card/50 p-6 md:p-8 rounded-3xl border border-border shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+        <div>
+            <h1 className="text-3xl md:text-5xl font-black mb-3">
+            Xush kelibsiz, <span className="bg-gradient-to-r from-primary to-purple-500 bg-clip-text text-transparent">{user?.name}</span> 👋
+            </h1>
+            <p className="text-muted-foreground text-base md:text-lg max-w-xl text-balance">
+            Kunlik vazifalarni bajaring, XP yig'ing va o'z intizomingizni saqlang!
+            </p>
+        </div>
+        <div className="flex gap-4 items-center shrink-0">
+            <div className={`flex items-center gap-2 px-4 py-2 rounded-2xl border ${user?.currentStreak > 0 ? 'bg-orange-500/10 border-orange-500/20 text-orange-500' : 'bg-muted border-border text-muted-foreground'}`}>
+                <Flame className={`w-6 h-6 ${user?.currentStreak > 0 ? 'animate-pulse' : ''}`} />
+                <div>
+                    <div className="text-xl font-black">{user?.currentStreak || 0}</div>
+                    <div className="text-[10px] uppercase font-bold tracking-wider">Kunlik Streak</div>
+                </div>
+            </div>
+            <div className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-yellow-500/10 border border-yellow-500/20 text-yellow-600 dark:text-yellow-500">
+                <Star className="w-6 h-6 fill-current" />
+                <div>
+                    <div className="text-xl font-black">{user?.xp || 0}</div>
+                    <div className="text-[10px] uppercase font-bold tracking-wider">Total XP</div>
+                </div>
+            </div>
+        </div>
       </section>
 
-      {/* Primary Action Needs */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {/* Daily Quests Section */}
+      <div className="bg-card border border-border rounded-3xl shadow-sm p-6 md:p-8 relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl pointer-events-none"></div>
         
-        {/* Priority 1: Review */}
-        <div className="bg-card border border-border p-6 rounded-3xl shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-3xl group-hover:bg-primary/10 transition-colors"></div>
-          <div className="flex items-start justify-between mb-4 relative z-10">
-            <div className="w-12 h-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center">
-              <Brain className="w-6 h-6" />
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8 relative z-10">
+            <div>
+                <h2 className="text-2xl md:text-3xl font-black flex items-center gap-3">
+                    <Trophy className="w-8 h-8 text-primary" /> Bugungi Vazifalar (Daily Quests)
+                </h2>
+                <p className="text-muted-foreground mt-2 font-medium">Til o'rganish — bu har kungi kichik odatlar yig'indisi. Barchasini yakunlang!</p>
             </div>
-            {reviewDueCount > 0 && (
-                <span className="bg-destructive text-destructive-foreground px-3 py-1 rounded-full text-xs font-bold animate-pulse">
-                  {reviewDueCount} ta so'z
-                </span>
-            )}
-          </div>
-          <h2 className="text-2xl font-bold mb-2 relative z-10">Spaced Repetition</h2>
-          <p className="text-muted-foreground text-sm mb-6 relative z-10">
-            Miyangiz so'zlarni unutmasligi uchun eng muhim qadam.
-          </p>
-          <Link 
-            to="/review" 
-            className="w-full inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground py-3 rounded-xl font-bold transition-all mt-auto z-10 relative"
-          >
-            <Play className="w-4 h-4 fill-current" /> 
-            {reviewDueCount > 0 ? "Takrorlashni boshlash" : "Takrorlash (Hozircha bo'sh)"}
-          </Link>
+            
+            <div className="w-full md:w-48 bg-secondary rounded-full h-3 border border-border/50 relative overflow-hidden shrink-0 mt-4 md:mt-0">
+               <div className="h-full bg-gradient-to-r from-primary to-purple-500 transition-all duration-1000 ease-out" style={{ width: `${progressPercent}%` }}></div>
+            </div>
         </div>
 
-        {/* Priority 2: Challenge */}
-        <div className="bg-card border border-border p-6 rounded-3xl shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group flex flex-col">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500/5 rounded-full blur-3xl group-hover:bg-orange-500/10 transition-colors"></div>
-          <div className="flex items-start justify-between mb-4 relative z-10">
-            <div className="w-12 h-12 rounded-2xl bg-orange-500/10 text-orange-500 flex items-center justify-center">
-              <Flame className="w-6 h-6" />
-            </div>
-          </div>
-          <h2 className="text-2xl font-bold mb-2 relative z-10">100 Days Challenge</h2>
-          <p className="text-muted-foreground text-sm mb-6 relative z-10">
-            Kichik qadamlar, katta natijalar. Bugungi yodlash mashqini bajaring.
-          </p>
-          <Link 
-            to="/challenge" 
-            className="w-full inline-flex items-center justify-center gap-2 bg-secondary hover:bg-secondary/80 text-secondary-foreground py-3 rounded-xl font-bold transition-all mt-auto z-10 relative"
-          >
-            Vazifalarni ko'rish
-          </Link>
-        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 relative z-10">
+            
+            {/* Quest 1: Review */}
+            <Link to="/review" className={`p-5 rounded-2xl border-2 transition-all flex flex-col group ${isReviewDone ? 'border-green-500 bg-green-500/5' : 'border-border hover:border-primary/50 bg-background'}`}>
+                <div className="flex justify-between items-start mb-4">
+                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${isReviewDone ? 'bg-green-500/20 text-green-500' : 'bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors'}`}>
+                        <Brain className="w-6 h-6" />
+                    </div>
+                    {isReviewDone ? <CheckCircle2 className="w-6 h-6 text-green-500" /> : <Circle className="w-6 h-6 text-muted-foreground opacity-30" />}
+                </div>
+                <h3 className="text-xl font-bold mb-1">Takrorlash</h3>
+                <p className="text-sm text-muted-foreground mb-4">Eski so'zlarni xotirada tiklang.</p>
+                {reviewDueCount > 0 && !isReviewDone && (
+                    <span className="text-xs font-bold text-destructive bg-destructive/10 px-2 py-1 rounded inline-block w-fit mt-auto animate-pulse">
+                        {reviewDueCount} ta so'z kutmoqda
+                    </span>
+                )}
+                {isReviewDone && <span className="text-xs font-bold text-green-500 mt-auto uppercase tracking-wide">Bajarildi ✅</span>}
+            </Link>
 
-        {/* Priority 3: Daily Topics */}
-        <div className="bg-card border border-border p-6 rounded-3xl shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group flex flex-col">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/5 rounded-full blur-3xl group-hover:bg-purple-500/10 transition-colors"></div>
-          <div className="flex items-start justify-between mb-4 relative z-10">
-            <div className="w-12 h-12 rounded-2xl bg-purple-500/10 text-purple-500 flex items-center justify-center">
-              <BookOpen className="w-6 h-6" />
-            </div>
-          </div>
-          <h2 className="text-2xl font-bold mb-2 relative z-10">Daily Topics</h2>
-          <p className="text-muted-foreground text-sm mb-6 relative z-10">
-            Har kuni bitta aniq mavzu doirasida yangi 5ta eng kerakli so'zni o'rganing.
-          </p>
-          <Link 
-            to="/topic" 
-            className="w-full inline-flex items-center justify-center gap-2 bg-purple-500 hover:bg-purple-600 text-white py-3 rounded-xl font-bold transition-all mt-auto z-10 relative"
-          >
-            Lug'atni boshlash
-          </Link>
+            {/* Quest 2: Daily Topic */}
+            <Link to="/topic" className={`p-5 rounded-2xl border-2 transition-all flex flex-col group ${isTopicDone ? 'border-green-500 bg-green-500/5' : 'border-border hover:border-primary/50 bg-background'}`}>
+                <div className="flex justify-between items-start mb-4">
+                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${isTopicDone ? 'bg-green-500/20 text-green-500' : 'bg-purple-500/10 text-purple-500 group-hover:bg-purple-500 group-hover:text-white transition-colors'}`}>
+                        <BookOpen className="w-6 h-6" />
+                    </div>
+                    {isTopicDone ? <CheckCircle2 className="w-6 h-6 text-green-500" /> : <Circle className="w-6 h-6 text-muted-foreground opacity-30" />}
+                </div>
+                <h3 className="text-xl font-bold mb-1">Yangi Qon</h3>
+                <p className="text-sm text-muted-foreground mb-4">Bugungi mavzu doirasida yangi 5ta so'z o'rganing.</p>
+                {isTopicDone ? <span className="text-xs font-bold text-green-500 mt-auto uppercase tracking-wide">Bajarildi ✅</span> : <span className="text-xs font-bold text-primary mt-auto">Boshlash &rarr;</span>}
+            </Link>
+
+            {/* Quest 3: Immersion / Challenge */}
+            <Link to="/roleplay" className={`p-5 rounded-2xl border-2 transition-all flex flex-col group ${isImmersionDone ? 'border-green-500 bg-green-500/5' : 'border-border hover:border-primary/50 bg-background'}`}>
+                <div className="flex justify-between items-start mb-4">
+                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${isImmersionDone ? 'bg-green-500/20 text-green-500' : 'bg-teal-500/10 text-teal-500 group-hover:bg-teal-500 group-hover:text-white transition-colors'}`}>
+                        <Mic className="w-6 h-6" />
+                    </div>
+                    {isImmersionDone ? <CheckCircle2 className="w-6 h-6 text-green-500" /> : <Circle className="w-6 h-6 text-muted-foreground opacity-30" />}
+                </div>
+                <h3 className="text-xl font-bold mb-1">Amaliyot</h3>
+                <p className="text-sm text-muted-foreground mb-4">AI bilan gaplashib so'zlarni extends ishlatib ko'ring.</p>
+                {isImmersionDone ? <span className="text-xs font-bold text-green-500 mt-auto uppercase tracking-wide">Bajarildi ✅</span> : <span className="text-xs font-bold text-primary mt-auto">Boshlash &rarr;</span>}
+            </Link>
+            
         </div>
       </div>
 
