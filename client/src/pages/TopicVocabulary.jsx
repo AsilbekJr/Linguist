@@ -124,10 +124,9 @@ const TopicVocabulary = () => {
                        </div>
 
                        <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 gap-6">
-                           {topicData.words && topicData.words.filter((w) => {
-                               // Also filter out words that are already in userWords
-                               return !userWords.some(userWord => userWord.word.toLowerCase() === w.word.toLowerCase());
-                           }).map((w, index) => (
+                           {topicData.words && topicData.words.map((w, index) => {
+                               const isAlreadyAdded = userWords.some(userWord => userWord.word.toLowerCase() === w.word.toLowerCase());
+                               return (
                                <div key={index} className="bg-background rounded-2xl p-5 border border-border flex flex-col hover:border-purple-500/50 transition-colors group">
                                    <div className="flex justify-between items-start mb-4">
                                        <div>
@@ -146,13 +145,13 @@ const TopicVocabulary = () => {
                                           variant="ghost" 
                                           size="sm" 
                                           onClick={() => handleAddWordToDict(w)}
-                                          disabled={addingWords[w.word] || addedWords[w.word]}
-                                          className={`rounded-full h-8 w-8 p-0 ${addedWords[w.word] ? 'bg-green-500/10 text-green-500' : 'hover:bg-purple-500/10 hover:text-purple-500'}`}
+                                          disabled={addingWords[w.word] || addedWords[w.word] || isAlreadyAdded}
+                                          className={`rounded-full h-8 w-8 p-0 ${(addedWords[w.word] || isAlreadyAdded) ? 'bg-green-500/10 text-green-500' : 'hover:bg-purple-500/10 hover:text-purple-500'}`}
                                           title="Word Lab'ga saqlash"
                                        >
                                            {addingWords[w.word] ? (
                                                <Loader2 className="w-4 h-4 animate-spin" />
-                                           ) : addedWords[w.word] ? (
+                                           ) : (addedWords[w.word] || isAlreadyAdded) ? (
                                                <CheckCircle2 className="w-4 h-4" />
                                            ) : (
                                                <PlusCircle className="w-5 h-5" />
@@ -175,7 +174,8 @@ const TopicVocabulary = () => {
                                        </div>
                                    </div>
                                </div>
-                           ))}
+                               );
+                           })}
                        </div>
 
 

@@ -49,9 +49,6 @@ router.get('/current', protect, async (req, res) => {
             return res.json({ message: "Congratulations! You have completed the 100 Days Challenge!", isFinished: true });
         }
 
-        // 1. Pick a topic
-        const randomTopic = TOPICS[Math.floor(Math.random() * TOPICS.length)];
-
         let targetWords = [];
         try {
             const activeWords = await Word.aggregate([
@@ -63,18 +60,30 @@ router.get('/current', protect, async (req, res) => {
             console.warn("Could not fetch target words for challenge:", e);
         }
 
-        // 3. Generate text using Gemini
-        let generatedText = null;
-        try {
-            generatedText = await generateChallengeText(randomTopic, targetWords, nextDaynum);
-        } catch (err) {
-            console.error("AI Generation failed for challenge, using fallback:", err.message);
-        }
+        // Generate challenge text from static JSON instead of AI
+        const fs = require('fs');
+        const path = require('path');
+        let generatedText = "Welcome to your text. Read exactly what is written to practice.";
+        let randomTopic = "Daily Practice";
 
-        // Generate dynamic fallback text if target words exist
-        let fallbackText = "This is a fallback text because AI generation failed. Welcome to your challenge! Read this text aloud to practice.";
-        if (targetWords.length > 0) {
-            fallbackText = `AI API is currently busy (Quota limit). Please manually read and practice these target words for your daily challenge:\n\n**${targetWords.join('**\n**')}**\n\nTry to create your own short story or sentences using these words.`;
+        try {
+            const challengesData = require('../data/challenges.json');
+            // Find the challenge for the specific day
+            const dayData = challengesData.find(c => c.dayNumber === nextDaynum);
+            if (dayData) {
+                randomTopic = dayData.topic;
+                generatedText = dayData.textTemplate;
+                // Inject target words naturally
+                if (targetWords.length > 0) {
+                    generatedText = generatedText.replace('(Target words will be dynamically injected here in the route).', `\n\nYour target vocabulary words to focus on today are: **${targetWords.join('** , **')}**. Try to use them in your own sentences later!`);
+                } else {
+                    generatedText = generatedText.replace('(Target words will be dynamically injected here in the route).', '');
+                }
+            }
+        } catch (err) {
+            console.error("Failed to load local challenges JSON. Falling back to simple text.", err.message);
+            randomTopic = TOPICS[Math.floor(Math.random() * TOPICS.length)];
+            generatedText = `This is a fallback text because challenges data was not found. Please manually read and practice these target words for your daily challenge:\n\n**${targetWords.join('**\n**')}**\n\nTry to create your own short story or sentences using these words.`;
         }
 
         // 4. Save to DB
@@ -82,7 +91,7 @@ router.get('/current', protect, async (req, res) => {
             user: req.user._id,
             dayNumber: nextDaynum,
             topic: randomTopic,
-            text: generatedText || fallbackText,
+            text: generatedText,
             status: 'pending'
         });
         await newChallenge.save();

@@ -41,7 +41,21 @@ router.post('/', protect, async (req, res) => {
         // 3. AI Operations (Validation & Context)
         let aiContext;
         
-        if (req.body.skipAI) {
+        // 3.0 Check local dictionary JSON first
+        let foundInLocalDict = false;
+        try {
+            const staticDict = require('../data/dictionary.json');
+            const localMatch = staticDict.find(item => item.word.toLowerCase() === word.toLowerCase());
+            if (localMatch) {
+                console.log(`Word "${word}" found in local JSON dictionary. Skipping AI.`);
+                aiContext = { ...localMatch };
+                foundInLocalDict = true;
+            }
+        } catch (err) {
+            console.warn("Could not load local dictionary.json:", err.message);
+        }
+
+        if (req.body.skipAI && !foundInLocalDict) {
             console.log("Skipping AI for:", word);
             aiContext = {
                 word: word,
@@ -51,40 +65,71 @@ router.post('/', protect, async (req, res) => {
                 collocations: [],
                 fun_fact: "This word was saved manually."
             };
-        } else {
-            // 3.1 AI Validation
-            console.log("Validating word:", word);
-            let validation;
+        } else if (!foundInLocalDict) {
+            console.log("Fetching definition from Free Dictionary API for:", word);
             try {
-                validation = await validateWord(word);
-            } catch (error) {
-                if (error.type === 'QUOTA_EXCEEDED') {
-                    return res.status(429).json({ message: error.message, type: 'QUOTA_EXCEEDED' });
+                // Use built-in fetch since Node 18+
+                const response = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`);
+                
+                if (!response.ok) {
+                    if (response.status === 404) {
+                        return res.status(400).json({
+                            message: `"${word}" doesn't seem to be a valid English word or no definition found.`,
+                            type: 'INVALID',
+                            suggestions: []
+                        });
+                    }
+                    throw new Error(`Dictionary API error: ${response.status}`);
                 }
-                throw error; // Rethrow for general catch
-            }
-            
-            if (validation && validation.isValid === false) {
-                 return res.status(400).json({
-                     message: `"${word}" doesn't seem to be a valid English word.`,
-                     type: 'INVALID',
-                     suggestions: validation.suggestions || []
-                 });
-            }
-
-            // 3.2 Generate Context (if valid)
-            console.log("Generating context for:", word);
-            try {
-                aiContext = await generateWordContext(word);
-            } catch (error) {
-                 if (error.type === 'QUOTA_EXCEEDED') {
-                    return res.status(429).json({ message: error.message, type: 'QUOTA_EXCEEDED' });
+                
+                const data = await response.json();
+                const entry = data[0];
+                
+                // Extract best definition
+                let definition = "Definition unavailable.";
+                let example = "Example unavailable.";
+                let partOfSpeech = "unknown verb/noun";
+                
+                if (entry.meanings && entry.meanings.length > 0) {
+                    partOfSpeech = entry.meanings[0].partOfSpeech;
+                    const defObj = entry.meanings[0].definitions[0];
+                    if (defObj) {
+                        definition = defObj.definition;
+                        if (defObj.example) {
+                            example = defObj.example;
+                        }
+                    }
                 }
-                throw error;
-            }
+                
+                // Extract phonetic
+                let phonetic = entry.phonetic || "";
+                if (!phonetic && entry.phonetics && entry.phonetics.length > 0) {
+                    const backupPhonetic = entry.phonetics.find(p => p.text);
+                    if (backupPhonetic) phonetic = backupPhonetic.text;
+                }
 
-            if (!aiContext) {
-                 return res.status(500).json({ message: "Failed to generate AI context" });
+                aiContext = {
+                    word: entry.word || word,
+                    phonetic: phonetic,
+                    definition: `(${partOfSpeech}) ${definition}`,
+                    translation: req.body.manualTranslation || "", // We don't have free translation API here, require manual or leave blank
+                    examples: example !== "Example unavailable." ? [example] : [],
+                    collocations: [],
+                    fun_fact: "Word found in standard Oxford dictionary."
+                };
+                
+            } catch (error) {
+                console.error("Dictionary API Fetch error:", error);
+                // Fallback to manual mode if API totally fails
+                console.log("Falling back to manual save for:", word);
+                aiContext = {
+                    word: word,
+                    definition: req.body.manualDefinition || "Definition unavailable (API failed). You can edit this later.",
+                    examples: req.body.manualExamples && req.body.manualExamples.length > 0 ? req.body.manualExamples : ["Example unavailable."],
+                    translation: req.body.manualTranslation || "",
+                    collocations: [],
+                    fun_fact: "Saved via fallback mechanism."
+                };
             }
         }
 

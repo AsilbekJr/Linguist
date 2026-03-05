@@ -43,17 +43,26 @@ router.post('/:id/check', protect, async (req, res) => {
             return res.status(404).json({ message: "Word not found" });
         }
 
-        // 1. Check with AI
-        const aiResult = await checkSentence(wordDoc.word, sentence); // { isCorrect, feedback }
+        // 1. Check with static local logic instead of AI
+        // A minimal logic: Is the word actually in the sentence? Is the sentence reasonably long?
+        const isWordPresent = sentence.toLowerCase().includes(wordDoc.word.toLowerCase());
+        const sentenceLength = sentence.trim().split(/\s+/).length;
         
-        // If AI failed due to quota/network, do not penalize the user or update SRS stages
-        if (aiResult && aiResult.feedback === "AI service unavailable. Please try again.") {
-            return res.json({
-                ...aiResult,
-                wordId: wordDoc._id,
-                nextReviewDate: wordDoc.nextReviewDate,
-                mastered: wordDoc.mastered
-            });
+        let aiResult = {
+            isCorrect: false,
+            feedback: ""
+        };
+
+        if (isWordPresent && sentenceLength >= 3) {
+            aiContext = true;
+            aiResult.isCorrect = true;
+            aiResult.feedback = "Ajoyib! So'z gap ichida to'g'ri qatnashgan ko'rinadi. (AI tekshiruvi o'chirib qo'yilgan)";
+        } else if (!isWordPresent) {
+            aiResult.isCorrect = false;
+            aiResult.feedback = `Gapingizda "${wordDoc.word}" so'zi qatnashmadi. Iltimos so'zni to'g'ri ishlating.`;
+        } else {
+            aiResult.isCorrect = false;
+            aiResult.feedback = "Gapingiz juda qisqa (kamida 3ta so'z bo'lishi kerak). Kengroq tushuntirishga harakat qiling.";
         }
         
         // 2. SRS Logic

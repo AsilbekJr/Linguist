@@ -1,18 +1,21 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { useGetWordsQuery, useGetReviewDueQuery, useGetMeQuery } from '../features/api/apiSlice';
 import { Link } from 'react-router-dom';
-import { Play, Flame, BookOpen, Brain, Mic, CheckCircle2, Circle, Trophy, Star } from 'lucide-react';
+import { Play, Flame, BookOpen, Brain, Mic, CheckCircle2, Circle, Trophy, Star, Quote } from 'lucide-react';
 import { groupWordsByDate } from '../utils/dateUtils';
+import quotesData from '../data/quotes.json';
 
 const Dashboard = () => {
   const authUser = useSelector((state) => state.auth.user);
-  const { data: fetchedUser } = useGetMeQuery();
+  const { data: fetchedUser, isLoading: isLoadingUser } = useGetMeQuery();
   const user = fetchedUser || authUser;
   
-  const { data: words = [] } = useGetWordsQuery();
-  const { data: reviewDueList } = useGetReviewDueQuery();
+  const { data: words = [], isLoading: isLoadingWords } = useGetWordsQuery();
+  const { data: reviewDueList, isLoading: isLoadingReview } = useGetReviewDueQuery();
   
+  const isLoading = isLoadingUser || isLoadingWords || isLoadingReview;
+
   const reviewDueCount = reviewDueList ? reviewDueList.length : 0;
   const totalWords = words.length;
 
@@ -27,9 +30,77 @@ const Dashboard = () => {
   const completedCount = [isReviewDone, isTopicDone, isImmersionDone].filter(Boolean).length;
   const progressPercent = (completedCount / 3) * 100;
 
+  // Daily Quote logic (changes once per day based on date)
+  const dailyQuote = useMemo(() => {
+     const msPerDay = 1000 * 60 * 60 * 24;
+     const todayInt = Math.floor(Date.now() / msPerDay);
+     const index = todayInt % quotesData.length;
+     return quotesData[index];
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div className="max-w-5xl mx-auto space-y-8 animate-pulse text-transparent">
+        {/* Welcome Skeleton */}
+        <section className="bg-card p-6 md:p-8 rounded-3xl border border-border shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+           <div className="space-y-4 w-full max-w-md">
+              <div className="h-10 md:h-12 bg-muted rounded-xl w-3/4"></div>
+              <div className="h-4 bg-muted rounded-md w-full"></div>
+              <div className="h-4 bg-muted rounded-md w-5/6"></div>
+           </div>
+           <div className="flex gap-4 shrink-0 mt-4 md:mt-0">
+              <div className="h-14 w-28 bg-muted rounded-2xl"></div>
+              <div className="h-14 w-28 bg-muted rounded-2xl"></div>
+           </div>
+        </section>
+
+        {/* Quests Skeleton */}
+        <div className="bg-card border border-border rounded-3xl shadow-sm p-6 md:p-8">
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
+                <div className="space-y-3">
+                    <div className="h-8 bg-muted rounded-xl w-64 md:w-80"></div>
+                    <div className="h-4 bg-muted rounded-md w-48 md:w-64"></div>
+                </div>
+                <div className="w-full md:w-48 bg-muted rounded-full h-3"></div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+               <div className="h-40 bg-muted rounded-2xl"></div>
+               <div className="h-40 bg-muted rounded-2xl"></div>
+               <div className="h-40 bg-muted rounded-2xl"></div>
+            </div>
+        </div>
+
+        {/* Secondary Actions Skeleton */}
+        <div className="space-y-6 mt-12">
+            <div className="h-6 bg-muted rounded-md w-48 mb-6"></div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+               <div className="h-24 bg-muted rounded-3xl"></div>
+               <div className="h-24 bg-muted rounded-3xl"></div>
+               <div className="h-24 bg-muted rounded-3xl"></div>
+            </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-5xl mx-auto space-y-8 animate-fade-in-up">
       
+      {/* Daily Quote Section */}
+      <div className="bg-gradient-to-r from-primary/10 to-purple-500/10 border border-primary/20 rounded-3xl p-6 relative overflow-hidden flex flex-col md:flex-row items-center gap-6 justify-between shadow-sm">
+         <Quote className="absolute -top-4 -left-4 w-24 h-24 text-primary/10 rotate-180 pointer-events-none" />
+         <div className="relative z-10 flex-grow">
+            <p className="text-lg md:text-xl font-medium italic text-foreground mb-2">"{dailyQuote.text}"</p>
+            <p className="text-sm text-muted-foreground font-medium mb-1">{dailyQuote.translation}</p>
+         </div>
+         <div className="relative z-10 shrink-0 text-right">
+             <div className="inline-flex items-center gap-2 bg-background px-4 py-2 rounded-full shadow-sm border border-border">
+                 <span className="w-2 h-2 rounded-full bg-primary/70"></span>
+                 <span className="text-sm font-bold opacity-80">{dailyQuote.author}</span>
+             </div>
+         </div>
+      </div>
+
       {/* Welcome & Stats Section */}
       <section className="bg-gradient-to-br from-card to-card/50 p-6 md:p-8 rounded-3xl border border-border shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
         <div>

@@ -15,19 +15,49 @@ router.post('/analyze', async (req, res) => {
     }
 
     try {
-        console.log("Analyzing story...");
-        const analysis = await analyzeStory(story, targetWords || []);
+        console.log("Analyzing story locally (AI Disabled)...");
         
-        const responseData = analysis || {
-            vibeScore: 70,
-            tone: "Analysis Failed (Mock)",
-            suggestions: ["AI service temporary unavailable, please try again."],
-            vocabularyUsage: {}
+        let wordsUsedCount = 0;
+        let vocabUsage = {};
+        
+        const safeTargetWords = targetWords || [];
+        safeTargetWords.forEach(w => {
+            const isUsed = story.toLowerCase().includes(w.toLowerCase());
+            vocabUsage[w] = isUsed ? "Correct" : "Incorrect";
+            if (isUsed) wordsUsedCount++;
+        });
+
+        const wordCount = story.trim().split(/\s+/).length;
+        let vibeScore = 50;
+        let suggestions = [];
+
+        // Simple scoring metric based on length
+        if (wordCount > 50) vibeScore += 20;
+        else if (wordCount > 20) vibeScore += 10;
+        else suggestions.push("Hikoyangiz ancha qisqa. Keyingi safar uzaytirib kengroq yozishga harakat qiling.");
+
+        // Metric based on target word usage
+        if (safeTargetWords.length > 0) {
+            const usagePercent = wordsUsedCount / safeTargetWords.length;
+            if (usagePercent === 1) vibeScore += 30;
+            else if (usagePercent >= 0.5) vibeScore += 15;
+            else suggestions.push("Berilgan target so'zlarni ko'proq ishlatishga harakat qiling!");
+        } else {
+             vibeScore += 20;
+        }
+
+        vibeScore = Math.min(100, vibeScore);
+
+        const responseData = {
+            vibeScore: vibeScore,
+            tone: "Neutral (AI izlanmadi)",
+            suggestions: suggestions.length > 0 ? suggestions : ["Ajoyib! Hikoyangiz yaxshi shakllangan."],
+            vocabularyUsage: vocabUsage
         };
 
         res.json(responseData);
     } catch (error) {
-        console.error(error);
+        console.error("Local Story Analysis Error:", error);
         res.status(500).json({ message: 'Server Error' });
     }
 });
