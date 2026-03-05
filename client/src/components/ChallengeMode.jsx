@@ -113,38 +113,39 @@ const ChallengeMode = ({ onAddWord }) => {
     }
   };
 
-  // Render Grid
-  const renderGrid = () => {
-    if (isHistoryLoading) return <div className="text-center py-10"><Loader2 className="w-8 h-8 animate-spin mx-auto text-primary" /></div>;
+  // Render Progress Bar instead of 100 Days Grid
+  const renderProgressBar = () => {
+    if (isHistoryLoading) return <div className="text-center py-6"><Loader2 className="w-6 h-6 animate-spin mx-auto text-primary" /></div>;
     
-    // We need 100 days
-    const days = Array.from({ length: 100 }, (_, i) => i + 1);
-    
-    // Create a map of completed days
-    const completedDaysMap = {};
+    let completedCount = 0;
     if (history) {
-      history.forEach(h => {
-        if (h.status === 'completed') {
-           completedDaysMap[h.dayNumber] = true;
-        }
-      });
+      completedCount = history.filter(h => h.status === 'completed').length;
     }
+    
+    // Ensure it doesn't exceed 100
+    const percentage = Math.min(100, Math.round((completedCount / 100) * 100));
 
     return (
-      <div className="grid grid-cols-5 sm:grid-cols-10 gap-1.5 md:gap-3 mb-8 md:mb-12 max-w-2xl mx-auto bg-card p-4 md:p-6 rounded-2xl md:rounded-3xl border shadow-sm">
-        {days.map(day => (
-          <div 
-            key={day}
-            className={`w-full aspect-square rounded flex items-center justify-center text-[10px] sm:text-xs md:text-sm font-bold transition-all ${
-              completedDaysMap[day] 
-              ? 'bg-green-500 text-white shadow-md shadow-green-500/20' 
-              : 'bg-muted text-muted-foreground border border-border/50'
-            }`}
-            title={`Day ${day}`}
-          >
-            {day}
-          </div>
-        ))}
+      <div className="mb-8 md:mb-12 max-w-2xl mx-auto bg-card p-6 rounded-3xl border shadow-sm">
+        <div className="flex justify-between items-center mb-3">
+           <h3 className="font-bold text-foreground">Sizning Natijangiz</h3>
+           <span className="text-sm font-black bg-primary/10 text-primary px-3 py-1 rounded-full">{percentage}% Bajarildi</span>
+        </div>
+        
+        <div className="w-full bg-secondary/50 rounded-full h-4 md:h-5 overflow-hidden border border-border/50">
+           <div 
+             className="bg-gradient-to-r from-emerald-400 to-cyan-500 h-full rounded-full transition-all duration-1000 ease-out relative"
+             style={{ width: `${percentage}%` }}
+           >
+              {percentage > 0 && (
+                 <div className="absolute top-0 right-0 bottom-0 w-10 bg-gradient-to-l from-white/30 to-transparent"></div>
+              )}
+           </div>
+        </div>
+        
+        <p className="text-xs text-muted-foreground mt-3 font-medium text-center">
+            {100 - completedCount} kun qoldi. Bo'shashmang! 🚀
+        </p>
       </div>
     );
   };
@@ -212,7 +213,7 @@ const ChallengeMode = ({ onAddWord }) => {
         </p>
       </div>
 
-      {renderGrid()}
+      {renderProgressBar()}
 
       {currentChallenge && currentChallenge.isFinished ? (
          <div className="text-center bg-card p-6 md:p-12 rounded-3xl border-2 border-green-500/30">

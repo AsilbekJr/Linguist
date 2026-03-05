@@ -35,7 +35,7 @@ router.get('/current', protect, async (req, res) => {
 
     const { currentDay, history } = progress;
     
-    // Check if maximum day reached
+    // 1. Check if maximum day reached
     if (currentDay > topicsData.length) {
        return res.json({ 
           message: "You have completed all topics!",
@@ -43,41 +43,56 @@ router.get('/current', protect, async (req, res) => {
           history
        });
     }
-    
-    // Find the topic for the current day
-    const currentTopic = topicsData.find(t => t.day === currentDay);
-    
-    if (!currentTopic) {
-        return res.status(404).json({ error: "Topic not found for the current day." });
-    }
 
-    // Check if today was already completed
+    // 2. Determine if today is completed
     const todayStr = new Date().toISOString().split('T')[0];
     const latestComplete = history.length > 0 ? history[history.length - 1] : null;
     let isCompleteForToday = false;
     
     if (latestComplete) {
        const latestDateStr = new Date(latestComplete.completedAt).toISOString().split('T')[0];
-       
-       // Note: Because we increment the currentDay ON completion, if the last completion
-       // was today, then they cannot proceed to the *next* day until tomorrow.
        if (latestDateStr === todayStr) {
            isCompleteForToday = true;
        }
     }
 
-    if (isCompleteForToday) {
-       const completedTopic = topicsData.find(t => t.day === progress.currentDay - 1);
-       return res.json({
-           ...(completedTopic || currentTopic),
-           isCompleteForToday: true,
-           history
-       });
+    // 3. User target day for fetching words
+    // If complete today, we are still displaying the (currentDay-1) effectively.
+    // However, the progress.currentDay was already incremented during /complete.
+    // So if isCompleteForToday is true, targetDay = currentDay - 1
+    // If NOT complete, targetDay = currentDay
+    const targetDay = isCompleteForToday ? Math.max(1, currentDay - 1) : currentDay;
+    
+    // 4. Fetch the title and desc from the "active" topic
+    const baseTopic = topicsData.find(t => t.day === targetDay);
+    if (!baseTopic) {
+        return res.status(404).json({ error: "Topic not found for the current day." });
     }
 
-    // Return the current topic to be displayed
+    // 5. Gather all words from Day 1 to targetDay
+    let allCumulativeWords = [];
+    for (let i = 1; i <= targetDay; i++) {
+        const topicOfDay = topicsData.find(t => t.day === i);
+        if (topicOfDay && topicOfDay.words) {
+            allCumulativeWords = allCumulativeWords.concat(topicOfDay.words);
+        }
+    }
+
+    // 6. Find words user has already mastered (saved to dictionary)
+    const Word = require('../models/Word'); // Ensure Word model is required
+    const userSavedWordsObj = await Word.find({ user: req.user._id }).select('word -_id');
+    const userSavedWords = userSavedWordsObj.map(w => w.word.toLowerCase());
+
+    // 7. Filter: Only keep words NOT saved by user
+    const unmasteredWords = allCumulativeWords.filter(topicWord => 
+        !userSavedWords.includes(topicWord.word.toLowerCase())
+    );
+
+    // Return the combined, filtered topic
     res.json({
-       ...currentTopic,
+       ...baseTopic, // keep title/desc of the current active topic
+       words: unmasteredWords, // Override words with all unmastered
+       isCompleteForToday: isCompleteForToday,
        history
     });
 

@@ -45,13 +45,18 @@ const TopicVocabulary = () => {
              await addWord(payload).unwrap();
              setAddedWords(prev => ({ ...prev, [wordObj.word]: true }));
              toast.success(`"${wordObj.word}" lug'atingizga qo'shildi!`);
+             
+             // Refresh the list after short delay so user sees animation
+             setTimeout(() => {
+                 refetch();
+             }, 800);
 
-             // Auto complete daily quest if 5 words added
+             // Auto complete daily quest if 5 words added or it's the very last word on the screen
              const currentAddedCount = topicData?.words?.filter(w => 
                  userWords.some(uw => uw.word.toLowerCase() === w.word.toLowerCase())
              ).length || 0;
              
-             if (currentAddedCount + 1 >= 5) {
+             if (currentAddedCount + 1 >= 5 || topicData?.words?.length <= 1) {
                  try {
                      const res = await syncDailyQuest({ type: 'topic' }).unwrap();
                      if (!topicData.isCompleteForToday) {
@@ -124,7 +129,21 @@ const TopicVocabulary = () => {
                        </div>
 
                        <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 gap-6">
-                           {topicData.words && topicData.words.map((w, index) => {
+                           {topicData.words && topicData.words.length === 0 ? (
+                               <div className="col-span-1 md:col-span-2 text-center p-8 bg-purple-500/5 rounded-2xl border border-purple-500/10">
+                                   <div className="text-4xl mb-3">✨</div>
+                                   <h3 className="text-xl font-bold text-foreground mb-2">Barcha so'zlar o'zlashtirilgan!</h3>
+                                   <p className="text-muted-foreground mb-6">Siz joriy kungacha bo'lgan hamma so'zlarni lug'atingizga saqlab ulgurgansiz.</p>
+                                   {!topicData.isCompleteForToday && (
+                                       <Button onClick={() => completeTopic()} disabled={isCompleting}>
+                                           {isCompleting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <CheckCircle2 className="w-4 h-4 mr-2" />} Bugunni yakunlash
+                                       </Button>
+                                   )}
+                                   {topicData.isCompleteForToday && (
+                                       <p className="text-green-500 font-medium">Ertaga yangi so'zlar kutib oling!</p>
+                                   )}
+                               </div>
+                           ) : topicData.words.map((w, index) => {
                                const isAlreadyAdded = userWords.some(userWord => userWord.word.toLowerCase() === w.word.toLowerCase());
                                return (
                                <div key={index} className="bg-background rounded-2xl p-5 border border-border flex flex-col hover:border-purple-500/50 transition-colors group">
