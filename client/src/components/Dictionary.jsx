@@ -256,7 +256,7 @@ const Dictionary = ({ onAddWord, userWords }) => {
                     <div 
                         key={topic.id} 
                         onClick={() => setActiveTopic(topic)}
-                        className="bg-card rounded-3xl p-6 border border-border shadow-md hover:shadow-xl hover:-translate-y-1 hover:border-primary/50 transition-all cursor-pointer group"
+                        className="bg-card rounded-3xl p-4 sm:p-6 border border-border shadow-md hover:shadow-xl hover:-translate-y-1 hover:border-primary/50 transition-all cursor-pointer group"
                     >
                         <div className={`w-14 h-14 rounded-2xl bg-background border border-border flex items-center justify-center mb-6 group-hover:scale-110 transition-transform ${topic.color}`}>
                             <topic.icon className="w-8 h-8" />
@@ -288,7 +288,7 @@ const Dictionary = ({ onAddWord, userWords }) => {
             <ChevronLeft className="w-4 h-4 mr-2" /> Back to Topics
         </Button>
 
-        <div className="bg-card rounded-3xl p-8 border border-border shadow-lg mb-8 flex items-center gap-6">
+        <div className="bg-card rounded-3xl p-5 sm:p-8 border border-border shadow-lg mb-8 flex items-center gap-6">
             <div className={`w-20 h-20 rounded-3xl bg-background border border-border flex items-center justify-center ${activeTopic.color}`}>
                  <activeTopic.icon className="w-10 h-10" />
             </div>

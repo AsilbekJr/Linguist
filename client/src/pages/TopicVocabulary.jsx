@@ -108,14 +108,14 @@ const TopicVocabulary = () => {
 
 
             {topicData && topicData.isFinished ? (
-               <div className="text-center bg-card p-6 md:p-12 rounded-3xl border-2 border-green-500/30">
+               <div className="text-center bg-card p-4 sm:p-6 md:p-12 rounded-3xl border-2 border-green-500/30">
                    <div className="text-6xl mb-6">🏆</div>
                    <h3 className="text-3xl font-black text-foreground mb-4">Tabriklaymiz!</h3>
                    <p className="text-xl text-muted-foreground">Siz barcha mavzulashtirilgan lug'atlarni o'zlashtirdingiz!</p>
                </div>
             ) : topicData ? (
                <div className="space-y-6">
-                   <div className="bg-card rounded-3xl p-6 md:p-10 border border-border shadow-md relative overflow-hidden">
+                   <div className="bg-card rounded-3xl p-4 sm:p-6 md:p-10 border border-border shadow-md relative overflow-hidden">
                        <div className="absolute top-0 right-0 w-64 h-64 bg-purple-500/5 rounded-full blur-3xl"></div>
                        
                        <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 border-b pb-6">
@@ -130,7 +130,7 @@ const TopicVocabulary = () => {
 
                        <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 gap-6">
                            {topicData.words && topicData.words.length === 0 ? (
-                               <div className="col-span-1 md:col-span-2 text-center p-8 bg-purple-500/5 rounded-2xl border border-purple-500/10">
+                               <div className="col-span-1 md:col-span-2 text-center p-4 sm:p-8 bg-purple-500/5 rounded-2xl border border-purple-500/10">
                                    <div className="text-4xl mb-3">✨</div>
                                    <h3 className="text-xl font-bold text-foreground mb-2">Barcha so'zlar o'zlashtirilgan!</h3>
                                    <p className="text-muted-foreground mb-6">Siz joriy kungacha bo'lgan hamma so'zlarni lug'atingizga saqlab ulgurgansiz.</p>
@@ -201,7 +201,7 @@ const TopicVocabulary = () => {
                    </div>
                </div>
             ) : (
-               <div className="text-center p-12">Nimadir xato ketdi. Sahifani yangilab ko'ring.</div>
+               <div className="text-center p-6 sm:p-12">Nimadir xato ketdi. Sahifani yangilab ko'ring.</div>
             )}
         </div>
     );

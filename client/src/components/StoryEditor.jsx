@@ -83,7 +83,7 @@ const StoryEditor = ({ words }) => {
         
         {/* Left: Writing Area */}
         <div className="lg:col-span-2 space-y-6">
-          <div className="bg-card rounded-2xl p-6 border border-border shadow-xl">
+          <div className="bg-card rounded-2xl p-4 sm:p-6 border border-border shadow-xl">
              <h2 className="text-2xl font-bold mb-4 flex items-center justify-between">
               <span className="flex items-center gap-2 text-3xl">✍️ <span className="text-xl text-card-foreground">Vibe-Writing</span></span>
               <div className="flex gap-2">
@@ -135,7 +135,7 @@ const StoryEditor = ({ words }) => {
 
           {/* Feedback Section */}
           {feedback && (
-            <div className="bg-gradient-to-br from-card to-background rounded-2xl p-8 border border-primary/30 shadow-lg animate-fade-in">
+            <div className="bg-gradient-to-br from-card to-background rounded-2xl p-5 sm:p-8 border border-primary/30 shadow-lg animate-fade-in">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-2xl font-bold text-card-foreground">AI Feedback</h3>
                 <div className="flex items-center gap-4">
@@ -199,7 +199,7 @@ const StoryEditor = ({ words }) => {
 
         {/* Right: Sidebar / Target Words */}
         <div className="space-y-6">
-          <div className="bg-card rounded-2xl p-6 border border-border">
+          <div className="bg-card rounded-2xl p-4 sm:p-6 border border-border">
             <h3 className="text-xl font-bold mb-4 text-card-foreground">Target Words</h3>
             <div className="flex flex-wrap gap-2">
               {targetWords.length > 0 ? (
@@ -214,7 +214,7 @@ const StoryEditor = ({ words }) => {
             </div>
           </div>
           
-          <div className="bg-primary/10 rounded-2xl p-6 border border-primary/20">
+          <div className="bg-primary/10 rounded-2xl p-4 sm:p-6 border border-primary/20">
              <h4 className="font-bold text-primary mb-2">Daily Prompt</h4>
              <p className="text-card-foreground italic">
                "Write about a time you found something valuable by accident."

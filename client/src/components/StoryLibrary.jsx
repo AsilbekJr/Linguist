@@ -14,14 +14,14 @@ const StoryLibrary = () => {
             </h2>
 
             {stories.length === 0 ? (
-                <div className="text-center bg-muted/20 p-12 rounded-2xl border border-border border-dashed">
+                <div className="text-center bg-muted/20 p-6 sm:p-12 rounded-2xl border border-border border-dashed">
                     <p className="text-xl text-muted-foreground">No stories found yet.</p>
                     <p className="text-muted-foreground mt-2">Go to Story Mode and let your imagination flow!</p>
                 </div>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {stories.map(story => (
-                        <div key={story._id} className="bg-card rounded-xl p-6 border border-border hover:border-primary/50 transition-all hover:shadow-lg hover:shadow-primary/10 group">
+                        <div key={story._id} className="bg-card rounded-xl p-4 sm:p-6 border border-border hover:border-primary/50 transition-all hover:shadow-lg hover:shadow-primary/10 group">
                             <div className="flex justify-between items-start mb-4">
                                 <div>
                                     <h3 className="text-xl font-bold text-card-foreground group-hover:text-primary transition-colors">

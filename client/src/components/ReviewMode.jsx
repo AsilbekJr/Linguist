@@ -248,7 +248,7 @@ const ReviewMode = () => {
                 </h2>
                 <p className="text-muted-foreground text-base md:text-lg mb-8">Siz "{selectedGroup}" guruhidagi so'zlarni muvaffaqiyatli takrorladingiz.</p>
                 
-                <div className="flex justify-center gap-8 mb-10 max-w-md mx-auto bg-background p-6 rounded-2xl border border-border/50">
+                <div className="flex justify-center gap-4 sm:gap-8 mb-10 max-w-md mx-auto bg-background p-4 sm:p-6 rounded-2xl border border-border/50">
                     <div className="text-center">
                         <div className="text-4xl font-black text-green-500 mb-1">{sessionResults.correct}</div>
                         <div className="text-xs text-muted-foreground font-bold uppercase tracking-wider">To'g'ri</div>
@@ -304,7 +304,7 @@ const ReviewMode = () => {
                 ></div>
             </div>
 
-            <div className="bg-card p-8 rounded-3xl border border-border shadow-2xl relative overflow-hidden group">
+            <div className="bg-card p-5 sm:p-8 rounded-3xl border border-border shadow-2xl relative overflow-hidden group">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-pink-500/10 rounded-full blur-3xl -mr-16 -mt-16 transition duration-500 group-hover:bg-pink-500/20"></div>
 
                 <div className="text-center mb-8">
@@ -382,7 +382,7 @@ const ReviewMode = () => {
                         )}
                     </div>
                 ) : (
-                    <div className={`mt-6 p-6 rounded-2xl border ${feedback.isCorrect ? 'bg-green-500/10 border-green-500/30' : 'bg-destructive/10 border-destructive/30'} animate-fade-in`}>
+                    <div className={`mt-6 p-4 sm:p-6 rounded-2xl border ${feedback.isCorrect ? 'bg-green-500/10 border-green-500/30' : 'bg-destructive/10 border-destructive/30'} animate-fade-in`}>
                         <div className="flex items-center gap-3 mb-3">
                             <span className="text-3xl">{feedback.isCorrect ? '✅' : '❌'}</span>
                             <h4 className={`text-xl font-bold ${feedback.isCorrect ? 'text-green-500' : 'text-destructive'}`}>

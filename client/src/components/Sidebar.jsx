@@ -86,7 +86,7 @@ const Sidebar = ({ user }) => {
               </Button>
             </SheetTrigger>
             
-            <SheetContent side="left" className="w-[280px] p-6 bg-background border-r border-border">
+            <SheetContent side="left" className="w-[280px] p-4 sm:p-6 bg-background border-r border-border">
               <SheetHeader className="mb-6 absolute left-6 top-6">
                 <SheetTitle className="sr-only">Menyu</SheetTitle>
               </SheetHeader>
@@ -103,7 +103,7 @@ const Sidebar = ({ user }) => {
       </div>
 
       {/* Desktop Persistent Sidebar */}
-      <aside className="hidden md:flex flex-col w-64 fixed inset-y-0 left-0 z-50 bg-card border-r border-border p-6 shadow-sm overflow-y-auto">
+      <aside className="hidden md:flex flex-col w-64 fixed inset-y-0 left-0 z-50 bg-card border-r border-border p-4 lg:p-6 shadow-sm overflow-y-auto">
          <SidebarContent />
       </aside>
     </>

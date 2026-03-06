@@ -126,7 +126,7 @@ const ChallengeMode = ({ onAddWord }) => {
     const percentage = Math.min(100, Math.round((completedCount / 100) * 100));
 
     return (
-      <div className="mb-8 md:mb-12 max-w-2xl mx-auto bg-card p-6 rounded-3xl border shadow-sm">
+      <div className="mb-8 md:mb-12 max-w-2xl mx-auto bg-card p-4 sm:p-6 rounded-3xl border shadow-sm">
         <div className="flex justify-between items-center mb-3">
            <h3 className="font-bold text-foreground">Sizning Natijangiz</h3>
            <span className="text-sm font-black bg-primary/10 text-primary px-3 py-1 rounded-full">{percentage}% Bajarildi</span>
@@ -216,13 +216,13 @@ const ChallengeMode = ({ onAddWord }) => {
       {renderProgressBar()}
 
       {currentChallenge && currentChallenge.isFinished ? (
-         <div className="text-center bg-card p-6 md:p-12 rounded-3xl border-2 border-green-500/30">
+         <div className="text-center bg-card p-4 sm:p-6 md:p-12 rounded-3xl border-2 border-green-500/30">
              <div className="text-6xl mb-6">🏆</div>
              <h3 className="text-3xl font-black text-foreground mb-4">Tabriklaymiz!</h3>
              <p className="text-xl text-muted-foreground">Siz 100 kunlik challenge'ni muvaffaqiyatli yakunladingiz!</p>
          </div>
       ) : currentChallenge && currentChallenge.isCompleteForToday ? (
-        <div className="text-center bg-card p-6 md:p-12 rounded-3xl border border-border shadow-sm">
+        <div className="text-center bg-card p-4 sm:p-6 md:p-12 rounded-3xl border border-border shadow-sm">
              <div className="text-6xl mb-6">✅</div>
              <h3 className="text-2xl font-bold text-foreground mb-2">Bugungi vazifa bajarildi!</h3>
              <p className="text-muted-foreground">Ertaga yangi matn bilan qayting. Xotirjam dam oling!</p>
@@ -235,7 +235,7 @@ const ChallengeMode = ({ onAddWord }) => {
              )}
          </div>
       ) : currentChallenge ? (
-        <div className="bg-card rounded-2xl md:rounded-3xl p-5 md:p-10 border border-border shadow-md">
+        <div className="bg-card rounded-2xl md:rounded-3xl p-4 sm:p-6 md:p-10 border border-border shadow-md">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4 mb-6">
                 <div className="flex items-center gap-3">
                     <span className="bg-primary/10 text-primary px-4 py-1.5 rounded-full text-sm font-bold shrink-0">
@@ -316,7 +316,7 @@ const ChallengeMode = ({ onAddWord }) => {
                     </div>
                 ) : (
                     <div className="w-full flex justify-center mt-4">
-                        <div className="flex flex-col items-center gap-6 w-full max-w-md bg-secondary/30 p-6 border rounded-3xl">
+                        <div className="flex flex-col items-center gap-6 w-full max-w-md bg-secondary/30 p-4 sm:p-6 border rounded-3xl">
                              <audio src={audioUrl} controls className="w-full rounded-2xl" />
                              <div className="flex flex-col sm:flex-row justify-between gap-3 sm:gap-4 w-full">
                                  <Button variant="outline" className="flex-1 w-full rounded-full" onClick={() => setAudioUrl(null)}>
@@ -332,7 +332,7 @@ const ChallengeMode = ({ onAddWord }) => {
             </div>
         </div>
       ) : (
-        <div className="text-center p-12">Nimadir xato ketdi. Sahifani yangilab ko'ring.</div>
+        <div className="text-center p-6 sm:p-12">Nimadir xato ketdi. Sahifani yangilab ko'ring.</div>
       )}
     </div>
   );

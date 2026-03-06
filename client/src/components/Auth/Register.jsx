@@ -28,7 +28,7 @@ const Register = ({ onSwitchToLogin }) => {
   };
 
   return (
-    <div className="w-full max-w-md mx-auto bg-card p-8 rounded-3xl border shadow-xl relative overflow-hidden z-10 transition-all">
+    <div className="w-full max-w-md mx-auto bg-card p-6 sm:p-8 rounded-3xl border shadow-xl relative overflow-hidden z-10 transition-all">
        <div className="text-center mb-8">
             <h2 className="text-3xl font-black bg-gradient-to-r from-primary via-emerald-500 to-teal-500 bg-clip-text text-transparent mb-2">Create Account</h2>
             <p className="text-muted-foreground">Start your language mastery journey</p>

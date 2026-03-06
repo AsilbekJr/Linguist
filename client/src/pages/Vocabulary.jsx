@@ -133,7 +133,7 @@ const Vocabulary = () => {
                   <div 
                       key={date} 
                       onClick={() => setActiveDateGroup(date)}
-                      className="bg-card rounded-3xl p-6 border border-border shadow-sm hover:shadow-xl hover:-translate-y-1 hover:border-primary/50 transition-all cursor-pointer group flex flex-col items-start"
+                      className="bg-card rounded-3xl p-4 sm:p-6 border border-border shadow-sm hover:shadow-xl hover:-translate-y-1 hover:border-primary/50 transition-all cursor-pointer group flex flex-col items-start"
                   >
                       <div className="w-12 h-12 rounded-2xl bg-secondary border border-border flex items-center justify-center mb-4 group-hover:scale-110 group-hover:bg-primary/10 group-hover:text-primary transition-all">
                           <Calendar className="w-6 h-6" />

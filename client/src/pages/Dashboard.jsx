@@ -42,7 +42,7 @@ const Dashboard = () => {
     return (
       <div className="max-w-5xl mx-auto space-y-8 animate-pulse text-transparent">
         {/* Welcome Skeleton */}
-        <section className="bg-card p-6 md:p-8 rounded-3xl border border-border shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+        <section className="bg-card p-4 sm:p-6 md:p-8 rounded-3xl border border-border shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
            <div className="space-y-4 w-full max-w-md">
               <div className="h-10 md:h-12 bg-muted rounded-xl w-3/4"></div>
               <div className="h-4 bg-muted rounded-md w-full"></div>
@@ -55,7 +55,7 @@ const Dashboard = () => {
         </section>
 
         {/* Quests Skeleton */}
-        <div className="bg-card border border-border rounded-3xl shadow-sm p-6 md:p-8">
+        <div className="bg-card border border-border rounded-3xl shadow-sm p-4 sm:p-6 md:p-8">
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
                 <div className="space-y-3">
                     <div className="h-8 bg-muted rounded-xl w-64 md:w-80"></div>
@@ -87,7 +87,7 @@ const Dashboard = () => {
     <div className="max-w-5xl mx-auto space-y-8 animate-fade-in-up">
       
       {/* Daily Quote Section */}
-      <div className="bg-gradient-to-r from-primary/10 to-purple-500/10 border border-primary/20 rounded-3xl p-6 relative overflow-hidden flex flex-col md:flex-row items-center gap-6 justify-between shadow-sm">
+      <div className="bg-gradient-to-r from-primary/10 to-purple-500/10 border border-primary/20 rounded-3xl p-4 sm:p-6 relative overflow-hidden flex flex-col md:flex-row items-center gap-6 justify-between shadow-sm">
          <Quote className="absolute -top-4 -left-4 w-24 h-24 text-primary/10 rotate-180 pointer-events-none" />
          <div className="relative z-10 flex-grow">
             <p className="text-lg md:text-xl font-medium italic text-foreground mb-2">"{dailyQuote.text}"</p>
@@ -102,7 +102,7 @@ const Dashboard = () => {
       </div>
 
       {/* Welcome & Stats Section */}
-      <section className="bg-gradient-to-br from-card to-card/50 p-6 md:p-8 rounded-3xl border border-border shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+      <section className="bg-gradient-to-br from-card to-card/50 p-4 sm:p-6 md:p-8 rounded-3xl border border-border shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
         <div>
             <h1 className="text-3xl md:text-5xl font-black mb-3">
             Xush kelibsiz, <span className="bg-gradient-to-r from-primary to-purple-500 bg-clip-text text-transparent">{user?.name}</span> 👋
@@ -130,7 +130,7 @@ const Dashboard = () => {
       </section>
 
       {/* Daily Quests Section */}
-      <div className="bg-card border border-border rounded-3xl shadow-sm p-6 md:p-8 relative overflow-hidden">
+      <div className="bg-card border border-border rounded-3xl shadow-sm p-4 sm:p-6 md:p-8 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl pointer-events-none"></div>
         
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8 relative z-10">
@@ -199,7 +199,7 @@ const Dashboard = () => {
       <h3 className="text-xl font-bold mt-12 mb-6">Amaliyot va Baza</h3>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         
-        <Link to="/speaking" className="bg-card border border-border p-6 rounded-3xl hover:border-primary/50 transition-colors flex items-center gap-4 group">
+        <Link to="/speaking" className="bg-card border border-border p-4 sm:p-6 rounded-3xl hover:border-primary/50 transition-colors flex items-center gap-4 group">
            <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-500 flex items-center justify-center group-hover:scale-110 transition-transform">
               <Mic className="w-5 h-5" />
            </div>
@@ -211,7 +211,7 @@ const Dashboard = () => {
         
 
         
-        <Link to="/roleplay" className="bg-card border border-border p-6 rounded-3xl hover:border-primary/50 transition-colors flex items-center gap-4 group">
+        <Link to="/roleplay" className="bg-card border border-border p-4 sm:p-6 rounded-3xl hover:border-primary/50 transition-colors flex items-center gap-4 group">
            <div className="w-10 h-10 rounded-xl bg-teal-500/10 text-teal-500 flex items-center justify-center group-hover:scale-110 transition-transform">
               <Mic className="w-5 h-5" />
            </div>
@@ -221,7 +221,7 @@ const Dashboard = () => {
            </div>
         </Link>
         
-        <Link to="/vocabulary" className="bg-card border border-border p-6 rounded-3xl hover:border-primary/50 transition-colors flex items-center gap-4 group">
+        <Link to="/vocabulary" className="bg-card border border-border p-4 sm:p-6 rounded-3xl hover:border-primary/50 transition-colors flex items-center gap-4 group">
            <div className="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-500 flex items-center justify-center group-hover:scale-110 transition-transform">
               <BookOpen className="w-5 h-5" />
            </div>

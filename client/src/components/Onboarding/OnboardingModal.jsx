@@ -49,7 +49,7 @@ const OnboardingModal = () => {
                     <h2 className="text-3xl font-black text-white relative z-10">Linguist AI</h2>
                 </div>
 
-                <div className="p-8">
+                <div className="p-5 sm:p-8">
                     {step === 1 && (
                         <div className="animate-in slide-in-from-right-4">
                             <h3 className="text-2xl font-bold mb-2">Ingliz tili darajangiz qanday?</h3>

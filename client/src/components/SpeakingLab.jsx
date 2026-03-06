@@ -256,7 +256,7 @@ const SpeakingLab = () => {
         {/* --- TAB 1: Translate & Speak --- */}
         <TabsContent value="translate" className="space-y-8 animate-fade-in">
           {/* STAGE 1: Uzbek Base Input */}
-          <div className={`relative bg-card rounded-3xl p-8 border text-center transition-all duration-500 mb-8 ${isListening ? 'border-orange-500/50 shadow-lg shadow-orange-500/20' : 'border-border'}`}>
+          <div className={`relative bg-card rounded-3xl p-5 sm:p-8 border text-center transition-all duration-500 mb-8 ${isListening ? 'border-orange-500/50 shadow-lg shadow-orange-500/20' : 'border-border'}`}>
               <div className="mb-8 flex justify-center flex-col items-center">
                   <Button
                      onClick={toggleUzbekListening}
@@ -276,7 +276,7 @@ const SpeakingLab = () => {
           </div>
 
           {isTranslating && (
-              <div className="flex flex-col items-center justify-center p-8 bg-card rounded-3xl border border-border mt-8">
+              <div className="flex flex-col items-center justify-center p-5 sm:p-8 bg-card rounded-3xl border border-border mt-8">
                   <Loader2 className="w-12 h-12 text-primary animate-spin mb-4" />
                   <p className="text-muted-foreground font-medium">Mukammal tarjima qilinmoqda...</p>
               </div>
@@ -288,7 +288,7 @@ const SpeakingLab = () => {
                   
                   {/* Casual Column */}
                   <div className="flex flex-col gap-4">
-                      <div className="bg-background rounded-3xl p-6 border border-border shadow-sm flex flex-col h-full">
+                      <div className="bg-background rounded-3xl p-4 sm:p-6 border border-border shadow-sm flex flex-col h-full">
                           <div className="flex justify-between items-start mb-4">
                               <div>
                                   <h4 className="font-bold text-blue-500 text-lg flex items-center gap-2">
@@ -313,7 +313,7 @@ const SpeakingLab = () => {
 
                   {/* Advanced Column */}
                   <div className="flex flex-col gap-4">
-                      <div className="bg-background rounded-3xl p-6 border border-border shadow-sm flex flex-col h-full">
+                      <div className="bg-background rounded-3xl p-4 sm:p-6 border border-border shadow-sm flex flex-col h-full">
                           <div className="flex justify-between items-start mb-4">
                               <div>
                                   <h4 className="font-bold text-purple-500 text-lg flex items-center gap-2">
@@ -341,14 +341,14 @@ const SpeakingLab = () => {
 
           {/* STAGE 3: Pronunciation Feedback Output */}
           {isEvaluating && (
-              <div className="mt-8 p-6 text-center border border-border bg-card rounded-2xl">
+              <div className="mt-8 p-4 sm:p-6 text-center border border-border bg-card rounded-2xl">
                   <Loader2 className="w-8 h-8 text-orange-500 animate-spin mx-auto mb-2" />
                   <p className="text-muted-foreground font-medium">Talaffuzingiz AI orqali tekshirilmoqda...</p>
               </div>
           )}
 
           {!isEvaluating && evaluationData && spokenEnglish && (
-              <div className={`mt-8 p-8 border-2 rounded-3xl shadow-lg transition-all animate-fade-in ${getEvaluationColor(evaluationData.color)}`}>
+              <div className={`mt-8 p-5 sm:p-8 border-2 rounded-3xl shadow-lg transition-all animate-fade-in ${getEvaluationColor(evaluationData.color)}`}>
                   <div className="flex justify-between items-start mb-6">
                      <div>
                          <h3 className="text-3xl font-black mb-1">Natija: {evaluationData.score} / 100</h3>
@@ -382,7 +382,7 @@ const SpeakingLab = () => {
 
         {/* --- TAB 2: Text Translator --- */}
         <TabsContent value="translator" className="space-y-6 animate-fade-in">
-            <div className="bg-card border border-border p-6 rounded-3xl shadow-sm">
+            <div className="bg-card border border-border p-4 sm:p-6 rounded-3xl shadow-sm">
                 
                 {/* Language Switcher */}
                 <div className="flex items-center justify-center gap-4 mb-8">
