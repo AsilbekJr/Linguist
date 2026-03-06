@@ -3,7 +3,7 @@ import { useGetWordsQuery, useAddWordMutation, useDeleteWordMutation } from '../
 import { groupWordsByDate } from '../utils/dateUtils';
 import WordForm from '../components/WordForm';
 import WordCard from '../components/WordCard';
-import { Calendar, ChevronLeft, Search, PlusCircle } from 'lucide-react';
+import { Calendar, ChevronLeft, Search, PlusCircle, BookOpen } from 'lucide-react';
 import { Dialog, DialogContent, DialogTrigger, DialogTitle, DialogDescription, DialogHeader } from "../components/ui/dialog";
 import { Button } from "../components/ui/button";
 

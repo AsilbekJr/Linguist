@@ -12,6 +12,8 @@ const ChallengeMode = ({ onAddWord }) => {
   const [isRecording, setIsRecording] = useState(false);
   const [audioUrl, setAudioUrl] = useState(null);
   const [audioBase64, setAudioBase64] = useState(null);
+  const [spokenText, setSpokenText] = useState("");
+  const recognitionRef = useRef(null);
   const [error, setError] = useState("");
   const [selectedWord, setSelectedWord] = useState(null);
   const [addWordSuccess, setAddWordSuccess] = useState(false);
@@ -57,6 +59,31 @@ const ChallengeMode = ({ onAddWord }) => {
       mediaRecorder.start();
       setIsRecording(true);
       setError("");
+      setSpokenText("");
+
+      if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+          const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+          const rec = new SpeechRecognition();
+          rec.continuous = true;
+          rec.interimResults = true;
+          rec.lang = 'en-US';
+
+          rec.onresult = (event) => {
+              let trans = '';
+              for (let i = 0; i < event.results.length; ++i) {
+                  trans += event.results[i][0].transcript;
+              }
+              setSpokenText(trans);
+          };
+          
+          recognitionRef.current = rec;
+          try {
+              rec.start();
+          } catch(e) {
+              console.warn("Speech API start error", e);
+          }
+      }
+
     } catch (err) {
       console.error("Error accessing microphone:", err);
       setError("Mikrofonga ulanishda xatolik. Ruxsat berilganligini tekshiring.");
@@ -69,6 +96,12 @@ const ChallengeMode = ({ onAddWord }) => {
       setIsRecording(false);
       // Stop all tracks to release microphone
       mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
+      
+      if (recognitionRef.current) {
+          try {
+              recognitionRef.current.stop();
+          } catch(e) {}
+      }
     }
   };
 
@@ -78,11 +111,13 @@ const ChallengeMode = ({ onAddWord }) => {
     try {
       await completeChallenge({ 
         challengeId: currentChallenge._id, 
-        audioData: audioBase64 
+        audioData: audioBase64,
+        spokenText: spokenText
       }).unwrap();
       
       setAudioUrl(null);
       setAudioBase64(null);
+      setSpokenText("");
       refetchHistory();
       refetchCurrent();
     } catch (err) {
@@ -230,7 +265,19 @@ const ChallengeMode = ({ onAddWord }) => {
              {currentChallenge.lastChallenge && currentChallenge.lastChallenge.audioData && (
                  <div className="mt-8">
                      <p className="text-sm font-bold uppercase tracking-widest text-muted-foreground mb-4">Bugungi yozuvingiz</p>
-                     <audio src={currentChallenge.lastChallenge.audioData} controls className="mx-auto w-full max-w-md rounded-2xl" />
+                     <audio src={currentChallenge.lastChallenge.audioData} controls className="mx-auto w-full max-w-md rounded-2xl mb-6" />
+                     
+                     {currentChallenge.lastChallenge.score !== null && currentChallenge.lastChallenge.score !== undefined && (
+                         <div className={`mt-6 p-4 sm:p-6 rounded-2xl border text-left border-${currentChallenge.lastChallenge.color}-200 bg-${currentChallenge.lastChallenge.color}-50 dark:bg-card dark:border-border`}>
+                             <div className="flex items-center gap-3 mb-2">
+                                <span className="text-2xl">
+                                    {currentChallenge.lastChallenge.score >= 90 ? '🔥' : currentChallenge.lastChallenge.score >= 50 ? '💪' : '📚'}
+                                </span>
+                                <h4 className="font-bold text-lg text-foreground">AI Baholashi: {currentChallenge.lastChallenge.score}/100</h4>
+                             </div>
+                             <p className="text-muted-foreground text-sm leading-relaxed">{currentChallenge.lastChallenge.feedback}</p>
+                         </div>
+                     )}
                  </div>
              )}
          </div>

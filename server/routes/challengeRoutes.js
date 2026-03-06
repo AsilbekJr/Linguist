@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Challenge = require('../models/Challenge');
 const Word = require('../models/Word');
-const { generateChallengeText } = require('../services/geminiService');
+const { generateChallengeText, evaluatePronunciation } = require('../services/geminiService');
 const { protect } = require('../middleware/authMiddleware');
 
 const TOPICS = [
@@ -60,30 +60,34 @@ router.get('/current', protect, async (req, res) => {
             console.warn("Could not fetch target words for challenge:", e);
         }
 
-        // Generate challenge text from static JSON instead of AI
-        const fs = require('fs');
-        const path = require('path');
-        let generatedText = "Welcome to your text. Read exactly what is written to practice.";
-        let randomTopic = "Daily Practice";
+        // 3. Generate challenge text: prefer AI, fallback to static JSON
+        let generatedText = null;
+        let randomTopic = TOPICS[(nextDaynum - 1) % TOPICS.length];
 
         try {
-            const challengesData = require('../data/challenges.json');
-            // Find the challenge for the specific day
-            const dayData = challengesData.find(c => c.dayNumber === nextDaynum);
-            if (dayData) {
-                randomTopic = dayData.topic;
-                generatedText = dayData.textTemplate;
-                // Inject target words naturally
-                if (targetWords.length > 0) {
-                    generatedText = generatedText.replace('(Target words will be dynamically injected here in the route).', `\n\nYour target vocabulary words to focus on today are: **${targetWords.join('** , **')}**. Try to use them in your own sentences later!`);
-                } else {
-                    generatedText = generatedText.replace('(Target words will be dynamically injected here in the route).', '');
-                }
-            }
+            generatedText = await generateChallengeText(randomTopic, targetWords, nextDaynum);
         } catch (err) {
-            console.error("Failed to load local challenges JSON. Falling back to simple text.", err.message);
-            randomTopic = TOPICS[Math.floor(Math.random() * TOPICS.length)];
-            generatedText = `This is a fallback text because challenges data was not found. Please manually read and practice these target words for your daily challenge:\n\n**${targetWords.join('**\n**')}**\n\nTry to create your own short story or sentences using these words.`;
+            console.warn("AI generation failed, moving to fallback...", err.message);
+        }
+
+        if (!generatedText || generatedText.includes("Failed to generate text") || generatedText.trim().length === 0) {
+            console.log("Using static JSON fallback for challenge text");
+            try {
+                const challengesData = require('../data/challenges.json');
+                const dayData = challengesData.find(c => c.dayNumber === nextDaynum);
+                if (dayData) {
+                    randomTopic = dayData.topic;
+                    generatedText = dayData.textTemplate;
+                    if (targetWords.length > 0) {
+                        generatedText = generatedText.replace('(Target words will be dynamically injected here in the route).', `\n\nYour target vocabulary words to focus on today are: **${targetWords.join('** , **')}**. Try to use them in your own sentences later!`);
+                    } else {
+                        generatedText = generatedText.replace('(Target words will be dynamically injected here in the route).', '');
+                    }
+                }
+            } catch (err) {
+                console.error("Failed to load local challenges JSON. Falling back to simple text.", err.message);
+                generatedText = `This is a fallback text because challenges data was not found. Please manually read and practice these target words for your daily challenge:\n\n**${targetWords.join('**\n**')}**\n\nTry to create your own short story or sentences using these words.`;
+            }
         }
 
         // 4. Save to DB
@@ -119,7 +123,7 @@ router.get('/history', protect, async (req, res) => {
 // Complete a challenge (upload audio)
 router.post('/complete', protect, async (req, res) => {
     try {
-        const { challengeId, audioData } = req.body;
+        const { challengeId, audioData, spokenText } = req.body;
 
         if (!challengeId || !audioData) {
             return res.status(400).json({ error: 'Challenge ID and audio data are required' });
@@ -133,6 +137,24 @@ router.post('/complete', protect, async (req, res) => {
 
         if (challenge.status === 'completed') {
              return res.status(400).json({ error: 'Challenge is already completed' });
+        }
+
+        // Evaluate using Gemini if spokenText is provided
+        if (spokenText && spokenText.trim().length > 0) {
+            try {
+                 const evalResult = await evaluatePronunciation(challenge.text, spokenText);
+                 if (evalResult) {
+                     challenge.score = evalResult.score;
+                     challenge.feedback = evalResult.feedback;
+                     challenge.color = evalResult.color;
+                 }
+            } catch (evalErr) {
+                 console.warn("AI Evaluation failed for Challenge:", evalErr);
+            }
+        } else {
+            challenge.feedback = "Audio yozib olinganiga qaramay ovoz aniqlanmadi (SpeechRecognition). Talaffuzingiz aniqroq bo'lishi mumkin.";
+            challenge.score = 0;
+            challenge.color = 'red';
         }
 
         challenge.audioData = audioData;

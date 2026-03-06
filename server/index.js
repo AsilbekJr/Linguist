@@ -20,7 +20,8 @@ const allowedOrigin = process.env.ALLOWED_ORIGIN || '*';
 app.use(cors({
     origin: allowedOrigin
 }));
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 app.get('/', (req, res) => {
     res.send('Linguist AI-Flow API is running (Mock Mode Available)...');

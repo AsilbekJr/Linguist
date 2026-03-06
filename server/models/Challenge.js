@@ -22,6 +22,18 @@ const challengeSchema = new mongoose.Schema({
     type: String, // Base64 encoded webm/mp3
     default: null
   },
+  score: {
+    type: Number,
+    default: null
+  },
+  feedback: {
+    type: String,
+    default: null
+  },
+  color: {
+    type: String,
+    default: null
+  },
   status: {
     type: String,
     enum: ['pending', 'completed'],

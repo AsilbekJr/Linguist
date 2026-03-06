@@ -6,9 +6,10 @@ import { ThemeToggle } from '../ThemeToggle';
 import Sidebar from '../Sidebar';
 import { LogOut, ChevronDown } from 'lucide-react';
 import OnboardingModal from '../Onboarding/OnboardingModal';
+import { useGetMeQuery } from '../../features/api/apiSlice';
 
 const DashboardLayout = () => {
-  const user = useSelector((state) => state.auth.user);
+  const authUser = useSelector((state) => state.auth.user);
   const dispatch = useDispatch();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
@@ -23,16 +24,26 @@ const DashboardLayout = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
   
+  const { data: fullUser, isLoading } = useGetMeQuery(undefined, { skip: !authUser });
+  const user = fullUser || authUser;
+  
+  const isOnboardingComplete = user?.onboarding?.completed === true;
+
+  if (isLoading) {
+      return <div className="min-h-screen bg-background animate-pulse" />;
+  }
+
   return (
     <div className="min-h-screen bg-background text-foreground flex">
-      <OnboardingModal />
+      {!isOnboardingComplete && <OnboardingModal />}
       {/* Desktop Sidebar (Optional: Keep Sidebar logic clean here or in Sidebar.jsx itself) */}
-      <Sidebar user={user} />
+      {isOnboardingComplete && <Sidebar user={user} />}
       
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0 md:ml-64 transition-all pb-24 md:pb-0">
+      <div className={`flex-1 flex flex-col min-w-0 transition-all pb-24 md:pb-0 ${isOnboardingComplete ? 'md:ml-64' : ''}`}>
         
         {/* Top Header */}
+        {isOnboardingComplete && (
         <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-md border-b border-border h-16 flex items-center justify-end px-4 md:px-8 gap-4 shadow-sm hidden md:flex">
           {user && (
             <div className="relative" ref={dropdownRef}>
@@ -69,11 +80,14 @@ const DashboardLayout = () => {
           )}
           <ThemeToggle />
         </header>
+        )}
 
         {/* Page Content */}
+        {isOnboardingComplete && (
         <main className="flex-1 p-4 md:p-8 pt-20 md:pt-8 w-full max-w-[1400px] mx-auto overflow-x-hidden">
           <Outlet />
         </main>
+        )}
       </div>
     </div>
   );

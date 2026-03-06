@@ -43,26 +43,20 @@ router.post('/:id/check', protect, async (req, res) => {
             return res.status(404).json({ message: "Word not found" });
         }
 
-        // 1. Check with static local logic instead of AI
-        // A minimal logic: Is the word actually in the sentence? Is the sentence reasonably long?
-        const isWordPresent = sentence.toLowerCase().includes(wordDoc.word.toLowerCase());
-        const sentenceLength = sentence.trim().split(/\s+/).length;
-        
+        // 1. Check with AI
         let aiResult = {
             isCorrect: false,
-            feedback: ""
+            feedback: "AI tekshirishida xatolik yuz berdi."
         };
 
-        if (isWordPresent && sentenceLength >= 3) {
-            aiContext = true;
-            aiResult.isCorrect = true;
-            aiResult.feedback = "Ajoyib! So'z gap ichida to'g'ri qatnashgan ko'rinadi. (AI tekshiruvi o'chirib qo'yilgan)";
-        } else if (!isWordPresent) {
-            aiResult.isCorrect = false;
-            aiResult.feedback = `Gapingizda "${wordDoc.word}" so'zi qatnashmadi. Iltimos so'zni to'g'ri ishlating.`;
-        } else {
-            aiResult.isCorrect = false;
-            aiResult.feedback = "Gapingiz juda qisqa (kamida 3ta so'z bo'lishi kerak). Kengroq tushuntirishga harakat qiling.";
+        try {
+            const result = await checkSentence(wordDoc.word, sentence);
+            if (result) {
+                aiResult = result;
+            }
+        } catch (error) {
+             console.error("AI Check Error:", error);
+             aiResult.feedback = "AI xizmatiga ulanib bo'lmadi. Iltimos keyinroq qayta urinib ko'ring.";
         }
         
         // 2. SRS Logic
