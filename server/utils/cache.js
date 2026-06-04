@@ -6,15 +6,11 @@ const dictionaryCache = new LRUCache({
 });
 
 const geminiResponseCache = new LRUCache({
-  max: 200,
-  ttl: 1000 * 60 * 60,
+  max: 400,
+  ttl: 1000 * 60 * 60 * 2,
 });
 
 let topicsCache = { data: null, loadedAt: 0, mtime: 0 };
-
-const getCached = (cache, key) => cache.get(key);
-
-const setCached = (cache, key, value) => cache.set(key, value);
 
 const getDictionaryEntry = (word, loader) => {
   const key = word.toLowerCase();
@@ -25,22 +21,16 @@ const getDictionaryEntry = (word, loader) => {
   return entry;
 };
 
-const getGeminiCached = (key, fetcher) => {
-  const hit = geminiResponseCache.get(key);
-  if (hit) return hit;
-  return null;
-};
+const getGeminiCached = (key) => geminiResponseCache.get(key);
 
 const setGeminiCached = (key, value) => {
-  if (value) geminiResponseCache.set(key, value);
+  if (value != null) geminiResponseCache.set(key, value);
 };
 
 module.exports = {
   dictionaryCache,
   geminiResponseCache,
   topicsCache,
-  getCached,
-  setCached,
   getDictionaryEntry,
   getGeminiCached,
   setGeminiCached,

@@ -17,7 +17,6 @@ import authReducer from '../features/auth/authSlice';
 
 const PERSISTED_QUERIES = new Set([
   'getMe',
-  'getWords',
   'getCurrentTopic',
   'getReviewDue',
   'getSubscription',

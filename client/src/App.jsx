@@ -2,7 +2,7 @@ import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { logout } from './features/auth/authSlice';
-import { apiSlice, useGetWordsQuery, useGetReviewDueQuery } from './features/api/apiSlice';
+import { apiSlice, useGetMeQuery } from './features/api/apiSlice';
 import { ThemeToggle } from './components/ThemeToggle';
 import Login from './components/Auth/Login';
 import Register from './components/Auth/Register';
@@ -36,8 +36,7 @@ function App() {
   const [loginPrefillEmail, setLoginPrefillEmail] = useState('');
   const dispatch = useDispatch();
 
-  const { isError: isWordsError, error: wordsError } = useGetWordsQuery(undefined, { skip: !token });
-  const { isError: isReviewError, error: reviewError } = useGetReviewDueQuery(undefined, { skip: !token });
+  const { isError: isMeError, error: meError } = useGetMeQuery(undefined, { skip: !token });
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -48,23 +47,21 @@ function App() {
 
   useEffect(() => {
     if (!isAuthenticated) return;
-    dispatch(apiSlice.util.prefetch('getReviewDue', undefined, { force: false }));
     dispatch(apiSlice.util.prefetch('getCurrentTopic', undefined, { force: false }));
-    dispatch(apiSlice.util.prefetch('getMe', undefined, { force: false }));
   }, [isAuthenticated, dispatch]);
 
   useEffect(() => {
     if (!token) return;
     const inAuthGrace = lastAuthAt && Date.now() - lastAuthAt < 8000;
     if (inAuthGrace) return;
-    if ((isWordsError && wordsError?.status === 401) || (isReviewError && reviewError?.status === 401)) {
+    if (isMeError && meError?.status === 401) {
       dispatch(logout());
     }
-  }, [token, lastAuthAt, isWordsError, wordsError, isReviewError, reviewError, dispatch]);
+  }, [token, lastAuthAt, isMeError, meError, dispatch]);
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-background text-foreground selection:bg-primary/30 font-sans flex items-center justify-center p-4">
+      <div className="min-h-screen bg-background text-foreground selection:bg-primary/30 font-sans flex items-center justify-center p-4 sm:p-6">
         <div className="absolute top-4 right-4 z-50 pointer-events-auto">
           <ThemeToggle />
         </div>

@@ -6,10 +6,10 @@ import { toast } from 'react-hot-toast';
 import { playTTSAudio } from '../utils/audio';
 
 const SCENARIOS = [
-    { id: 'cafe', title: 'Qahvaxona', icon: <Coffee className="w-8 h-8" />, desc: 'Barista bilan qahva va shirinliklar buyurtma qilish.', bg: 'from-orange-400 to-amber-600' },
-    { id: 'airport', title: 'Aeroport', icon: <PlaneTakeoff className="w-8 h-8" />, desc: 'Bojxona xodimi bilan pasport nazoratidan o\'tish.', bg: 'from-blue-400 to-indigo-600' },
-    { id: 'interview', title: 'Suhbat (Interview)', icon: <Briefcase className="w-8 h-8" />, desc: 'HR menejer bilan ishga kirish suhbatida qatnashish.', bg: 'from-slate-600 to-slate-900' },
-    { id: 'street', title: 'Ko\'chada', icon: <MapPin className="w-8 h-8" />, desc: 'Notanish odamdan manzilni so\'rash.', bg: 'from-emerald-400 to-teal-600' }
+    { id: 'cafe', title: 'Qahvaxona', icon: <Coffee className="w-8 h-8" />, desc: 'Barista bilan qahva va shirinliklar buyurtma qilish.', bg: 'from-orange-400 to-amber-600', greeting: "Hi! Welcome to our café. What can I get for you today?" },
+    { id: 'airport', title: 'Aeroport', icon: <PlaneTakeoff className="w-8 h-8" />, desc: 'Bojxona xodimi bilan pasport nazoratidan o\'tish.', bg: 'from-blue-400 to-indigo-600', greeting: "Good morning. May I see your passport and boarding pass, please?" },
+    { id: 'interview', title: 'Suhbat (Interview)', icon: <Briefcase className="w-8 h-8" />, desc: 'HR menejer bilan ishga kirish suhbatida qatnashish.', bg: 'from-slate-600 to-slate-900', greeting: "Hello! Thanks for coming in today. Tell me a little about yourself." },
+    { id: 'street', title: 'Ko\'chada', icon: <MapPin className="w-8 h-8" />, desc: 'Notanish odamdan manzilni so\'rash.', bg: 'from-emerald-400 to-teal-600', greeting: "Hi there! You look a bit lost — can I help you find something?" }
 ];
 
 const RoleplayMode = () => {
@@ -94,34 +94,13 @@ const RoleplayMode = () => {
     };
 
     // Start a Scenario
-    const startScenario = async (scenario) => {
+    const startScenario = (scenario) => {
         setActiveScenario(scenario);
         setMessages([]);
-        setIsTyping(true);
-
-        const targetWords = getTargetWords();
-
-        try {
-            // Initial greeting trigger - sending an empty invisible context message 
-            // to prompt the AI to start the conversation as the character.
-            const data = await chatRoleplay({
-                scenario: scenario.title,
-                targetWords,
-                chatHistory: [],
-                message: "[SYSTEM EVENT: User has entered the scenario. Introduce yourself and say hello according to your role.]"
-            }).unwrap();
-
-            setMessages([{ role: 'ai', content: data.reply }]);
-            playTTSAudio(data.reply, 'en-US', 0.95);
-        } catch (err) {
-            if (err?.status === 402) {
-                setError("Kunlik AI limiti tugadi. Tariflar sahifasiga o'ting.");
-            } else {
-                setError("Server tarmog'ida xatolik yuz berdi.");
-            }
-        } finally {
-            setIsTyping(false);
-        }
+        setError(null);
+        const greeting = scenario.greeting || 'Hello! Ready to practice?';
+        setMessages([{ role: 'ai', content: greeting }]);
+        playTTSAudio(greeting, 'en-US', 0.95);
     };
 
     const handleSendMessage = async (e) => {

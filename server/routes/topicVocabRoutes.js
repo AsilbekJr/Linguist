@@ -6,6 +6,7 @@ const TopicProgress = require('../models/TopicProgress');
 const Word = require('../models/Word');
 const { protect } = require('../middleware/authMiddleware');
 const { topicsCache } = require('../utils/cache');
+const { getSavedWordList } = require('../utils/userWordsCache');
 const {
   getDailyWordTarget,
   resolveTopicDay,
@@ -76,8 +77,10 @@ router.get('/current', protect, async (req, res) => {
       return res.status(404).json({ error: 'Topic not found for the current day.' });
     }
 
-    const userSavedWords = await Word.find({ user: req.user._id }).select('word -_id').lean();
-    const savedLower = userSavedWords.map((w) => w.word.toLowerCase());
+    const savedLower = await getSavedWordList(req.user._id, async () => {
+      const rows = await Word.find({ user: req.user._id }).select('word -_id').lean();
+      return rows.map((w) => w.word.toLowerCase());
+    });
 
     const todayAllWords = baseTopic.words || [];
     const { dailyWords, savedCount, requiredCount, totalToday, unsavedRemaining } =
@@ -126,8 +129,10 @@ router.get('/backlog', protect, async (req, res) => {
     const topicsList = loadTopicsData();
     const learnerLevel = req.user.onboarding?.level || 'beginner';
     const contentDay = resolveTopicDay(progress.currentDay, learnerLevel);
-    const userSavedWords = await Word.find({ user: req.user._id }).select('word -_id').lean();
-    const savedLower = userSavedWords.map((w) => w.word.toLowerCase());
+    const savedLower = await getSavedWordList(req.user._id, async () => {
+      const rows = await Word.find({ user: req.user._id }).select('word -_id').lean();
+      return rows.map((w) => w.word.toLowerCase());
+    });
     const words = buildBacklog(topicsList, contentDay, savedLower, 20);
 
     res.json({ words, count: words.length });
@@ -165,8 +170,10 @@ router.post('/finish', protect, async (req, res) => {
       return res.status(404).json({ error: 'Topic not found' });
     }
 
-    const userSavedWords = await Word.find({ user: req.user._id }).select('word -_id').lean();
-    const savedLower = userSavedWords.map((w) => w.word.toLowerCase());
+    const savedLower = await getSavedWordList(req.user._id, async () => {
+      const rows = await Word.find({ user: req.user._id }).select('word -_id').lean();
+      return rows.map((w) => w.word.toLowerCase());
+    });
     const todayWords = baseTopic.words || [];
     const { dailyWords, savedCount, requiredCount } = pickDailySessionWords(
       todayWords,
@@ -232,36 +239,6 @@ router.post('/finish', protect, async (req, res) => {
     });
   } catch (error) {
     console.error('Topic finish error:', error);
-    res.status(500).json({ error: 'Server Error' });
-  }
-});
-
-// @desc    Complete current day (legacy)
-// @route   POST /api/topics/complete
-router.post('/complete', protect, async (req, res) => {
-  try {
-    const progress = await TopicProgress.findOne({ user: req.user._id });
-
-    if (!progress) {
-      return res.status(404).json({ error: 'Progress not found' });
-    }
-
-    const todayStr = new Date().toISOString().split('T')[0];
-    const latestComplete = progress.history.length > 0 ? progress.history[progress.history.length - 1] : null;
-    if (latestComplete) {
-      const latestDateStr = new Date(latestComplete.completedAt).toISOString().split('T')[0];
-      if (latestDateStr === todayStr) {
-        return res.json({ message: 'Today already completed', currentDay: progress.currentDay });
-      }
-    }
-
-    progress.history.push({ day: progress.currentDay, completedAt: new Date() });
-    progress.currentDay += 1;
-    await progress.save();
-
-    res.json({ message: 'Topic marked as complete!', currentDay: progress.currentDay });
-  } catch (error) {
-    console.error('Topic API Error (Complete):', error);
     res.status(500).json({ error: 'Server Error' });
   }
 });

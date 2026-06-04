@@ -7,13 +7,11 @@ const mongoSanitize = require('express-mongo-sanitize');
 const hpp = require('hpp');
 const cookieParser = require('cookie-parser');
 const connectDB = require('./config/db');
+const { getCorsOptions } = require('./utils/corsConfig');
+const { validateEnv } = require('./utils/validateEnv');
 
 dotenv.config();
-
-if (!process.env.JWT_SECRET) {
-  console.error('FATAL: JWT_SECRET is required.');
-  process.exit(1);
-}
+validateEnv();
 
 const wordRoutes = require('./routes/wordRoutes');
 const reviewRoutes = require('./routes/reviewRoutes');
@@ -29,17 +27,13 @@ const billingWebhook = require('./routes/billingWebhook');
 const app = express();
 
 const isProd = process.env.NODE_ENV === 'production';
-const allowedOrigin = process.env.ALLOWED_ORIGIN || 'http://localhost:5173';
 
 app.use(helmet({
   crossOriginResourcePolicy: { policy: 'cross-origin' },
 }));
 app.use(hpp());
 
-app.use(cors({
-  origin: isProd ? allowedOrigin : [allowedOrigin, 'http://localhost:5173', 'http://127.0.0.1:5173'],
-  credentials: true,
-}));
+app.use(cors(getCorsOptions(isProd)));
 
 app.use(
   '/api/billing/webhook',

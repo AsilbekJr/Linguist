@@ -15,13 +15,13 @@ services:
       - key: MONGO_URI
         sync: false
       - key: JWT_SECRET
-        sync: false
+        generateValue: true
       - key: GEMINI_API_KEY
         sync: false
       - key: ALLOWED_ORIGIN
-        sync: false
+        value: https://linguist-eight.vercel.app
       - key: CLIENT_URL
-        sync: false
+        value: https://linguist-eight.vercel.app
       - key: STRIPE_SECRET_KEY
         sync: false
       - key: STRIPE_WEBHOOK_SECRET

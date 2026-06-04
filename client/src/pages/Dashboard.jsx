@@ -70,7 +70,7 @@ const Dashboard = () => {
 
       <section className="bg-gradient-to-br from-card to-card/50 p-4 sm:p-6 md:p-8 rounded-3xl border border-border shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
         <div>
-          <h1 className="text-3xl md:text-5xl font-black mb-3">
+          <h1 className="text-2xl sm:text-3xl md:text-5xl font-black mb-3 break-words">
             Xush kelibsiz,{' '}
             <span className="bg-gradient-to-r from-primary to-purple-500 bg-clip-text text-transparent">
               {user?.name}
@@ -81,7 +81,7 @@ const Dashboard = () => {
             Quyidagi 3 qadamni ketma-ket bajaring — shunda kunlik reja tugaydi.
           </p>
         </div>
-        <div className="flex gap-4 items-center shrink-0">
+        <div className="flex flex-wrap gap-3 sm:gap-4 items-center shrink-0">
           <div
             className={`flex items-center gap-2 px-4 py-2 rounded-2xl border ${
               user?.currentStreak > 0

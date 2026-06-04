@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Menu, Home, Book, Mic, LogOut, Flame, BarChart3, CreditCard, BookHeart, Brain, GraduationCap, PenLine } from "lucide-react";
+import { Menu, Home, Book, Mic, LogOut, Flame, BarChart3, CreditCard, BookHeart, Brain, GraduationCap, PenLine, MessageCircle, AudioLines } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "./ThemeToggle";
 import { useDispatch } from 'react-redux';
@@ -24,8 +24,8 @@ const Sidebar = ({ user }) => {
     { id: '/topic', label: 'Kunlik sahna', icon: BookHeart },
     { id: '/practice', label: 'Amaliyot', icon: PenLine },
     { id: '/tutor', label: 'Ustoz AI', icon: GraduationCap },
-    { id: '/roleplay', label: 'AI suhbat', icon: Mic },
-    { id: '/speaking', label: 'Speaking Lab', icon: Mic },
+    { id: '/roleplay', label: 'AI suhbat', icon: MessageCircle },
+    { id: '/speaking', label: 'Speaking Lab', icon: AudioLines },
     { id: '/challenge', label: '100 kun', icon: Flame },
   ];
 

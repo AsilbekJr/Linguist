@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Challenge = require('../models/Challenge');
 const Word = require('../models/Word');
-const { generateChallengeText, evaluatePronunciation } = require('../services/geminiService');
+const { evaluatePronunciation } = require('../services/geminiService');
 const { protect } = require('../middleware/authMiddleware');
 const { trackAiUsage } = require('../middleware/usageQuota');
 
@@ -61,34 +61,30 @@ router.get('/current', protect, async (req, res) => {
             console.warn("Could not fetch target words for challenge:", e);
         }
 
-        // 3. Generate challenge text: prefer AI, fallback to static JSON
         let generatedText = null;
         let randomTopic = TOPICS[(nextDaynum - 1) % TOPICS.length];
 
         try {
-            generatedText = await generateChallengeText(randomTopic, targetWords, nextDaynum);
+            const challengesData = require('../data/challenges.json');
+            const dayData = challengesData.find((c) => c.dayNumber === nextDaynum);
+            if (dayData) {
+                randomTopic = dayData.topic;
+                generatedText = dayData.textTemplate;
+                const injection =
+                    targetWords.length > 0
+                        ? `\n\nFocus words: **${targetWords.join('**, **')}**.`
+                        : '';
+                generatedText = generatedText.replace(
+                    '(Target words will be dynamically injected here in the route).',
+                    injection
+                );
+            }
         } catch (err) {
-            console.warn("AI generation failed, moving to fallback...", err.message);
+            console.error('Challenge JSON load failed:', err.message);
         }
 
-        if (!generatedText || generatedText.includes("Failed to generate text") || generatedText.trim().length === 0) {
-            console.log("Using static JSON fallback for challenge text");
-            try {
-                const challengesData = require('../data/challenges.json');
-                const dayData = challengesData.find(c => c.dayNumber === nextDaynum);
-                if (dayData) {
-                    randomTopic = dayData.topic;
-                    generatedText = dayData.textTemplate;
-                    if (targetWords.length > 0) {
-                        generatedText = generatedText.replace('(Target words will be dynamically injected here in the route).', `\n\nYour target vocabulary words to focus on today are: **${targetWords.join('** , **')}**. Try to use them in your own sentences later!`);
-                    } else {
-                        generatedText = generatedText.replace('(Target words will be dynamically injected here in the route).', '');
-                    }
-                }
-            } catch (err) {
-                console.error("Failed to load local challenges JSON. Falling back to simple text.", err.message);
-                generatedText = `This is a fallback text because challenges data was not found. Please manually read and practice these target words for your daily challenge:\n\n**${targetWords.join('**\n**')}**\n\nTry to create your own short story or sentences using these words.`;
-            }
+        if (!generatedText?.trim()) {
+            generatedText = `Day ${nextDaynum}: practice these words in your own sentences:\n\n**${targetWords.join('**, **')}**`;
         }
 
         // 4. Save to DB

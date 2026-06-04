@@ -247,7 +247,7 @@ const SpeakingLab = () => {
 
       <Tabs defaultValue="translate" className="w-full">
         <div className="flex justify-center mb-8">
-            <TabsList className="grid w-[400px] grid-cols-2 p-1 bg-secondary rounded-2xl h-14">
+            <TabsList className="grid w-full max-w-[400px] grid-cols-2 p-1 bg-secondary rounded-2xl h-12 sm:h-14">
                 <TabsTrigger value="translate" className="rounded-xl font-bold data-[state=active]:bg-background data-[state=active]:shadow-sm">Translate & Speak</TabsTrigger>
                 <TabsTrigger value="translator" className="rounded-xl font-bold data-[state=active]:bg-background data-[state=active]:shadow-sm">Text Translator</TabsTrigger>
             </TabsList>

@@ -22,17 +22,25 @@ const REFRESH_COOKIE = 'linguist_refresh';
 const REFRESH_MS = 30 * 24 * 60 * 60 * 1000;
 
 const setRefreshCookie = (res, token) => {
+  const isProd = process.env.NODE_ENV === 'production';
   res.cookie(REFRESH_COOKIE, token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
+    secure: isProd,
+    // Cross-origin frontend (Vercel) + API (Render) requires SameSite=None
+    sameSite: isProd ? 'none' : 'lax',
     maxAge: REFRESH_MS,
     path: '/api/auth',
   });
 };
 
 const clearRefreshCookie = (res) => {
-  res.clearCookie(REFRESH_COOKIE, { path: '/api/auth' });
+  const isProd = process.env.NODE_ENV === 'production';
+  res.clearCookie(REFRESH_COOKIE, {
+    path: '/api/auth',
+    httpOnly: true,
+    secure: isProd,
+    sameSite: isProd ? 'none' : 'lax',
+  });
 };
 
 module.exports = {

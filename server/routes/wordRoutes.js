@@ -4,6 +4,7 @@ const Word = require('../models/Word');
 const { protect } = require('../middleware/authMiddleware');
 const { validate, wordCreateSchema } = require('../middleware/validate');
 const { getDictionaryEntry } = require('../utils/cache');
+const { invalidateUserWords } = require('../utils/userWordsCache');
 const { getTopicReviewDate } = require('../utils/topicHelpers');
 
 // @desc    Get all words
@@ -157,6 +158,7 @@ router.post('/', protect, validate(wordCreateSchema), async (req, res) => {
         });
 
         console.log("Word saved to DB:", newWord.word);
+        invalidateUserWords(req.user._id);
         res.status(201).json(newWord);
 
     } catch (error) {
@@ -176,6 +178,7 @@ router.delete('/:id', protect, async (req, res) => {
         }
 
         await word.deleteOne();
+        invalidateUserWords(req.user._id);
         res.json({ message: 'Word removed', id: req.params.id });
     } catch (error) {
         console.error("Delete Error:", error);

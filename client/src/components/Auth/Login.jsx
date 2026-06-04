@@ -46,10 +46,10 @@ const Login = ({ onSwitchToRegister, initialEmail = '', onAuthSuccess }) => {
   };
 
   return (
-    <div className="w-full max-w-md mx-auto bg-card p-6 sm:p-8 rounded-3xl border shadow-xl relative overflow-hidden z-10 transition-all">
-       <div className="text-center mb-8">
-            <h2 className="text-3xl font-black bg-gradient-to-r from-primary via-purple-500 to-pink-500 bg-clip-text text-transparent mb-2">Welcome Back</h2>
-            <p className="text-muted-foreground">Log in to your Linguist AI-Flow account</p>
+    <div className="w-full max-w-md mx-auto bg-card p-5 sm:p-8 rounded-2xl sm:rounded-3xl border shadow-xl relative overflow-hidden z-10 transition-all">
+       <div className="text-center mb-6 sm:mb-8">
+            <h2 className="text-2xl sm:text-3xl font-black bg-gradient-to-r from-primary via-purple-500 to-pink-500 bg-clip-text text-transparent mb-2">Welcome Back</h2>
+            <p className="text-sm sm:text-base text-muted-foreground">Log in to your Linguist AI-Flow account</p>
        </div>
 
        {errorMsg && (
@@ -67,7 +67,7 @@ const Login = ({ onSwitchToRegister, initialEmail = '', onAuthSuccess }) => {
                 required 
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="pl-12 h-14 rounded-2xl bg-background border-2 border-border focus:border-primary focus:ring-4 focus:ring-primary/20 text-lg transition-all"
+                className="pl-12 h-12 sm:h-14 rounded-2xl bg-background border-2 border-border focus:border-primary focus:ring-4 focus:ring-primary/20 text-base sm:text-lg transition-all"
               />
           </div>
           
@@ -81,7 +81,7 @@ const Login = ({ onSwitchToRegister, initialEmail = '', onAuthSuccess }) => {
           <Button 
             type="submit" 
             disabled={isLoading}
-            className="h-14 mt-4 rounded-2xl text-lg font-bold bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/30 transition-all group overflow-hidden relative"
+            className="h-12 sm:h-14 mt-2 sm:mt-4 rounded-2xl text-base sm:text-lg font-bold bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/30 transition-all group overflow-hidden relative"
           >
              {isLoading ? <Loader2 className="w-6 h-6 animate-spin mx-auto text-white" /> : 'Log In'}
           </Button>

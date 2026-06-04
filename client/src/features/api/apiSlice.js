@@ -51,8 +51,8 @@ const baseQueryWithReauth = async (args, api, extraOptions) => {
 
 export const apiSlice = createApi({
   reducerPath: 'api',
-  keepUnusedDataFor: 120,
-  refetchOnMountOrArgChange: 30,
+  keepUnusedDataFor: 180,
+  refetchOnMountOrArgChange: 60,
   refetchOnFocus: false,
   refetchOnReconnect: true,
   baseQuery: baseQueryWithReauth,
@@ -162,13 +162,6 @@ export const apiSlice = createApi({
       query: () => '/api/topics/backlog',
       providesTags: ['Topic'],
       keepUnusedDataFor: 120,
-    }),
-    completeTopic: builder.mutation({
-      query: () => ({
-        url: '/api/topics/complete',
-        method: 'POST',
-      }),
-      invalidatesTags: ['Topic', 'User'],
     }),
     finishTopicDay: builder.mutation({
       query: (body) => ({
@@ -287,7 +280,6 @@ export const {
   useGetReviewDueQuery,
   useGetCurrentTopicQuery,
   useGetTopicBacklogQuery,
-  useCompleteTopicMutation,
   useFinishTopicDayMutation,
   useOnboardUserMutation,
   useSyncDailyQuestMutation,

@@ -41,4 +41,30 @@ npm run dev
 - Frontend: Vercel (`client/`)
 - Backend: Render (`render.yaml`, `server/`)
 
-Set `ALLOWED_ORIGIN` and `CLIENT_URL` to your production URLs.
+**Render → Environment** (service `linguist-backend`):
+
+| Variable | Required | Example |
+|----------|----------|---------|
+| `JWT_SECRET` | Yes | Long random string (32+ chars) |
+| `MONGO_URI` | Yes | `mongodb+srv://...` from MongoDB Atlas |
+| `GEMINI_API_KEY` | Yes (AI features) | Google AI Studio key |
+| `ALLOWED_ORIGIN` | Yes | `https://linguist-eight.vercel.app` |
+| `CLIENT_URL` | Yes | `https://linguist-eight.vercel.app` |
+
+Generate a secret locally:
+
+```bash
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+```
+
+Do not use `*` for `ALLOWED_ORIGIN` — credentialed CORS needs the exact frontend URL.
+
+After saving env vars, click **Manual Deploy**.
+
+**Vercel env:**
+
+```env
+VITE_API_URL=https://linguist-backend.onrender.com
+```
+
+Redeploy both services after changing env vars.

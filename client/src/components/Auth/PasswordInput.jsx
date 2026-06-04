@@ -24,7 +24,7 @@ const PasswordInput = ({
         value={value}
         onChange={onChange}
         autoComplete={autoComplete}
-        className="pl-12 pr-12 h-14 rounded-2xl bg-background border-2 border-border focus:border-primary focus:ring-4 focus:ring-primary/20 text-lg transition-all"
+        className="pl-12 pr-12 h-12 sm:h-14 rounded-2xl bg-background border-2 border-border focus:border-primary focus:ring-4 focus:ring-primary/20 text-base sm:text-lg transition-all"
       />
       <button
         type="button"

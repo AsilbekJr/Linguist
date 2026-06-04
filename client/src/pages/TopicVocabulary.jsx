@@ -112,12 +112,12 @@ const TopicVocabulary = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const token = useSelector((s) => s.auth.token);
-  const { data: topicData, isLoading, refetch } = useGetCurrentTopicQuery();
+  const { data: topicData, isLoading } = useGetCurrentTopicQuery();
   const { data: backlogData } = useGetTopicBacklogQuery(undefined, { skip: !topicData });
-  const { data: user, refetch: refetchMe } = useGetMeQuery();
+  const { data: user } = useGetMeQuery();
   const [finishTopicDay, { isLoading: isFinishing }] = useFinishTopicDayMutation();
   const [addWord] = useAddWordMutation();
-  const { data: userWords = [], refetch: refetchWords } = useGetWordsQuery();
+  const { data: userWords = [] } = useGetWordsQuery();
 
   const [step, setStep] = useState('intro');
   const [addingWords, setAddingWords] = useState({});
@@ -154,14 +154,11 @@ const TopicVocabulary = () => {
       fireConfetti();
       toast.success(res.message || 'Kunlik sahna bajarildi!');
       setStep('done');
-      refetch();
-      refetchMe();
-      refetchWords();
     } catch (err) {
       const msg = err?.data?.error || 'Yakunlashda xatolik';
       toast.error(msg);
     }
-  }, [finishTopicDay, quizPassed, pack.length, applyUserUpdate, refetch, refetchMe, refetchWords]);
+  }, [finishTopicDay, quizPassed, pack.length, applyUserUpdate]);
 
   useEffect(() => {
     if (topicData?.topicQuestCompleted && step !== 'done') {
@@ -191,12 +188,9 @@ const TopicVocabulary = () => {
         synonyms: [],
       }).unwrap();
       toast.success(`"${wordObj.word}" saqlandi — takrorlashda chiqadi`);
-      await refetchWords();
-      await refetch();
     } catch (error) {
       if (error?.data?.type === 'DUPLICATE' || error?.data?.message?.includes('already')) {
         toast.success(`"${wordObj.word}" allaqachon lug'atingizda`);
-        await refetch();
       } else {
         toast.error("So'zni qo'shishda xatolik.");
       }
@@ -251,10 +245,10 @@ const TopicVocabulary = () => {
   const progressPercent = requiredCount > 0 ? Math.min(100, Math.round((packSavedCount / requiredCount) * 100)) : 100;
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-8">
-      <div className="text-center mb-6">
+    <div className="max-w-3xl mx-auto px-3 sm:px-4 py-6 sm:py-8">
+      <div className="text-center mb-4 sm:mb-6">
         <p className="text-xs font-bold uppercase text-purple-500">Kunlik sahna · 1-qadam</p>
-        <h1 className="text-3xl font-black mt-1">Bugungi mavzu</h1>
+        <h1 className="text-2xl sm:text-3xl font-black mt-1">Bugungi mavzu</h1>
         <p className="text-sm text-muted-foreground mt-2">
           Saqlangan: {packSavedCount}/{requiredCount}
           {quizPassed ? ' · Test ✓' : ' · Test kerak'}
@@ -266,9 +260,9 @@ const TopicVocabulary = () => {
       </div>
 
       {step === 'intro' && (
-        <div className="bg-card border rounded-3xl p-8 text-center">
-          <div className="text-6xl mb-4">{topicData.scenarioEmoji || '📚'}</div>
-          <h2 className="text-xl font-bold mb-4">{topicData.topicUz || topicData.topic}</h2>
+        <div className="bg-card border rounded-2xl sm:rounded-3xl p-5 sm:p-8 text-center">
+          <div className="text-4xl sm:text-6xl mb-3 sm:mb-4">{topicData.scenarioEmoji || '📚'}</div>
+          <h2 className="text-lg sm:text-xl font-bold mb-3 sm:mb-4">{topicData.topicUz || topicData.topic}</h2>
           <p className="text-foreground mb-4 leading-relaxed">{topicData.story}</p>
           <p className="text-sm text-muted-foreground mb-8">
             Ketma-ketlik: o'rganish → mini-test → {requiredCount} ta so'z saqlash → takrorlash
