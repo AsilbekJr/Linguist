@@ -28,6 +28,7 @@ const RoleplayMode = () => {
     const [error, setError] = useState(null);
 
     const messagesEndRef = useRef(null);
+    const immersionSyncedRef = useRef(false);
 
     // Auto-scroll to bottom of chat
     const scrollToBottom = () => {
@@ -113,7 +114,11 @@ const RoleplayMode = () => {
             setMessages([{ role: 'ai', content: data.reply }]);
             playTTSAudio(data.reply, 'en-US', 0.95);
         } catch (err) {
-            setError("Server tarmog'ida xatolik yuz berdi.");
+            if (err?.status === 402) {
+                setError("Kunlik AI limiti tugadi. Tariflar sahifasiga o'ting.");
+            } else {
+                setError("Server tarmog'ida xatolik yuz berdi.");
+            }
         } finally {
             setIsTyping(false);
         }
@@ -135,14 +140,19 @@ const RoleplayMode = () => {
         setInputText("");
         setIsTyping(true);
 
-        // Sync Immersion quest after a reasonable exchange (e.g., 3 user lines + 2 AI lines + 1 initial = 6)
-        if (newMessages.length === 6) {
+        const userMessageCount = newMessages.filter((m) => m.role === 'user').length;
+        if (!immersionSyncedRef.current && (newMessages.length >= 6 || userMessageCount >= 3)) {
+           immersionSyncedRef.current = true;
            syncDailyQuest({ type: 'immersion' })
               .unwrap()
               .then(res => {
+                  if (res.xpAwarded) toast.success(res.message || `+${res.xpAwarded} XP`);
                   if (res.streakUpdated) toast.success(res.message, { icon: '🔥' });
               })
-              .catch(err => console.error("Immersion quest sync failed", err));
+              .catch(err => {
+                  immersionSyncedRef.current = false;
+                  console.error("Immersion quest sync failed", err);
+              });
         }
 
         try {

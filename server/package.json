@@ -15,15 +15,23 @@
     "@google/generative-ai": "^0.24.1",
     "@tailwindcss/vite": "^4.2.0",
     "bcryptjs": "^3.0.3",
+    "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
     "dotenv": "^17.3.1",
     "express": "^5.2.1",
-    "firebase-admin": "^13.6.1",
+    "express-mongo-sanitize": "^2.2.0",
+    "express-rate-limit": "^8.5.2",
+    "helmet": "^8.2.0",
+    "hpp": "^0.2.3",
     "jsonwebtoken": "^9.0.3",
+    "lru-cache": "^11.5.1",
     "mongoose": "^9.2.1",
-    "tailwindcss": "^4.2.0"
+    "stripe": "^22.2.0",
+    "tailwindcss": "^4.2.0",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
+    "mongodb-memory-server": "^10.1.4",
     "nodemon": "^3.1.11"
   }
 }

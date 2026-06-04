@@ -4,9 +4,10 @@ import { useRegisterMutation } from '../../features/api/apiSlice';
 import { setCredentials } from '../../features/auth/authSlice';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Loader2, User, Lock, Mail } from "lucide-react";
+import { Loader2, User, Mail } from "lucide-react";
+import PasswordInput from './PasswordInput';
 
-const Register = ({ onSwitchToLogin }) => {
+const Register = ({ onSwitchToLogin, onUserExists, onAuthSuccess }) => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -20,10 +21,25 @@ const Register = ({ onSwitchToLogin }) => {
     setErrorMsg('');
     try {
       const userData = await register({ name, email, password }).unwrap();
+      if (!userData?.token) {
+        setErrorMsg("Server javobida token yo'q. Qayta urinib ko'ring.");
+        return;
+      }
       dispatch(setCredentials({ user: userData, token: userData.token }));
+      onAuthSuccess?.();
     } catch (err) {
       console.error("Register Failed:", err);
-      setErrorMsg(err?.data?.message || 'Registration failed.');
+      const message = err?.data?.message;
+      if (message === 'User already exists') {
+        setErrorMsg(
+          "Bu email allaqachon ro'yxatdan o'tgan. Quyidagi \"Log in here\" orqali kiring."
+        );
+        onUserExists?.(email);
+      } else if (err?.status === 400 && message === 'Validation failed') {
+        setErrorMsg("Ism, email yoki parol noto'g'ri (parol kamida 8 belgi).");
+      } else {
+        setErrorMsg(message || "Ro'yxatdan o'tish amalga oshmadi.");
+      }
     }
   };
 
@@ -65,17 +81,12 @@ const Register = ({ onSwitchToLogin }) => {
               />
           </div>
           
-          <div className="relative group">
-              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground transition-colors group-focus-within:text-primary" />
-              <Input 
-                type="password" 
-                placeholder="Password" 
-                required 
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="pl-12 h-14 rounded-2xl bg-background border-2 border-border focus:border-primary focus:ring-4 focus:ring-primary/20 text-lg transition-all"
-              />
-          </div>
+          <PasswordInput
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="Password (kamida 8 belgi)"
+            autoComplete="new-password"
+          />
 
           <Button 
             type="submit" 

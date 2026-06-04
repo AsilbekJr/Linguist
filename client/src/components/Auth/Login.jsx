@@ -1,13 +1,14 @@
-import React, { useState, useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import React, { useState } from 'react';
+import { useDispatch } from 'react-redux';
 import { useLoginMutation } from '../../features/api/apiSlice';
 import { setCredentials } from '../../features/auth/authSlice';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Loader2, Lock, Mail } from "lucide-react";
+import { Loader2, Mail } from "lucide-react";
+import PasswordInput from './PasswordInput';
 
-const Login = ({ onSwitchToRegister }) => {
-  const [email, setEmail] = useState('');
+const Login = ({ onSwitchToRegister, initialEmail = '', onAuthSuccess }) => {
+  const [email, setEmail] = useState(initialEmail);
   const [password, setPassword] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
 
@@ -19,10 +20,28 @@ const Login = ({ onSwitchToRegister }) => {
     setErrorMsg('');
     try {
       const userData = await login({ email, password }).unwrap();
+      if (!userData?.token) {
+        setErrorMsg("Server javobida token yo'q. Qayta urinib ko'ring.");
+        return;
+      }
       dispatch(setCredentials({ user: userData, token: userData.token }));
+      onAuthSuccess?.();
     } catch (err) {
       console.error("Login Failed:", err);
-      setErrorMsg(err?.data?.message || 'Login failed.');
+      const message = err?.data?.message;
+      if (err?.status === 429 || message === 'Too many auth attempts. Try again later.') {
+        setErrorMsg(
+          "Juda ko'p urinish. 15 daqiqa kuting yoki serverni qayta ishga tushiring (dev)."
+        );
+      } else if (err?.status === 401) {
+        setErrorMsg(
+          message === 'Invalid credentials'
+            ? "Email yoki parol noto'g'ri. Ro'yxatdan o'tgan bo'lsangiz, to'g'ri parolni kiriting."
+            : message || "Kirish rad etildi."
+        );
+      } else {
+        setErrorMsg(message || "Server bilan bog'lanib bo'lmadi.");
+      }
     }
   };
 
@@ -52,17 +71,12 @@ const Login = ({ onSwitchToRegister }) => {
               />
           </div>
           
-          <div className="relative group">
-              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground transition-colors group-focus-within:text-primary" />
-              <Input 
-                type="password" 
-                placeholder="Password" 
-                required 
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="pl-12 h-14 rounded-2xl bg-background border-2 border-border focus:border-primary focus:ring-4 focus:ring-primary/20 text-lg transition-all"
-              />
-          </div>
+          <PasswordInput
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="Password"
+            autoComplete="current-password"
+          />
 
           <Button 
             type="submit" 

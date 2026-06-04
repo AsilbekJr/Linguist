@@ -4,6 +4,7 @@ const Challenge = require('../models/Challenge');
 const Word = require('../models/Word');
 const { generateChallengeText, evaluatePronunciation } = require('../services/geminiService');
 const { protect } = require('../middleware/authMiddleware');
+const { trackAiUsage } = require('../middleware/usageQuota');
 
 const TOPICS = [
     "A Memorable Travel Experience",
@@ -52,7 +53,7 @@ router.get('/current', protect, async (req, res) => {
         let targetWords = [];
         try {
             const activeWords = await Word.aggregate([
-                { $match: { user: req.user._id, srsStage: { $lt: 5 } } },
+                { $match: { user: req.user._id, mastered: false, reviewStage: { $lt: 5 } } },
                 { $sample: { size: 5 } }
             ]);
             targetWords = activeWords.map(w => w.word);
@@ -112,7 +113,10 @@ router.get('/current', protect, async (req, res) => {
 router.get('/history', protect, async (req, res) => {
     try {
         // Find all challenges and sort by dayNumber
-        const history = await Challenge.find({ user: req.user._id }).sort({ dayNumber: 1 });
+        const history = await Challenge.find({ user: req.user._id })
+            .select('-audioData')
+            .sort({ dayNumber: 1 })
+            .lean();
         res.json(history);
     } catch (error) {
         console.error("Error fetching challenge history:", error);
@@ -121,7 +125,7 @@ router.get('/history', protect, async (req, res) => {
 });
 
 // Complete a challenge (upload audio)
-router.post('/complete', protect, async (req, res) => {
+router.post('/complete', protect, trackAiUsage, async (req, res) => {
     try {
         const { challengeId, audioData, spokenText } = req.body;
 

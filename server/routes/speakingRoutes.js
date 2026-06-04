@@ -2,12 +2,12 @@ const express = require('express');
 const router = express.Router();
 const { translateUzbekToEnglish, evaluatePronunciation, translateText } = require('../services/geminiService');
 const { protect } = require('../middleware/authMiddleware');
+const { validate, speakingTranslateSchema } = require('../middleware/validate');
+const { trackAiUsage } = require('../middleware/usageQuota');
 
-// POST /api/speaking/translate
-// Accepts an Uzbek text, returns structured English translations
-router.post('/translate', protect, async (req, res) => {
+router.post('/translate', protect, validate(speakingTranslateSchema), trackAiUsage, async (req, res) => {
     try {
-        const { text } = req.body;
+        const { text } = req.validated.body;
         
         if (!text) {
             return res.status(400).json({ error: "Text is required" });
@@ -31,7 +31,7 @@ router.post('/translate', protect, async (req, res) => {
 
 // POST /api/speaking/translate-text
 // Generic text-to-text translation
-router.post('/translate-text', protect, async (req, res) => {
+router.post('/translate-text', protect, trackAiUsage, async (req, res) => {
     try {
         const { text, from, to } = req.body;
         if (!text || !from || !to) {
@@ -53,7 +53,7 @@ router.post('/translate-text', protect, async (req, res) => {
 
 // POST /api/speaking/evaluate
 // Compares spoken transcript against the actual target English sentence
-router.post('/evaluate', protect, async (req, res) => {
+router.post('/evaluate', protect, trackAiUsage, async (req, res) => {
     try {
         const { targetSentence, spokenText } = req.body;
         

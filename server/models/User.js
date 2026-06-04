@@ -34,15 +34,32 @@ const userSchema = new mongoose.Schema({
   },
   onboarding: {
     completed: { type: Boolean, default: false },
-    level: { type: String, default: 'beginner' }, // beginner, intermediate, advanced
-    goal: { type: String, default: 'speaking' }, // speaking, vocabulary, grammar
-    planType: { type: String, default: 'standard' } // sprint, foundation, fluency
+    level: { type: String, default: 'beginner' },
+    goal: { type: String, default: 'speaking' },
+    planType: { type: String, default: 'standard' },
   },
   dailyQuests: {
-    date: { type: String, default: '' }, // YYYY-MM-DD
+    date: { type: String, default: '' },
     reviewCompleted: { type: Boolean, default: false },
     topicCompleted: { type: Boolean, default: false },
     immersionCompleted: { type: Boolean, default: false },
+  },
+  subscription: {
+    plan: { type: String, enum: ['free', 'pro', 'premium'], default: 'free' },
+    status: {
+      type: String,
+      enum: ['active', 'canceled', 'past_due', 'trialing'],
+      default: 'active',
+    },
+    provider: { type: String, enum: ['stripe', 'payme', 'click', null], default: null },
+    stripeCustomerId: String,
+    stripeSubscriptionId: String,
+    paymeSubscriptionId: String,
+    currentPeriodEnd: Date,
+  },
+  usage: {
+    aiCallsToday: { type: Number, default: 0 },
+    aiCallsDate: { type: String, default: '' },
   },
   createdAt: {
     type: Date,
@@ -50,19 +67,25 @@ const userSchema = new mongoose.Schema({
   },
 });
 
-// Hash password before saving
 userSchema.pre('save', async function () {
   if (!this.isModified('password')) {
     return;
   }
-
   const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(this.password, salt);
 });
 
-// Match user entered password to hashed password in database
 userSchema.methods.matchPassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
+};
+
+userSchema.methods.getEffectivePlan = function () {
+  const sub = this.subscription || {};
+  const plan = sub.plan || 'free';
+  const status = sub.status || 'active';
+  if (plan === 'free' || status !== 'active') return 'free';
+  if (sub.currentPeriodEnd && new Date(sub.currentPeriodEnd) < new Date()) return 'free';
+  return plan;
 };
 
 const User = mongoose.model('User', userSchema);

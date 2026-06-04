@@ -1,422 +1,495 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { useGetWordsQuery, useCheckReviewMutation, useSyncDailyQuestMutation } from '../features/api/apiSlice';
+import { Link } from 'react-router-dom';
+import {
+  useGetReviewDueQuery,
+  useGetWordsQuery,
+  useCheckReviewMutation,
+  useQuickReviewMutation,
+  useSyncDailyQuestMutation,
+} from '../features/api/apiSlice';
 import { groupWordsByReviewInterval } from '../utils/dateUtils';
-import { BookOpen, ChevronLeft, Mic, MicOff, Volume2 } from 'lucide-react';
+import { ChevronLeft, Mic, MicOff, Volume2, Layers, ListChecks, PenLine } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 import { playTTSAudio } from '../utils/audio';
+import { fireConfetti } from '../utils/celebration';
+
+const MODES = [
+  { id: 'flashcard', label: 'Flashcard', icon: Layers, desc: 'So\'z ↔ ma\'no, tez takrorlash' },
+  { id: 'quiz', label: 'Variantli savol', icon: ListChecks, desc: '4 tarjimadan to\'g\'risini tanlang' },
+  { id: 'sentence', label: 'Jumla yozish', icon: PenLine, desc: 'AI bilan jumlada tekshirish' },
+];
+
+const shuffle = (arr) => [...arr].sort(() => Math.random() - 0.5);
 
 const ReviewMode = () => {
-    const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:5000';
-    const { data: words = [], isLoading } = useGetWordsQuery();
-    const [checkReviewMutation] = useCheckReviewMutation();
-    const [syncDailyQuest] = useSyncDailyQuestMutation();
+  const { data: dueWords = [], isLoading: loadingDue } = useGetReviewDueQuery();
+  const { data: allWords = [], isLoading: loadingWords } = useGetWordsQuery();
+  const [checkReviewMutation] = useCheckReviewMutation();
+  const [quickReview] = useQuickReviewMutation();
+  const [syncDailyQuest] = useSyncDailyQuestMutation();
 
-    const [selectedGroup, setSelectedGroup] = useState(null); // String: "Review Now ⚡", etc.
-    const [sessionWords, setSessionWords] = useState([]); // Words ready for review in this session
-    
-    const [currentIndex, setCurrentIndex] = useState(0);
-    const [userSentence, setUserSentence] = useState('');
-    const [feedback, setFeedback] = useState(null);
-    const [checking, setChecking] = useState(false);
-    const [showHint, setShowHint] = useState(false);
-    const [sessionResults, setSessionResults] = useState({ correct: 0, incorrect: 0 });
-    const [isListening, setIsListening] = useState(false);
-    const [recognition, setRecognition] = useState(null);
-    const [error, setError] = useState(null);
+  const [activeMode, setActiveMode] = useState(null);
+  const [selectedGroup, setSelectedGroup] = useState(null);
+  const [sessionWords, setSessionWords] = useState([]);
 
-    const userSentenceRef = useRef('');
-    const autoAdvanceTimeoutRef = useRef(null);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [userSentence, setUserSentence] = useState('');
+  const [feedback, setFeedback] = useState(null);
+  const [checking, setChecking] = useState(false);
+  const [showHint, setShowHint] = useState(false);
+  const [sessionResults, setSessionResults] = useState({ correct: 0, incorrect: 0 });
+  const [isListening, setIsListening] = useState(false);
+  const [recognition, setRecognition] = useState(null);
+  const [error, setError] = useState(null);
 
-    useEffect(() => {
-        userSentenceRef.current = userSentence;
-    }, [userSentence]);
+  const [flipped, setFlipped] = useState(false);
+  const [quizOptions, setQuizOptions] = useState([]);
+  const [quizAnswered, setQuizAnswered] = useState(null);
 
-    useEffect(() => {
-        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            const rec = new SpeechRecognition();
-            rec.continuous = false;
-            rec.interimResults = true;
-            rec.lang = 'en-US';
+  const autoAdvanceTimeoutRef = useRef(null);
+  const questSyncedRef = useRef(false);
 
-            rec.onresult = (event) => {
-                let finalTrans = '';
-                let interimTrans = '';
-                for (let i = event.resultIndex; i < event.results.length; ++i) {
-                    if (event.results[i].isFinal) finalTrans += event.results[i][0].transcript;
-                    else interimTrans += event.results[i][0].transcript;
-                }
-                const newText = finalTrans || interimTrans;
-                setUserSentence(newText);
-            };
+  const totalWords = allWords.length;
+  const isLoading = loadingDue || loadingWords;
 
-            rec.onend = () => {
-                setIsListening(false);
-            };
+  useEffect(() => {
+    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      const rec = new SpeechRecognition();
+      rec.continuous = false;
+      rec.interimResults = true;
+      rec.lang = 'en-US';
 
-            rec.onerror = (e) => { 
-                setIsListening(false); 
-                console.error("Speech recognition error:", e);
-                setError("Microphone error. Please try again or type.");
-            };
-            
-            setRecognition(rec);
+      rec.onresult = (event) => {
+        let finalTrans = '';
+        let interimTrans = '';
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          if (event.results[i].isFinal) finalTrans += event.results[i][0].transcript;
+          else interimTrans += event.results[i][0].transcript;
         }
-    }, []);
+        setUserSentence(finalTrans || interimTrans);
+      };
 
-    const toggleListening = () => {
-        if (!recognition) {
-            setError("Your browser doesn't support speech recognition.");
-            return;
-        }
+      rec.onend = () => setIsListening(false);
+      rec.onerror = () => {
+        setIsListening(false);
+        setError("Microphone error. Please try again or type.");
+      };
 
-        if (isListening) {
-            recognition.stop();
-        } else {
-            setError(null);
-            recognition.start();
-            setIsListening(true);
-        }
-    };
+      setRecognition(rec);
+    }
+  }, []);
 
-    const groupedWords = useMemo(() => {
-        return groupWordsByReviewInterval(words);
-    }, [words]);
+  const groupedWords = useMemo(() => groupWordsByReviewInterval(dueWords), [dueWords]);
 
-    const startReviewSession = (groupName, wordsInGroup) => {
-        if (groupName === "Mastered 🏆") {
-            alert("Siz bu so'zlarni to'liq o'zlashtirgansiz! Ular asosan arxivda saqlanadi.");
-            return;
-        }
-        setSelectedGroup(groupName);
-        setSessionWords(wordsInGroup);
-        setCurrentIndex(0);
-        setUserSentence('');
-        setFeedback(null);
-        setError(null);
-        setShowHint(false);
-        setSessionResults({ correct: 0, incorrect: 0 });
-    };
+  const buildQuizOptions = (word, pool) => {
+    const wrong = shuffle(
+      pool.filter((w) => w._id !== word._id && w.translation).map((w) => w.translation)
+    ).slice(0, 3);
+    const correct = word.translation || word.definition || word.word;
+    return shuffle([correct, ...wrong].filter(Boolean).slice(0, 4));
+  };
 
-    const handleCheck = async () => {
-        if (!userSentence.trim()) return;
+  const finishSession = () => {
+    if (!questSyncedRef.current) {
+      questSyncedRef.current = true;
+      syncDailyQuest({ type: 'review' })
+        .unwrap()
+        .then((res) => {
+          if (res.xpAwarded) toast.success(res.message || `+${res.xpAwarded} XP`);
+          if (res.streakUpdated) {
+            fireConfetti();
+            toast.success(res.message, { icon: '🔥' });
+          }
+        })
+        .catch((err) => console.error('Failed to sync quest:', err));
+    }
+    setSessionWords([]);
+    setSelectedGroup(null);
+    setActiveMode(null);
+    setFlipped(false);
+    setQuizAnswered(null);
+  };
 
-        setChecking(true);
-        const currentWord = sessionWords[currentIndex];
-
-        try {
-            const data = await checkReviewMutation({ id: currentWord._id, sentence: userSentence }).unwrap();
-            setFeedback(data); // { isCorrect, feedback, nextReviewDate }
-            setSessionResults(prev => ({
-                ...prev,
-                [data.isCorrect ? 'correct' : 'incorrect']: prev[data.isCorrect ? 'correct' : 'incorrect'] + 1
-            }));
-            
-            // Auto advance on correct answer
-            if (data.isCorrect) {
-                 autoAdvanceTimeoutRef.current = setTimeout(() => {
-                     handleNext();
-                 }, 2500); // 2.5 seconds to see the positive feedback
-            }
-        } catch (err) {
-            console.error("Check error:", err);
-            setError("Server xatosi: Javob olib bo'lmadi. Qayta urinib ko'ring.");
-        } finally {
-            setChecking(false);
-        }
-    };
-
-    const handleNext = () => {
-        if (autoAdvanceTimeoutRef.current) {
-            clearTimeout(autoAdvanceTimeoutRef.current);
-            autoAdvanceTimeoutRef.current = null;
-        }
-
-        setFeedback(null);
-        setUserSentence('');
-        setError(null);
-        setShowHint(false);
-        if (isListening && recognition) recognition.stop();
-        if (currentIndex < sessionWords.length - 1) {
-            setCurrentIndex(prev => prev + 1);
-        } else {
-            // Finished all reviews in this session
-            syncDailyQuest({ type: 'review' })
-                .then(async (res) => {
-                    // User request: If Takrorlash is completed with >= 5 words, trigger Yangi Qon (topic)
-                    if (sessionWords.length >= 5) {
-                        try {
-                            const topicRes = await syncDailyQuest({ type: 'topic' }).unwrap();
-                            if (topicRes.streakUpdated) {
-                               toast.success(topicRes.message, { icon: '🔥' });
-                            } else {
-                               toast.success("🔥 Yangi Qon vazifasi ham avtomatik bajarildi!");
-                            }
-                        } catch (err) {
-                            console.error("Failed to auto-sync topic quest:", err);
-                        }
-                    } else if (res.data?.streakUpdated) {
-                        toast.success(res.data.message, { icon: '🔥' });
-                    }
-                })
-                .catch(err => console.error("Failed to sync quest:", err));
-
-            setSessionWords([]); 
-            setSelectedGroup(null);
-        }
-    };
-
-    if (isLoading) return <div className="text-center py-20 animate-pulse">Yuklanmoqda...</div>;
-
-    if (!selectedGroup) {
-        // VIEW 1: Spaced Repetition Buckets / Cards
-        const groupsEntries = Object.entries(groupedWords);
-
-        if (groupsEntries.length === 0) {
-            return (
-                <div className="text-center py-20 bg-card border border-border border-dashed rounded-3xl max-w-2xl mx-auto">
-                    <div className="text-5xl md:text-6xl mb-4">🎉</div>
-                    <h2 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-green-400 to-blue-500 bg-clip-text text-transparent mb-4">
-                        Hammasi Bajarildi!
-                    </h2>
-                    <p className="text-base md:text-lg text-muted-foreground mt-2">Hozircha takrorlash uchun so'zlar yo'q. Keyinroq qaytib ko'ring!</p>
-                </div>
-            );
-        }
-
-        return (
-            <div className="max-w-4xl mx-auto animate-fade-in text-center">
-                <div className="mb-12">
-                   <h2 className="text-2xl md:text-5xl font-bold bg-gradient-to-r from-pink-500 to-purple-500 bg-clip-text text-transparent mb-4">
-                      Takrorlash ✨
-                   </h2>
-                   <p className="text-base md:text-lg text-muted-foreground">Xotirangizni mustahkamlash uchun guruhlardan birini tanlang.</p>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 text-left">
-                    {groupsEntries.map(([groupName, wordsInGroup]) => {
-                        const isOverdue = groupName.includes("Overdue");
-                        
-                        return (
-                            <div 
-                                key={groupName} 
-                                onClick={() => startReviewSession(groupName, wordsInGroup)}
-                                className={`bg-card rounded-3xl p-6 border shadow-md transition-all cursor-pointer group ${
-                                    isOverdue 
-                                    ? 'border-destructive/50 hover:border-destructive shadow-destructive/10 hover:shadow-destructive/30 hover:-translate-y-1 animate-pulse hover:animate-none' 
-                                    : 'border-border hover:shadow-xl hover:-translate-y-1 hover:border-pink-500/50'
-                                }`}
-                            >
-                                <div className={`w-14 h-14 rounded-2xl border flex items-center justify-center mb-6 group-hover:scale-110 transition-transform ${
-                                    isOverdue
-                                    ? 'bg-destructive/10 border-destructive/20 text-destructive'
-                                    : 'bg-pink-500/10 border-pink-500/20 text-pink-500'
-                                }`}>
-                                    <BookOpen className="w-8 h-8" />
-                                </div>
-                                <h3 className="text-xl md:text-2xl font-bold text-card-foreground mb-2">
-                                    {groupName}
-                                </h3>
-                                <p className="text-muted-foreground text-xs md:text-sm mb-4">
-                                    {wordsInGroup.length} ta so'z
-                                </p>
-                                <div className={`flex items-center text-sm font-bold opacity-0 group-hover:opacity-100 transition-opacity ${
-                                    isOverdue ? 'text-destructive' : 'text-pink-500'
-                                }`}>
-                                    Boshlash &rarr;
-                                </div>
-                            </div>
-                        );
-                    })}
-                </div>
-            </div>
-        );
+  const advanceQuick = async (known) => {
+    const currentWord = sessionWords[currentIndex];
+    try {
+      await quickReview({ id: currentWord._id, known }).unwrap();
+      setSessionResults((prev) => ({
+        ...prev,
+        [known ? 'correct' : 'incorrect']: prev[known ? 'correct' : 'incorrect'] + 1,
+      }));
+    } catch (err) {
+      console.error('Quick review error:', err);
+      setError('Saqlashda xatolik. Qayta urinib ko\'ring.');
+      return;
     }
 
-    // VIEW 2: Active Review Session
-    const word = sessionWords[currentIndex];
+    setFlipped(false);
+    setQuizAnswered(null);
+    if (currentIndex < sessionWords.length - 1) {
+      const nextIdx = currentIndex + 1;
+      setCurrentIndex(nextIdx);
+      if (activeMode === 'quiz') {
+        setQuizOptions(buildQuizOptions(sessionWords[nextIdx], allWords));
+      }
+    } else {
+      finishSession();
+    }
+  };
 
-    // If session is done
-    if (!word) {
-        const total = sessionResults.correct + sessionResults.incorrect;
-        const accuracy = total > 0 ? Math.round((sessionResults.correct / total) * 100) : 0;
+  const startReviewSession = (groupName, wordsInGroup, mode) => {
+    setSelectedGroup(groupName);
+    setSessionWords(wordsInGroup);
+    setActiveMode(mode);
+    setCurrentIndex(0);
+    setUserSentence('');
+    setFeedback(null);
+    setError(null);
+    setShowHint(false);
+    setSessionResults({ correct: 0, incorrect: 0 });
+    setFlipped(false);
+    setQuizAnswered(null);
+    questSyncedRef.current = false;
+    if (mode === 'quiz' && wordsInGroup[0]) {
+      setQuizOptions(buildQuizOptions(wordsInGroup[0], allWords));
+    }
+  };
 
-        return (
-            <div className="text-center py-16 max-w-2xl mx-auto bg-card border border-border rounded-3xl shadow-xl animate-fade-in mt-12">
-                <div className="text-5xl md:text-6xl mb-6">🎉</div>
-                <h2 className="text-2xl md:text-5xl font-bold bg-gradient-to-r from-green-400 to-blue-500 bg-clip-text text-transparent mb-4">
-                    Takrorlash Yakunlandi!
-                </h2>
-                <p className="text-muted-foreground text-base md:text-lg mb-8">Siz "{selectedGroup}" guruhidagi so'zlarni muvaffaqiyatli takrorladingiz.</p>
-                
-                <div className="flex justify-center gap-4 sm:gap-8 mb-10 max-w-md mx-auto bg-background p-4 sm:p-6 rounded-2xl border border-border/50">
-                    <div className="text-center">
-                        <div className="text-4xl font-black text-green-500 mb-1">{sessionResults.correct}</div>
-                        <div className="text-xs text-muted-foreground font-bold uppercase tracking-wider">To'g'ri</div>
-                    </div>
-                    <div className="w-px bg-border"></div>
-                    <div className="text-center">
-                        <div className="text-4xl font-black text-primary mb-1">{accuracy}%</div>
-                        <div className="text-xs text-muted-foreground font-bold uppercase tracking-wider">Aniqlik</div>
-                    </div>
-                    <div className="w-px bg-border"></div>
-                    <div className="text-center">
-                        <div className="text-4xl font-black text-destructive mb-1">{sessionResults.incorrect}</div>
-                        <div className="text-xs text-muted-foreground font-bold uppercase tracking-wider">Xato</div>
-                    </div>
-                </div>
+  const toggleListening = () => {
+    if (!recognition) {
+      setError("Your browser doesn't support speech recognition.");
+      return;
+    }
+    if (isListening) recognition.stop();
+    else {
+      setError(null);
+      recognition.start();
+      setIsListening(true);
+    }
+  };
 
-                <div className="flex justify-center gap-4">
-                    <button 
-                        onClick={() => setSelectedGroup(null)} 
-                        className="px-8 py-3 bg-secondary text-secondary-foreground font-bold rounded-full hover:bg-secondary/80 transition shadow-sm"
-                    >
-                        Bosh Menyu
-                    </button>
-                </div>
-            </div>
-        );
+  const handleCheck = async () => {
+    if (!userSentence.trim()) return;
+    setChecking(true);
+    const currentWord = sessionWords[currentIndex];
+    try {
+      const data = await checkReviewMutation({ id: currentWord._id, sentence: userSentence }).unwrap();
+      setFeedback(data);
+      setSessionResults((prev) => ({
+        ...prev,
+        [data.isCorrect ? 'correct' : 'incorrect']: prev[data.isCorrect ? 'correct' : 'incorrect'] + 1,
+      }));
+      if (data.isCorrect) {
+        autoAdvanceTimeoutRef.current = setTimeout(() => handleNext(), 2500);
+      }
+    } catch (err) {
+      console.error('Check error:', err);
+      setError("Server xatosi: Javob olib bo'lmadi. Qayta urinib ko'ring.");
+    } finally {
+      setChecking(false);
+    }
+  };
+
+  const handleNext = () => {
+    if (autoAdvanceTimeoutRef.current) {
+      clearTimeout(autoAdvanceTimeoutRef.current);
+      autoAdvanceTimeoutRef.current = null;
+    }
+    setFeedback(null);
+    setUserSentence('');
+    setError(null);
+    setShowHint(false);
+    if (isListening && recognition) recognition.stop();
+    if (currentIndex < sessionWords.length - 1) {
+      setCurrentIndex((prev) => prev + 1);
+    } else {
+      finishSession();
+    }
+  };
+
+  if (isLoading) return <div className="text-center py-20 animate-pulse">Yuklanmoqda...</div>;
+
+  if (!selectedGroup) {
+    const groupsEntries = Object.entries(groupedWords);
+
+    if (totalWords === 0) {
+      return (
+        <div className="text-center py-20 bg-card border border-border border-dashed rounded-3xl max-w-2xl mx-auto px-6">
+          <div className="text-5xl md:text-6xl mb-4">📚</div>
+          <h2 className="text-2xl md:text-3xl font-bold mb-4">Hali so'z qo'shmagansiz</h2>
+          <p className="text-muted-foreground mb-6">
+            Takrorlash uchun avval yangi so'zlar o'rganing — keyin bu yerda mashq qilasiz.
+          </p>
+          <Link
+            to="/topic"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground font-bold rounded-full hover:opacity-90"
+          >
+            Yangi so'z o'rganish →
+          </Link>
+        </div>
+      );
+    }
+
+    if (groupsEntries.length === 0) {
+      return (
+        <div className="text-center py-20 bg-card border border-border border-dashed rounded-3xl max-w-2xl mx-auto px-6">
+          <div className="text-5xl md:text-6xl mb-4">🎉</div>
+          <h2 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-green-400 to-blue-500 bg-clip-text text-transparent mb-4">
+            Bugungi takrorlash tugadi!
+          </h2>
+          <p className="text-muted-foreground">
+            Hozircha takrorlash uchun so'zlar yo'q. Ertaga yoki yangi so'z qo'shganda qaytib keling.
+          </p>
+        </div>
+      );
     }
 
     return (
-        <div className="max-w-2xl mx-auto px-4 animate-fade-in">
-            <button 
-                onClick={() => setSelectedGroup(null)}
-                className="mb-8 text-muted-foreground hover:text-foreground flex items-center gap-2 transition-colors font-medium bg-secondary px-4 py-2 rounded-lg inline-flex"
-            >
-                <ChevronLeft className="w-4 h-4" /> Chiqish
-            </button>
-
-            <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl md:text-2xl font-bold flex items-center gap-2">
-                    <span className="w-2 h-6 md:h-8 bg-pink-500 rounded-full inline-block"></span>
-                    {selectedGroup} Review
-                </h2>
-                <span className="text-xs md:text-sm bg-muted text-muted-foreground px-3 py-1 rounded-full border border-border font-bold">
-                    {currentIndex + 1} / {sessionWords.length}
-                </span>
-            </div>
-
-            {/* Progress Bar */}
-            <div className="w-full h-3 bg-secondary rounded-full overflow-hidden mb-8 border border-border/50">
-                <div 
-                    className="h-full bg-gradient-to-r from-pink-500 to-purple-500 transition-all duration-500 ease-out"
-                    style={{ width: `${((currentIndex + (feedback ? 1 : 0)) / sessionWords.length) * 100}%` }}
-                ></div>
-            </div>
-
-            <div className="bg-card p-5 sm:p-8 rounded-3xl border border-border shadow-2xl relative overflow-hidden group">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-pink-500/10 rounded-full blur-3xl -mr-16 -mt-16 transition duration-500 group-hover:bg-pink-500/20"></div>
-
-                <div className="text-center mb-8">
-                    {error && <div className="text-destructive mb-4 text-sm animate-pulse">{error}</div>}
-                    <p className="text-muted-foreground text-xs md:text-sm tracking-widest uppercase mb-2 font-bold">Maqsadli So'z</p>
-                    <div className="flex justify-center items-center gap-4 mb-4">
-                        <h3 className="text-4xl md:text-5xl font-black text-card-foreground tracking-tight capitalize">{word.word}</h3>
-                        <button 
-                            onClick={() => playTTSAudio(word.word, 'en-GB', 1.0)} 
-                            className="p-2 bg-pink-500/10 text-pink-500 hover:bg-pink-500 hover:text-white rounded-full transition-all flex items-center justify-center shadow-sm"
-                            title="Tinglash (UK)"
-                        >
-                            <Volume2 className="w-6 h-6" />
-                        </button>
-                    </div>
-                    <p className="text-muted-foreground text-sm md:text-base italic">"{word.definition}"</p>
-                </div>
-
-                {!feedback ? (
-                    <div className="space-y-4">
-                        <label className="block text-sm text-card-foreground ml-1">
-                            <strong>{word.word}</strong> so'zini gap ichida ishlating:
-                        </label>
-                        <div className="relative group">
-                            <textarea 
-                                className={`w-full bg-background border rounded-xl p-4 pr-16 text-base md:text-lg outline-none transition-all resize-none text-foreground placeholder:text-sm md:placeholder:text-base ${isListening ? 'border-orange-500 ring-2 ring-orange-500/20' : 'border-border focus:border-pink-500 focus:ring-1 focus:ring-pink-500'}`}
-                                rows="3"
-                                placeholder="Gapingizni yozing yoki mikrofondan foydalaning (ingliz tilida)..."
-                                value={userSentence}
-                                onChange={(e) => setUserSentence(e.target.value)}
-                                onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleCheck()}
-                            />
-                            <button 
-                                onClick={toggleListening}
-                                className={`absolute bottom-4 right-4 p-3 rounded-full transition-all ${isListening ? 'bg-destructive text-white animate-pulse shadow-lg shadow-destructive/40' : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'}`}
-                                title="Gapirish (Ingliz)"
-                            >
-                                {isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
-                            </button>
-                        </div>
-                        
-                        <div className="flex justify-start">
-                             {!showHint ? (
-                                <button 
-                                    type="button"
-                                    onClick={() => setShowHint(true)}
-                                    className="text-sm text-pink-500 hover:text-pink-600 font-bold flex items-center gap-1 transition-colors"
-                                >
-                                    💡 Yordam (Tarjimasi)
-                                </button>
-                             ) : (
-                                <div className="text-sm text-card-foreground bg-secondary px-4 py-2 rounded-lg font-medium animate-fade-in border border-border inline-flex items-center gap-2">
-                                    <span className="text-muted-foreground">Tarjimasi:</span> 
-                                    <span className="font-bold">{word.translation || "Mavjud emas"}</span>
-                                </div>
-                             )}
-                        </div>
-
-                        {error ? (
-                             <button 
-                                 onClick={handleCheck}
-                                 disabled={checking || !userSentence.trim()}
-                                 className="w-full py-4 bg-destructive hover:bg-destructive/90 rounded-xl font-bold text-lg hover:opacity-90 transition-all disabled:opacity-50 flex justify-center items-center gap-2 text-white"
-                             >
-                                 {checking ? 'Urinib ko\'rilmoqda...' : 'Qayta urinish (Retry) ↻'}
-                             </button>
-                        ) : (
-                             <button 
-                                 onClick={handleCheck}
-                                 disabled={checking || !userSentence.trim()}
-                                 className="w-full py-4 bg-gradient-to-r from-pink-600 to-purple-600 rounded-xl font-bold text-lg hover:opacity-90 transition-all disabled:opacity-50 flex justify-center items-center gap-2 text-white"
-                             >
-                                 {checking ? 'Tekshirilmoqda...' : 'Tekshirish ✨'}
-                             </button>
-                        )}
-                    </div>
-                ) : (
-                    <div className={`mt-6 p-4 sm:p-6 rounded-2xl border ${feedback.isCorrect ? 'bg-green-500/10 border-green-500/30' : 'bg-destructive/10 border-destructive/30'} animate-fade-in`}>
-                        <div className="flex items-center gap-3 mb-3">
-                            <span className="text-3xl">{feedback.isCorrect ? '✅' : '❌'}</span>
-                            <h4 className={`text-xl font-bold ${feedback.isCorrect ? 'text-green-500' : 'text-destructive'}`}>
-                                {feedback.isCorrect ? 'Ajoyib!' : 'Xato ketib qoldi'}
-                            </h4>
-                        </div>
-                        <p className="text-card-foreground mb-6 leading-relaxed">
-                            {feedback.feedback}
-                        </p>
-                        
-                        {feedback.feedback === "AI service unavailable. Please try again." ? (
-                            <button 
-                                onClick={() => setFeedback(null)}
-                                className="w-full py-3 rounded-xl font-bold transition-all bg-destructive hover:bg-destructive/90 text-white shadow-lg shadow-destructive/20"
-                            >
-                                Yana urinib ko'rish ↻
-                            </button>
-                        ) : (
-                            <button 
-                                onClick={handleNext}
-                                className={`w-full py-3 rounded-xl font-bold transition-all ${
-                                    feedback.isCorrect 
-                                    ? 'bg-green-600 hover:bg-green-500 text-white shadow-lg shadow-green-500/20' 
-                                    : 'bg-secondary hover:bg-secondary/80 text-secondary-foreground'
-                                }`}
-                            >
-                                {currentIndex < sessionWords.length - 1 ? 'Keyingi So\'z →' : 'Sessiyani Yakunlash 🎉'}
-                            </button>
-                        )}
-                    </div>
-                )}
-            </div>
+      <div className="max-w-4xl mx-auto animate-fade-in text-center">
+        <div className="mb-10">
+          <h2 className="text-2xl md:text-5xl font-bold bg-gradient-to-r from-pink-500 to-purple-500 bg-clip-text text-transparent mb-4">
+            Takrorlash ✨
+          </h2>
+          <p className="text-muted-foreground">Rejim tanlang, keyin guruhni boshlang.</p>
         </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10 text-left">
+          {MODES.map((m) => {
+            const Icon = m.icon;
+            return (
+              <div key={m.id} className="bg-card border border-border rounded-2xl p-4">
+                <Icon className="w-6 h-6 text-pink-500 mb-2" />
+                <h4 className="font-bold">{m.label}</h4>
+                <p className="text-xs text-muted-foreground mt-1">{m.desc}</p>
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
+          {groupsEntries.map(([groupName, wordsInGroup]) => {
+            const isOverdue = groupName.includes('Overdue');
+            return (
+              <div key={groupName} className="bg-card rounded-3xl p-6 border shadow-md border-border">
+                <h3 className="text-xl font-bold mb-2">{groupName}</h3>
+                <p className="text-sm text-muted-foreground mb-4">{wordsInGroup.length} ta so'z</p>
+                <div className="flex flex-wrap gap-2">
+                  {MODES.map((m) => (
+                    <button
+                      key={m.id}
+                      type="button"
+                      onClick={() => startReviewSession(groupName, wordsInGroup, m.id)}
+                      className={`text-xs font-bold px-3 py-2 rounded-full border transition-colors ${
+                        isOverdue
+                          ? 'border-destructive/50 text-destructive hover:bg-destructive/10'
+                          : 'border-pink-500/50 text-pink-500 hover:bg-pink-500/10'
+                      }`}
+                    >
+                      {m.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
     );
+  }
+
+  const word = sessionWords[currentIndex];
+
+  if (!word) {
+    const total = sessionResults.correct + sessionResults.incorrect;
+    const accuracy = total > 0 ? Math.round((sessionResults.correct / total) * 100) : 0;
+    return (
+      <div className="text-center py-16 max-w-2xl mx-auto bg-card border border-border rounded-3xl shadow-xl animate-fade-in mt-12">
+        <div className="text-5xl mb-6">🎉</div>
+        <h2 className="text-2xl font-bold mb-4">Takrorlash yakunlandi!</h2>
+        <p className="text-muted-foreground mb-6">{selectedGroup} · {accuracy}% aniqlik</p>
+        <button
+          type="button"
+          onClick={() => setSelectedGroup(null)}
+          className="px-8 py-3 bg-secondary font-bold rounded-full"
+        >
+          Bosh menyu
+        </button>
+      </div>
+    );
+  }
+
+  if (activeMode === 'flashcard') {
+    return (
+      <div className="max-w-xl mx-auto px-4">
+        <button type="button" onClick={finishSession} className="mb-6 text-muted-foreground flex items-center gap-2">
+          <ChevronLeft className="w-4 h-4" /> Chiqish
+        </button>
+        <p className="text-sm font-bold text-muted-foreground mb-4">
+          {currentIndex + 1} / {sessionWords.length}
+        </p>
+        <button
+          type="button"
+          onClick={() => setFlipped((f) => !f)}
+          className="w-full min-h-[220px] bg-card border-2 border-border rounded-3xl p-8 text-center hover:border-pink-500/50 transition-colors"
+        >
+          {!flipped ? (
+            <>
+              <p className="text-xs uppercase text-muted-foreground mb-2">So'z</p>
+              <h3 className="text-4xl font-black capitalize">{word.word}</h3>
+            </>
+          ) : (
+            <>
+              <p className="text-xs uppercase text-muted-foreground mb-2">Ma'no</p>
+              <p className="text-lg font-medium">{word.translation || word.definition}</p>
+            </>
+          )}
+        </button>
+        {flipped && (
+          <div className="flex gap-3 mt-6">
+            <button
+              type="button"
+              onClick={() => advanceQuick(false)}
+              className="flex-1 py-3 rounded-xl border border-destructive/50 text-destructive font-bold"
+            >
+              Bilmadim
+            </button>
+            <button
+              type="button"
+              onClick={() => advanceQuick(true)}
+              className="flex-1 py-3 rounded-xl bg-green-600 text-white font-bold"
+            >
+              Bildim
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  if (activeMode === 'quiz') {
+    return (
+      <div className="max-w-xl mx-auto px-4">
+        <button type="button" onClick={finishSession} className="mb-6 text-muted-foreground flex items-center gap-2">
+          <ChevronLeft className="w-4 h-4" /> Chiqish
+        </button>
+        <p className="text-sm font-bold mb-2">
+          {currentIndex + 1} / {sessionWords.length}
+        </p>
+        <h3 className="text-3xl font-black capitalize mb-6">{word.word}</h3>
+        <p className="text-sm text-muted-foreground mb-4">To'g'ri tarjimani tanlang:</p>
+        <div className="space-y-3">
+          {quizOptions.map((opt) => {
+            const correct = word.translation || word.definition;
+            const isCorrect = opt === correct;
+            const showResult = quizAnswered !== null;
+            return (
+              <button
+                key={opt}
+                type="button"
+                disabled={quizAnswered !== null}
+                onClick={() => {
+                  setQuizAnswered(opt);
+                  setTimeout(() => advanceQuick(isCorrect), 800);
+                }}
+                className={`w-full text-left p-4 rounded-xl border font-medium transition-colors ${
+                  showResult && isCorrect
+                    ? 'border-green-500 bg-green-500/10'
+                    : showResult && quizAnswered === opt && !isCorrect
+                      ? 'border-destructive bg-destructive/10'
+                      : 'border-border hover:border-primary/50'
+                }`}
+              >
+                {opt}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-2xl mx-auto px-4 animate-fade-in">
+      <button
+        type="button"
+        onClick={finishSession}
+        className="mb-8 text-muted-foreground hover:text-foreground flex items-center gap-2 font-medium bg-secondary px-4 py-2 rounded-lg"
+      >
+        <ChevronLeft className="w-4 h-4" /> Chiqish
+      </button>
+
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-xl font-bold">{selectedGroup} · Jumla</h2>
+        <span className="text-sm bg-muted px-3 py-1 rounded-full font-bold">
+          {currentIndex + 1} / {sessionWords.length}
+        </span>
+      </div>
+
+      <div className="bg-card p-8 rounded-3xl border border-border shadow-2xl">
+        <div className="text-center mb-8">
+          {error && <div className="text-destructive mb-4 text-sm">{error}</div>}
+          <div className="flex justify-center items-center gap-4 mb-4">
+            <h3 className="text-4xl font-black capitalize">{word.word}</h3>
+            <button
+              type="button"
+              onClick={() => playTTSAudio(word.word, 'en-GB', 1.0)}
+              className="p-2 bg-pink-500/10 text-pink-500 rounded-full"
+            >
+              <Volume2 className="w-6 h-6" />
+            </button>
+          </div>
+          <p className="text-muted-foreground italic">"{word.definition}"</p>
+        </div>
+
+        {!feedback ? (
+          <div className="space-y-4">
+            <div className="relative">
+              <textarea
+                className={`w-full bg-background border rounded-xl p-4 pr-16 text-lg outline-none resize-none ${
+                  isListening ? 'border-orange-500' : 'border-border focus:border-pink-500'
+                }`}
+                rows="3"
+                placeholder="Gapingizni yozing..."
+                value={userSentence}
+                onChange={(e) => setUserSentence(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleCheck()}
+              />
+              <button
+                type="button"
+                onClick={toggleListening}
+                className="absolute bottom-4 right-4 p-3 rounded-full bg-secondary"
+              >
+                {isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
+              </button>
+            </div>
+            {!showHint ? (
+              <button type="button" onClick={() => setShowHint(true)} className="text-sm text-pink-500 font-bold">
+                💡 Yordam
+              </button>
+            ) : (
+              <p className="text-sm font-bold">{word.translation || '—'}</p>
+            )}
+            <button
+              type="button"
+              onClick={handleCheck}
+              disabled={checking || !userSentence.trim()}
+              className="w-full py-4 bg-gradient-to-r from-pink-600 to-purple-600 rounded-xl font-bold text-white disabled:opacity-50"
+            >
+              {checking ? 'Tekshirilmoqda...' : 'Tekshirish ✨'}
+            </button>
+          </div>
+        ) : (
+          <div className={`p-6 rounded-2xl border ${feedback.isCorrect ? 'bg-green-500/10 border-green-500/30' : 'bg-destructive/10'}`}>
+            <p className="mb-4">{feedback.feedback}</p>
+            <button type="button" onClick={handleNext} className="w-full py-3 rounded-xl font-bold bg-secondary">
+              {currentIndex < sessionWords.length - 1 ? 'Keyingi →' : 'Yakunlash'}
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
 };
 
 export default ReviewMode;

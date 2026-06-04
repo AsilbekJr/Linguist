@@ -33,7 +33,10 @@ const OnboardingModal = () => {
             toast.success("Ajoyib! O'quv rejangiz tayyorlandi.", { icon: '🎯' });
             refetch(); // Refresh user data
         } catch (error) {
-            toast.error("Xatolik yuz berdi. Qayta urinib ko'ring.");
+            const msg = error?.data?.message || error?.data?.errors?.fieldErrors
+              ? "Ma'lumotlar noto'g'ri. Qayta urinib ko'ring."
+              : "Xatolik yuz berdi. Qayta urinib ko'ring.";
+            toast.error(msg);
             console.error(error);
         }
     };

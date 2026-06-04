@@ -3,6 +3,34 @@ const router = express.Router();
 const Word = require('../models/Word');
 const { checkSentence } = require('../services/geminiService');
 const { protect } = require('../middleware/authMiddleware');
+const { validate, reviewCheckSchema } = require('../middleware/validate');
+const { trackAiUsage } = require('../middleware/usageQuota');
+
+const applySrsResult = (wordDoc, isCorrect) => {
+    let nextReview = new Date();
+    let isMastered = false;
+
+    if (isCorrect) {
+        const stages = [1, 3, 7, 14, 30];
+        const currentStage = wordDoc.reviewStage || 0;
+
+        if (currentStage >= stages.length) {
+            isMastered = true;
+            nextReview = null;
+        } else {
+            const daysToAdd = stages[currentStage];
+            nextReview.setDate(nextReview.getDate() + daysToAdd);
+        }
+
+        wordDoc.reviewStage = currentStage + 1;
+        wordDoc.mastered = isMastered;
+        wordDoc.nextReviewDate = nextReview;
+    } else {
+        nextReview.setDate(nextReview.getDate() + 1);
+        wordDoc.reviewStage = Math.max(0, (wordDoc.reviewStage || 0) - 1);
+        wordDoc.nextReviewDate = nextReview;
+    }
+};
 
 // @desc    Get words due for review
 // @route   GET /api/review/due
@@ -29,9 +57,9 @@ router.get('/due', protect, async (req, res) => {
 
 // @desc    Check a sentence for a word and update SRS stage
 // @route   POST /api/review/:id/check
-router.post('/:id/check', protect, async (req, res) => {
-    const { sentence } = req.body;
-    const wordId = req.params.id;
+router.post('/:id/check', protect, validate(reviewCheckSchema), trackAiUsage, async (req, res) => {
+    const { sentence } = req.validated.body;
+    const wordId = req.validated.params.id;
 
     if (!sentence) {
         return res.status(400).json({ message: "Sentence is required" });
@@ -50,7 +78,8 @@ router.post('/:id/check', protect, async (req, res) => {
         };
 
         try {
-            const result = await checkSentence(wordDoc.word, sentence);
+            const learnerLevel = req.user.onboarding?.level || 'beginner';
+            const result = await checkSentence(wordDoc.word, sentence, learnerLevel);
             if (result) {
                 aiResult = result;
             }
@@ -59,37 +88,7 @@ router.post('/:id/check', protect, async (req, res) => {
              aiResult.feedback = "AI xizmatiga ulanib bo'lmadi. Iltimos keyinroq qayta urinib ko'ring.";
         }
         
-        // 2. SRS Logic
-        let nextReview = new Date();
-        let isMastered = false;
-
-        if (aiResult && aiResult.isCorrect) {
-            // Success: Increase stage
-            // Stages (days): 0 -> 1 -> 3 -> 7 -> 14 -> 30 -> Mastered
-            const stages = [1, 3, 7, 14, 30];
-            const currentStage = wordDoc.reviewStage || 0;
-            
-            if (currentStage >= stages.length) {
-                isMastered = true;
-                nextReview = null; // No more reviews
-            } else {
-                const daysToAdd = stages[currentStage];
-                nextReview.setDate(nextReview.getDate() + daysToAdd);
-            }
-
-            wordDoc.reviewStage = currentStage + 1;
-            wordDoc.mastered = isMastered;
-            wordDoc.nextReviewDate = nextReview;
-
-        } else {
-            // Failure: Reset stage or keep same?
-            // Let's keep it simple: Reset to 0 or 1.
-            // "Penalize" by setting review to tomorrow (Stage 0 logic essentially)
-            nextReview.setDate(nextReview.getDate() + 1);
-            wordDoc.reviewStage = Math.max(0, (wordDoc.reviewStage || 0) - 1); // Decrease stage slightly
-            wordDoc.nextReviewDate = nextReview;
-        }
-
+        applySrsResult(wordDoc, aiResult && aiResult.isCorrect);
         await wordDoc.save();
 
         res.json({
@@ -102,6 +101,35 @@ router.post('/:id/check', protect, async (req, res) => {
     } catch (error) {
         console.error("Review Check Error:", error);
         res.status(500).json({ message: "Server Error" });
+    }
+});
+
+// @desc    Quick review without AI (flashcard / quiz)
+// @route   POST /api/review/:id/quick
+router.post('/:id/quick', protect, async (req, res) => {
+    const { known } = req.body;
+    if (typeof known !== 'boolean') {
+        return res.status(400).json({ message: 'known (boolean) is required' });
+    }
+
+    try {
+        const wordDoc = await Word.findOne({ _id: req.params.id, user: req.user._id });
+        if (!wordDoc) {
+            return res.status(404).json({ message: 'Word not found' });
+        }
+
+        applySrsResult(wordDoc, known);
+        await wordDoc.save();
+
+        res.json({
+            isCorrect: known,
+            wordId: wordDoc._id,
+            nextReviewDate: wordDoc.nextReviewDate,
+            mastered: wordDoc.mastered,
+        });
+    } catch (error) {
+        console.error('Quick review error:', error);
+        res.status(500).json({ message: 'Server Error' });
     }
 });
 

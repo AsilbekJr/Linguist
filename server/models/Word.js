@@ -13,6 +13,8 @@ const wordSchema = new mongoose.Schema({
     phonetic: String,
     definition: String,
     translation: String,
+    partOfSpeech: String,
+    synonyms: [String],
     examples: [String],
     collocations: [String],
     imageUrl: String,

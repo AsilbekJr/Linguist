@@ -5,3 +5,6 @@ dist
 .vscode
 coverage
 build
+server/server_error.log
+server/models.json
+server/node_modules/.cache/

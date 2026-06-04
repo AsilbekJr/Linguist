@@ -1,14 +1,19 @@
 const express = require('express');
 const router = express.Router();
 const Word = require('../models/Word');
-const { generateWordContext, validateWord } = require('../services/geminiService');
 const { protect } = require('../middleware/authMiddleware');
+const { validate, wordCreateSchema } = require('../middleware/validate');
+const { getDictionaryEntry } = require('../utils/cache');
+const { getTopicReviewDate } = require('../utils/topicHelpers');
 
 // @desc    Get all words
 // @route   GET /api/words
 router.get('/', protect, async (req, res) => {
     try {
-        const words = await Word.find({ user: req.user._id }).sort({ createdAt: -1 });
+        const words = await Word.find({ user: req.user._id })
+            .select('word phonetic definition translation partOfSpeech synonyms examples collocations mastered reviewStage nextReviewDate createdAt')
+            .sort({ createdAt: -1 })
+            .lean();
         res.json(words);
     } catch (error) {
         console.error("Error fetching words:", error);
@@ -18,9 +23,10 @@ router.get('/', protect, async (req, res) => {
 
 // @desc    Add a word (with AI context and validation)
 // @route   POST /api/words
-router.post('/', protect, async (req, res) => {
+router.post('/', protect, validate(wordCreateSchema), async (req, res) => {
     try {
-        let { word } = req.body;
+        const body = req.validated.body;
+        let { word } = body;
 
         if (!word) {
             return res.status(400).json({ message: 'Word is required' });
@@ -45,7 +51,9 @@ router.post('/', protect, async (req, res) => {
         let foundInLocalDict = false;
         try {
             const staticDict = require('../data/dictionary.json');
-            const localMatch = staticDict.find(item => item.word.toLowerCase() === word.toLowerCase());
+            const localMatch = getDictionaryEntry(word, () =>
+                staticDict.find((item) => item.word.toLowerCase() === word.toLowerCase())
+            );
             if (localMatch) {
                 console.log(`Word "${word}" found in local JSON dictionary. Skipping AI.`);
                 aiContext = { ...localMatch };
@@ -55,13 +63,13 @@ router.post('/', protect, async (req, res) => {
             console.warn("Could not load local dictionary.json:", err.message);
         }
 
-        if (req.body.skipAI && !foundInLocalDict) {
+        if (body.skipAI && !foundInLocalDict) {
             console.log("Skipping AI for:", word);
             aiContext = {
                 word: word,
-                definition: req.body.manualDefinition || "Definition unavailable (AI Limit Reached). You can edit this later.",
-                examples: req.body.manualExamples && req.body.manualExamples.length > 0 ? req.body.manualExamples : ["Example unavailable."],
-                translation: req.body.manualTranslation || "",
+                definition: body.manualDefinition || "Definition unavailable (AI Limit Reached). You can edit this later.",
+                examples: body.manualExamples && body.manualExamples.length > 0 ? body.manualExamples : ["Example unavailable."],
+                translation: body.manualTranslation || "",
                 collocations: [],
                 fun_fact: "This word was saved manually."
             };
@@ -112,7 +120,7 @@ router.post('/', protect, async (req, res) => {
                     word: entry.word || word,
                     phonetic: phonetic,
                     definition: `(${partOfSpeech}) ${definition}`,
-                    translation: req.body.manualTranslation || "", // We don't have free translation API here, require manual or leave blank
+                    translation: body.manualTranslation || "",
                     examples: example !== "Example unavailable." ? [example] : [],
                     collocations: [],
                     fun_fact: "Word found in standard Oxford dictionary."
@@ -124,9 +132,9 @@ router.post('/', protect, async (req, res) => {
                 console.log("Falling back to manual save for:", word);
                 aiContext = {
                     word: word,
-                    definition: req.body.manualDefinition || "Definition unavailable (API failed). You can edit this later.",
-                    examples: req.body.manualExamples && req.body.manualExamples.length > 0 ? req.body.manualExamples : ["Example unavailable."],
-                    translation: req.body.manualTranslation || "",
+                    definition: body.manualDefinition || "Definition unavailable (API failed). You can edit this later.",
+                    examples: body.manualExamples && body.manualExamples.length > 0 ? body.manualExamples : ["Example unavailable."],
+                    translation: body.manualTranslation || "",
                     collocations: [],
                     fun_fact: "Saved via fallback mechanism."
                 };
@@ -138,11 +146,14 @@ router.post('/', protect, async (req, res) => {
             word: aiContext.word || word, // Use AI's capitalization if it differs
             phonetic: aiContext.phonetic || "",
             definition: aiContext.definition,
-            translation: aiContext.translation || req.body.manualTranslation || "",
+            translation: aiContext.translation || body.manualTranslation || "",
+            partOfSpeech: body.partOfSpeech || aiContext.partOfSpeech || "",
+            synonyms: body.synonyms || aiContext.synonyms || [],
             examples: aiContext.examples,
             collocations: aiContext.collocations,
-            fun_fact: aiContext.fun_fact,
-            mastered: false
+            mastered: false,
+            nextReviewDate: body.fromTopic ? getTopicReviewDate() : new Date(),
+            reviewStage: 0,
         });
 
         console.log("Word saved to DB:", newWord.word);

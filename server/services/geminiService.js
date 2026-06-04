@@ -12,6 +12,16 @@ try {
 
 const fs = require('fs');
 const path = require('path');
+const { getGeminiCached, setGeminiCached } = require('../utils/cache');
+
+const levelHint = (level) => {
+    const map = {
+        beginner: 'Use very simple Uzbek feedback for an A1 learner.',
+        intermediate: 'Use clear Uzbek feedback for a B1 learner.',
+        advanced: 'Use concise, precise Uzbek feedback for a C1 learner.',
+    };
+    return map[level] || map.beginner;
+};
 
 const logError = (context, error) => {
     const timestamp = new Date().toISOString();
@@ -109,21 +119,26 @@ const analyzeStory = async (story, targetWords) => {
     }
 };
 
-const checkSentence = async (word, sentence) => {
+const checkSentence = async (word, sentence, learnerLevel = 'beginner') => {
     try {
+        const cacheKey = `check:${word}:${sentence}:${learnerLevel}`;
+        const cached = getGeminiCached(cacheKey);
+        if (cached) return cached;
+
         if (!genAI) return null;
 
         const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
 
         const prompt = `
-        Act as an English teacher.
+        Act as an English teacher for a ${learnerLevel} learner.
+        ${levelHint(learnerLevel)}
         Check if the word "${word}" is used correctly in this sentence: "${sentence}".
         Ignore minor punctuation errors. Focus on the meaning and context of the target word.
         
         Return a JSON object with this EXACT structure (no markdown):
         {
-            "isCorrect": true, // or false
-            "feedback": "A short, encouraging explanation in **Uzbek** (O'zbek tili) of why it is correct or incorrect. MUST BE IN UZBEK."
+            "isCorrect": true,
+            "feedback": "A short, encouraging explanation in Uzbek (O'zbek tili)."
         }
         `;
 
@@ -133,7 +148,9 @@ const checkSentence = async (word, sentence) => {
         const text = response.text();
         
         const jsonStr = text.replace(/```json/g, '').replace(/```/g, '').trim();
-        return JSON.parse(jsonStr);
+        const parsed = JSON.parse(jsonStr);
+        setGeminiCached(cacheKey, parsed);
+        return parsed;
 
     } catch (error) {
         console.error("Gemini Check Sentence Error:", error);
@@ -277,7 +294,7 @@ const evaluatePronunciation = async (targetSentence, spokenText) => {
     }
 };
 
-const generateRoleplayResponse = async (scenario, targetWords, chatHistory, userMessage) => {
+const generateRoleplayResponse = async (scenario, targetWords, chatHistory, userMessage, learnerLevel = 'beginner') => {
     try {
         if (!genAI) return null;
 
@@ -289,6 +306,7 @@ const generateRoleplayResponse = async (scenario, targetWords, chatHistory, user
 
         const prompt = `
         You are an AI actor participating in an immersive English learning roleplay.
+        The learner's level is: ${learnerLevel}. ${levelHint(learnerLevel)}
         
         Scenario: ${scenario}
         Target Vocabulary Words the user is currently learning: [${wordsList}]
@@ -363,4 +381,206 @@ const generateChallengeText = async (topic, targetWords, dayNumber = 1) => {
     }
 };
 
-module.exports = { generateWordContext, analyzeStory, checkSentence, validateWord, translateUzbekToEnglish, translateText, evaluatePronunciation, generateRoleplayResponse, generateChallengeText };
+const generateTeacherResponse = async (
+    question,
+    category = 'general',
+    chatHistory = [],
+    learnerLevel = 'beginner'
+) => {
+    try {
+        if (!genAI) return null;
+
+        const cacheKey = `teacher:${learnerLevel}:${category}:${question.slice(0, 120)}`;
+        const cached = getGeminiCached(cacheKey);
+        if (cached) return cached;
+
+        const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
+
+        const categoryGuide = {
+            grammar: 'Focus on grammar rules, structure, and when to use the form.',
+            vocabulary: 'Focus on word meaning, usage, collocations, and common mistakes.',
+            phrase: 'Focus on idioms, phrasal verbs, and fixed expressions.',
+            general: 'Answer clearly whether it is grammar, vocabulary, or a phrase, then explain.',
+        };
+
+        const historyText = chatHistory
+            .map((msg) => `${msg.role === 'user' ? 'Student' : 'Teacher'}: ${msg.content}`)
+            .join('\n');
+
+        const prompt = `
+You are "Ustoz AI" — a patient, expert English teacher for Uzbek-speaking learners.
+Learner level: ${learnerLevel}. ${levelHint(learnerLevel)}
+Topic category: ${category}. ${categoryGuide[category] || categoryGuide.general}
+
+Previous conversation:
+${historyText || '(new question)'}
+
+Student's question (may be in Uzbek or English):
+"${question}"
+
+Teach like a real tutor:
+1. Explain in clear Uzbek (O'zbek tili) — simple, friendly, not overly academic.
+2. Give the English rule or meaning in plain language.
+3. Provide 2-3 short example sentences in English with Uzbek translation.
+4. Mention 1 common mistake Uzbek learners make (if relevant).
+5. End with one practical tip to remember.
+
+Return ONLY valid JSON (no markdown):
+{
+  "title": "Short title in Uzbek",
+  "explanation": "Main explanation in Uzbek (2-4 short paragraphs as one string with \\n)",
+  "rule": "One-line English rule summary",
+  "examples": [
+    { "en": "English example", "uz": "Uzbek translation" }
+  ],
+  "commonMistake": "Optional common mistake in Uzbek or empty string",
+  "tip": "One memorable tip in Uzbek"
+}
+`;
+
+        const result = await model.generateContent(prompt);
+        const text = (await result.response).text();
+        const jsonStr = text.replace(/```json/g, '').replace(/```/g, '').trim();
+        const parsed = JSON.parse(jsonStr);
+        setGeminiCached(cacheKey, parsed);
+        return parsed;
+    } catch (error) {
+        console.error("Gemini Teacher Error:", error);
+        logError("generateTeacherResponse", error);
+        if (
+            error.message?.includes('429') ||
+            error.message?.includes('Quota') ||
+            error.message?.includes('503') ||
+            error.message?.includes('Overloaded')
+        ) {
+            throw {
+                type: 'QUOTA_EXCEEDED',
+                message: "AI xizmatiga ulanib bo'lmadi. Keyinroq urinib ko'ring.",
+            };
+        }
+        return null;
+    }
+};
+
+const generatePracticePrompt = async (words, bucketLabel, learnerLevel = 'beginner') => {
+    const wordList = words.map((w) => `${w.word} (${w.translation || w.definition || ''})`).join(', ');
+    const fallback = {
+        promptUz: `${bucketLabel}: quyidagi so'zlardan kamida ikkitasini ishlatib ingliz tilida 1–2 ta to'liq gap yozing: ${words.map((w) => w.word).join(', ')}.`,
+        targetWords: words.map((w) => w.word),
+        miniTipUz: "So'zlarni tabiiy jumla ichida ishlating, ro'yxat emas.",
+    };
+
+    try {
+        if (!genAI) return fallback;
+
+        const cacheKey = `practice-prompt:${wordList}:${bucketLabel}:${learnerLevel}`;
+        const cached = getGeminiCached(cacheKey);
+        if (cached) return cached;
+
+        const model = genAI.getGenerativeModel({ model: 'gemini-flash-latest' });
+        const prompt = `
+        Act as an English coach using Active Recall for a ${learnerLevel} Uzbek-speaking learner.
+        ${levelHint(learnerLevel)}
+        The learner studied these words (${bucketLabel}): ${wordList}.
+
+        Create ONE short real-life situation in Uzbek that naturally requires using at least 2 of these English words in the learner's written answer.
+        Return JSON only:
+        {
+            "promptUz": "2-3 sentence Uzbek scenario/instruction",
+            "targetWords": ["word1", "word2"],
+            "miniTipUz": "One short tip in Uzbek about natural usage"
+        }
+        `;
+
+        const result = await model.generateContent(prompt);
+        const text = (await result.response).text();
+        const jsonStr = text.replace(/```json/g, '').replace(/```/g, '').trim();
+        const parsed = JSON.parse(jsonStr);
+        const out = {
+            promptUz: parsed.promptUz || fallback.promptUz,
+            targetWords: Array.isArray(parsed.targetWords) ? parsed.targetWords : fallback.targetWords,
+            miniTipUz: parsed.miniTipUz || fallback.miniTipUz,
+        };
+        setGeminiCached(cacheKey, out);
+        return out;
+    } catch (error) {
+        logError('generatePracticePrompt', error);
+        return fallback;
+    }
+};
+
+const checkPracticeSentence = async (words, sentence, learnerLevel = 'beginner') => {
+    const targetList = words.map((w) => w.word).join(', ');
+    const usedCount = words.filter((w) =>
+        sentence.toLowerCase().includes(w.word.toLowerCase())
+    ).length;
+
+    const fallback = {
+        isCorrect: usedCount >= Math.min(2, words.length),
+        feedback:
+            usedCount >= 2
+                ? "Yaxshi! So'zlar ishlatilgan. AI tekshiruvi vaqtincha ishlamayapti."
+                : `Kamida ${Math.min(2, words.length)} ta maqsadli so'zni jumlada ishlating: ${targetList}`,
+        wordsUsed: Object.fromEntries(
+            words.map((w) => [w.word, sentence.toLowerCase().includes(w.word.toLowerCase())])
+        ),
+    };
+
+    try {
+        if (!genAI) return fallback;
+
+        const cacheKey = `practice-check:${targetList}:${sentence}:${learnerLevel}`;
+        const cached = getGeminiCached(cacheKey);
+        if (cached) return cached;
+
+        const model = genAI.getGenerativeModel({ model: 'gemini-flash-latest' });
+        const prompt = `
+        Act as an English teacher for a ${learnerLevel} learner.
+        ${levelHint(learnerLevel)}
+        Target words: ${JSON.stringify(words.map((w) => ({ word: w.word, meaning: w.translation || w.definition })))}
+        Learner sentence: "${sentence}"
+
+        Rules:
+        1. At least 2 target words must be used correctly in context (meaning + grammar).
+        2. Minor punctuation issues are OK.
+        3. Feedback in Uzbek (O'zbek tili), encouraging and specific.
+
+        Return JSON only:
+        {
+            "isCorrect": true,
+            "feedback": "Uzbek feedback",
+            "wordsUsed": { "word1": true, "word2": false }
+        }
+        `;
+
+        const result = await model.generateContent(prompt);
+        const text = (await result.response).text();
+        const jsonStr = text.replace(/```json/g, '').replace(/```/g, '').trim();
+        const parsed = JSON.parse(jsonStr);
+        const out = {
+            isCorrect: !!parsed.isCorrect,
+            feedback: parsed.feedback || fallback.feedback,
+            wordsUsed: parsed.wordsUsed || fallback.wordsUsed,
+        };
+        setGeminiCached(cacheKey, out);
+        return out;
+    } catch (error) {
+        logError('checkPracticeSentence', error);
+        return fallback;
+    }
+};
+
+module.exports = {
+    generateWordContext,
+    analyzeStory,
+    checkSentence,
+    validateWord,
+    translateUzbekToEnglish,
+    translateText,
+    evaluatePronunciation,
+    generateRoleplayResponse,
+    generateChallengeText,
+    generateTeacherResponse,
+    generatePracticePrompt,
+    checkPracticeSentence,
+};

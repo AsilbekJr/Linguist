@@ -1,15 +1,16 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Outlet, NavLink } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
-import { logout } from '../../features/auth/authSlice';
+import { performLogout } from '../../utils/authHelpers';
 import { ThemeToggle } from '../ThemeToggle';
 import Sidebar from '../Sidebar';
-import { LogOut, ChevronDown } from 'lucide-react';
+import { LogOut, ChevronDown, Loader2 } from 'lucide-react';
 import OnboardingModal from '../Onboarding/OnboardingModal';
 import { useGetMeQuery } from '../../features/api/apiSlice';
 
 const DashboardLayout = () => {
   const authUser = useSelector((state) => state.auth.user);
+  const token = useSelector((state) => state.auth.token);
   const dispatch = useDispatch();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
@@ -24,13 +25,21 @@ const DashboardLayout = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
   
-  const { data: fullUser, isLoading } = useGetMeQuery(undefined, { skip: !authUser });
+  const { data: fullUser, isLoading } = useGetMeQuery(undefined, { skip: !token });
   const user = fullUser || authUser;
   
   const isOnboardingComplete = user?.onboarding?.completed === true;
 
   if (isLoading) {
-      return <div className="min-h-screen bg-background animate-pulse" />;
+      return (
+        <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
+           <Loader2 className="w-12 h-12 md:w-16 md:h-16 animate-spin text-primary mb-6" />
+           <h2 className="text-xl md:text-2xl font-black text-foreground mb-2 text-center">Tizimga kirilmoqda...</h2>
+           <p className="text-muted-foreground text-sm md:text-base text-center max-w-md">
+             Ma'lumotlar yuklanmoqda. Agar server uyqu rejimida bo'lsa, bu 1-2 daqiqa vaqt olishi mumkin. Iltimos, kuting!
+           </p>
+        </div>
+      );
   }
 
   return (
@@ -66,7 +75,7 @@ const DashboardLayout = () => {
                     </div>
                     <button 
                       onClick={() => {
-                          dispatch(logout());
+                          performLogout(dispatch);
                           setIsDropdownOpen(false);
                       }}
                       className="w-full flex items-center justify-between px-4 py-2.5 text-sm font-bold text-red-500 hover:bg-red-500/10 transition-colors"

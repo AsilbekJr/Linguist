@@ -2,18 +2,25 @@ const express = require('express');
 const router = express.Router();
 const { generateRoleplayResponse } = require('../services/geminiService');
 const { protect } = require('../middleware/authMiddleware');
+const { validate, roleplaySchema } = require('../middleware/validate');
+const { trackAiUsage } = require('../middleware/usageQuota');
 
-// @desc    Handle chat interaction for Roleplay Immersion mode
-// @route   POST /api/roleplay/chat
-router.post('/chat', protect, async (req, res) => {
-    const { scenario, targetWords = [], chatHistory = [], message } = req.body;
+router.post('/chat', protect, validate(roleplaySchema), trackAiUsage, async (req, res) => {
+    const { scenario, targetWords = [], chatHistory = [], message } = req.validated.body;
 
     if (!scenario || !message) {
         return res.status(400).json({ error: "Scenario and message are required." });
     }
 
     try {
-        const aiResponse = await generateRoleplayResponse(scenario, targetWords, chatHistory, message);
+        const learnerLevel = req.user.onboarding?.level || 'beginner';
+        const aiResponse = await generateRoleplayResponse(
+            scenario,
+            targetWords,
+            chatHistory,
+            message,
+            learnerLevel
+        );
         res.json({ reply: aiResponse });
     } catch (error) {
         console.error("Roleplay Route Error:", error);
