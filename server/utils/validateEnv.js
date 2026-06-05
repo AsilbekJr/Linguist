@@ -41,6 +41,10 @@ const validateEnv = () => {
     }
   }
 
+  if (isProd && !process.env.GEMINI_API_KEY?.trim()) {
+    console.warn('WARN: GEMINI_API_KEY missing — AI features (Speaking, Tutor) will return 503.');
+  }
+
   if (missing.length === 0) {
     return;
   }

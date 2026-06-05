@@ -28,6 +28,10 @@ const app = express();
 
 const isProd = process.env.NODE_ENV === 'production';
 
+if (isProd) {
+  app.set('trust proxy', 1);
+}
+
 app.use(helmet({
   crossOriginResourcePolicy: { policy: 'cross-origin' },
 }));

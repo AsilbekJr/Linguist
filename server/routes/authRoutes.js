@@ -64,16 +64,23 @@ router.post('/refresh', async (req, res) => {
   try {
     const refreshToken = req.cookies?.linguist_refresh;
     if (!refreshToken) {
-      return res.status(401).json({ message: 'No refresh token' });
+      return res.status(401).json({
+        message: 'Refresh cookie yo\'q. Qayta login qiling.',
+        code: 'NO_REFRESH_COOKIE',
+      });
     }
     const session = await findValidSession(refreshToken);
     if (!session) {
-      return res.status(401).json({ message: 'Invalid refresh session' });
+      return res.status(401).json({
+        message: 'Sessiya tugagan. Qayta login qiling.',
+        code: 'INVALID_REFRESH',
+      });
     }
     const user = await User.findById(session.user).select('-password');
     if (!user) {
       return res.status(401).json({ message: 'User not found' });
     }
+
     const token = generateAccessToken(user._id);
     const profile = await formatUser(user);
     res.json({ token, ...profile });

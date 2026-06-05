@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from "@/components/ui/button";
 import { Mic, MicOff, Volume2, Sparkles, Loader2, RefreshCw, AudioLines, ArrowRightLeft } from "lucide-react";
 import { useTranslateSpeakingMutation, useEvaluateSpeakingMutation, useTranslateTextMutation } from '../features/api/apiSlice';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { playTTSAudio } from '../utils/audio';
+import { getApiErrorMessage } from '../utils/apiErrors';
 
 const SpeakingLab = () => {
   const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:5000';
@@ -29,10 +30,14 @@ const SpeakingLab = () => {
   const [translateTextMutation] = useTranslateTextMutation();
 
   // Use refs to avoid stale closures in Web Speech API event listeners
-  const translationsRef = React.useRef(null);
-  const practiceTypeRef = React.useRef(null);
-  const spokenEnglishRef = React.useRef("");
-  const apiCallRef = React.useRef(null);
+  const translationsRef = useRef(null);
+  const practiceTypeRef = useRef(null);
+  const spokenEnglishRef = useRef('');
+  const apiCallRef = useRef(null);
+  const finalUzbekRef = useRef('');
+  const lastTranslatedRef = useRef('');
+  const translateInFlightRef = useRef(false);
+  const translateCacheKey = 'linguist_speak_translate_cache';
 
   useEffect(() => {
       translationsRef.current = translations;
@@ -56,20 +61,84 @@ const SpeakingLab = () => {
               const data = await evaluateSpeakingMutation({ targetSentence, spokenText: spokenRawText }).unwrap();
               setEvaluationData(data);
           } catch (err) {
-              setError("Sun'iy intellekt baholashda xatolik berdi.");
+              setError(getApiErrorMessage(err, "Sun'iy intellekt baholashda xatolik berdi."));
           } finally {
               setIsEvaluating(false);
           }
       };
   });
 
+  const readTranslateCache = (text) => {
+    try {
+      const raw = sessionStorage.getItem(translateCacheKey);
+      if (!raw) return null;
+      const cache = JSON.parse(raw);
+      return cache[text.trim().toLowerCase()] || null;
+    } catch {
+      return null;
+    }
+  };
+
+  const writeTranslateCache = (text, data) => {
+    try {
+      const key = text.trim().toLowerCase();
+      const raw = sessionStorage.getItem(translateCacheKey);
+      const cache = raw ? JSON.parse(raw) : {};
+      cache[key] = data;
+      const keys = Object.keys(cache);
+      if (keys.length > 40) {
+        delete cache[keys[0]];
+      }
+      sessionStorage.setItem(translateCacheKey, JSON.stringify(cache));
+    } catch {
+      /* ignore */
+    }
+  };
+
+  const handleTranslation = useCallback(async (textToTranslate) => {
+      const text = String(textToTranslate || '').trim();
+      if (text.length < 3) return;
+      if (translateInFlightRef.current) return;
+      if (text === lastTranslatedRef.current) return;
+
+      const cached = readTranslateCache(text);
+      if (cached) {
+        lastTranslatedRef.current = text;
+        setTranslations(cached);
+        return;
+      }
+
+      translateInFlightRef.current = true;
+      setIsTranslating(true);
+      setError('');
+      try {
+          const data = await translateSpeaking(text).unwrap();
+          lastTranslatedRef.current = text;
+          writeTranslateCache(text, data);
+          setTranslations(data);
+      } catch (err) {
+          setError(getApiErrorMessage(err, 'Tarjima qilishda xatolik yuz berdi.'));
+      } finally {
+          translateInFlightRef.current = false;
+          setIsTranslating(false);
+      }
+  }, [translateSpeaking]);
+
+  const handleTranslationRef = useRef(handleTranslation);
+  useEffect(() => {
+    handleTranslationRef.current = handleTranslation;
+  }, [handleTranslation]);
+
   // Initialize Web Speech APIs
   useEffect(() => {
+    let uzRec;
+    let enRec;
+
     if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       
       // 1. Uzbek Listener (Phase 1)
-      const uzRec = new SpeechRecognition();
+      uzRec = new SpeechRecognition();
       uzRec.continuous = false;
       uzRec.interimResults = true;
       uzRec.lang = 'uz-UZ';
@@ -81,21 +150,20 @@ const SpeakingLab = () => {
           if (event.results[i].isFinal) finalTrans += event.results[i][0].transcript;
           else interimTrans += event.results[i][0].transcript;
         }
+        if (finalTrans) finalUzbekRef.current = finalTrans;
         setUzbekText(finalTrans || interimTrans);
       };
 
       uzRec.onend = () => {
         setIsListening(false);
-        setUzbekText((currentText) => {
-            if (currentText.trim().length > 2) handleTranslation(currentText);
-            return currentText;
-        });
+        const text = (finalUzbekRef.current || '').trim();
+        if (text.length > 2) handleTranslationRef.current(text);
       };
       uzRec.onerror = () => { setIsListening(false); setError("O'zbek mikrofoni bilan xatolik."); };
       setUzbekRecognition(uzRec);
 
       // 2. English Listener (Phase 2)
-      const enRec = new SpeechRecognition();
+      enRec = new SpeechRecognition();
       enRec.continuous = false;
       enRec.interimResults = true;
       enRec.lang = 'en-US';
@@ -127,32 +195,30 @@ const SpeakingLab = () => {
     } else {
       setError("Brauzeringiz Speech API ni qo'llab-quvvatlamaydi.");
     }
+
+    return () => {
+      try {
+        uzRec?.stop();
+        enRec?.stop();
+      } catch {
+        /* ignore */
+      }
+    };
   }, []);
 
   const toggleUzbekListening = () => {
     if (isListening) uzbekRecognition.stop();
     else {
-      setUzbekText("");
+      setUzbekText('');
       setTranslations(null);
-      setSpokenEnglish("");
+      setSpokenEnglish('');
       setEvaluationData(null);
-      setError("");
+      setError('');
+      finalUzbekRef.current = '';
+      lastTranslatedRef.current = '';
       uzbekRecognition.start();
       setIsListening(true);
     }
-  };
-
-  const handleTranslation = async (textToTranslate) => {
-      setIsTranslating(true);
-      setError("");
-      try {
-          const data = await translateSpeaking(textToTranslate).unwrap();
-          setTranslations(data);
-      } catch (err) {
-          setError("Tarjima qilishda xatolik yuz berdi.");
-      } finally {
-          setIsTranslating(false);
-      }
   };
 
   const toggleEnglishPractice = (type) => {
@@ -175,7 +241,7 @@ const SpeakingLab = () => {
           const data = await evaluateSpeakingMutation({ targetSentence, spokenText: spokenRawText }).unwrap();
           setEvaluationData(data);
       } catch (err) {
-          setError("Sun'iy intellekt baholashda xatolik berdi.");
+          setError(getApiErrorMessage(err, "Sun'iy intellekt baholashda xatolik berdi."));
       } finally {
           setIsEvaluating(false);
       }
@@ -220,7 +286,7 @@ const SpeakingLab = () => {
           }).unwrap();
           setTranslatedResult(data.translatedText);
       } catch (err) {
-          setError("Tarjima qilishda xatolik yuz berdi.");
+          setError(getApiErrorMessage(err, 'Tarjima qilishda xatolik yuz berdi.'));
       } finally {
           setIsTranslatingText(false);
       }
@@ -240,7 +306,7 @@ const SpeakingLab = () => {
       </div>
 
       {error && (
-         <div className="bg-destructive/10 border border-destructive/30 text-destructive p-4 rounded-xl mb-8 text-center animate-pulse">
+         <div className="bg-destructive/15 border border-destructive/50 text-destructive p-4 rounded-xl mb-6 sm:mb-8 text-center text-sm sm:text-base font-medium">
              {error}
          </div>
       )}

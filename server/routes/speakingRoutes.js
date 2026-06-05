@@ -1,31 +1,40 @@
 const express = require('express');
 const router = express.Router();
-const { translateUzbekToEnglish, evaluatePronunciation, translateText } = require('../services/geminiService');
+const {
+  translateUzbekToEnglish,
+  evaluatePronunciation,
+  translateText,
+} = require('../services/geminiService');
 const { protect } = require('../middleware/authMiddleware');
 const { validate, speakingTranslateSchema } = require('../middleware/validate');
-const { trackAiUsage } = require('../middleware/usageQuota');
+const { trackAiUsage, recordAiUsage } = require('../middleware/usageQuota');
 
-router.post('/translate', protect, validate(speakingTranslateSchema), trackAiUsage, async (req, res) => {
+router.post('/translate', protect, validate(speakingTranslateSchema), async (req, res) => {
     try {
         const { text } = req.validated.body;
-        
+
         if (!text) {
-            return res.status(400).json({ error: "Text is required" });
+            return res.status(400).json({ error: 'Text is required' });
         }
 
         const result = await translateUzbekToEnglish(text);
-        
-        if (!result) {
-             return res.status(503).json({ error: "AI service failed or unavailable." });
+
+        if (!result?.casual) {
+            return res.status(503).json({
+                error: 'Tarjima xizmati vaqtincha ishlamayapti. Keyinroq urinib ko\'ring.',
+                code: 'TRANSLATE_UNAVAILABLE',
+            });
         }
 
-        res.json(result);
-    } catch (err) {
-        console.error("Translation Route Error:", err);
-        if (err.type === 'QUOTA_EXCEEDED') {
-            return res.status(429).json({ error: err.message });
+        if (result._source === 'gemini') {
+            await recordAiUsage(req.user);
         }
-        res.status(500).json({ error: "Server error during translation" });
+
+        const { _source, ...payload } = result;
+        res.json(payload);
+    } catch (err) {
+        console.error('Translation Route Error:', err);
+        res.status(500).json({ error: 'Server error during translation' });
     }
 });
 
@@ -51,29 +60,20 @@ router.post('/translate-text', protect, trackAiUsage, async (req, res) => {
     }
 });
 
-// POST /api/speaking/evaluate
-// Compares spoken transcript against the actual target English sentence
-router.post('/evaluate', protect, trackAiUsage, async (req, res) => {
+// POST /api/speaking/evaluate — mahalliy so'z mosligi (AI token sarflanmaydi)
+router.post('/evaluate', protect, async (req, res) => {
     try {
         const { targetSentence, spokenText } = req.body;
-        
+
         if (!targetSentence || !spokenText) {
-            return res.status(400).json({ error: "Both targetSentence and spokenText are required." });
+            return res.status(400).json({ error: 'targetSentence va spokenText kerak.' });
         }
 
         const result = await evaluatePronunciation(targetSentence, spokenText);
-        
-        if (!result) {
-             return res.status(503).json({ error: "AI evaluation service unavailable." });
-        }
-
         res.json(result);
     } catch (err) {
-        console.error("Evaluation Route Error:", err);
-        if (err.type === 'QUOTA_EXCEEDED') {
-            return res.status(429).json({ error: err.message });
-        }
-        res.status(500).json({ error: "Server error during evaluation" });
+        console.error('Evaluation Route Error:', err);
+        res.status(500).json({ error: 'Baholashda server xatosi.' });
     }
 });
 

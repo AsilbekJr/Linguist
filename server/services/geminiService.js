@@ -1,13 +1,14 @@
 const crypto = require('crypto');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const { getGeminiCached, setGeminiCached } = require('../utils/cache');
+const { fetchMyMemoryUzEn } = require('../utils/fallbackTranslate');
 
 let genAI;
 if (process.env.GEMINI_API_KEY) {
   genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 }
 
-const MODEL = 'gemini-flash-latest';
+const MODEL = process.env.GEMINI_MODEL || 'gemini-flash-latest';
 
 const levelTag = (level) =>
   ({ beginner: 'A1', intermediate: 'B1', advanced: 'C1' })[level] || 'A1';
@@ -21,11 +22,45 @@ const truncateHistory = (chatHistory, maxTurns = 6, maxChars = 280) =>
     }));
 
 const parseJson = (text) => {
-  const jsonStr = String(text)
+  const raw = String(text)
     .replace(/```json/gi, '')
     .replace(/```/g, '')
     .trim();
-  return JSON.parse(jsonStr);
+
+  try {
+    return JSON.parse(raw);
+  } catch {
+    const block = raw.match(/\{[\s\S]*\}/);
+    if (!block) throw new Error('No JSON object in response');
+    const cleaned = block[0].replace(/,\s*([}\]])/g, '$1');
+    return JSON.parse(cleaned);
+  }
+};
+
+const extractLooseFields = (text) => {
+  const raw = String(text);
+  const casual = raw.match(/"casual"\s*:\s*"((?:[^"\\]|\\.)*)"/i);
+  const advanced = raw.match(/"advanced"\s*:\s*"((?:[^"\\]|\\.)*)"/i);
+  if (casual || advanced) {
+    return {
+      casual: casual?.[1]?.replace(/\\"/g, '"'),
+      advanced: advanced?.[1]?.replace(/\\"/g, '"'),
+    };
+  }
+  const casualLine = raw.match(/CASUAL:\s*(.+)/i);
+  const advancedLine = raw.match(/ADVANCED:\s*(.+)/i);
+  if (casualLine || advancedLine) {
+    return { casual: casualLine?.[1]?.trim(), advanced: advancedLine?.[1]?.trim() };
+  }
+  return null;
+};
+
+const parseJsonSafe = (text) => {
+  try {
+    return parseJson(text);
+  } catch {
+    return extractLooseFields(text);
+  }
 };
 
 const cacheKey = (...parts) =>
@@ -39,44 +74,68 @@ const withCache = async (key, fetcher) => {
   return value;
 };
 
-const getJsonModel = (maxOutputTokens = 384) => {
+const normalizeTranslateResult = (parsed) => {
+  if (!parsed || typeof parsed !== 'object') return null;
+  const casual =
+    parsed.casual || parsed.Casual || parsed.informal || parsed.simple || '';
+  const advanced =
+    parsed.advanced || parsed.Advanced || parsed.formal || parsed.professional || '';
+  if (!casual && !advanced) return null;
+  return {
+    casual: String(casual || advanced).trim(),
+    advanced: String(advanced || casual).trim(),
+  };
+};
+
+const getModel = (maxOutputTokens, temperature = 0.3) => {
   if (!genAI) return null;
   return genAI.getGenerativeModel({
     model: MODEL,
-    generationConfig: {
-      maxOutputTokens,
-      temperature: 0.25,
-      responseMimeType: 'application/json',
-    },
+    generationConfig: { maxOutputTokens, temperature },
   });
 };
 
-const getTextModel = (maxOutputTokens = 320) => {
+const runJson = async (prompt, maxTokens = 512) => {
   if (!genAI) return null;
-  return genAI.getGenerativeModel({
-    model: MODEL,
-    generationConfig: { maxOutputTokens, temperature: 0.45 },
-  });
+  try {
+    const model = getModel(maxTokens, 0.3);
+    const result = await model.generateContent(prompt);
+    const text = (await result.response).text();
+    const parsed = parseJsonSafe(text);
+    if (!parsed) {
+      console.error('Gemini JSON error: could not parse response');
+      return null;
+    }
+    return parsed;
+  } catch (error) {
+    if (isQuotaError(error)) throw error;
+    console.error('Gemini JSON error:', error.message);
+    return null;
+  }
 };
 
-const runJson = async (prompt, maxTokens = 384) => {
-  const model = getJsonModel(maxTokens);
-  if (!model) return null;
-  const result = await model.generateContent(prompt);
-  return parseJson((await result.response).text());
-};
+const isGeminiReady = () => Boolean(genAI && process.env.GEMINI_API_KEY);
 
-const runText = async (prompt, maxTokens = 320) => {
-  const model = getTextModel(maxTokens);
+const runText = async (prompt, maxTokens = 400) => {
+  const model = getModel(maxTokens, 0.45);
   if (!model) return null;
-  const result = await model.generateContent(prompt);
-  return (await result.response).text().trim();
+  try {
+    const result = await model.generateContent(prompt);
+    return (await result.response).text().trim();
+  } catch (error) {
+    if (isQuotaError(error)) throw error;
+    console.error('Gemini text error:', error.message);
+    return null;
+  }
 };
 
 const isQuotaError = (error) =>
+  error?.type === 'QUOTA_EXCEEDED' ||
   error?.message?.includes('429') ||
+  error?.message?.includes('Too Many Requests') ||
   error?.message?.includes('Quota') ||
-  error?.message?.includes('503') ||
+  error?.message?.includes('quota') ||
+  error?.message?.includes('RESOURCE_EXHAUSTED') ||
   error?.message?.includes('Overloaded');
 
 const quotaThrow = () => {
@@ -116,14 +175,73 @@ const checkSentence = (word, sentence, learnerLevel = 'beginner') =>
     feedback: 'AI vaqtincha ishlamayapti.',
   }));
 
+const parseTranslateLines = (rawText) => {
+  const fromFields = normalizeTranslateResult(extractLooseFields(rawText));
+  if (fromFields) return fromFields;
+
+  const fromJson = normalizeTranslateResult(parseJsonSafe(rawText));
+  if (fromJson) return fromJson;
+
+  const lines = String(rawText)
+    .split('\n')
+    .map((line) =>
+      line
+        .replace(/^\s*(?:\d+[\).:-]|[-*•])\s*/, '')
+        .replace(/^(casual|advanced|informal|formal)\s*:\s*/i, '')
+        .trim()
+    )
+    .filter((line) => line.length > 1 && !line.startsWith('{'));
+
+  if (lines.length >= 2) {
+    return { casual: lines[0], advanced: lines[1] };
+  }
+  if (lines.length === 1) {
+    return { casual: lines[0], advanced: lines[0] };
+  }
+  return null;
+};
+
+const tryGeminiUzEn = async (text) => {
+  if (!genAI) return null;
+
+  const prompt = `Translate this Uzbek sentence into English two ways.
+Uzbek: "${text}"
+
+Reply with EXACTLY two lines and nothing else:
+CASUAL: [everyday spoken English]
+ADVANCED: [more formal English]`;
+
+  const rawText = await runText(prompt, 256);
+  const parsed = parseTranslateLines(rawText);
+  if (!parsed) {
+    console.error('tryGeminiUzEn parse failed:', rawText?.slice(0, 160));
+    return null;
+  }
+  return { ...parsed, _source: 'gemini' };
+};
+
 const translateUzbekToEnglish = async (uzbekText) => {
   const key = cacheKey('uz-en', uzbekText);
   return withCache(key, async () => {
-    if (!genAI) return null;
-    const prompt = `UZ→EN. Text: "${uzbekText.slice(0, 400)}". JSON: {"casual":"...","advanced":"..."}`;
-    return runJson(prompt, 256);
-  }).catch((error) => {
-    if (isQuotaError(error)) quotaThrow();
+    const text = uzbekText.slice(0, 400);
+
+    try {
+      const gemini = await tryGeminiUzEn(text);
+      if (gemini) return gemini;
+    } catch (error) {
+      if (isQuotaError(error)) {
+        console.warn('Gemini limit — zaxira tarjima ishlatilmoqda');
+      } else {
+        console.error('translateUzbekToEnglish gemini:', error.message);
+      }
+    }
+
+    const fallback = await fetchMyMemoryUzEn(text);
+    if (fallback) {
+      console.log('translateUzbekToEnglish: MyMemory fallback OK');
+      return fallback;
+    }
+
     return null;
   });
 };
@@ -140,26 +258,31 @@ const translateText = async (text, fromLang, toLang) => {
   });
 };
 
-const evaluatePronunciation = async (targetSentence, spokenText) => {
+const buildLocalEvaluation = (targetSentence, spokenText) => {
   const overlap = pronunciationOverlapScore(targetSentence, spokenText);
+  const target = normalizeWords(targetSentence);
+  const spoken = normalizeWords(spokenText);
+  const missed = target.filter((w) => w.length > 1 && !spoken.includes(w));
+
+  let feedback;
   if (overlap >= 90) {
-    return {
-      score: overlap,
-      feedback: "Juda yaxshi! So'zlar aniq aytilgan.",
-      color: 'green',
-    };
+    feedback = "Juda yaxshi! So'zlar aniq aytilgan.";
+  } else if (missed.length > 0) {
+    feedback = `Quyidagi so'zlarni aniqroq aytib ko'ring: ${missed.slice(0, 6).join(', ')}`;
+  } else {
+    feedback = "Yaxshi urinish! Jumlani yana bir bor sekin va aniq o'qib ko'ring.";
   }
 
-  const key = cacheKey('pron', targetSentence, spokenText);
-  return withCache(key, async () => {
-    if (!genAI) return null;
-    const prompt = `Score reading 0-100. Target: "${targetSentence.slice(0, 200)}". Heard: "${spokenText.slice(0, 200)}". JSON: {"score":int,"feedback":"brief Uzbek","color":"green|yellow|red"}`;
-    return runJson(prompt, 200);
-  }).catch((error) => {
-    if (isQuotaError(error)) quotaThrow();
-    return null;
-  });
+  return {
+    score: overlap,
+    feedback,
+    color: overlap >= 90 ? 'green' : overlap >= 50 ? 'yellow' : 'red',
+  };
 };
+
+/** Mahalliy so'z mosligi — AI token sarflamaydi, limitga bog'liq emas */
+const evaluatePronunciation = async (targetSentence, spokenText) =>
+  buildLocalEvaluation(targetSentence, spokenText);
 
 const generateRoleplayResponse = async (
   scenario,
@@ -285,6 +408,7 @@ const checkPracticeSentence = async (words, sentence, learnerLevel = 'beginner')
 };
 
 module.exports = {
+  isGeminiReady,
   checkSentence,
   translateUzbekToEnglish,
   translateText,

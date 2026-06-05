@@ -22,16 +22,24 @@ const isPublicAuthRequest = (url) =>
     url.includes(path)
   );
 
+let refreshPromise = null;
+
 const baseQueryWithReauth = async (args, api, extraOptions) => {
   let result = await rawBaseQuery(args, api, extraOptions);
   const url = getRequestUrl(args);
 
   if (result.error?.status === 401 && !isPublicAuthRequest(url)) {
-    const refresh = await rawBaseQuery(
-      { url: '/api/auth/refresh', method: 'POST' },
-      api,
-      extraOptions
-    );
+    if (!refreshPromise) {
+      refreshPromise = rawBaseQuery(
+        { url: '/api/auth/refresh', method: 'POST' },
+        api,
+        extraOptions
+      ).finally(() => {
+        refreshPromise = null;
+      });
+    }
+
+    const refresh = await refreshPromise;
 
     if (refresh.data?.token) {
       api.dispatch(
@@ -41,7 +49,7 @@ const baseQueryWithReauth = async (args, api, extraOptions) => {
         })
       );
       result = await rawBaseQuery(args, api, extraOptions);
-    } else {
+    } else if (refresh.error?.status === 401) {
       api.dispatch(logout());
     }
   }

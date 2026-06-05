@@ -18,6 +18,8 @@ services:
         generateValue: true
       - key: GEMINI_API_KEY
         sync: false
+      - key: GEMINI_MODEL
+        value: gemini-2.0-flash
       - key: ALLOWED_ORIGIN
         value: https://linguist-eight.vercel.app
       - key: CLIENT_URL
