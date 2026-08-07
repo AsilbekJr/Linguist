@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Loader2, User, Mail } from "lucide-react";
 import PasswordInput from './PasswordInput';
+import { getApiErrorMessage } from '../../utils/apiErrors';
 
 const Register = ({ onSwitchToLogin, onUserExists, onAuthSuccess }) => {
   const [name, setName] = useState('');
@@ -38,7 +39,7 @@ const Register = ({ onSwitchToLogin, onUserExists, onAuthSuccess }) => {
       } else if (err?.status === 400 && message === 'Validation failed') {
         setErrorMsg("Ism, email yoki parol noto'g'ri (parol kamida 8 belgi).");
       } else {
-        setErrorMsg(message || "Ro'yxatdan o'tish amalga oshmadi.");
+        setErrorMsg(getApiErrorMessage(err, "Ro'yxatdan o'tish amalga oshmadi."));
       }
     }
   };

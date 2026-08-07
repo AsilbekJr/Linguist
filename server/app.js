@@ -5,7 +5,7 @@ const rateLimit = require('express-rate-limit');
 const mongoSanitize = require('express-mongo-sanitize');
 const hpp = require('hpp');
 const cookieParser = require('cookie-parser');
-const { getCorsOptions } = require('./utils/corsConfig');
+const { getCorsOptions, corsRejectionHandler } = require('./utils/corsConfig');
 
 /**
  * Express ilovasini quradi. `index.js` dan ajratildi — busiz integratsion
@@ -25,6 +25,8 @@ const createApp = ({ isProd = process.env.NODE_ENV === 'production', enableRateL
   );
   app.use(hpp());
   app.use(cors(getCorsOptions(isProd)));
+  // CORS'dan o'tmagan so'rovga "Failed to fetch" o'rniga aniq sabab
+  app.use(corsRejectionHandler(isProd));
 
   // Webhook xom body talab qiladi — json parser'dan OLDIN turishi shart
   app.use(
@@ -56,13 +58,33 @@ const createApp = ({ isProd = process.env.NODE_ENV === 'production', enableRateL
       standardHeaders: true,
       legacyHeaders: false,
     });
-    const authLimiter = rateLimit({
-      windowMs: 15 * 60 * 1000,
-      max: isProd ? 10 : 200,
-      standardHeaders: true,
-      legacyHeaders: false,
-      message: { message: 'Too many auth attempts. Try again later.' },
-    });
+    /**
+     * Auth cheklovi.
+     *
+     * Ilgari bitta `authLimiter` login va register'ga BIRGA qo'llanardi,
+     * ya'ni ular 10 ta urinishlik umumiy byudjetni bo'lishardi. Bundan
+     * tashqari muvaffaqiyatli kirishlar ham hisoblanardi — bu esa
+     * brute-force'dan himoya emas, oddiy foydalanuvchiga to'siq.
+     *
+     * Endi: alohida hisoblagichlar + faqat MUVAFFAQIYATSIZ urinishlar.
+     */
+    const makeAuthLimiter = (max, name) =>
+      rateLimit({
+        windowMs: 15 * 60 * 1000,
+        max: Number(process.env[`RATE_LIMIT_${name}`]) || (isProd ? max : 500),
+        standardHeaders: true,
+        legacyHeaders: false,
+        // Muvaffaqiyatli so'rov limitni yemaydi — hujumchi baribir
+        // parolni bilmagani uchun uning urinishlari hisoblanaveradi
+        skipSuccessfulRequests: true,
+        message: {
+          message: "Juda ko'p muvaffaqiyatsiz urinish. 15 daqiqadan keyin qayta urinib ko'ring.",
+          code: 'RATE_LIMITED',
+        },
+      });
+
+    const loginLimiter = makeAuthLimiter(20, 'LOGIN');
+    const registerLimiter = makeAuthLimiter(10, 'REGISTER');
 
     // Parolni tiklash alohida va qattiqroq cheklanadi:
     // — /forgot-password spam yuborish vositasiga aylanmasin
@@ -76,16 +98,40 @@ const createApp = ({ isProd = process.env.NODE_ENV === 'production', enableRateL
     });
 
     app.use(globalLimiter);
-    app.use('/api/auth/login', authLimiter);
-    app.use('/api/auth/register', authLimiter);
+    app.use('/api/auth/login', loginLimiter);
+    app.use('/api/auth/register', registerLimiter);
     // Refresh ham cheklanadi — ilgari cheklovsiz edi va cookie brute-force'ga ochiq qolardi
-    app.use('/api/auth/refresh', authLimiter);
+    app.use('/api/auth/refresh', makeAuthLimiter(60, 'REFRESH'));
     app.use('/api/auth/forgot-password', passwordResetLimiter);
     app.use('/api/auth/reset-password', passwordResetLimiter);
   }
 
+  /**
+   * Sog'liq va konfiguratsiya holati.
+   *
+   * Maxfiy qiymatlar QAYTARILMAYDI — faqat "sozlanganmi" degan boolean.
+   * Bu deploydan keyingi eng ko'p uchraydigan muammoni (env o'zgaruvchisi
+   * yozilmagan) bir so'rov bilan aniqlash imkonini beradi; aks holda
+   * sababni Render loglaridan qidirishga to'g'ri keladi.
+   */
   app.get('/health', (req, res) => {
-    res.json({ status: 'ok', service: 'Linguist AI-Flow API' });
+    const { getAllowedOrigins } = require('./utils/corsConfig');
+    res.json({
+      status: 'ok',
+      service: 'Linguist AI-Flow API',
+      env: isProd ? 'production' : 'development',
+      config: {
+        mongo: Boolean(process.env.MONGO_URI),
+        jwtSecret: Boolean(process.env.JWT_SECRET),
+        gemini: Boolean(process.env.GEMINI_API_KEY),
+        mail: Boolean(process.env.RESEND_API_KEY || process.env.BREVO_API_KEY),
+        push: Boolean(process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY),
+        cron: Boolean(process.env.CRON_SECRET),
+      },
+      // Aynan shu ro'yxatga tushmagan origin CORS'da rad etiladi
+      allowedOrigins: getAllowedOrigins(isProd),
+      requestOrigin: req.headers.origin || null,
+    });
   });
   app.get('/', (req, res) => {
     res.json({ status: 'ok', message: 'Linguist AI-Flow API' });

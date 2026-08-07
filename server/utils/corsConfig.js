@@ -35,15 +35,16 @@ const parseOrigins = (...sources) => {
   }
   return [...origins];
 };
-const getCorsOptions = (isProd) => {
+/** Ruxsat etilgan originlar ro'yxati — /health uchun ham kerak */
+const getAllowedOrigins = (isProd) => {
   const devDefaults = ['http://localhost:5173', 'http://127.0.0.1:5173'];
-  const allowedOrigins = isProd
+  return isProd
     ? parseOrigins(process.env.ALLOWED_ORIGIN, process.env.CLIENT_URL)
-    : parseOrigins(
-        process.env.ALLOWED_ORIGIN,
-        process.env.CLIENT_URL,
-        ...devDefaults
-      );
+    : parseOrigins(process.env.ALLOWED_ORIGIN, process.env.CLIENT_URL, ...devDefaults);
+};
+
+const getCorsOptions = (isProd) => {
+  const allowedOrigins = getAllowedOrigins(isProd);
 
   for (const raw of [process.env.ALLOWED_ORIGIN, process.env.CLIENT_URL]) {
     if (!raw) continue;
@@ -75,14 +76,48 @@ const getCorsOptions = (isProd) => {
         callback(null, true);
         return;
       }
-      callback(new Error(`Origin not allowed by CORS: ${origin}`));
+      /**
+       * MUHIM: bu yerda `new Error(...)` uzatilsa Express uni 500 ga
+       * aylantiradi va brauzerda shunchaki "Failed to fetch" ko'rinadi —
+       * sababini topib bo'lmaydi. Buning o'rniga so'rovni CORS sarlavhasisiz
+       * o'tkazamiz; keyin `corsRejectionHandler` aniq 403 va tushuntirish
+       * qaytaradi.
+       */
+      console.warn(
+        `CORS rad etildi: "${requestOrigin}". Ruxsat etilganlar: ${allowedOrigins.join(', ') || '(bo\'sh)'}`
+      );
+      callback(null, false);
     },
     credentials: true,
   };
 };
 
+/**
+ * CORS'dan o'tmagan so'rovga tushunarli javob.
+ * `cors` middleware'dan KEYIN qo'yiladi.
+ */
+const corsRejectionHandler = (isProd) => (req, res, next) => {
+  const origin = req.headers.origin;
+  // Origin yo'q (server-server, curl) yoki ruxsat berilgan — davom etamiz
+  if (!origin || res.getHeader('Access-Control-Allow-Origin')) return next();
+
+  const allowed = getAllowedOrigins(isProd);
+  return res.status(403).json({
+    message: 'CORS: bu manzilga ruxsat berilmagan',
+    code: 'CORS_ORIGIN_NOT_ALLOWED',
+    yourOrigin: origin,
+    allowedOrigins: allowed,
+    hint:
+      allowed.length === 0
+        ? 'Serverda ALLOWED_ORIGIN yoki CLIENT_URL sozlanmagan.'
+        : `Serverdagi ALLOWED_ORIGIN ga "${origin}" ni qo'shing (vergul bilan bir nechta bo'lishi mumkin).`,
+  });
+};
+
 module.exports = {
   getCorsOptions,
+  getAllowedOrigins,
+  corsRejectionHandler,
   parseOrigins,
   normalizeOrigin,
   isValidOrigin,

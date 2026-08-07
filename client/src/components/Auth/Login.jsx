@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Loader2, Mail } from "lucide-react";
 import PasswordInput from './PasswordInput';
+import { getApiErrorMessage } from '../../utils/apiErrors';
 
 const Login = ({ onSwitchToRegister, initialEmail = '', onAuthSuccess }) => {
   const [email, setEmail] = useState(initialEmail);
@@ -28,20 +29,14 @@ const Login = ({ onSwitchToRegister, initialEmail = '', onAuthSuccess }) => {
       dispatch(setCredentials({ user: userData, token: userData.token }));
       onAuthSuccess?.();
     } catch (err) {
-      console.error("Login Failed:", err);
-      const message = err?.data?.message;
-      if (err?.status === 429 || message === 'Too many auth attempts. Try again later.') {
+      console.error('Login Failed:', err);
+      if (err?.status === 401) {
         setErrorMsg(
-          "Juda ko'p urinish. 15 daqiqa kuting yoki serverni qayta ishga tushiring (dev)."
-        );
-      } else if (err?.status === 401) {
-        setErrorMsg(
-          message === 'Invalid credentials'
-            ? "Email yoki parol noto'g'ri. Ro'yxatdan o'tgan bo'lsangiz, to'g'ri parolni kiriting."
-            : message || "Kirish rad etildi."
+          "Email yoki parol noto'g'ri. Parolni unutgan bo'lsangiz, quyidagi havoladan tiklang."
         );
       } else {
-        setErrorMsg(message || "Server bilan bog'lanib bo'lmadi.");
+        // Tarmoq, CORS va rate-limit holatlari bitta joyda tushuntiriladi
+        setErrorMsg(getApiErrorMessage(err, "Server bilan bog'lanib bo'lmadi."));
       }
     }
   };
