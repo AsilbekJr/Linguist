@@ -9,6 +9,7 @@ import { Headphones, Volume2, Rabbit, Turtle, Loader2, CheckCircle2, Eye } from 
 import { toast } from 'react-hot-toast';
 import { playTTSAudio } from '../utils/audio';
 import { fireConfetti } from '../utils/celebration';
+import { track, EVENTS } from '../lib/analytics';
 
 /**
  * Tinglab yozish (diktant).
@@ -64,6 +65,9 @@ const ListeningMode = () => {
       setTimeout(() => inputRef.current?.focus(), 50);
       return;
     }
+
+    const avg = scores.length ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : 0;
+    track(EVENTS.LISTENING_FINISHED, { lines: lines.length, averageScore: avg });
 
     try {
       const res = await completeListening().unwrap();

@@ -8,6 +8,7 @@ import {
 } from '../features/api/apiSlice';
 import { Button } from '@/components/ui/button';
 import { Check, Loader2, Crown, Zap } from 'lucide-react';
+import { track, EVENTS } from '../lib/analytics';
 
 const PLANS = [
   {
@@ -45,6 +46,7 @@ const Pricing = () => {
   const currentPlan = sub?.plan || 'free';
 
   const handleUpgrade = async (plan) => {
+    track(EVENTS.UPGRADE_CLICKED, { plan, currentPlan });
     try {
       const res = await checkout(plan).unwrap();
       if (res.url) window.location.href = res.url;

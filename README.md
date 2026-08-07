@@ -133,4 +133,18 @@ Bu ro'yxat ataylab ochiq — mahsulot hali bularni qila olmaydi:
 - **Daraja aniqlash.** Foydalanuvchi darajasini o'zi tanlaydi; adaptiv
   placement test yo'q.
 - **Kontent hajmi.** 24 kun (A1-A2). B1+ hali yozilmagan.
-- **i18n yo'q**, **PWA yo'q**, **analitika/xato monitoringi yo'q**.
+- **i18n yo'q** — matnlar kodga qotirilgan, rus tiliga chiqish uchun refaktoring kerak.
+- **PWA yo'q** — manifest va service worker qo'shilmagan.
+
+## Analitika
+
+Funnel hodisalari `client/src/lib/analytics.js` da. SDK ishlatilmaydi —
+PostHog'ning HTTP capture endpointi to'g'ridan-to'g'ri chaqiriladi, shuning
+uchun bundle hajmi oshmaydi. `VITE_POSTHOG_KEY` yo'q bo'lsa hech narsa
+yuborilmaydi va foydalanuvchi qurilmasida identifikator ham qoldirilmaydi.
+
+Kuzatiladigan asosiy nuqtalar: `registered` → `onboarding_completed` →
+`topic_day_finished` → `daily_plan_completed` → `upgrade_clicked`.
+Ayrim muhim signal: `ai_unavailable` — Gemini uzilishlari ko'rinib turadi.
+
+Render xatolari `ErrorBoundary` orqali ushlanadi va shu quvurga tushadi.

@@ -13,6 +13,7 @@ import Review from './pages/Review';
 import Practice from './pages/Practice';
 import TopicVocabulary from './pages/TopicVocabulary';
 import { Loader2 } from 'lucide-react';
+import { identify } from './lib/analytics';
 
 const ForgotPassword = lazy(() => import('./components/Auth/ForgotPassword'));
 const ResetPassword = lazy(() => import('./components/Auth/ResetPassword'));
@@ -47,6 +48,18 @@ function App() {
       setLoginPrefillEmail('');
     }
   }, [isAuthenticated]);
+
+  // Anonim ID'ni haqiqiy foydalanuvchiga bog'lash — busiz funnel
+  // ro'yxatdan o'tish nuqtasida uzilib qoladi
+  useEffect(() => {
+    if (!me?._id) return;
+    identify(me._id, {
+      level: me.onboarding?.level,
+      goal: me.onboarding?.goal,
+      plan: me.subscription?.plan,
+      streak: me.currentStreak,
+    });
+  }, [me]);
 
   /**
    * Brauzer zonasini serverga yuboramiz.

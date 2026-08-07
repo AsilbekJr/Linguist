@@ -28,6 +28,7 @@ import { toast } from 'react-hot-toast';
 import { playTTSAudio } from '../utils/audio';
 import { getDailyWordTarget } from '../utils/learningUtils';
 import { fireConfetti } from '../utils/celebration';
+import { track, EVENTS } from '../lib/analytics';
 
 /**
  * Mini-test.
@@ -196,6 +197,11 @@ const TopicVocabulary = () => {
       applyUserUpdate(res.user);
       fireConfetti();
       toast.success(res.message || 'Kunlik sahna bajarildi!');
+      track(EVENTS.TOPIC_DAY_FINISHED, {
+        day: topicData?.day,
+        cefr: topicData?.cefr,
+        wordsSaved: packSavedCount,
+      });
       setStep('done');
     } catch (err) {
       const msg = err?.data?.error || 'Yakunlashda xatolik';
@@ -502,7 +508,10 @@ const TopicVocabulary = () => {
             quiz={quiz}
             submitQuiz={submitQuiz}
             isSubmitting={isSubmittingQuiz}
-            onPass={() => setStep('learn')}
+            onPass={(res) => {
+              track(EVENTS.TOPIC_QUIZ_PASSED, { day: topicData?.day, score: res?.score });
+              setStep('learn');
+            }}
             onBack={() => setStep('learn')}
           />
         </div>

@@ -12,6 +12,7 @@ import { ChevronLeft, Mic, MicOff, Volume2, Layers, ListChecks, PenLine } from '
 import { toast } from 'react-hot-toast';
 import { playTTSAudio } from '../utils/audio';
 import { fireConfetti } from '../utils/celebration';
+import { track, EVENTS } from '../lib/analytics';
 
 const MODES = [
   { id: 'flashcard', label: 'Flashcard', icon: Layers, desc: 'So\'z ↔ ma\'no, tez takrorlash' },
@@ -110,6 +111,12 @@ const ReviewMode = () => {
   const finishSession = () => {
     if (!questSyncedRef.current) {
       questSyncedRef.current = true;
+      track(EVENTS.REVIEW_SESSION_FINISHED, {
+        mode: activeMode,
+        words: sessionWords.length,
+        correct: sessionResults.correct,
+        incorrect: sessionResults.incorrect,
+      });
       syncDailyQuest({ type: 'review' })
         .unwrap()
         .then((res) => {
@@ -213,6 +220,7 @@ const ReviewMode = () => {
       // O'ZGARTIRMAGAN. Foydalanuvchiga aynan shuni aytamiz — ilgari uning
       // to'g'ri gapi "xato" deb belgilanib, pog'onasi pasayardi.
       if (err?.status === 503 && err?.data?.srsUnchanged) {
+        track(EVENTS.AI_UNAVAILABLE, { where: 'review_check', code: err?.data?.code });
         setError(
           err.data.message ||
             "AI hozir javob bera olmadi. Takrorlash holatingiz o'zgarmadi — biroz kutib qayta urinib ko'ring."
