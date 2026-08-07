@@ -2,6 +2,7 @@ import React from 'react';
 import { useGetMeQuery, useGetWordsQuery, useGetChallengeHistoryQuery } from '../features/api/apiSlice';
 import { Flame, Star, BookOpen, Target, Loader2, Award } from 'lucide-react';
 import { BADGE_DEFINITIONS, computeLevelFromXp, xpProgressInLevel } from '../utils/learningUtils';
+import NotificationSettings from '../components/NotificationSettings';
 
 const Analytics = () => {
   const { data: user, isLoading: loadingUser } = useGetMeQuery();
@@ -90,6 +91,8 @@ const Analytics = () => {
           })}
         </div>
       </div>
+
+      <NotificationSettings />
 
       <div className="bg-card border border-border rounded-2xl p-6">
         <h2 className="font-bold mb-2">Onboarding profili</h2>

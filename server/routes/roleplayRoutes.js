@@ -6,30 +6,36 @@ const { validate, roleplaySchema } = require('../middleware/validate');
 const { trackAiUsage } = require('../middleware/usageQuota');
 
 router.post('/chat', protect, validate(roleplaySchema), trackAiUsage, async (req, res) => {
-    const { scenario, targetWords = [], chatHistory = [], message } = req.validated.body;
+  const { scenario, targetWords = [], chatHistory = [], message } = req.validated.body;
 
-    if (!scenario || !message) {
-        return res.status(400).json({ error: "Scenario and message are required." });
+  try {
+    const learnerLevel = req.user.onboarding?.level || 'beginner';
+    const result = await generateRoleplayResponse(
+      scenario,
+      targetWords,
+      chatHistory,
+      message,
+      learnerLevel
+    );
+
+    if (result.status === 'unavailable') {
+      await req.aiCall.refund();
+      return res.status(503).json({
+        error:
+          result.reason === 'QUOTA_EXCEEDED'
+            ? "AI limiti tugadi. Keyinroq urinib ko'ring."
+            : "Suhbatdosh hozir javob bera olmadi. Qayta urinib ko'ring.",
+        code: result.reason,
+      });
     }
 
-    try {
-        const learnerLevel = req.user.onboarding?.level || 'beginner';
-        const aiResponse = await generateRoleplayResponse(
-            scenario,
-            targetWords,
-            chatHistory,
-            message,
-            learnerLevel
-        );
-        res.json({ reply: aiResponse });
-    } catch (error) {
-        console.error("Roleplay Route Error:", error);
-        if (error.type === 'QUOTA_EXCEEDED') {
-             res.status(429).json({ error: error.message });
-        } else {
-             res.status(500).json({ error: "Server Error" });
-        }
-    }
+    req.aiCall.commit();
+    res.json({ reply: result.reply });
+  } catch (error) {
+    console.error('Roleplay Route Error:', error);
+    await req.aiCall?.refund();
+    res.status(500).json({ error: 'Server Error' });
+  }
 });
 
 module.exports = router;

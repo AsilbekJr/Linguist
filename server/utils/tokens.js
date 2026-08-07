@@ -13,6 +13,11 @@ const generateAccessToken = (id) =>
 
 const generateRefreshToken = () => crypto.randomBytes(40).toString('hex');
 
+/** Parolni tiklash tokeni — URL'ga tushadi, shuning uchun hex */
+const generateResetToken = () => crypto.randomBytes(32).toString('hex');
+
+const RESET_TOKEN_TTL_MS = 60 * 60 * 1000; // 1 soat
+
 const hashToken = (token) =>
   crypto.createHash('sha256').update(token).digest('hex');
 
@@ -46,6 +51,8 @@ const clearRefreshCookie = (res) => {
 module.exports = {
   generateAccessToken,
   generateRefreshToken,
+  generateResetToken,
+  RESET_TOKEN_TTL_MS,
   hashToken,
   verifyAccessToken,
   REFRESH_COOKIE,

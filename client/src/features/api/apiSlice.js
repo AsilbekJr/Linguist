@@ -1,7 +1,25 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import { setCredentials, logout } from '../auth/authSlice';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:5000';
+/**
+ * Backend manzili.
+ *
+ * Zaxira qiymat FAQAT ishlab chiqish uchun. Deploy qilingan build'da
+ * `VITE_API_URL` yozilmagan bo'lsa, ilova foydalanuvchining O'Z
+ * kompyuteridagi 127.0.0.1:5000 ga murojaat qilishga urinadi — bu esa
+ * https sahifadan http manzilga so'rov bo'lgani uchun brauzer tomonidan
+ * bloklanadi ("mixed content") va sabab hech qayerda ko'rinmaydi.
+ * Shuning uchun bu holatni baland ovozda aytamiz.
+ */
+const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '' : 'http://127.0.0.1:5000');
+
+if (import.meta.env.PROD && !import.meta.env.VITE_API_URL) {
+  console.error(
+    '[Linguist] VITE_API_URL sozlanmagan. Vercel → Settings → Environment Variables ' +
+      "ga uni qo'shing va deploymentni qayta ishga tushiring. Aks holda hech qanday " +
+      "so'rov ishlamaydi."
+  );
+}
 
 const rawBaseQuery = fetchBaseQuery({
   baseUrl: API_URL,
@@ -64,7 +82,7 @@ export const apiSlice = createApi({
   refetchOnFocus: false,
   refetchOnReconnect: true,
   baseQuery: baseQueryWithReauth,
-  tagTypes: ['Word', 'Challenge', 'Topic', 'User', 'Billing', 'Practice'],
+  tagTypes: ['Word', 'Challenge', 'Topic', 'User', 'Billing', 'Practice', 'Listening', 'Notifications', 'Push'],
   endpoints: (builder) => ({
     getWords: builder.query({
       query: () => '/api/words',
@@ -99,6 +117,15 @@ export const apiSlice = createApi({
       }),
       invalidatesTags: ['Word', 'User'],
     }),
+    /** 4 darajali baholash: 0=Again, 1=Hard, 2=Good, 3=Easy */
+    gradeReview: builder.mutation({
+      query: ({ id, grade }) => ({
+        url: `/api/review/${id}/grade`,
+        method: 'POST',
+        body: { grade },
+      }),
+      invalidatesTags: ['Word', 'User'],
+    }),
     quickReview: builder.mutation({
       query: ({ id, known }) => ({
         url: `/api/review/${id}/quick`,
@@ -107,6 +134,11 @@ export const apiSlice = createApi({
       }),
       invalidatesTags: ['Word', 'User'],
     }),
+    getReviewStats: builder.query({
+      query: () => '/api/review/stats',
+      providesTags: ['Word'],
+      keepUnusedDataFor: 60,
+    }),
     translateSpeaking: builder.mutation({
       query: (text) => ({
         url: '/api/speaking/translate',
@@ -114,13 +146,27 @@ export const apiSlice = createApi({
         body: { text },
       }),
     }),
-    translateText: builder.mutation({
-      query: (data) => ({
-        url: '/api/speaking/translate-text',
+    getListeningSession: builder.query({
+      query: () => '/api/listening/session',
+      providesTags: ['Listening'],
+      keepUnusedDataFor: 300,
+    }),
+    checkDictation: builder.mutation({
+      query: ({ lineIndex, typed }) => ({
+        url: '/api/listening/check',
         method: 'POST',
-        body: data,
+        body: { lineIndex, typed },
       }),
     }),
+    completeListening: builder.mutation({
+      query: () => ({
+        url: '/api/listening/complete',
+        method: 'POST',
+      }),
+      invalidatesTags: ['Listening', 'User'],
+    }),
+    // `translateText` (/api/speaking/translate-text) olib tashlandi:
+    // u umumiy tarjimon edi — o'rganish funksiyasi emas, lekin AI limitini yerdi.
     evaluateSpeaking: builder.mutation({
       query: ({ targetSentence, spokenText }) => ({
         url: '/api/speaking/evaluate',
@@ -171,8 +217,27 @@ export const apiSlice = createApi({
       providesTags: ['Topic'],
       keepUnusedDataFor: 120,
     }),
+    /**
+     * Mini-testni boshlash. Savollar SERVERDA yaratiladi va to'g'ri javob
+     * mijozga yuborilmaydi — ilgari test butunlay brauzerda edi va uni
+     * sessionStorage orqali o'tkazib yuborish mumkin edi.
+     */
+    startTopicQuiz: builder.mutation({
+      query: () => ({
+        url: '/api/topics/quiz/start',
+        method: 'POST',
+      }),
+    }),
+    submitTopicQuiz: builder.mutation({
+      query: ({ quizId, answers }) => ({
+        url: '/api/topics/quiz/submit',
+        method: 'POST',
+        body: { quizId, answers },
+      }),
+      invalidatesTags: ['Topic'],
+    }),
     finishTopicDay: builder.mutation({
-      query: (body) => ({
+      query: (body = {}) => ({
         url: '/api/topics/finish',
         method: 'POST',
         body,
@@ -191,6 +256,68 @@ export const apiSlice = createApi({
         url: '/api/auth/register',
         method: 'POST',
         body: userData,
+      }),
+    }),
+    getPushStatus: builder.query({
+      query: () => '/api/push/status',
+      providesTags: ['Push'],
+    }),
+    getPushPublicKey: builder.query({
+      query: () => '/api/push/public-key',
+    }),
+    subscribePush: builder.mutation({
+      query: (body) => ({ url: '/api/push/subscribe', method: 'POST', body }),
+      invalidatesTags: ['Push'],
+    }),
+    unsubscribePush: builder.mutation({
+      query: (endpoint) => ({
+        url: '/api/push/unsubscribe',
+        method: 'POST',
+        body: { endpoint },
+      }),
+      invalidatesTags: ['Push'],
+    }),
+    sendTestPush: builder.mutation({
+      query: () => ({ url: '/api/push/test', method: 'POST' }),
+    }),
+    getNotificationPrefs: builder.query({
+      query: () => '/api/notifications/preferences',
+      providesTags: ['Notifications'],
+    }),
+    updateNotificationPrefs: builder.mutation({
+      query: (body) => ({ url: '/api/notifications/preferences', method: 'PUT', body }),
+      invalidatesTags: ['Notifications'],
+    }),
+    unsubscribe: builder.mutation({
+      query: (token) => ({
+        url: '/api/notifications/unsubscribe',
+        method: 'POST',
+        body: { token },
+      }),
+    }),
+    startPlacement: builder.mutation({
+      query: () => ({ url: '/api/placement/start', method: 'POST' }),
+    }),
+    answerPlacement: builder.mutation({
+      query: (body) => ({ url: '/api/placement/answer', method: 'POST', body }),
+      invalidatesTags: (result) => (result?.done ? ['User', 'Topic', 'Listening'] : []),
+    }),
+    getPlacementResult: builder.query({
+      query: () => '/api/placement/result',
+      providesTags: ['User'],
+    }),
+    forgotPassword: builder.mutation({
+      query: (email) => ({
+        url: '/api/auth/forgot-password',
+        method: 'POST',
+        body: { email },
+      }),
+    }),
+    resetPassword: builder.mutation({
+      query: ({ token, password }) => ({
+        url: '/api/auth/reset-password',
+        method: 'POST',
+        body: { token, password },
       }),
     }),
     getMe: builder.query({
@@ -232,6 +359,14 @@ export const apiSlice = createApi({
       }),
       invalidatesTags: ['User'],
     }),
+    /** Streak va kunlik reja foydalanuvchi zonasida hisoblanishi uchun */
+    setTimezone: builder.mutation({
+      query: (timezone) => ({
+        url: '/api/auth/timezone',
+        method: 'POST',
+        body: { timezone },
+      }),
+    }),
     refreshToken: builder.mutation({
       query: () => ({
         url: '/api/auth/refresh',
@@ -270,10 +405,14 @@ export const {
   useAddWordMutation,
   useDeleteWordMutation,
   useCheckReviewMutation,
+  useGradeReviewMutation,
   useQuickReviewMutation,
+  useGetReviewStatsQuery,
   useTranslateSpeakingMutation,
-  useTranslateTextMutation,
   useEvaluateSpeakingMutation,
+  useGetListeningSessionQuery,
+  useCheckDictationMutation,
+  useCompleteListeningMutation,
   useChatRoleplayMutation,
   useAskTeacherMutation,
   useGetCurrentChallengeQuery,
@@ -281,6 +420,19 @@ export const {
   useCompleteChallengeMutation,
   useLoginMutation,
   useRegisterMutation,
+  useForgotPasswordMutation,
+  useResetPasswordMutation,
+  useGetPushStatusQuery,
+  useGetPushPublicKeyQuery,
+  useSubscribePushMutation,
+  useUnsubscribePushMutation,
+  useSendTestPushMutation,
+  useGetNotificationPrefsQuery,
+  useUpdateNotificationPrefsMutation,
+  useUnsubscribeMutation,
+  useStartPlacementMutation,
+  useAnswerPlacementMutation,
+  useGetPlacementResultQuery,
   useGetMeQuery,
   useGetPracticeSessionQuery,
   useGetPracticePromptMutation,
@@ -288,9 +440,12 @@ export const {
   useGetReviewDueQuery,
   useGetCurrentTopicQuery,
   useGetTopicBacklogQuery,
+  useStartTopicQuizMutation,
+  useSubmitTopicQuizMutation,
   useFinishTopicDayMutation,
   useOnboardUserMutation,
   useSyncDailyQuestMutation,
+  useSetTimezoneMutation,
   useRefreshTokenMutation,
   useLogoutSessionMutation,
   useGetSubscriptionQuery,

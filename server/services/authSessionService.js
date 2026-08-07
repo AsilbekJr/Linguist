@@ -43,8 +43,21 @@ const findValidSession = async (refreshToken) => {
   });
 };
 
+/**
+ * Foydalanuvchining barcha sessiyalarini bekor qiladi.
+ * Parol almashtirilganda chaqiriladi: hisobni kimdir egallagan bo'lsa,
+ * uning refresh tokeni ham darhol kuchini yo'qotsin.
+ */
+const revokeAllSessionsForUser = async (userId) => {
+  await Session.updateMany(
+    { user: userId, revokedAt: null },
+    { revokedAt: new Date() }
+  );
+};
+
 module.exports = {
   createSession,
   revokeSessionByCookie,
   findValidSession,
+  revokeAllSessionsForUser,
 };

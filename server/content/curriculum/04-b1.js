@@ -1,0 +1,217 @@
+/**
+ * B1 bloki — 25-30 kunlar.
+ *
+ * A2 dan farqi: endi foydalanuvchi vaziyatni boshqaribgina qolmay, FIKR
+ * BILDIRADI, sabab keltiradi va mavhum mavzular haqida gapiradi — o'tmish
+ * xotiralari, ekologiya, texnologiyaning ta'siri, kelajak rejalari.
+ *
+ * Bu blok placement testi B1 deb baholagan foydalanuvchi uchun kursning
+ * boshlanish nuqtasi (`getStartDayForLevel`).
+ */
+
+module.exports = [
+  {
+    day: 25,
+    cefr: 'B1',
+    emoji: '📷',
+    topic: 'Childhood Memories',
+    topicUz: 'Bolalik xotiralari',
+    description: "O'tmishdagi odatlar va xotiralar haqida gapirish.",
+    grammarFocus: 'used to / would — o\'tmishdagi takroriy harakatlar',
+    story:
+      "Kimdir sizdan bolaligingiz haqida so'radi. Bu yerda `used to` tuzilmasi mashq qilinadi — o'zbek tilida so'zlashuvchilar uni ko'pincha oddiy o'tgan zamon bilan almashtirib yuboradi.",
+    dialogue: [
+      ['Sara', "Do you often think about your childhood?", "Bolaligingiz haqida tez-tez o'ylaysizmi?"],
+      ['Aziz', "Yes. I have a clear memory of our old neighbourhood.", "Ha. Eski mahallamiz haqida aniq xotiram bor."],
+      ['Sara', "What did you use to do there?", "U yerda nima qilardingiz?"],
+      ['Aziz', "We played on the playground until dark. I miss those days.", "Qorong'i tushguncha o'yin maydonchasida o'ynardik. O'sha kunlarni sog'inaman."],
+      ['Sara', "Do you still remember your neighbours?", "Qo'shnilaringizni hali eslaysizmi?"],
+      ['Aziz', "Some of them. But I forget the names now.", "Ba'zilarini. Lekin ismlarini endi unutyapman."],
+      ['Sara', "Do you have any photographs?", "Suratlaringiz bormi?"],
+      ['Aziz', "A few. I was a teenager when we moved away.", "Bir nechta. Ko'chib ketganimizda men o'smir edim."],
+      ['Sara', "Every moment of that time matters, doesn't it?", "O'sha davrning har bir lahzasi qadrli-ku?"],
+    ],
+    words: [
+      ['memory', 'xotira', '/ˈmeməri/', 'noun', 'something you remember from the past', 'I have a clear memory of that day.', "O'sha kun haqida aniq xotiram bor.", 'B1', ['childhood memory']],
+      ['childhood', 'bolalik', '/ˈtʃaɪldhʊd/', 'noun', 'the time when you are a child', 'She had a happy childhood.', 'Uning bolaligi baxtli o\'tgan.', 'B1', []],
+      ['remember', 'eslamoq', '/rɪˈmembə/', 'verb', 'to keep something in your mind from the past', 'I remember his face but not his name.', 'Uning yuzini eslayman, ismini esa yo\'q.', 'B1', []],
+      ['forget', 'unutmoq', '/fəˈɡet/', 'verb', 'to be unable to remember', 'Do not forget to call her.', 'Unga qo\'ng\'iroq qilishni unutmang.', 'B1', ['forget about']],
+      ['moment', 'lahza', '/ˈməʊmənt/', 'noun', 'a very short period of time', 'That was the best moment of my life.', 'Bu hayotimdagi eng yaxshi lahza edi.', 'B1', ['at the moment']],
+      ['neighbourhood', 'mahalla', '/ˈneɪbəhʊd/', 'noun', 'the area around where you live', 'Our neighbourhood is quiet and safe.', 'Mahallamiz tinch va xavfsiz.', 'B1', []],
+      ['playground', "o'yin maydonchasi", '/ˈpleɪɡraʊnd/', 'noun', 'an outdoor area where children play', 'The playground is full of children.', "O'yin maydonchasi bolalarga to'la.", 'B1', []],
+      ['teenager', "o'smir", '/ˈtiːneɪdʒə/', 'noun', 'a person between 13 and 19 years old', 'My son is a teenager now.', "O'g'lim endi o'smir.", 'B1', []],
+      ['photograph', 'surat', '/ˈfəʊtəɡrɑːf/', 'noun', 'a picture made with a camera', 'She showed me an old photograph.', 'U menga eski suratni ko\'rsatdi.', 'B1', ['take a photograph']],
+      ['miss', "sog'inmoq", '/mɪs/', 'verb', 'to feel sad because someone or something is not with you', 'I miss my family very much.', 'Oilamni juda sog\'inaman.', 'B1', []],
+    ],
+  },
+
+  {
+    day: 26,
+    cefr: 'B1',
+    emoji: '🥗',
+    topic: 'Health and Lifestyle',
+    topicUz: 'Salomatlik va turmush tarzi',
+    description: 'Odatlar, ovqatlanish va sog\'lom turmush.',
+    grammarFocus: 'should / ought to — maslahat berish',
+    story:
+      "Turmush tarzingizni o'zgartirdingiz va buni tushuntirib berishingiz kerak. Maslahat berish tuzilmalari bu yerda tabiiy mashq qilinadi.",
+    dialogue: [
+      ['Sara', "You look full of energy today.", "Bugun juda tetik ko'rinasiz."],
+      ['Aziz', "I changed my diet and I exercise regularly now.", "Ovqatlanishimni o'zgartirdim va endi muntazam mashq qilaman."],
+      ['Sara', "Was it hard to build the habit?", "Odat shakllantirish qiyin bo'ldimi?"],
+      ['Aziz', "The first month, yes. I had to avoid fast food completely.", "Birinchi oy — ha. Tez tayyor ovqatdan butunlay voz kechishga to'g'ri keldi."],
+      ['Sara', "Did you lose weight?", "Vazn tashladingizmi?"],
+      ['Aziz', "A little. But the main thing is less stress.", "Bir oz. Lekin asosiysi — stress kamaydi."],
+      ['Sara', "I should quit coffee too.", "Men ham qahvani tashlashim kerak."],
+      ['Aziz', "Small regular changes work better than big ones. Now I feel healthy.", "Kichik muntazam o'zgarishlar kattalaridan yaxshiroq ishlaydi. Endi o'zimni sog'lom his qilaman."],
+    ],
+    words: [
+      ['healthy', "sog'lom", '/ˈhelθi/', 'adjective', 'physically well and strong', 'A healthy person sleeps well.', 'Sog\'lom odam yaxshi uxlaydi.', 'B1', ['healthy lifestyle']],
+      ['exercise', 'mashq qilmoq', '/ˈeksəsaɪz/', 'verb', 'to do physical activity to stay fit', 'I exercise three times a week.', 'Men haftada uch marta mashq qilaman.', 'B1', ['do exercise']],
+      ['diet', 'ovqatlanish tartibi', '/ˈdaɪət/', 'noun', 'the food a person usually eats', 'A balanced diet is important.', 'Muvozanatli ovqatlanish muhim.', 'B1', ['go on a diet']],
+      ['habit', 'odat', '/ˈhæbɪt/', 'noun', 'something you do regularly, often without thinking', 'Reading before bed is a good habit.', 'Uxlashdan oldin o\'qish yaxshi odat.', 'B1', ['bad habit', 'break a habit']],
+      ['stress', 'stress', '/stres/', 'noun', 'worry caused by a difficult situation', 'Too much work causes stress.', 'Haddan ziyod ish stressga olib keladi.', 'B1', ['under stress']],
+      ['avoid', 'voz kechmoq', '/əˈvɔɪd/', 'verb', 'to stay away from something', 'Try to avoid sugar in the evening.', 'Kechqurun shakardan voz kechishga harakat qiling.', 'B1', []],
+      ['weight', 'vazn', '/weɪt/', 'noun', 'how heavy someone or something is', 'He lost ten kilos of weight.', 'U o\'n kilo vazn tashladi.', 'B1', ['lose weight', 'put on weight']],
+      ['energy', 'kuch-quvvat', '/ˈenədʒi/', 'noun', 'the strength to be active', 'I have no energy after work.', 'Ishdan keyin quvvatim qolmaydi.', 'B1', ['full of energy']],
+      ['regular', 'muntazam', '/ˈreɡjələ/', 'adjective', 'happening at the same time repeatedly', 'Regular sleep improves memory.', 'Muntazam uyqu xotirani yaxshilaydi.', 'B1', []],
+      ['quit', 'tashlamoq', '/kwɪt/', 'verb', 'to stop doing something', 'He decided to quit smoking.', 'U chekishni tashlashga qaror qildi.', 'B1', ['quit smoking']],
+    ],
+  },
+
+  {
+    day: 27,
+    cefr: 'B1',
+    emoji: '♻️',
+    topic: 'The Environment',
+    topicUz: 'Atrof-muhit',
+    description: 'Ekologik muammolar va yechimlar.',
+    grammarFocus: 'Passive voice: is thrown away, must be done',
+    story:
+      "Ekologiya haqidagi suhbat — B1 darajadagi eng ko'p uchraydigan imtihon mavzularidan biri. Bu yerda majhul nisbat tabiiy ravishda ishlatiladi.",
+    dialogue: [
+      ['Sara', "Our city has a serious pollution problem.", "Shahrimizda jiddiy ifloslanish muammosi bor."],
+      ['Aziz', "Yes, and too much plastic is thrown away every day.", "Ha, va har kuni juda ko'p plastik chiqindiga tashlanadi."],
+      ['Sara', "Do people recycle here?", "Bu yerda odamlar qayta ishlashga topshiradimi?"],
+      ['Aziz', "Some do. But most rubbish is not separated.", "Ba'zilar topshiradi. Lekin ko'p axlat ajratilmaydi."],
+      ['Sara', "We should reduce waste at home first.", "Avval uyda chiqindini kamaytirishimiz kerak."],
+      ['Aziz', "True. Small actions protect the environment.", "To'g'ri. Kichik harakatlar atrof-muhitni asraydi."],
+      ['Sara', "Climate change is already causing damage.", "Iqlim o'zgarishi allaqachon zarar keltirmoqda."],
+      ['Aziz', "That is why the government must act now.", "Shuning uchun hukumat hozir harakat qilishi kerak."],
+    ],
+    words: [
+      ['environment', 'atrof-muhit', '/ɪnˈvaɪrənmənt/', 'noun', 'the natural world around us', 'We must look after the environment.', 'Atrof-muhitni asrashimiz kerak.', 'B1', ['protect the environment']],
+      ['pollution', 'ifloslanish', '/pəˈluːʃn/', 'noun', 'harmful substances in air, water or land', 'Air pollution is worse in winter.', 'Havo ifloslanishi qishda kuchayadi.', 'B1', ['air pollution']],
+      ['waste', 'chiqindi; isrof qilmoq', '/weɪst/', 'noun', 'material that is thrown away', 'The factory produces a lot of waste.', 'Zavod ko\'p chiqindi chiqaradi.', 'B1', ['food waste']],
+      ['recycle', 'qayta ishlamoq', '/ˌriːˈsaɪkl/', 'verb', 'to treat used materials so they can be used again', 'We recycle paper and glass.', 'Biz qog\'oz va shishani qayta ishlashga topshiramiz.', 'B1', []],
+      ['plastic', 'plastik', '/ˈplæstɪk/', 'noun', 'a light artificial material', 'Plastic bags harm animals.', 'Plastik xaltalar hayvonlarga zarar keltiradi.', 'B1', ['plastic bag']],
+      ['protect', 'asramoq', '/prəˈtekt/', 'verb', 'to keep someone or something safe', 'Trees protect the soil.', 'Daraxtlar tuproqni asraydi.', 'B1', ['protect from']],
+      ['climate', 'iqlim', '/ˈklaɪmət/', 'noun', 'the usual weather conditions of an area', 'The climate is changing quickly.', 'Iqlim tez o\'zgarmoqda.', 'B1', ['climate change']],
+      ['damage', 'zarar', '/ˈdæmɪdʒ/', 'noun', 'physical harm to something', 'The storm caused serious damage.', 'Bo\'ron jiddiy zarar keltirdi.', 'B1', ['cause damage']],
+      ['reduce', 'kamaytirmoq', '/rɪˈdjuːs/', 'verb', 'to make something smaller in amount', 'We need to reduce our water use.', 'Suv sarfimizni kamaytirishimiz kerak.', 'B1', []],
+      ['rubbish', 'axlat', '/ˈrʌbɪʃ/', 'noun', 'things you throw away', 'Please take the rubbish outside.', 'Iltimos, axlatni tashqariga olib chiqing.', 'B1', []],
+    ],
+  },
+
+  {
+    day: 28,
+    cefr: 'B1',
+    emoji: '📵',
+    topic: 'Technology and Social Media',
+    topicUz: 'Texnologiya va ijtimoiy tarmoqlar',
+    description: 'Ekran vaqti, maxfiylik va tarmoqlar.',
+    grammarFocus: 'Present Perfect Continuous: I have been using…',
+    story:
+      "Ijtimoiy tarmoqlar haqida fikr bildirish. Bu mavzu suhbatda ham, imtihonda ham eng ko'p uchraydiganlardan.",
+    dialogue: [
+      ['Sara', "How much time do you spend in front of a screen?", "Ekran oldida qancha vaqt o'tkazasiz?"],
+      ['Aziz', "Too much. I think I am addicted to my device.", "Juda ko'p. O'ylashimcha, qurilmamga qaram bo'lib qolganman."],
+      ['Sara', "Which network do you use most?", "Qaysi tarmoqdan ko'proq foydalanasiz?"],
+      ['Aziz', "Instagram. But I only share content with close friends.", "Instagram. Lekin kontentni faqat yaqin do'stlar bilan bo'lishaman."],
+      ['Sara', "Are you worried about privacy?", "Maxfiylik haqida tashvishlanasizmi?"],
+      ['Aziz', "Yes. People comment on everything now.", "Ha. Endi odamlar hamma narsaga izoh yozadi."],
+      ['Sara', "Technology is useful, but it can be harmful too.", "Texnologiya foydali, lekin zararli ham bo'lishi mumkin."],
+      ['Aziz', "Balance is the answer.", "Muvozanat — javob shu."],
+    ],
+    words: [
+      ['technology', 'texnologiya', '/tekˈnɒlədʒi/', 'noun', 'machines and systems based on science', 'Technology changes very fast.', 'Texnologiya juda tez o\'zgaradi.', 'B1', []],
+      ['device', 'qurilma', '/dɪˈvaɪs/', 'noun', 'a machine made for a particular purpose', 'This device charges in one hour.', 'Bu qurilma bir soatda quvvat oladi.', 'B1', ['mobile device']],
+      ['screen', 'ekran', '/skriːn/', 'noun', 'the flat surface of a phone or computer', 'My screen is cracked.', 'Ekranim yorilgan.', 'B1', ['screen time']],
+      ['addicted', 'qaram', '/əˈdɪktɪd/', 'adjective', 'unable to stop doing something', 'Many teenagers are addicted to games.', 'Ko\'p o\'smirlar o\'yinlarga qaram.', 'B1', ['addicted to']],
+      ['privacy', 'maxfiylik', '/ˈprɪvəsi/', 'noun', 'the right to keep your life private', 'Privacy online is important.', 'Onlayn maxfiylik muhim.', 'B1', []],
+      ['share', "bo'lishmoq", '/ʃeə/', 'verb', 'to give part of something to others', 'Do not share your password.', 'Parolingizni hech kim bilan bo\'lishmang.', 'B1', ['share with']],
+      ['network', 'tarmoq', '/ˈnetwɜːk/', 'noun', 'a system of connected people or computers', 'This social network has millions of users.', 'Bu ijtimoiy tarmoqda millionlab foydalanuvchi bor.', 'B1', ['social network']],
+      ['content', 'kontent', '/ˈkɒntent/', 'noun', 'the information shown on a website or app', 'She creates content about cooking.', 'U ovqat haqida kontent yaratadi.', 'B1', []],
+      ['comment', 'izoh', '/ˈkɒment/', 'noun', 'a written opinion about something online', 'His comment received many likes.', 'Uning izohi ko\'p layk oldi.', 'B1', ['leave a comment']],
+      ['harmful', 'zararli', '/ˈhɑːmfl/', 'adjective', 'causing damage or injury', 'Too much screen time is harmful.', 'Haddan ziyod ekran vaqti zararli.', 'B1', []],
+    ],
+  },
+
+  {
+    day: 29,
+    cefr: 'B1',
+    emoji: '🎯',
+    topic: 'Education and Career Plans',
+    topicUz: "Ta'lim va karyera rejalari",
+    description: 'Kelajak rejalari va maqsadlar.',
+    grammarFocus: 'Kelasi zamon: will / going to / present continuous',
+    story:
+      "Kelajak rejalari haqida suhbat. Bu yerda uch xil kelasi zamon farqi mashq qilinadi — o'zbek tilida bitta shakl bo'lgani uchun bu chalkash joy.",
+    dialogue: [
+      ['Sara', "What are your plans after you graduate?", "Diplom olganingizdan keyin rejangiz qanday?"],
+      ['Aziz', "I want to build a career in engineering.", "Muhandislik sohasida karyera qurmoqchiman."],
+      ['Sara', "Have you made a decision about the country?", "Mamlakat haqida qaror qabul qildingizmi?"],
+      ['Aziz', "Not yet. I am looking for an opportunity abroad.", "Hali yo'q. Chet elda imkoniyat qidiryapman."],
+      ['Sara', "A foreign degree is a real challenge.", "Chet el diplomi — haqiqiy sinov."],
+      ['Aziz', "I know. But my goal is to improve my skills.", "Bilaman. Lekin maqsadim — ko'nikmalarimni oshirish."],
+      ['Sara', "Can I give you some advice?", "Sizga maslahat bersam bo'ladimi?"],
+      ['Aziz', "Please do. I want to achieve something serious.", "Marhamat. Men jiddiy narsaga erishmoqchiman."],
+    ],
+    words: [
+      ['degree', 'diplom; daraja', '/dɪˈɡriː/', 'noun', 'a qualification given by a university', 'She has a degree in economics.', 'Uning iqtisodiyot bo\'yicha diplomi bor.', 'B1', ['get a degree']],
+      ['graduate', 'bitirmoq', '/ˈɡrædʒueɪt/', 'verb', 'to finish your studies at a university', 'I will graduate next summer.', 'Kelasi yozda bitiraman.', 'B1', ['graduate from']],
+      ['career', 'karyera', '/kəˈrɪə/', 'noun', 'the work you do over a long period of your life', 'He changed his career at forty.', 'U qirq yoshda karyerasini o\'zgartirdi.', 'B1', ['build a career']],
+      ['opportunity', 'imkoniyat', '/ˌɒpəˈtjuːnəti/', 'noun', 'a chance to do something good', 'This is a great opportunity for you.', 'Bu siz uchun ajoyib imkoniyat.', 'B1', ['miss an opportunity']],
+      ['achieve', 'erishmoq', '/əˈtʃiːv/', 'verb', 'to succeed in doing something after effort', 'She achieved all her goals.', 'U barcha maqsadlariga erishdi.', 'B1', []],
+      ['goal', 'maqsad', '/ɡəʊl/', 'noun', 'something you want to achieve', 'Set a clear goal for this year.', 'Bu yil uchun aniq maqsad qo\'ying.', 'B1', ['set a goal']],
+      ['improve', 'yaxshilamoq', '/ɪmˈpruːv/', 'verb', 'to make something better', 'Reading will improve your vocabulary.', 'O\'qish so\'z boyligingizni oshiradi.', 'B1', []],
+      ['challenge', 'sinov', '/ˈtʃælɪndʒ/', 'noun', 'something difficult that tests your ability', 'Learning a language is a challenge.', 'Til o\'rganish — bu sinov.', 'B1', ['face a challenge']],
+      ['advice', 'maslahat', '/ədˈvaɪs/', 'noun', 'an opinion about what someone should do', 'He gave me useful advice.', 'U menga foydali maslahat berdi.', 'B1', ['give advice', 'take advice']],
+      ['decision', 'qaror', '/dɪˈsɪʒn/', 'noun', 'a choice you make after thinking', 'It was a difficult decision.', 'Bu qiyin qaror edi.', 'B1', ['make a decision']],
+    ],
+  },
+
+  {
+    day: 30,
+    cefr: 'B1',
+    emoji: '📦',
+    topic: 'Complaints and Solutions',
+    topicUz: 'Shikoyat va yechim',
+    description: 'Muammoni muloyim tarzda hal qilish.',
+    grammarFocus: "Muloyim shikoyat: Would you mind…? / I'm afraid…",
+    story:
+      "Buyurtmangiz shikastlangan holda keldi. Muloyim, lekin qat'iy shikoyat qilish — chet elda ham, ishda ham eng kerakli ko'nikmalardan biri.",
+    dialogue: [
+      ['Customer', "I want to complain about my order.", "Buyurtmam haqida shikoyat qilmoqchiman."],
+      ['Support', "I apologise. What is the issue?", "Uzr so'rayman. Muammo nimada?"],
+      ['Customer', "The package arrived damaged and two days late.", "Paket shikastlangan holda va ikki kun kech keldi."],
+      ['Support', "I am sorry about the delay. Would you like a refund?", "Kechikish uchun uzr. Pulni qaytarishimizni xohlaysizmi?"],
+      ['Customer', "Can you replace it instead?", "Uning o'rniga almashtira olasizmi?"],
+      ['Support', "Of course. We will deliver a new one tomorrow.", "Albatta. Ertaga yangisini yetkazib beramiz."],
+      ['Customer', "Is there a guarantee?", "Kafolat bormi?"],
+      ['Support', "One year. Thank you for being a patient customer.", "Bir yil. Sabrli mijoz bo'lganingiz uchun rahmat."],
+    ],
+    words: [
+      ['complain', 'shikoyat qilmoq', '/kəmˈpleɪn/', 'verb', 'to say that you are not satisfied', 'She complained about the noise.', 'U shovqin haqida shikoyat qildi.', 'B1', ['complain about']],
+      ['refund', 'pulni qaytarish', '/ˈriːfʌnd/', 'noun', 'money returned to you', 'They gave me a full refund.', 'Ular menga pulni to\'liq qaytarishdi.', 'B1', ['get a refund']],
+      ['deliver', 'yetkazib bermoq', '/dɪˈlɪvə/', 'verb', 'to take goods to a place', 'They deliver orders every morning.', 'Ular buyurtmalarni har kuni ertalab yetkazib beradi.', 'B1', []],
+      ['damaged', 'shikastlangan', '/ˈdæmɪdʒd/', 'adjective', 'harmed or broken', 'The screen was damaged in transit.', 'Ekran yo\'lda shikastlangan.', 'B1', []],
+      ['replace', 'almashtirmoq', '/rɪˈpleɪs/', 'verb', 'to put a new thing in place of an old one', 'We will replace the broken part.', 'Singan qismni almashtiramiz.', 'B1', []],
+      ['apologise', "uzr so'ramoq", '/əˈpɒlədʒaɪz/', 'verb', 'to say you are sorry', 'He apologised for the mistake.', 'U xato uchun uzr so\'radi.', 'B1', ['apologise for']],
+      ['delay', 'kechikish', '/dɪˈleɪ/', 'noun', 'a situation when something happens later than planned', 'There was a long delay at the airport.', 'Aeroportda uzoq kechikish bo\'ldi.', 'B1', []],
+      ['issue', 'muammo', '/ˈɪʃuː/', 'noun', 'a problem that needs attention', 'We solved the issue quickly.', 'Muammoni tez hal qildik.', 'B1', []],
+      ['customer', 'mijoz', '/ˈkʌstəmə/', 'noun', 'a person who buys goods or services', 'The customer asked for help.', 'Mijoz yordam so\'radi.', 'B1', ['customer service']],
+      ['guarantee', 'kafolat', '/ˌɡærənˈtiː/', 'noun', 'a promise to repair or replace a product', 'The laptop has a two-year guarantee.', 'Noutbukning ikki yillik kafolati bor.', 'B1', []],
+    ],
+  },
+];

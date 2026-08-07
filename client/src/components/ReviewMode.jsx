@@ -4,7 +4,7 @@ import {
   useGetReviewDueQuery,
   useGetWordsQuery,
   useCheckReviewMutation,
-  useQuickReviewMutation,
+  useGradeReviewMutation,
   useSyncDailyQuestMutation,
 } from '../features/api/apiSlice';
 import { groupWordsByReviewInterval } from '../utils/dateUtils';
@@ -12,6 +12,7 @@ import { ChevronLeft, Mic, MicOff, Volume2, Layers, ListChecks, PenLine } from '
 import { toast } from 'react-hot-toast';
 import { playTTSAudio } from '../utils/audio';
 import { fireConfetti } from '../utils/celebration';
+import { track, EVENTS } from '../lib/analytics';
 
 const MODES = [
   { id: 'flashcard', label: 'Flashcard', icon: Layers, desc: 'So\'z ↔ ma\'no, tez takrorlash' },
@@ -19,13 +20,29 @@ const MODES = [
   { id: 'sentence', label: 'Jumla yozish', icon: PenLine, desc: 'AI bilan jumlada tekshirish' },
 ];
 
-const shuffle = (arr) => [...arr].sort(() => Math.random() - 0.5);
+/** Fisher–Yates — `sort(() => Math.random() - 0.5)` statistik jihatdan nosimmetrik aralashtiradi */
+const shuffle = (arr) => {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+};
+
+/** SM-2 baholari — server utils/srs.js dagi GRADE bilan bir xil */
+const GRADES = [
+  { grade: 0, label: 'Eslay olmadim', hint: 'So\'z shu sessiyada qayta chiqadi', className: 'border-destructive/50 text-destructive hover:bg-destructive/10' },
+  { grade: 1, label: 'Qiyin', hint: 'Qiynalib esladim — tez-tez qaytadi', className: 'border-orange-500/50 text-orange-600 hover:bg-orange-500/10' },
+  { grade: 2, label: 'Esladim', hint: 'Normal', className: 'border-green-600/50 text-green-600 hover:bg-green-600/10' },
+  { grade: 3, label: 'Juda oson', hint: 'Uzoq vaqtdan keyin qaytadi', className: 'border-blue-500/50 text-blue-600 hover:bg-blue-500/10' },
+];
 
 const ReviewMode = () => {
   const { data: dueWords = [], isLoading: loadingDue } = useGetReviewDueQuery();
   const { data: allWords = [], isLoading: loadingWords } = useGetWordsQuery();
   const [checkReviewMutation] = useCheckReviewMutation();
-  const [quickReview] = useQuickReviewMutation();
+  const [gradeReview] = useGradeReviewMutation();
   const [syncDailyQuest] = useSyncDailyQuestMutation();
 
   const [activeMode, setActiveMode] = useState(null);
@@ -45,6 +62,7 @@ const ReviewMode = () => {
   const [flipped, setFlipped] = useState(false);
   const [quizOptions, setQuizOptions] = useState([]);
   const [quizAnswered, setQuizAnswered] = useState(null);
+  const [lastInterval, setLastInterval] = useState(null);
 
   const autoAdvanceTimeoutRef = useRef(null);
   const questSyncedRef = useRef(false);
@@ -93,13 +111,19 @@ const ReviewMode = () => {
   const finishSession = () => {
     if (!questSyncedRef.current) {
       questSyncedRef.current = true;
+      track(EVENTS.REVIEW_SESSION_FINISHED, {
+        mode: activeMode,
+        words: sessionWords.length,
+        correct: sessionResults.correct,
+        incorrect: sessionResults.incorrect,
+      });
       syncDailyQuest({ type: 'review' })
         .unwrap()
         .then((res) => {
           if (res.xpAwarded) toast.success(res.message || `+${res.xpAwarded} XP`);
           if (res.streakUpdated) {
             fireConfetti();
-            toast.success(res.message, { icon: '🔥' });
+            toast.success(res.message, { icon: res.streakFrozen ? '🧊' : '🔥' });
           }
         })
         .catch((err) => console.error('Failed to sync quest:', err));
@@ -111,16 +135,23 @@ const ReviewMode = () => {
     setQuizAnswered(null);
   };
 
-  const advanceQuick = async (known) => {
+  /**
+   * @param {number} grade 0=Again, 1=Hard, 2=Good, 3=Easy
+   * Ilgari faqat "bildim/bilmadim" bor edi. SM-2 ning ease factor'i aynan
+   * shu farqdan oziqlanadi: qiynalib eslangan so'z tez-tez, oson eslangan
+   * so'z kamroq qaytadi.
+   */
+  const advanceWithGrade = async (grade) => {
     const currentWord = sessionWords[currentIndex];
     try {
-      await quickReview({ id: currentWord._id, known }).unwrap();
+      const res = await gradeReview({ id: currentWord._id, grade }).unwrap();
       setSessionResults((prev) => ({
         ...prev,
-        [known ? 'correct' : 'incorrect']: prev[known ? 'correct' : 'incorrect'] + 1,
+        [grade > 0 ? 'correct' : 'incorrect']: prev[grade > 0 ? 'correct' : 'incorrect'] + 1,
       }));
+      setLastInterval(res.intervalDays);
     } catch (err) {
-      console.error('Quick review error:', err);
+      console.error('Grade review error:', err);
       setError('Saqlashda xatolik. Qayta urinib ko\'ring.');
       return;
     }
@@ -172,6 +203,7 @@ const ReviewMode = () => {
   const handleCheck = async () => {
     if (!userSentence.trim()) return;
     setChecking(true);
+    setError(null);
     const currentWord = sessionWords[currentIndex];
     try {
       const data = await checkReviewMutation({ id: currentWord._id, sentence: userSentence }).unwrap();
@@ -184,8 +216,19 @@ const ReviewMode = () => {
         autoAdvanceTimeoutRef.current = setTimeout(() => handleNext(), 2500);
       }
     } catch (err) {
-      console.error('Check error:', err);
-      setError("Server xatosi: Javob olib bo'lmadi. Qayta urinib ko'ring.");
+      // AI javob bermadi (503). Muhim: bu holatda server takrorlash holatini
+      // O'ZGARTIRMAGAN. Foydalanuvchiga aynan shuni aytamiz — ilgari uning
+      // to'g'ri gapi "xato" deb belgilanib, pog'onasi pasayardi.
+      if (err?.status === 503 && err?.data?.srsUnchanged) {
+        track(EVENTS.AI_UNAVAILABLE, { where: 'review_check', code: err?.data?.code });
+        setError(
+          err.data.message ||
+            "AI hozir javob bera olmadi. Takrorlash holatingiz o'zgarmadi — biroz kutib qayta urinib ko'ring."
+        );
+      } else {
+        console.error('Check error:', err);
+        setError("Server xatosi: javob olib bo'lmadi. Qayta urinib ko'ring.");
+      }
     } finally {
       setChecking(false);
     }
@@ -346,22 +389,29 @@ const ReviewMode = () => {
           )}
         </button>
         {flipped && (
-          <div className="flex gap-3 mt-6">
-            <button
-              type="button"
-              onClick={() => advanceQuick(false)}
-              className="flex-1 py-3 rounded-xl border border-destructive/50 text-destructive font-bold"
-            >
-              Bilmadim
-            </button>
-            <button
-              type="button"
-              onClick={() => advanceQuick(true)}
-              className="flex-1 py-3 rounded-xl bg-green-600 text-white font-bold"
-            >
-              Bildim
-            </button>
-          </div>
+          <>
+            <p className="text-xs text-center text-muted-foreground mt-6 mb-3">
+              Qanchalik oson esladingiz?
+            </p>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              {GRADES.map((g) => (
+                <button
+                  key={g.grade}
+                  type="button"
+                  onClick={() => advanceWithGrade(g.grade)}
+                  className={`py-3 px-2 rounded-xl border-2 font-bold text-sm transition-colors ${g.className}`}
+                  title={g.hint}
+                >
+                  {g.label}
+                </button>
+              ))}
+            </div>
+            {lastInterval !== null && (
+              <p className="text-center text-xs text-muted-foreground mt-3">
+                Oldingi so'z {lastInterval === 0 ? 'shu sessiyada' : `${lastInterval} kundan keyin`} qaytadi
+              </p>
+            )}
+          </>
         )}
       </div>
     );
@@ -390,7 +440,7 @@ const ReviewMode = () => {
                 disabled={quizAnswered !== null}
                 onClick={() => {
                   setQuizAnswered(opt);
-                  setTimeout(() => advanceQuick(isCorrect), 800);
+                  setTimeout(() => advanceWithGrade(isCorrect ? 2 : 0), 800);
                 }}
                 className={`w-full text-left p-4 rounded-xl border font-medium transition-colors ${
                   showResult && isCorrect
@@ -480,8 +530,30 @@ const ReviewMode = () => {
             </button>
           </div>
         ) : (
-          <div className={`p-6 rounded-2xl border ${feedback.isCorrect ? 'bg-green-500/10 border-green-500/30' : 'bg-destructive/10'}`}>
-            <p className="mb-4">{feedback.feedback}</p>
+          <div className={`p-6 rounded-2xl border ${feedback.isCorrect ? 'bg-green-500/10 border-green-500/30' : 'bg-destructive/10 border-destructive/30'}`}>
+            <p className="mb-3">{feedback.feedback}</p>
+
+            {feedback.usedTargetWord === false && (
+              <p className="text-sm font-bold text-amber-600 mb-3">
+                Diqqat: &quot;{word.word}&quot; so&apos;zi gapda ishlatilmagan.
+              </p>
+            )}
+
+            {feedback.corrected && (
+              <div className="mb-4 p-3 rounded-xl bg-background border border-border">
+                <p className="text-xs uppercase text-muted-foreground mb-1">To&apos;g&apos;ri variant</p>
+                <p className="font-medium">{feedback.corrected}</p>
+              </div>
+            )}
+
+            {feedback.intervalDays != null && (
+              <p className="text-xs text-muted-foreground mb-4">
+                {feedback.intervalDays === 0
+                  ? "Bu so'z shu sessiyada qayta chiqadi"
+                  : `Keyingi takrorlash: ${feedback.intervalDays} kundan keyin`}
+              </p>
+            )}
+
             <button type="button" onClick={handleNext} className="w-full py-3 rounded-xl font-bold bg-secondary">
               {currentIndex < sessionWords.length - 1 ? 'Keyingi →' : 'Yakunlash'}
             </button>

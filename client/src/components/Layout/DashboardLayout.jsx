@@ -6,6 +6,7 @@ import { ThemeToggle } from '../ThemeToggle';
 import Sidebar from '../Sidebar';
 import { LogOut, ChevronDown, Loader2 } from 'lucide-react';
 import OnboardingModal from '../Onboarding/OnboardingModal';
+import InstallPrompt from '../InstallPrompt';
 import { useGetMeQuery } from '../../features/api/apiSlice';
 
 const DashboardLayout = () => {
@@ -97,6 +98,10 @@ const DashboardLayout = () => {
           <Outlet />
         </main>
         )}
+
+        {/* Onboarding tugagandan keyingina taklif qilamiz — birinchi
+            daqiqada ikkita modal foydalanuvchini bosib ketadi */}
+        {isOnboardingComplete && <InstallPrompt />}
       </div>
     </div>
   );

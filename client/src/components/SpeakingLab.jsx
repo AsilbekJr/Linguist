@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from "@/components/ui/button";
 import { Mic, MicOff, Volume2, Sparkles, Loader2, RefreshCw, AudioLines, ArrowRightLeft } from "lucide-react";
-import { useTranslateSpeakingMutation, useEvaluateSpeakingMutation, useTranslateTextMutation } from '../features/api/apiSlice';
+import { useTranslateSpeakingMutation, useEvaluateSpeakingMutation } from '../features/api/apiSlice';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { playTTSAudio } from '../utils/audio';
 import { getApiErrorMessage } from '../utils/apiErrors';
@@ -27,7 +27,6 @@ const SpeakingLab = () => {
   // RTK Query Mutations
   const [translateSpeaking] = useTranslateSpeakingMutation();
   const [evaluateSpeakingMutation] = useEvaluateSpeakingMutation();
-  const [translateTextMutation] = useTranslateTextMutation();
 
   // Use refs to avoid stale closures in Web Speech API event listeners
   const translationsRef = useRef(null);
@@ -255,43 +254,6 @@ const SpeakingLab = () => {
       return 'bg-red-500/10 border-red-500 text-red-600';
   };
 
-  // Text Translator State
-  const [translatorText, setTranslatorText] = useState("");
-  const [translatedResult, setTranslatedResult] = useState("");
-  const [isTranslatingText, setIsTranslatingText] = useState(false);
-  const [translateFrom, setTranslateFrom] = useState("uz");
-
-  const handleSwapLanguages = () => {
-      setTranslateFrom(prev => prev === 'uz' ? 'en' : 'uz');
-      // optionally swap text and translated result
-      const temp = translatorText;
-      setTranslatorText(translatedResult);
-      setTranslatedResult(temp);
-  };
-
-  const handleTextTranslate = async () => {
-      if (!translatorText.trim()) return;
-      
-      setIsTranslatingText(true);
-      setError("");
-      
-      const fromLang = translateFrom === 'uz' ? 'Uzbek' : 'English';
-      const toLang = translateFrom === 'uz' ? 'English' : 'Uzbek';
-
-      try {
-          const data = await translateTextMutation({ 
-              text: translatorText, 
-              from: fromLang, 
-              to: toLang 
-          }).unwrap();
-          setTranslatedResult(data.translatedText);
-      } catch (err) {
-          setError(getApiErrorMessage(err, 'Tarjima qilishda xatolik yuz berdi.'));
-      } finally {
-          setIsTranslatingText(false);
-      }
-  };
-
 
 
   return (
@@ -315,7 +277,6 @@ const SpeakingLab = () => {
         <div className="flex justify-center mb-8">
             <TabsList className="grid w-full max-w-[400px] grid-cols-2 p-1 bg-secondary rounded-2xl h-12 sm:h-14">
                 <TabsTrigger value="translate" className="rounded-xl font-bold data-[state=active]:bg-background data-[state=active]:shadow-sm">Translate & Speak</TabsTrigger>
-                <TabsTrigger value="translator" className="rounded-xl font-bold data-[state=active]:bg-background data-[state=active]:shadow-sm">Text Translator</TabsTrigger>
             </TabsList>
         </div>
 
@@ -447,64 +408,6 @@ const SpeakingLab = () => {
         </TabsContent>
 
         {/* --- TAB 2: Text Translator --- */}
-        <TabsContent value="translator" className="space-y-6 animate-fade-in">
-            <div className="bg-card border border-border p-4 sm:p-6 rounded-3xl shadow-sm">
-                
-                {/* Language Switcher */}
-                <div className="flex items-center justify-center gap-4 mb-8">
-                    <span className="font-bold w-24 text-center text-lg">{translateFrom === 'uz' ? "O'zbekcha" : "English"}</span>
-                    <Button variant="outline" size="icon" onClick={handleSwapLanguages} className="rounded-full shadow-sm">
-                        <ArrowRightLeft className="w-5 h-5 text-primary" />
-                    </Button>
-                    <span className="font-bold w-24 text-center text-lg">{translateFrom === 'uz' ? "English" : "O'zbekcha"}</span>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* Input Box */}
-                    <div className="flex flex-col gap-2">
-                        <div className="flex justify-between items-center mb-1 px-1">
-                             <span className="text-sm font-bold text-muted-foreground uppercase">{translateFrom === 'uz' ? "O'zbekcha" : "English"} matn</span>
-                             {translatorText && <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full" onClick={() => playTTSAudio(translatorText, translateFrom === 'uz' ? 'uz-UZ' : 'en-US')}><Volume2 className="w-4 h-4 text-blue-500" /></Button>}
-                        </div>
-                        <textarea 
-                            value={translatorText}
-                            onChange={(e) => setTranslatorText(e.target.value)}
-                            placeholder={translateFrom === 'uz' ? "Tarjima qilish uchun matn kiriting..." : "Enter text to translate..."}
-                            className="w-full bg-background border border-border rounded-2xl p-4 min-h-[200px] resize-none focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 text-lg"
-                        />
-                    </div>
-                    
-                    {/* Output Box */}
-                    <div className="flex flex-col gap-2">
-                        <div className="flex justify-between items-center mb-1 px-1">
-                             <span className="text-sm font-bold text-muted-foreground uppercase">{translateFrom === 'uz' ? "English" : "O'zbekcha"} tarjima</span>
-                             {translatedResult && <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full" onClick={() => playTTSAudio(translatedResult, translateFrom === 'en' ? 'uz-UZ' : 'en-US')}><Volume2 className="w-4 h-4 text-blue-500" /></Button>}
-                        </div>
-                        <div className={`w-full bg-secondary/30 border border-border rounded-2xl p-4 min-h-[200px] text-lg ${!translatedResult ? 'text-muted-foreground/50' : 'text-foreground font-medium'}`}>
-                            {isTranslatingText ? (
-                                <div className="flex items-center justify-center h-full">
-                                    <Loader2 className="w-8 h-8 animate-spin text-primary" />
-                                </div>
-                            ) : (
-                                translatedResult || (translateFrom === 'uz' ? "Tarjima bu yerda chiqadi..." : "Translation will appear here...")
-                            )}
-                        </div>
-                    </div>
-                </div>
-
-                {/* Translate Button */}
-                <div className="mt-8 flex justify-center">
-                    <Button 
-                        size="lg" 
-                        onClick={handleTextTranslate}
-                        disabled={isTranslatingText || !translatorText.trim()}
-                        className="rounded-xl px-12 font-bold text-base shadow-sm"
-                    >
-                        {isTranslatingText ? "Tarjima qilinmoqda..." : "Tarjima qilish"}
-                    </Button>
-                </div>
-            </div>
-        </TabsContent>
       </Tabs>
     </div>
   );

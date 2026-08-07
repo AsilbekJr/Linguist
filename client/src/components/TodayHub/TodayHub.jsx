@@ -4,6 +4,7 @@ import { Brain, BookOpen, Mic, CheckCircle2, Circle, Lock, ArrowRight, Clock, St
 import { cn } from '@/lib/utils';
 import { getDailyWordTarget, xpProgressInLevel } from '../../utils/learningUtils';
 import { fireConfetti } from '../../utils/celebration';
+import { track, EVENTS } from '../../lib/analytics';
 
 const STEPS = [
   {
@@ -63,9 +64,15 @@ const TodayHub = ({ user, reviewDueCount = 0, totalWords = 0 }) => {
     if (allDone && !celebratedRef.current) {
       celebratedRef.current = true;
       fireConfetti(1500);
+      // Retention'ning asosiy ko'rsatkichi — kunlik reja to'liq bajarilgani
+      track(EVENTS.DAILY_PLAN_COMPLETED, {
+        streak: user?.currentStreak,
+        level: user?.level,
+        totalWords,
+      });
     }
     if (!allDone) celebratedRef.current = false;
-  }, [allDone]);
+  }, [allDone, user?.currentStreak, user?.level, totalWords]);
 
   const coachMessage = () => {
     if (allDone) return 'Ajoyib! Bugungi reja to\'liq bajarildi. Ertaga yana ko\'ramiz!';

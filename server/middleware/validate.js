@@ -46,16 +46,136 @@ const wordCreateSchema = z.object({
   }),
 });
 
+const objectId = z.string().regex(/^[a-f\d]{24}$/i, 'Invalid id');
+
 const reviewCheckSchema = z.object({
-  params: z.object({ id: z.string().min(1) }),
+  params: z.object({ id: objectId }),
   body: z.object({
     sentence: z.string().min(1).max(1000),
+  }),
+});
+
+/** 4 darajali baholash; eski mijozlar uchun `known` ham qabul qilinadi */
+const reviewGradeSchema = z.object({
+  params: z.object({ id: objectId }),
+  body: z
+    .object({
+      grade: z.number().int().min(0).max(3).optional(),
+      known: z.boolean().optional(),
+    })
+    .refine((b) => b.grade !== undefined || b.known !== undefined, {
+      message: 'grade (0-3) yoki known (boolean) kerak',
+    }),
+});
+
+/** Mini-test: server yaratgan sessiyaga javoblarni yuborish */
+const topicQuizSubmitSchema = z.object({
+  body: z.object({
+    quizId: z.string().min(8).max(80),
+    answers: z.array(z.number().int().min(0).max(3)).min(1).max(20),
+  }),
+});
+
+const topicFinishSchema = z.object({
+  body: z.object({
+    quizId: z.string().min(8).max(80).optional(),
+  }),
+});
+
+/**
+ * Challenge audio. Base64 hajmi cheklangan — ilgari cheklov yo'q edi va
+ * 16MB'lik Mongo hujjat limiti tufayli uzun yozuv 500 xatosi berardi.
+ */
+const challengeCompleteSchema = z.object({
+  body: z.object({
+    challengeId: objectId,
+    audioData: z
+      .string()
+      .min(32)
+      .max(3_500_000, "Audio juda uzun — 60 soniyagacha yozing")
+      .regex(/^data:audio\/(webm|mp4|mpeg|ogg|wav)(;codecs=[\w.,-]+)?;base64,/, 'Yaroqsiz audio format')
+      .optional(),
+    spokenText: z.string().max(5000).optional(),
+  }),
+});
+
+const pushSubscribeSchema = z.object({
+  body: z.object({
+    endpoint: z.string().url().max(1000),
+    keys: z.object({
+      p256dh: z.string().min(20).max(200),
+      auth: z.string().min(10).max(100),
+    }),
+  }),
+});
+
+const pushUnsubscribeSchema = z.object({
+  body: z.object({
+    endpoint: z.string().url().max(1000),
+  }),
+});
+
+const notificationPrefsSchema = z.object({
+  body: z
+    .object({
+      enabled: z.boolean().optional(),
+      hour: z.number().int().min(0).max(23).optional(),
+    })
+    .refine((b) => b.enabled !== undefined || b.hour !== undefined, {
+      message: 'enabled yoki hour kerak',
+    }),
+});
+
+const unsubscribeSchema = z.object({
+  body: z.object({
+    token: z.string().min(16).max(128),
+  }),
+});
+
+const placementAnswerSchema = z.object({
+  body: z.object({
+    sessionId: objectId,
+    itemId: z.string().min(2).max(40),
+    answered: z.number().int().min(0).max(3),
+  }),
+});
+
+const listeningCheckSchema = z.object({
+  body: z.object({
+    lineIndex: z.number().int().min(0).max(50),
+    typed: z.string().max(1000),
+  }),
+});
+
+const speakingEvaluateSchema = z.object({
+  body: z.object({
+    targetSentence: z.string().min(1).max(2000),
+    spokenText: z.string().min(1).max(2000),
   }),
 });
 
 const syncQuestSchema = z.object({
   body: z.object({
     type: z.enum(['review', 'topic', 'immersion']),
+  }),
+});
+
+const forgotPasswordSchema = z.object({
+  body: z.object({
+    email: z.string().email(),
+  }),
+});
+
+const resetPasswordSchema = z.object({
+  body: z.object({
+    token: z.string().min(32).max(128),
+    password: z.string().min(8).max(128),
+  }),
+});
+
+const timezoneSchema = z.object({
+  body: z.object({
+    timezone: z.string().min(3).max(64),
   }),
 });
 
@@ -127,10 +247,25 @@ const teacherAskSchema = z.object({
 
 module.exports = {
   validate,
+  objectId,
   authRegisterSchema,
   authLoginSchema,
   wordCreateSchema,
   reviewCheckSchema,
+  reviewGradeSchema,
+  topicQuizSubmitSchema,
+  topicFinishSchema,
+  challengeCompleteSchema,
+  speakingEvaluateSchema,
+  listeningCheckSchema,
+  placementAnswerSchema,
+  notificationPrefsSchema,
+  unsubscribeSchema,
+  pushSubscribeSchema,
+  pushUnsubscribeSchema,
+  timezoneSchema,
+  forgotPasswordSchema,
+  resetPasswordSchema,
   syncQuestSchema,
   onboardSchema,
   roleplaySchema,

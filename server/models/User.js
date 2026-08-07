@@ -32,17 +32,60 @@ const userSchema = new mongoose.Schema({
     type: Date,
     default: null,
   },
+  /** Oxirgi streak hisoblangan kun ('YYYY-MM-DD', foydalanuvchi zonasida) */
+  lastStreakDay: {
+    type: String,
+    default: '',
+  },
+  /** IANA zona nomi — kunlik reja, streak va kvota shunga qarab hisoblanadi */
+  timezone: {
+    type: String,
+    default: 'Asia/Tashkent',
+  },
+  /**
+   * Eslatmalar.
+   * `hour` — foydalanuvchi MAHALLIY vaqtidagi soat (0-23). Server UTC'da
+   * ishlasa ham eslatma odamning kechqurunida yetib boradi.
+   */
+  notifications: {
+    email: {
+      enabled: { type: Boolean, default: true },
+      hour: { type: Number, default: 19, min: 0, max: 23 },
+      lastSentDay: { type: String, default: '' },
+      sentCount: { type: Number, default: 0 },
+    },
+    /** Xatdagi obunani bekor qilish havolasi uchun — login talab qilmaydi */
+    unsubscribeToken: { type: String, index: true, sparse: true },
+  },
+  /** Streak muzlatish: kun o'tkazib yuborilsa streak saqlanadi */
+  streakFreeze: {
+    available: { type: Number, default: 2 },
+    lastGrantedMonth: { type: String, default: '' },
+    lastUsedDay: { type: String, default: '' },
+  },
   onboarding: {
     completed: { type: Boolean, default: false },
     level: { type: String, default: 'beginner' },
     goal: { type: String, default: 'speaking' },
     planType: { type: String, default: 'standard' },
+    /**
+     * Placement testi natijasi (A1/A2/B1/B2).
+     * `level` dan farqi: bu O'LCHANGAN daraja, `level` esa ilova ichidagi
+     * uch bosqichli soddalashtirish. Foydalanuvchi o'zi tanlagan bo'lsa bu bo'sh.
+     */
+    placedCefr: { type: String, default: null },
   },
   dailyQuests: {
     date: { type: String, default: '' },
     reviewCompleted: { type: Boolean, default: false },
     topicCompleted: { type: Boolean, default: false },
     immersionCompleted: { type: Boolean, default: false },
+    /**
+     * Tinglash mashqi. Kunlik rejaning 3 qadamiga KIRMAYDI va streak'ni
+     * bloklamaydi — bu ixtiyoriy qo'shimcha. Aks holda kunlik yuk oshib,
+     * reja bajarilishi tushib ketardi.
+     */
+    listeningCompleted: { type: Boolean, default: false },
   },
   subscription: {
     plan: { type: String, enum: ['free', 'pro', 'premium'], default: 'free' },
@@ -56,6 +99,7 @@ const userSchema = new mongoose.Schema({
     stripeSubscriptionId: String,
     paymeSubscriptionId: String,
     currentPeriodEnd: Date,
+    cancelAtPeriodEnd: { type: Boolean, default: false },
   },
   usage: {
     aiCallsToday: { type: Number, default: 0 },
