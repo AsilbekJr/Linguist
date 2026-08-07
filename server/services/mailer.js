@@ -110,4 +110,41 @@ Agar bu so'rovni siz yubormagan bo'lsangiz, bu xatni e'tiborsiz qoldiring — pa
   `,
 });
 
-module.exports = { sendMail, isConfigured, passwordResetEmail };
+/**
+ * Kunlik eslatma xati.
+ *
+ * Obunani bekor qilish havolasi HAR BIR xatda bo'lishi shart — bu ham qonuniy
+ * talab, ham pochta yetkazib berish obro'sini saqlaydi. Havola login talab
+ * qilmaydi: odam bir bosishda chiqib keta olishi kerak.
+ */
+const dailyReminderEmail = (content, { appUrl, unsubscribeUrl }) => ({
+  subject: content.subject,
+  text: `${content.headline}
+
+${content.stepsLine}
+
+Davom etish: ${appUrl}
+
+—
+Eslatmalarni o'chirish: ${unsubscribeUrl}`,
+  html: `
+    <div style="font-family:system-ui,-apple-system,sans-serif;max-width:520px;margin:0 auto;padding:24px;color:#111">
+      <p style="font-size:17px;line-height:1.5;margin:0 0 16px">${content.headline}</p>
+      <p style="color:#555;font-size:15px;margin:0 0 28px">${content.stepsLine}</p>
+      <p style="margin:0 0 28px">
+        <a href="${appUrl}"
+           style="background:#6d28d9;color:#fff;padding:12px 28px;border-radius:999px;
+                  text-decoration:none;font-weight:700;display:inline-block">
+          Davom etish
+        </a>
+      </p>
+      <hr style="border:none;border-top:1px solid #eee;margin:24px 0">
+      <p style="color:#999;font-size:12px;margin:0">
+        Bu kunlik eslatma.
+        <a href="${unsubscribeUrl}" style="color:#999">Eslatmalarni o'chirish</a>
+      </p>
+    </div>
+  `,
+});
+
+module.exports = { sendMail, isConfigured, passwordResetEmail, dailyReminderEmail };

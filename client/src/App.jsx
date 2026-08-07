@@ -15,6 +15,7 @@ import TopicVocabulary from './pages/TopicVocabulary';
 import { Loader2 } from 'lucide-react';
 import { identify } from './lib/analytics';
 
+const Unsubscribe = lazy(() => import('./pages/Unsubscribe'));
 const ForgotPassword = lazy(() => import('./components/Auth/ForgotPassword'));
 const ResetPassword = lazy(() => import('./components/Auth/ResetPassword'));
 const Listening = lazy(() => import('./pages/Listening'));
@@ -90,6 +91,17 @@ function App() {
       dispatch(logout());
     }
   }, [token, lastAuthAt, isMeError, meError, dispatch]);
+
+  // Obunani bekor qilish auth devoridan TASHQARIDA bo'lishi kerak: xatdagi
+  // havolani bosgan odam login qilmagan bo'lishi mumkin va uni login sahifasiga
+  // yuborish "spam" tugmasini bosishga olib keladi.
+  if (window.location.pathname === '/unsubscribe') {
+    return (
+      <Suspense fallback={<PageLoader />}>
+        <Unsubscribe />
+      </Suspense>
+    );
+  }
 
   if (!isAuthenticated) {
     // Haqiqiy route'lar: ilgari bu yerda shartli render bor edi, shuning uchun

@@ -99,6 +99,23 @@ const challengeCompleteSchema = z.object({
   }),
 });
 
+const notificationPrefsSchema = z.object({
+  body: z
+    .object({
+      enabled: z.boolean().optional(),
+      hour: z.number().int().min(0).max(23).optional(),
+    })
+    .refine((b) => b.enabled !== undefined || b.hour !== undefined, {
+      message: 'enabled yoki hour kerak',
+    }),
+});
+
+const unsubscribeSchema = z.object({
+  body: z.object({
+    token: z.string().min(16).max(128),
+  }),
+});
+
 const placementAnswerSchema = z.object({
   body: z.object({
     sessionId: objectId,
@@ -226,6 +243,8 @@ module.exports = {
   speakingEvaluateSchema,
   listeningCheckSchema,
   placementAnswerSchema,
+  notificationPrefsSchema,
+  unsubscribeSchema,
   timezoneSchema,
   forgotPasswordSchema,
   resetPasswordSchema,

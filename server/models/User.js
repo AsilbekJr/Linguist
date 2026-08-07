@@ -42,6 +42,21 @@ const userSchema = new mongoose.Schema({
     type: String,
     default: 'Asia/Tashkent',
   },
+  /**
+   * Eslatmalar.
+   * `hour` — foydalanuvchi MAHALLIY vaqtidagi soat (0-23). Server UTC'da
+   * ishlasa ham eslatma odamning kechqurunida yetib boradi.
+   */
+  notifications: {
+    email: {
+      enabled: { type: Boolean, default: true },
+      hour: { type: Number, default: 19, min: 0, max: 23 },
+      lastSentDay: { type: String, default: '' },
+      sentCount: { type: Number, default: 0 },
+    },
+    /** Xatdagi obunani bekor qilish havolasi uchun — login talab qilmaydi */
+    unsubscribeToken: { type: String, index: true, sparse: true },
+  },
   /** Streak muzlatish: kun o'tkazib yuborilsa streak saqlanadi */
   streakFreeze: {
     available: { type: Number, default: 2 },

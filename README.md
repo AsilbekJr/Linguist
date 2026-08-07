@@ -82,6 +82,26 @@ npm run content:validate    # faqat tekshirish
 Yangi mavzu qo'shish: `server/content/curriculum/` ichida kortej formatida yozing
 va `npm run content:build` ni ishga tushiring.
 
+### Kunlik eslatmalar
+Kunlik reja bajarilmagan bo'lsa, foydalanuvchining **mahalliy** soatida
+(default 19:00) email yuboriladi. Xabar mazmunli: streak bor bo'lsa aynan
+uning xavf ostida ekani, muzlatish qolgan-qolmagani va qaysi qadamlar
+bajarilmagani aytiladi.
+
+Yuborilmaydi: reja tugagan, kuniga ikkinchi marta, onboarding tugamagan,
+30 kundan beri faol bo'lmagan (spam va pochta obro'si uchun).
+
+Har bir xatda obunani bekor qilish havolasi bor va u **login talab qilmaydi** —
+aks holda odam "spam" tugmasini bosadi va domen obro'si tushadi.
+
+Render bepul tarifida doimiy jarayon yo'q, shuning uchun tashqi cron
+soatiga bir marta chaqiradi:
+
+```bash
+curl -X POST https://<backend>/api/notifications/run \
+     -H "x-cron-secret: $CRON_SECRET"
+```
+
 ### Oraliqli takrorlash (SM-2)
 `server/utils/srs.js` — har so'z uchun individual ease factor, 4 darajali baholash
 (Eslay olmadim / Qiyin / Esladim / Juda oson), lapse mantiqi. So'z hech qachon
@@ -96,7 +116,7 @@ takrorlashdan butunlay chiqib ketmaydi.
 ## Testlar
 
 ```bash
-cd server && npm test     # 104 ta test; pretest kontentni validatsiya qiladi
+cd server && npm test     # 132 ta test; pretest kontentni validatsiya qiladi
 cd client && npm run lint
 cd client && npm run build
 
@@ -121,6 +141,7 @@ npx playwright test
 | `GEMINI_API_KEY` | AI uchun | Yo'q bo'lsa AI funksiyalari 503 qaytaradi |
 | `DEFAULT_TIMEZONE` | yo'q | Default `Asia/Tashkent` |
 | `MAIL_PROVIDER` + kalit | tiklash uchun | `resend` yoki `brevo`; yo'q bo'lsa xat logga chiqadi |
+| `CRON_SECRET` | eslatma uchun | Tashqi cron shu sir bilan chaqiradi |
 | `STRIPE_*` | to'lov uchun | Quyidagi izohga qarang |
 
 Maxfiy kalit generatsiya qilish:

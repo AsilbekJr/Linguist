@@ -64,7 +64,7 @@ export const apiSlice = createApi({
   refetchOnFocus: false,
   refetchOnReconnect: true,
   baseQuery: baseQueryWithReauth,
-  tagTypes: ['Word', 'Challenge', 'Topic', 'User', 'Billing', 'Practice', 'Listening'],
+  tagTypes: ['Word', 'Challenge', 'Topic', 'User', 'Billing', 'Practice', 'Listening', 'Notifications'],
   endpoints: (builder) => ({
     getWords: builder.query({
       query: () => '/api/words',
@@ -240,6 +240,21 @@ export const apiSlice = createApi({
         body: userData,
       }),
     }),
+    getNotificationPrefs: builder.query({
+      query: () => '/api/notifications/preferences',
+      providesTags: ['Notifications'],
+    }),
+    updateNotificationPrefs: builder.mutation({
+      query: (body) => ({ url: '/api/notifications/preferences', method: 'PUT', body }),
+      invalidatesTags: ['Notifications'],
+    }),
+    unsubscribe: builder.mutation({
+      query: (token) => ({
+        url: '/api/notifications/unsubscribe',
+        method: 'POST',
+        body: { token },
+      }),
+    }),
     startPlacement: builder.mutation({
       query: () => ({ url: '/api/placement/start', method: 'POST' }),
     }),
@@ -367,6 +382,9 @@ export const {
   useRegisterMutation,
   useForgotPasswordMutation,
   useResetPasswordMutation,
+  useGetNotificationPrefsQuery,
+  useUpdateNotificationPrefsMutation,
+  useUnsubscribeMutation,
   useStartPlacementMutation,
   useAnswerPlacementMutation,
   useGetPlacementResultQuery,

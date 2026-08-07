@@ -64,6 +64,7 @@ const makeClient = () => {
   return {
     get: (p) => request('GET', p),
     post: (p, b) => request('POST', p, b),
+    put: (p, b) => request('PUT', p, b),
     del: (p) => request('DELETE', p),
     setToken: (t) => {
       token = t;
