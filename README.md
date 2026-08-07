@@ -49,9 +49,20 @@ mumkin (0.6× / 0.95× / 1.15×).
 Bu mashq kunlik 3 qadamga **kirmaydi** va streak'ni bloklamaydi — kunlik yukni
 oshirib, reja bajarilishini tushirmaslik uchun ataylab ixtiyoriy qoldirilgan.
 
+### Daraja aniqlash (placement)
+Onboarding'ning birinchi qadami: adaptiv test, ~12 savol, 2 daqiqa.
+A2 dan boshlanadi; har darajada 3 savol, 2/3 dan yuqori bo'lsa yuqoriga,
+past bo'lsa pastga (`server/content/placement.js`).
+
+Natija kursning **boshlanish kunini** belgilaydi: A1/A2 → 1-kun,
+B1/B2 → 25-kun. Ilgari daraja tanlansa ham hamma 1-kundan boshlardi.
+
+Savollar va to'g'ri javoblar serverda — natijani ko'tarib olish mumkin emas.
+Testni o'tkazib yuborib darajani o'zi tanlash ham mumkin.
+
 ### Kontent
-24 mavzu, 240 so'z, A1 → A2. Har bir mavzuda dialog (o'zbekcha tarjima bilan),
-grammatika fokusi, IPA, ta'rif, misol va kollokatsiyalar.
+30 mavzu, 300 so'z, A1 → A2 → B1. Har bir mavzuda dialog (o'zbekcha tarjima
+bilan), grammatika fokusi, IPA, ta'rif, misol va kollokatsiyalar.
 
 Kontent **validator** bilan himoyalangan (`server/content/schema.js`):
 - so'z mavzu dialogida haqiqatan ishlatilishi shart;
@@ -85,7 +96,7 @@ takrorlashdan butunlay chiqib ketmaydi.
 ## Testlar
 
 ```bash
-cd server && npm test     # 78 ta test; pretest kontentni validatsiya qiladi
+cd server && npm test     # 104 ta test; pretest kontentni validatsiya qiladi
 cd client && npm run lint
 cd client && npm run build
 
@@ -130,9 +141,8 @@ Bu ro'yxat ataylab ochiq — mahsulot hali bularni qila olmaydi:
   `SpeechRecognition` transkriptining matnga mosligini o'lchaydi. Natija
   `method: 'transcript_match'` bilan belgilanadi va UI uni "talaffuz bahosi"
   deb ko'rsatmasligi kerak. Haqiqiy baho uchun fonema darajasidagi xizmat kerak.
-- **Daraja aniqlash.** Foydalanuvchi darajasini o'zi tanlaydi; adaptiv
-  placement test yo'q.
-- **Kontent hajmi.** 24 kun (A1-A2). B1+ hali yozilmagan.
+- **Kontent hajmi.** 30 kun (A1-B1). B2 hali yozilmagan — placement B2 desa ham
+  kurs mavjud eng yuqori blokdan (B1) boshlanadi.
 - **i18n yo'q** — matnlar kodga qotirilgan, rus tiliga chiqish uchun refaktoring kerak.
 - **PWA yo'q** — manifest va service worker qo'shilmagan.
 

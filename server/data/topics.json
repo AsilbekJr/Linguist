@@ -4206,5 +4206,1071 @@
         "collocations": []
       }
     ]
+  },
+  {
+    "day": 25,
+    "cefr": "B1",
+    "topic": "Childhood Memories",
+    "topicUz": "Bolalik xotiralari",
+    "description": "O'tmishdagi odatlar va xotiralar haqida gapirish.",
+    "story": "Kimdir sizdan bolaligingiz haqida so'radi. Bu yerda `used to` tuzilmasi mashq qilinadi — o'zbek tilida so'zlashuvchilar uni ko'pincha oddiy o'tgan zamon bilan almashtirib yuboradi.",
+    "scenarioEmoji": "📷",
+    "grammarFocus": "used to / would — o'tmishdagi takroriy harakatlar",
+    "dialogue": [
+      {
+        "speaker": "Sara",
+        "en": "Do you often think about your childhood?",
+        "uz": "Bolaligingiz haqida tez-tez o'ylaysizmi?"
+      },
+      {
+        "speaker": "Aziz",
+        "en": "Yes. I have a clear memory of our old neighbourhood.",
+        "uz": "Ha. Eski mahallamiz haqida aniq xotiram bor."
+      },
+      {
+        "speaker": "Sara",
+        "en": "What did you use to do there?",
+        "uz": "U yerda nima qilardingiz?"
+      },
+      {
+        "speaker": "Aziz",
+        "en": "We played on the playground until dark. I miss those days.",
+        "uz": "Qorong'i tushguncha o'yin maydonchasida o'ynardik. O'sha kunlarni sog'inaman."
+      },
+      {
+        "speaker": "Sara",
+        "en": "Do you still remember your neighbours?",
+        "uz": "Qo'shnilaringizni hali eslaysizmi?"
+      },
+      {
+        "speaker": "Aziz",
+        "en": "Some of them. But I forget the names now.",
+        "uz": "Ba'zilarini. Lekin ismlarini endi unutyapman."
+      },
+      {
+        "speaker": "Sara",
+        "en": "Do you have any photographs?",
+        "uz": "Suratlaringiz bormi?"
+      },
+      {
+        "speaker": "Aziz",
+        "en": "A few. I was a teenager when we moved away.",
+        "uz": "Bir nechta. Ko'chib ketganimizda men o'smir edim."
+      },
+      {
+        "speaker": "Sara",
+        "en": "Every moment of that time matters, doesn't it?",
+        "uz": "O'sha davrning har bir lahzasi qadrli-ku?"
+      }
+    ],
+    "words": [
+      {
+        "word": "memory",
+        "translation": "xotira",
+        "phonetic": "/ˈmeməri/",
+        "partOfSpeech": "noun",
+        "definition": "something you remember from the past",
+        "example": "I have a clear memory of that day.",
+        "exampleUz": "O'sha kun haqida aniq xotiram bor.",
+        "cefr": "B1",
+        "collocations": [
+          "childhood memory"
+        ]
+      },
+      {
+        "word": "childhood",
+        "translation": "bolalik",
+        "phonetic": "/ˈtʃaɪldhʊd/",
+        "partOfSpeech": "noun",
+        "definition": "the time when you are a child",
+        "example": "She had a happy childhood.",
+        "exampleUz": "Uning bolaligi baxtli o'tgan.",
+        "cefr": "B1",
+        "collocations": []
+      },
+      {
+        "word": "remember",
+        "translation": "eslamoq",
+        "phonetic": "/rɪˈmembə/",
+        "partOfSpeech": "verb",
+        "definition": "to keep something in your mind from the past",
+        "example": "I remember his face but not his name.",
+        "exampleUz": "Uning yuzini eslayman, ismini esa yo'q.",
+        "cefr": "B1",
+        "collocations": []
+      },
+      {
+        "word": "forget",
+        "translation": "unutmoq",
+        "phonetic": "/fəˈɡet/",
+        "partOfSpeech": "verb",
+        "definition": "to be unable to remember",
+        "example": "Do not forget to call her.",
+        "exampleUz": "Unga qo'ng'iroq qilishni unutmang.",
+        "cefr": "B1",
+        "collocations": [
+          "forget about"
+        ]
+      },
+      {
+        "word": "moment",
+        "translation": "lahza",
+        "phonetic": "/ˈməʊmənt/",
+        "partOfSpeech": "noun",
+        "definition": "a very short period of time",
+        "example": "That was the best moment of my life.",
+        "exampleUz": "Bu hayotimdagi eng yaxshi lahza edi.",
+        "cefr": "B1",
+        "collocations": [
+          "at the moment"
+        ]
+      },
+      {
+        "word": "neighbourhood",
+        "translation": "mahalla",
+        "phonetic": "/ˈneɪbəhʊd/",
+        "partOfSpeech": "noun",
+        "definition": "the area around where you live",
+        "example": "Our neighbourhood is quiet and safe.",
+        "exampleUz": "Mahallamiz tinch va xavfsiz.",
+        "cefr": "B1",
+        "collocations": []
+      },
+      {
+        "word": "playground",
+        "translation": "o'yin maydonchasi",
+        "phonetic": "/ˈpleɪɡraʊnd/",
+        "partOfSpeech": "noun",
+        "definition": "an outdoor area where children play",
+        "example": "The playground is full of children.",
+        "exampleUz": "O'yin maydonchasi bolalarga to'la.",
+        "cefr": "B1",
+        "collocations": []
+      },
+      {
+        "word": "teenager",
+        "translation": "o'smir",
+        "phonetic": "/ˈtiːneɪdʒə/",
+        "partOfSpeech": "noun",
+        "definition": "a person between 13 and 19 years old",
+        "example": "My son is a teenager now.",
+        "exampleUz": "O'g'lim endi o'smir.",
+        "cefr": "B1",
+        "collocations": []
+      },
+      {
+        "word": "photograph",
+        "translation": "surat",
+        "phonetic": "/ˈfəʊtəɡrɑːf/",
+        "partOfSpeech": "noun",
+        "definition": "a picture made with a camera",
+        "example": "She showed me an old photograph.",
+        "exampleUz": "U menga eski suratni ko'rsatdi.",
+        "cefr": "B1",
+        "collocations": [
+          "take a photograph"
+        ]
+      },
+      {
+        "word": "miss",
+        "translation": "sog'inmoq",
+        "phonetic": "/mɪs/",
+        "partOfSpeech": "verb",
+        "definition": "to feel sad because someone or something is not with you",
+        "example": "I miss my family very much.",
+        "exampleUz": "Oilamni juda sog'inaman.",
+        "cefr": "B1",
+        "collocations": []
+      }
+    ]
+  },
+  {
+    "day": 26,
+    "cefr": "B1",
+    "topic": "Health and Lifestyle",
+    "topicUz": "Salomatlik va turmush tarzi",
+    "description": "Odatlar, ovqatlanish va sog'lom turmush.",
+    "story": "Turmush tarzingizni o'zgartirdingiz va buni tushuntirib berishingiz kerak. Maslahat berish tuzilmalari bu yerda tabiiy mashq qilinadi.",
+    "scenarioEmoji": "🥗",
+    "grammarFocus": "should / ought to — maslahat berish",
+    "dialogue": [
+      {
+        "speaker": "Sara",
+        "en": "You look full of energy today.",
+        "uz": "Bugun juda tetik ko'rinasiz."
+      },
+      {
+        "speaker": "Aziz",
+        "en": "I changed my diet and I exercise regularly now.",
+        "uz": "Ovqatlanishimni o'zgartirdim va endi muntazam mashq qilaman."
+      },
+      {
+        "speaker": "Sara",
+        "en": "Was it hard to build the habit?",
+        "uz": "Odat shakllantirish qiyin bo'ldimi?"
+      },
+      {
+        "speaker": "Aziz",
+        "en": "The first month, yes. I had to avoid fast food completely.",
+        "uz": "Birinchi oy — ha. Tez tayyor ovqatdan butunlay voz kechishga to'g'ri keldi."
+      },
+      {
+        "speaker": "Sara",
+        "en": "Did you lose weight?",
+        "uz": "Vazn tashladingizmi?"
+      },
+      {
+        "speaker": "Aziz",
+        "en": "A little. But the main thing is less stress.",
+        "uz": "Bir oz. Lekin asosiysi — stress kamaydi."
+      },
+      {
+        "speaker": "Sara",
+        "en": "I should quit coffee too.",
+        "uz": "Men ham qahvani tashlashim kerak."
+      },
+      {
+        "speaker": "Aziz",
+        "en": "Small regular changes work better than big ones. Now I feel healthy.",
+        "uz": "Kichik muntazam o'zgarishlar kattalaridan yaxshiroq ishlaydi. Endi o'zimni sog'lom his qilaman."
+      }
+    ],
+    "words": [
+      {
+        "word": "healthy",
+        "translation": "sog'lom",
+        "phonetic": "/ˈhelθi/",
+        "partOfSpeech": "adjective",
+        "definition": "physically well and strong",
+        "example": "A healthy person sleeps well.",
+        "exampleUz": "Sog'lom odam yaxshi uxlaydi.",
+        "cefr": "B1",
+        "collocations": [
+          "healthy lifestyle"
+        ]
+      },
+      {
+        "word": "exercise",
+        "translation": "mashq qilmoq",
+        "phonetic": "/ˈeksəsaɪz/",
+        "partOfSpeech": "verb",
+        "definition": "to do physical activity to stay fit",
+        "example": "I exercise three times a week.",
+        "exampleUz": "Men haftada uch marta mashq qilaman.",
+        "cefr": "B1",
+        "collocations": [
+          "do exercise"
+        ]
+      },
+      {
+        "word": "diet",
+        "translation": "ovqatlanish tartibi",
+        "phonetic": "/ˈdaɪət/",
+        "partOfSpeech": "noun",
+        "definition": "the food a person usually eats",
+        "example": "A balanced diet is important.",
+        "exampleUz": "Muvozanatli ovqatlanish muhim.",
+        "cefr": "B1",
+        "collocations": [
+          "go on a diet"
+        ]
+      },
+      {
+        "word": "habit",
+        "translation": "odat",
+        "phonetic": "/ˈhæbɪt/",
+        "partOfSpeech": "noun",
+        "definition": "something you do regularly, often without thinking",
+        "example": "Reading before bed is a good habit.",
+        "exampleUz": "Uxlashdan oldin o'qish yaxshi odat.",
+        "cefr": "B1",
+        "collocations": [
+          "bad habit",
+          "break a habit"
+        ]
+      },
+      {
+        "word": "stress",
+        "translation": "stress",
+        "phonetic": "/stres/",
+        "partOfSpeech": "noun",
+        "definition": "worry caused by a difficult situation",
+        "example": "Too much work causes stress.",
+        "exampleUz": "Haddan ziyod ish stressga olib keladi.",
+        "cefr": "B1",
+        "collocations": [
+          "under stress"
+        ]
+      },
+      {
+        "word": "avoid",
+        "translation": "voz kechmoq",
+        "phonetic": "/əˈvɔɪd/",
+        "partOfSpeech": "verb",
+        "definition": "to stay away from something",
+        "example": "Try to avoid sugar in the evening.",
+        "exampleUz": "Kechqurun shakardan voz kechishga harakat qiling.",
+        "cefr": "B1",
+        "collocations": []
+      },
+      {
+        "word": "weight",
+        "translation": "vazn",
+        "phonetic": "/weɪt/",
+        "partOfSpeech": "noun",
+        "definition": "how heavy someone or something is",
+        "example": "He lost ten kilos of weight.",
+        "exampleUz": "U o'n kilo vazn tashladi.",
+        "cefr": "B1",
+        "collocations": [
+          "lose weight",
+          "put on weight"
+        ]
+      },
+      {
+        "word": "energy",
+        "translation": "kuch-quvvat",
+        "phonetic": "/ˈenədʒi/",
+        "partOfSpeech": "noun",
+        "definition": "the strength to be active",
+        "example": "I have no energy after work.",
+        "exampleUz": "Ishdan keyin quvvatim qolmaydi.",
+        "cefr": "B1",
+        "collocations": [
+          "full of energy"
+        ]
+      },
+      {
+        "word": "regular",
+        "translation": "muntazam",
+        "phonetic": "/ˈreɡjələ/",
+        "partOfSpeech": "adjective",
+        "definition": "happening at the same time repeatedly",
+        "example": "Regular sleep improves memory.",
+        "exampleUz": "Muntazam uyqu xotirani yaxshilaydi.",
+        "cefr": "B1",
+        "collocations": []
+      },
+      {
+        "word": "quit",
+        "translation": "tashlamoq",
+        "phonetic": "/kwɪt/",
+        "partOfSpeech": "verb",
+        "definition": "to stop doing something",
+        "example": "He decided to quit smoking.",
+        "exampleUz": "U chekishni tashlashga qaror qildi.",
+        "cefr": "B1",
+        "collocations": [
+          "quit smoking"
+        ]
+      }
+    ]
+  },
+  {
+    "day": 27,
+    "cefr": "B1",
+    "topic": "The Environment",
+    "topicUz": "Atrof-muhit",
+    "description": "Ekologik muammolar va yechimlar.",
+    "story": "Ekologiya haqidagi suhbat — B1 darajadagi eng ko'p uchraydigan imtihon mavzularidan biri. Bu yerda majhul nisbat tabiiy ravishda ishlatiladi.",
+    "scenarioEmoji": "♻️",
+    "grammarFocus": "Passive voice: is thrown away, must be done",
+    "dialogue": [
+      {
+        "speaker": "Sara",
+        "en": "Our city has a serious pollution problem.",
+        "uz": "Shahrimizda jiddiy ifloslanish muammosi bor."
+      },
+      {
+        "speaker": "Aziz",
+        "en": "Yes, and too much plastic is thrown away every day.",
+        "uz": "Ha, va har kuni juda ko'p plastik chiqindiga tashlanadi."
+      },
+      {
+        "speaker": "Sara",
+        "en": "Do people recycle here?",
+        "uz": "Bu yerda odamlar qayta ishlashga topshiradimi?"
+      },
+      {
+        "speaker": "Aziz",
+        "en": "Some do. But most rubbish is not separated.",
+        "uz": "Ba'zilar topshiradi. Lekin ko'p axlat ajratilmaydi."
+      },
+      {
+        "speaker": "Sara",
+        "en": "We should reduce waste at home first.",
+        "uz": "Avval uyda chiqindini kamaytirishimiz kerak."
+      },
+      {
+        "speaker": "Aziz",
+        "en": "True. Small actions protect the environment.",
+        "uz": "To'g'ri. Kichik harakatlar atrof-muhitni asraydi."
+      },
+      {
+        "speaker": "Sara",
+        "en": "Climate change is already causing damage.",
+        "uz": "Iqlim o'zgarishi allaqachon zarar keltirmoqda."
+      },
+      {
+        "speaker": "Aziz",
+        "en": "That is why the government must act now.",
+        "uz": "Shuning uchun hukumat hozir harakat qilishi kerak."
+      }
+    ],
+    "words": [
+      {
+        "word": "environment",
+        "translation": "atrof-muhit",
+        "phonetic": "/ɪnˈvaɪrənmənt/",
+        "partOfSpeech": "noun",
+        "definition": "the natural world around us",
+        "example": "We must look after the environment.",
+        "exampleUz": "Atrof-muhitni asrashimiz kerak.",
+        "cefr": "B1",
+        "collocations": [
+          "protect the environment"
+        ]
+      },
+      {
+        "word": "pollution",
+        "translation": "ifloslanish",
+        "phonetic": "/pəˈluːʃn/",
+        "partOfSpeech": "noun",
+        "definition": "harmful substances in air, water or land",
+        "example": "Air pollution is worse in winter.",
+        "exampleUz": "Havo ifloslanishi qishda kuchayadi.",
+        "cefr": "B1",
+        "collocations": [
+          "air pollution"
+        ]
+      },
+      {
+        "word": "waste",
+        "translation": "chiqindi; isrof qilmoq",
+        "phonetic": "/weɪst/",
+        "partOfSpeech": "noun",
+        "definition": "material that is thrown away",
+        "example": "The factory produces a lot of waste.",
+        "exampleUz": "Zavod ko'p chiqindi chiqaradi.",
+        "cefr": "B1",
+        "collocations": [
+          "food waste"
+        ]
+      },
+      {
+        "word": "recycle",
+        "translation": "qayta ishlamoq",
+        "phonetic": "/ˌriːˈsaɪkl/",
+        "partOfSpeech": "verb",
+        "definition": "to treat used materials so they can be used again",
+        "example": "We recycle paper and glass.",
+        "exampleUz": "Biz qog'oz va shishani qayta ishlashga topshiramiz.",
+        "cefr": "B1",
+        "collocations": []
+      },
+      {
+        "word": "plastic",
+        "translation": "plastik",
+        "phonetic": "/ˈplæstɪk/",
+        "partOfSpeech": "noun",
+        "definition": "a light artificial material",
+        "example": "Plastic bags harm animals.",
+        "exampleUz": "Plastik xaltalar hayvonlarga zarar keltiradi.",
+        "cefr": "B1",
+        "collocations": [
+          "plastic bag"
+        ]
+      },
+      {
+        "word": "protect",
+        "translation": "asramoq",
+        "phonetic": "/prəˈtekt/",
+        "partOfSpeech": "verb",
+        "definition": "to keep someone or something safe",
+        "example": "Trees protect the soil.",
+        "exampleUz": "Daraxtlar tuproqni asraydi.",
+        "cefr": "B1",
+        "collocations": [
+          "protect from"
+        ]
+      },
+      {
+        "word": "climate",
+        "translation": "iqlim",
+        "phonetic": "/ˈklaɪmət/",
+        "partOfSpeech": "noun",
+        "definition": "the usual weather conditions of an area",
+        "example": "The climate is changing quickly.",
+        "exampleUz": "Iqlim tez o'zgarmoqda.",
+        "cefr": "B1",
+        "collocations": [
+          "climate change"
+        ]
+      },
+      {
+        "word": "damage",
+        "translation": "zarar",
+        "phonetic": "/ˈdæmɪdʒ/",
+        "partOfSpeech": "noun",
+        "definition": "physical harm to something",
+        "example": "The storm caused serious damage.",
+        "exampleUz": "Bo'ron jiddiy zarar keltirdi.",
+        "cefr": "B1",
+        "collocations": [
+          "cause damage"
+        ]
+      },
+      {
+        "word": "reduce",
+        "translation": "kamaytirmoq",
+        "phonetic": "/rɪˈdjuːs/",
+        "partOfSpeech": "verb",
+        "definition": "to make something smaller in amount",
+        "example": "We need to reduce our water use.",
+        "exampleUz": "Suv sarfimizni kamaytirishimiz kerak.",
+        "cefr": "B1",
+        "collocations": []
+      },
+      {
+        "word": "rubbish",
+        "translation": "axlat",
+        "phonetic": "/ˈrʌbɪʃ/",
+        "partOfSpeech": "noun",
+        "definition": "things you throw away",
+        "example": "Please take the rubbish outside.",
+        "exampleUz": "Iltimos, axlatni tashqariga olib chiqing.",
+        "cefr": "B1",
+        "collocations": []
+      }
+    ]
+  },
+  {
+    "day": 28,
+    "cefr": "B1",
+    "topic": "Technology and Social Media",
+    "topicUz": "Texnologiya va ijtimoiy tarmoqlar",
+    "description": "Ekran vaqti, maxfiylik va tarmoqlar.",
+    "story": "Ijtimoiy tarmoqlar haqida fikr bildirish. Bu mavzu suhbatda ham, imtihonda ham eng ko'p uchraydiganlardan.",
+    "scenarioEmoji": "📵",
+    "grammarFocus": "Present Perfect Continuous: I have been using…",
+    "dialogue": [
+      {
+        "speaker": "Sara",
+        "en": "How much time do you spend in front of a screen?",
+        "uz": "Ekran oldida qancha vaqt o'tkazasiz?"
+      },
+      {
+        "speaker": "Aziz",
+        "en": "Too much. I think I am addicted to my device.",
+        "uz": "Juda ko'p. O'ylashimcha, qurilmamga qaram bo'lib qolganman."
+      },
+      {
+        "speaker": "Sara",
+        "en": "Which network do you use most?",
+        "uz": "Qaysi tarmoqdan ko'proq foydalanasiz?"
+      },
+      {
+        "speaker": "Aziz",
+        "en": "Instagram. But I only share content with close friends.",
+        "uz": "Instagram. Lekin kontentni faqat yaqin do'stlar bilan bo'lishaman."
+      },
+      {
+        "speaker": "Sara",
+        "en": "Are you worried about privacy?",
+        "uz": "Maxfiylik haqida tashvishlanasizmi?"
+      },
+      {
+        "speaker": "Aziz",
+        "en": "Yes. People comment on everything now.",
+        "uz": "Ha. Endi odamlar hamma narsaga izoh yozadi."
+      },
+      {
+        "speaker": "Sara",
+        "en": "Technology is useful, but it can be harmful too.",
+        "uz": "Texnologiya foydali, lekin zararli ham bo'lishi mumkin."
+      },
+      {
+        "speaker": "Aziz",
+        "en": "Balance is the answer.",
+        "uz": "Muvozanat — javob shu."
+      }
+    ],
+    "words": [
+      {
+        "word": "technology",
+        "translation": "texnologiya",
+        "phonetic": "/tekˈnɒlədʒi/",
+        "partOfSpeech": "noun",
+        "definition": "machines and systems based on science",
+        "example": "Technology changes very fast.",
+        "exampleUz": "Texnologiya juda tez o'zgaradi.",
+        "cefr": "B1",
+        "collocations": []
+      },
+      {
+        "word": "device",
+        "translation": "qurilma",
+        "phonetic": "/dɪˈvaɪs/",
+        "partOfSpeech": "noun",
+        "definition": "a machine made for a particular purpose",
+        "example": "This device charges in one hour.",
+        "exampleUz": "Bu qurilma bir soatda quvvat oladi.",
+        "cefr": "B1",
+        "collocations": [
+          "mobile device"
+        ]
+      },
+      {
+        "word": "screen",
+        "translation": "ekran",
+        "phonetic": "/skriːn/",
+        "partOfSpeech": "noun",
+        "definition": "the flat surface of a phone or computer",
+        "example": "My screen is cracked.",
+        "exampleUz": "Ekranim yorilgan.",
+        "cefr": "B1",
+        "collocations": [
+          "screen time"
+        ]
+      },
+      {
+        "word": "addicted",
+        "translation": "qaram",
+        "phonetic": "/əˈdɪktɪd/",
+        "partOfSpeech": "adjective",
+        "definition": "unable to stop doing something",
+        "example": "Many teenagers are addicted to games.",
+        "exampleUz": "Ko'p o'smirlar o'yinlarga qaram.",
+        "cefr": "B1",
+        "collocations": [
+          "addicted to"
+        ]
+      },
+      {
+        "word": "privacy",
+        "translation": "maxfiylik",
+        "phonetic": "/ˈprɪvəsi/",
+        "partOfSpeech": "noun",
+        "definition": "the right to keep your life private",
+        "example": "Privacy online is important.",
+        "exampleUz": "Onlayn maxfiylik muhim.",
+        "cefr": "B1",
+        "collocations": []
+      },
+      {
+        "word": "share",
+        "translation": "bo'lishmoq",
+        "phonetic": "/ʃeə/",
+        "partOfSpeech": "verb",
+        "definition": "to give part of something to others",
+        "example": "Do not share your password.",
+        "exampleUz": "Parolingizni hech kim bilan bo'lishmang.",
+        "cefr": "B1",
+        "collocations": [
+          "share with"
+        ]
+      },
+      {
+        "word": "network",
+        "translation": "tarmoq",
+        "phonetic": "/ˈnetwɜːk/",
+        "partOfSpeech": "noun",
+        "definition": "a system of connected people or computers",
+        "example": "This social network has millions of users.",
+        "exampleUz": "Bu ijtimoiy tarmoqda millionlab foydalanuvchi bor.",
+        "cefr": "B1",
+        "collocations": [
+          "social network"
+        ]
+      },
+      {
+        "word": "content",
+        "translation": "kontent",
+        "phonetic": "/ˈkɒntent/",
+        "partOfSpeech": "noun",
+        "definition": "the information shown on a website or app",
+        "example": "She creates content about cooking.",
+        "exampleUz": "U ovqat haqida kontent yaratadi.",
+        "cefr": "B1",
+        "collocations": []
+      },
+      {
+        "word": "comment",
+        "translation": "izoh",
+        "phonetic": "/ˈkɒment/",
+        "partOfSpeech": "noun",
+        "definition": "a written opinion about something online",
+        "example": "His comment received many likes.",
+        "exampleUz": "Uning izohi ko'p layk oldi.",
+        "cefr": "B1",
+        "collocations": [
+          "leave a comment"
+        ]
+      },
+      {
+        "word": "harmful",
+        "translation": "zararli",
+        "phonetic": "/ˈhɑːmfl/",
+        "partOfSpeech": "adjective",
+        "definition": "causing damage or injury",
+        "example": "Too much screen time is harmful.",
+        "exampleUz": "Haddan ziyod ekran vaqti zararli.",
+        "cefr": "B1",
+        "collocations": []
+      }
+    ]
+  },
+  {
+    "day": 29,
+    "cefr": "B1",
+    "topic": "Education and Career Plans",
+    "topicUz": "Ta'lim va karyera rejalari",
+    "description": "Kelajak rejalari va maqsadlar.",
+    "story": "Kelajak rejalari haqida suhbat. Bu yerda uch xil kelasi zamon farqi mashq qilinadi — o'zbek tilida bitta shakl bo'lgani uchun bu chalkash joy.",
+    "scenarioEmoji": "🎯",
+    "grammarFocus": "Kelasi zamon: will / going to / present continuous",
+    "dialogue": [
+      {
+        "speaker": "Sara",
+        "en": "What are your plans after you graduate?",
+        "uz": "Diplom olganingizdan keyin rejangiz qanday?"
+      },
+      {
+        "speaker": "Aziz",
+        "en": "I want to build a career in engineering.",
+        "uz": "Muhandislik sohasida karyera qurmoqchiman."
+      },
+      {
+        "speaker": "Sara",
+        "en": "Have you made a decision about the country?",
+        "uz": "Mamlakat haqida qaror qabul qildingizmi?"
+      },
+      {
+        "speaker": "Aziz",
+        "en": "Not yet. I am looking for an opportunity abroad.",
+        "uz": "Hali yo'q. Chet elda imkoniyat qidiryapman."
+      },
+      {
+        "speaker": "Sara",
+        "en": "A foreign degree is a real challenge.",
+        "uz": "Chet el diplomi — haqiqiy sinov."
+      },
+      {
+        "speaker": "Aziz",
+        "en": "I know. But my goal is to improve my skills.",
+        "uz": "Bilaman. Lekin maqsadim — ko'nikmalarimni oshirish."
+      },
+      {
+        "speaker": "Sara",
+        "en": "Can I give you some advice?",
+        "uz": "Sizga maslahat bersam bo'ladimi?"
+      },
+      {
+        "speaker": "Aziz",
+        "en": "Please do. I want to achieve something serious.",
+        "uz": "Marhamat. Men jiddiy narsaga erishmoqchiman."
+      }
+    ],
+    "words": [
+      {
+        "word": "degree",
+        "translation": "diplom; daraja",
+        "phonetic": "/dɪˈɡriː/",
+        "partOfSpeech": "noun",
+        "definition": "a qualification given by a university",
+        "example": "She has a degree in economics.",
+        "exampleUz": "Uning iqtisodiyot bo'yicha diplomi bor.",
+        "cefr": "B1",
+        "collocations": [
+          "get a degree"
+        ]
+      },
+      {
+        "word": "graduate",
+        "translation": "bitirmoq",
+        "phonetic": "/ˈɡrædʒueɪt/",
+        "partOfSpeech": "verb",
+        "definition": "to finish your studies at a university",
+        "example": "I will graduate next summer.",
+        "exampleUz": "Kelasi yozda bitiraman.",
+        "cefr": "B1",
+        "collocations": [
+          "graduate from"
+        ]
+      },
+      {
+        "word": "career",
+        "translation": "karyera",
+        "phonetic": "/kəˈrɪə/",
+        "partOfSpeech": "noun",
+        "definition": "the work you do over a long period of your life",
+        "example": "He changed his career at forty.",
+        "exampleUz": "U qirq yoshda karyerasini o'zgartirdi.",
+        "cefr": "B1",
+        "collocations": [
+          "build a career"
+        ]
+      },
+      {
+        "word": "opportunity",
+        "translation": "imkoniyat",
+        "phonetic": "/ˌɒpəˈtjuːnəti/",
+        "partOfSpeech": "noun",
+        "definition": "a chance to do something good",
+        "example": "This is a great opportunity for you.",
+        "exampleUz": "Bu siz uchun ajoyib imkoniyat.",
+        "cefr": "B1",
+        "collocations": [
+          "miss an opportunity"
+        ]
+      },
+      {
+        "word": "achieve",
+        "translation": "erishmoq",
+        "phonetic": "/əˈtʃiːv/",
+        "partOfSpeech": "verb",
+        "definition": "to succeed in doing something after effort",
+        "example": "She achieved all her goals.",
+        "exampleUz": "U barcha maqsadlariga erishdi.",
+        "cefr": "B1",
+        "collocations": []
+      },
+      {
+        "word": "goal",
+        "translation": "maqsad",
+        "phonetic": "/ɡəʊl/",
+        "partOfSpeech": "noun",
+        "definition": "something you want to achieve",
+        "example": "Set a clear goal for this year.",
+        "exampleUz": "Bu yil uchun aniq maqsad qo'ying.",
+        "cefr": "B1",
+        "collocations": [
+          "set a goal"
+        ]
+      },
+      {
+        "word": "improve",
+        "translation": "yaxshilamoq",
+        "phonetic": "/ɪmˈpruːv/",
+        "partOfSpeech": "verb",
+        "definition": "to make something better",
+        "example": "Reading will improve your vocabulary.",
+        "exampleUz": "O'qish so'z boyligingizni oshiradi.",
+        "cefr": "B1",
+        "collocations": []
+      },
+      {
+        "word": "challenge",
+        "translation": "sinov",
+        "phonetic": "/ˈtʃælɪndʒ/",
+        "partOfSpeech": "noun",
+        "definition": "something difficult that tests your ability",
+        "example": "Learning a language is a challenge.",
+        "exampleUz": "Til o'rganish — bu sinov.",
+        "cefr": "B1",
+        "collocations": [
+          "face a challenge"
+        ]
+      },
+      {
+        "word": "advice",
+        "translation": "maslahat",
+        "phonetic": "/ədˈvaɪs/",
+        "partOfSpeech": "noun",
+        "definition": "an opinion about what someone should do",
+        "example": "He gave me useful advice.",
+        "exampleUz": "U menga foydali maslahat berdi.",
+        "cefr": "B1",
+        "collocations": [
+          "give advice",
+          "take advice"
+        ]
+      },
+      {
+        "word": "decision",
+        "translation": "qaror",
+        "phonetic": "/dɪˈsɪʒn/",
+        "partOfSpeech": "noun",
+        "definition": "a choice you make after thinking",
+        "example": "It was a difficult decision.",
+        "exampleUz": "Bu qiyin qaror edi.",
+        "cefr": "B1",
+        "collocations": [
+          "make a decision"
+        ]
+      }
+    ]
+  },
+  {
+    "day": 30,
+    "cefr": "B1",
+    "topic": "Complaints and Solutions",
+    "topicUz": "Shikoyat va yechim",
+    "description": "Muammoni muloyim tarzda hal qilish.",
+    "story": "Buyurtmangiz shikastlangan holda keldi. Muloyim, lekin qat'iy shikoyat qilish — chet elda ham, ishda ham eng kerakli ko'nikmalardan biri.",
+    "scenarioEmoji": "📦",
+    "grammarFocus": "Muloyim shikoyat: Would you mind…? / I'm afraid…",
+    "dialogue": [
+      {
+        "speaker": "Customer",
+        "en": "I want to complain about my order.",
+        "uz": "Buyurtmam haqida shikoyat qilmoqchiman."
+      },
+      {
+        "speaker": "Support",
+        "en": "I apologise. What is the issue?",
+        "uz": "Uzr so'rayman. Muammo nimada?"
+      },
+      {
+        "speaker": "Customer",
+        "en": "The package arrived damaged and two days late.",
+        "uz": "Paket shikastlangan holda va ikki kun kech keldi."
+      },
+      {
+        "speaker": "Support",
+        "en": "I am sorry about the delay. Would you like a refund?",
+        "uz": "Kechikish uchun uzr. Pulni qaytarishimizni xohlaysizmi?"
+      },
+      {
+        "speaker": "Customer",
+        "en": "Can you replace it instead?",
+        "uz": "Uning o'rniga almashtira olasizmi?"
+      },
+      {
+        "speaker": "Support",
+        "en": "Of course. We will deliver a new one tomorrow.",
+        "uz": "Albatta. Ertaga yangisini yetkazib beramiz."
+      },
+      {
+        "speaker": "Customer",
+        "en": "Is there a guarantee?",
+        "uz": "Kafolat bormi?"
+      },
+      {
+        "speaker": "Support",
+        "en": "One year. Thank you for being a patient customer.",
+        "uz": "Bir yil. Sabrli mijoz bo'lganingiz uchun rahmat."
+      }
+    ],
+    "words": [
+      {
+        "word": "complain",
+        "translation": "shikoyat qilmoq",
+        "phonetic": "/kəmˈpleɪn/",
+        "partOfSpeech": "verb",
+        "definition": "to say that you are not satisfied",
+        "example": "She complained about the noise.",
+        "exampleUz": "U shovqin haqida shikoyat qildi.",
+        "cefr": "B1",
+        "collocations": [
+          "complain about"
+        ]
+      },
+      {
+        "word": "refund",
+        "translation": "pulni qaytarish",
+        "phonetic": "/ˈriːfʌnd/",
+        "partOfSpeech": "noun",
+        "definition": "money returned to you",
+        "example": "They gave me a full refund.",
+        "exampleUz": "Ular menga pulni to'liq qaytarishdi.",
+        "cefr": "B1",
+        "collocations": [
+          "get a refund"
+        ]
+      },
+      {
+        "word": "deliver",
+        "translation": "yetkazib bermoq",
+        "phonetic": "/dɪˈlɪvə/",
+        "partOfSpeech": "verb",
+        "definition": "to take goods to a place",
+        "example": "They deliver orders every morning.",
+        "exampleUz": "Ular buyurtmalarni har kuni ertalab yetkazib beradi.",
+        "cefr": "B1",
+        "collocations": []
+      },
+      {
+        "word": "damaged",
+        "translation": "shikastlangan",
+        "phonetic": "/ˈdæmɪdʒd/",
+        "partOfSpeech": "adjective",
+        "definition": "harmed or broken",
+        "example": "The screen was damaged in transit.",
+        "exampleUz": "Ekran yo'lda shikastlangan.",
+        "cefr": "B1",
+        "collocations": []
+      },
+      {
+        "word": "replace",
+        "translation": "almashtirmoq",
+        "phonetic": "/rɪˈpleɪs/",
+        "partOfSpeech": "verb",
+        "definition": "to put a new thing in place of an old one",
+        "example": "We will replace the broken part.",
+        "exampleUz": "Singan qismni almashtiramiz.",
+        "cefr": "B1",
+        "collocations": []
+      },
+      {
+        "word": "apologise",
+        "translation": "uzr so'ramoq",
+        "phonetic": "/əˈpɒlədʒaɪz/",
+        "partOfSpeech": "verb",
+        "definition": "to say you are sorry",
+        "example": "He apologised for the mistake.",
+        "exampleUz": "U xato uchun uzr so'radi.",
+        "cefr": "B1",
+        "collocations": [
+          "apologise for"
+        ]
+      },
+      {
+        "word": "delay",
+        "translation": "kechikish",
+        "phonetic": "/dɪˈleɪ/",
+        "partOfSpeech": "noun",
+        "definition": "a situation when something happens later than planned",
+        "example": "There was a long delay at the airport.",
+        "exampleUz": "Aeroportda uzoq kechikish bo'ldi.",
+        "cefr": "B1",
+        "collocations": []
+      },
+      {
+        "word": "issue",
+        "translation": "muammo",
+        "phonetic": "/ˈɪʃuː/",
+        "partOfSpeech": "noun",
+        "definition": "a problem that needs attention",
+        "example": "We solved the issue quickly.",
+        "exampleUz": "Muammoni tez hal qildik.",
+        "cefr": "B1",
+        "collocations": []
+      },
+      {
+        "word": "customer",
+        "translation": "mijoz",
+        "phonetic": "/ˈkʌstəmə/",
+        "partOfSpeech": "noun",
+        "definition": "a person who buys goods or services",
+        "example": "The customer asked for help.",
+        "exampleUz": "Mijoz yordam so'radi.",
+        "cefr": "B1",
+        "collocations": [
+          "customer service"
+        ]
+      },
+      {
+        "word": "guarantee",
+        "translation": "kafolat",
+        "phonetic": "/ˌɡærənˈtiː/",
+        "partOfSpeech": "noun",
+        "definition": "a promise to repair or replace a product",
+        "example": "The laptop has a two-year guarantee.",
+        "exampleUz": "Noutbukning ikki yillik kafolati bor.",
+        "cefr": "B1",
+        "collocations": []
+      }
+    ]
   }
 ]
