@@ -1,7 +1,7 @@
 # Linguist AI-Flow
 
 O'zbek tilida so'zlashuvchilar uchun ingliz tili ilovasi: CEFR bo'yicha tartiblangan
-kunlik kurs, SM-2 oraliqli takrorlash, AI o'qituvchi va gapirish mashqlari.
+kunlik kurs, SM-2 oraliqli takrorlash, tinglab yozish, AI o'qituvchi va gapirish mashqlari.
 
 ## Stack
 
@@ -35,6 +35,19 @@ funksiyalari esa 503 qaytaradi va **foydalanuvchi progressiga tegmaydi**.
 1. **Kunlik sahna** — mavzu dialogi, so'zlar, mini-test
 2. **Takrorlash** — SM-2 jadvali bo'yicha, 4 darajali baholash
 3. **Amaliyot** — o'rganilgan so'zlardan gap tuzish, AI tekshiradi
+
+### Tinglash (diktant)
+Kunlik dialog qatorlarini eshitib yozish — ilovadagi yagona **input** mashqi.
+Baholash so'z darajasida (`server/utils/dictation.js`, LCS asosida): qaysi so'z
+o'tkazib yuborilgani va qaysi biri ortiqcha yozilgani rangli ko'rsatiladi.
+Qisqartmalar (`don't` = `do not`) teng qabul qilinadi.
+
+Ovoz brauzerning `speechSynthesis`i orqali chiqariladi — tashqi TTS xizmati
+talab qilinmaydi, lekin ovoz sifati qurilmaga bog'liq. Tezlikni sekinlashtirish
+mumkin (0.6× / 0.95× / 1.15×).
+
+Bu mashq kunlik 3 qadamga **kirmaydi** va streak'ni bloklamaydi — kunlik yukni
+oshirib, reja bajarilishini tushirmaslik uchun ataylab ixtiyoriy qoldirilgan.
 
 ### Kontent
 24 mavzu, 240 so'z, A1 → A2. Har bir mavzuda dialog (o'zbekcha tarjima bilan),
@@ -72,7 +85,7 @@ takrorlashdan butunlay chiqib ketmaydi.
 ## Testlar
 
 ```bash
-cd server && npm test     # 58 ta test; pretest kontentni validatsiya qiladi
+cd server && npm test     # 78 ta test; pretest kontentni validatsiya qiladi
 cd client && npm run lint
 cd client && npm run build
 
@@ -113,8 +126,6 @@ Bu ro'yxat ataylab ochiq — mahsulot hali bularni qila olmaydi:
 
 - **To'lov.** Stripe O'zbekiston kartalarini qabul qilmaydi. Payme/Click
   integratsiyasi hali yo'q, ya'ni mahalliy bozordan daromad olish imkonsiz.
-- **Listening.** Ilovada tinglab tushunish mashqi yo'q — bu eng katta
-  pedagogik bo'shliq.
 - **Talaffuz bahosi.** `evaluateSpokenAccuracy` talaffuzni emas, brauzer
   `SpeechRecognition` transkriptining matnga mosligini o'lchaydi. Natija
   `method: 'transcript_match'` bilan belgilanadi va UI uni "talaffuz bahosi"

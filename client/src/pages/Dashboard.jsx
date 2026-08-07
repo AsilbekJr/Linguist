@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { useSelector } from 'react-redux';
 import { useGetWordsQuery, useGetReviewDueQuery, useGetMeQuery } from '../features/api/apiSlice';
 import { Link } from 'react-router-dom';
-import { Flame, BookOpen, Mic, Star, Quote, ArrowRight, GraduationCap } from 'lucide-react';
+import { Flame, BookOpen, Mic, Star, Quote, ArrowRight, GraduationCap, Headphones } from 'lucide-react';
 import quotesData from '../data/quotes.json';
 import TodayHub from '../components/TodayHub/TodayHub';
 import { getGoalRecommendation } from '../utils/learningUtils';
@@ -123,13 +123,23 @@ const Dashboard = () => {
             </div>
           </Link>
           <Link
+            to="/listening"
+            className="bg-card border border-teal-500/30 p-5 rounded-2xl hover:border-teal-500/60 transition-colors flex items-center gap-4"
+          >
+            <Headphones className="w-5 h-5 text-teal-500" />
+            <div>
+              <h4 className="font-bold">Tinglash</h4>
+              <p className="text-xs text-muted-foreground">Eshitib yozish</p>
+            </div>
+          </Link>
+          <Link
             to="/speaking"
             className="bg-card border border-border p-5 rounded-2xl hover:border-primary/50 transition-colors flex items-center gap-4"
           >
             <Mic className="w-5 h-5 text-blue-500" />
             <div>
               <h4 className="font-bold">Speaking Lab</h4>
-              <p className="text-xs text-muted-foreground">Talaffuz</p>
+              <p className="text-xs text-muted-foreground">Gapirish mashqi</p>
             </div>
           </Link>
           <Link

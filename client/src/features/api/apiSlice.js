@@ -64,7 +64,7 @@ export const apiSlice = createApi({
   refetchOnFocus: false,
   refetchOnReconnect: true,
   baseQuery: baseQueryWithReauth,
-  tagTypes: ['Word', 'Challenge', 'Topic', 'User', 'Billing', 'Practice'],
+  tagTypes: ['Word', 'Challenge', 'Topic', 'User', 'Billing', 'Practice', 'Listening'],
   endpoints: (builder) => ({
     getWords: builder.query({
       query: () => '/api/words',
@@ -127,6 +127,25 @@ export const apiSlice = createApi({
         method: 'POST',
         body: { text },
       }),
+    }),
+    getListeningSession: builder.query({
+      query: () => '/api/listening/session',
+      providesTags: ['Listening'],
+      keepUnusedDataFor: 300,
+    }),
+    checkDictation: builder.mutation({
+      query: ({ lineIndex, typed }) => ({
+        url: '/api/listening/check',
+        method: 'POST',
+        body: { lineIndex, typed },
+      }),
+    }),
+    completeListening: builder.mutation({
+      query: () => ({
+        url: '/api/listening/complete',
+        method: 'POST',
+      }),
+      invalidatesTags: ['Listening', 'User'],
     }),
     // `translateText` (/api/speaking/translate-text) olib tashlandi:
     // u umumiy tarjimon edi — o'rganish funksiyasi emas, lekin AI limitini yerdi.
@@ -325,6 +344,9 @@ export const {
   useGetReviewStatsQuery,
   useTranslateSpeakingMutation,
   useEvaluateSpeakingMutation,
+  useGetListeningSessionQuery,
+  useCheckDictationMutation,
+  useCompleteListeningMutation,
   useChatRoleplayMutation,
   useAskTeacherMutation,
   useGetCurrentChallengeQuery,

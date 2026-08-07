@@ -95,6 +95,7 @@ const createApp = ({ isProd = process.env.NODE_ENV === 'production', enableRateL
   app.use('/api/review', require('./routes/reviewRoutes'));
   app.use('/api/practice', require('./routes/practiceRoutes'));
   app.use('/api/speaking', require('./routes/speakingRoutes'));
+  app.use('/api/listening', require('./routes/listeningRoutes'));
   app.use('/api/roleplay', require('./routes/roleplayRoutes'));
   app.use('/api/teacher', require('./routes/teacherRoutes'));
   app.use('/api/challenge', require('./routes/challengeRoutes'));

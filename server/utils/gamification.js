@@ -118,6 +118,7 @@ const rollDailyQuests = (user, todayKey) => {
     reviewCompleted: false,
     topicCompleted: false,
     immersionCompleted: false,
+    listeningCompleted: false,
   };
   return true;
 };

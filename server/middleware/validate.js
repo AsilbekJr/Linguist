@@ -99,6 +99,13 @@ const challengeCompleteSchema = z.object({
   }),
 });
 
+const listeningCheckSchema = z.object({
+  body: z.object({
+    lineIndex: z.number().int().min(0).max(50),
+    typed: z.string().max(1000),
+  }),
+});
+
 const speakingEvaluateSchema = z.object({
   body: z.object({
     targetSentence: z.string().min(1).max(2000),
@@ -209,6 +216,7 @@ module.exports = {
   topicFinishSchema,
   challengeCompleteSchema,
   speakingEvaluateSchema,
+  listeningCheckSchema,
   timezoneSchema,
   forgotPasswordSchema,
   resetPasswordSchema,

@@ -16,6 +16,7 @@ import { Loader2 } from 'lucide-react';
 
 const ForgotPassword = lazy(() => import('./components/Auth/ForgotPassword'));
 const ResetPassword = lazy(() => import('./components/Auth/ResetPassword'));
+const Listening = lazy(() => import('./pages/Listening'));
 const SpeakingLab = lazy(() => import('./pages/SpeakingLab'));
 const Roleplay = lazy(() => import('./pages/Roleplay'));
 const Challenge = lazy(() => import('./pages/Challenge'));
@@ -167,6 +168,14 @@ function App() {
           }
         />
         <Route path="topic" element={<TopicVocabulary />} />
+        <Route
+          path="listening"
+          element={
+            <Suspense fallback={<PageLoader />}>
+              <Listening />
+            </Suspense>
+          }
+        />
         <Route
           path="pricing"
           element={

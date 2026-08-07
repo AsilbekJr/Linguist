@@ -22,6 +22,7 @@ import {
   ChevronLeft,
   Sparkles,
   BookOpen,
+  Headphones,
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { playTTSAudio } from '../utils/audio';
@@ -354,7 +355,7 @@ const TopicVocabulary = () => {
                     }
                     className="text-xs font-bold text-purple-600 flex items-center gap-1"
                   >
-                    <Volume2 className="w-4 h-4" /> Tinglash
+                    <Volume2 className="w-4 h-4" /> Eshitish
                   </button>
                 </div>
               </div>
@@ -386,6 +387,19 @@ const TopicVocabulary = () => {
                   </div>
                 ))}
               </div>
+
+              {/* Dialogni o'qigach — uni tinglab yozib ko'rish. Bu ilovadagi
+                  yagona input mashqi va aynan shu joyda tabiiy tushadi. */}
+              <Link
+                to="/listening"
+                className="mt-5 flex items-center justify-between gap-3 p-3 rounded-xl border border-teal-500/30 bg-teal-500/5 hover:bg-teal-500/10 transition-colors"
+              >
+                <span className="flex items-center gap-2 text-sm font-bold text-teal-700 dark:text-teal-300">
+                  <Headphones className="w-4 h-4" />
+                  Shu dialogni tinglab yozib ko&apos;ring
+                </span>
+                <ArrowRight className="w-4 h-4 text-teal-600 shrink-0" />
+              </Link>
             </div>
           )}
 
