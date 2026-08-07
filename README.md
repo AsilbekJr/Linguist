@@ -102,6 +102,26 @@ curl -X POST https://<backend>/api/notifications/run \
      -H "x-cron-secret: $CRON_SECRET"
 ```
 
+### PWA
+Ilova telefon bosh ekraniga o'rnatiladi va oflaynda ochiladi. Bu eslatma
+zanjirini yopadi: xat keladi → bosiladi → ilova bir bosishda ochiladi
+(brauzerdan qidirish shart emas).
+
+Service worker uchta qat'iy qoida bilan ishlaydi:
+1. **API javoblari hech qachon keshlanmaydi** — ular foydalanuvchi ma'lumoti;
+2. navigatsiya — avval tarmoq, oflaynda keshdagi app shell;
+3. `assets/` — kontent-xesh bilan nomlangani uchun stale-while-revalidate.
+
+Birinchi qoida `npm run check:pwa` bilan build vaqtida tekshiriladi — bunday
+regressiyani qo'lda sinovda payqash deyarli imkonsiz.
+
+Ikonkalar `npm run icons` bilan generatsiya qilinadi: `sharp`/`canvas` kabi
+native paket o'rniga zlib + CRC32 bilan yozilgan kichik PNG enkoder
+(`scripts/generate-icons.js`).
+
+iOS Safari `beforeinstallprompt` ni qo'llab-quvvatlamaydi, shuning uchun u
+yerda "Share → Bosh ekranga qo'shish" ko'rsatmasi ko'rsatiladi.
+
 ### Oraliqli takrorlash (SM-2)
 `server/utils/srs.js` — har so'z uchun individual ease factor, 4 darajali baholash
 (Eslay olmadim / Qiyin / Esladim / Juda oson), lapse mantiqi. So'z hech qachon
@@ -164,8 +184,10 @@ Bu ro'yxat ataylab ochiq — mahsulot hali bularni qila olmaydi:
   deb ko'rsatmasligi kerak. Haqiqiy baho uchun fonema darajasidagi xizmat kerak.
 - **Kontent hajmi.** 30 kun (A1-B1). B2 hali yozilmagan — placement B2 desa ham
   kurs mavjud eng yuqori blokdan (B1) boshlanadi.
+- **Push bildirishnoma yo'q** — eslatma faqat email orqali. Web Push VAPID
+  kalitlari va `web-push` paketini talab qiladi; iOS'da esa faqat o'rnatilgan
+  PWA'da ishlaydi.
 - **i18n yo'q** — matnlar kodga qotirilgan, rus tiliga chiqish uchun refaktoring kerak.
-- **PWA yo'q** — manifest va service worker qo'shilmagan.
 
 ## Analitika
 

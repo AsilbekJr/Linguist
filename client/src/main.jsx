@@ -11,6 +11,9 @@ import { Toaster } from 'react-hot-toast'
 import { Loader2 } from 'lucide-react'
 import ErrorBoundary from './components/ErrorBoundary'
 import { trackError } from './lib/analytics'
+import { initPwa } from './lib/pwa'
+
+initPwa()
 
 // Promise ichidagi ushlanmagan xatolar ErrorBoundary'ga tushmaydi — alohida ushlaymiz
 window.addEventListener('unhandledrejection', (event) => {

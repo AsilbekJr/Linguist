@@ -1,0 +1,54 @@
+{
+  "name": "Linguist AI — ingliz tili",
+  "short_name": "Linguist AI",
+  "description": "CEFR bo'yicha kunlik ingliz tili kursi: so'z o'rganish, oraliqli takrorlash, tinglash va AI o'qituvchi.",
+  "lang": "uz",
+  "dir": "ltr",
+  "start_url": "/?source=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0a0a0a",
+  "theme_color": "#6d28d9",
+  "categories": ["education", "productivity"],
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Kunlik sahna",
+      "short_name": "Sahna",
+      "url": "/topic?source=pwa_shortcut",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Takrorlash",
+      "short_name": "Takror",
+      "url": "/review?source=pwa_shortcut",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Tinglash",
+      "short_name": "Tinglash",
+      "url": "/listening?source=pwa_shortcut",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}

@@ -53,8 +53,15 @@ export default [
     },
   },
   {
-    // Konfiguratsiya fayllari Node muhitida ishlaydi
-    files: ['*.config.js', 'vite.config.js', 'eslint.config.js'],
+    // Konfiguratsiya va build skriptlari Node muhitida ishlaydi
+    files: ['*.config.js', 'vite.config.js', 'eslint.config.js', 'scripts/**/*.js'],
     languageOptions: { globals: { ...globals.node } },
+  },
+  {
+    // Service worker'da `window` yo'q, o'rniga `self` va cache API bor
+    files: ['public/sw.js'],
+    languageOptions: {
+      globals: { ...globals.serviceworker, ...globals.browser },
+    },
   },
 ];
