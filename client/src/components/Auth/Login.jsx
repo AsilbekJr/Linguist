@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { useLoginMutation } from '../../features/api/apiSlice';
 import { setCredentials } from '../../features/auth/authSlice';
@@ -48,8 +49,8 @@ const Login = ({ onSwitchToRegister, initialEmail = '', onAuthSuccess }) => {
   return (
     <div className="w-full max-w-md mx-auto bg-card p-5 sm:p-8 rounded-2xl sm:rounded-3xl border shadow-xl relative overflow-hidden z-10 transition-all">
        <div className="text-center mb-6 sm:mb-8">
-            <h2 className="text-2xl sm:text-3xl font-black bg-gradient-to-r from-primary via-purple-500 to-pink-500 bg-clip-text text-transparent mb-2">Welcome Back</h2>
-            <p className="text-sm sm:text-base text-muted-foreground">Log in to your Linguist AI-Flow account</p>
+            <h2 className="text-2xl sm:text-3xl font-black bg-gradient-to-r from-primary via-purple-500 to-pink-500 bg-clip-text text-transparent mb-2">Xush kelibsiz</h2>
+            <p className="text-sm sm:text-base text-muted-foreground">Linguist AI hisobingizga kiring</p>
        </div>
 
        {errorMsg && (
@@ -63,7 +64,7 @@ const Login = ({ onSwitchToRegister, initialEmail = '', onAuthSuccess }) => {
               <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground transition-colors group-focus-within:text-primary" />
               <Input 
                 type="email" 
-                placeholder="Email Address" 
+                placeholder="Email manzilingiz" 
                 required 
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -74,7 +75,7 @@ const Login = ({ onSwitchToRegister, initialEmail = '', onAuthSuccess }) => {
           <PasswordInput
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder="Password"
+            placeholder="Parol"
             autoComplete="current-password"
           />
 
@@ -83,18 +84,24 @@ const Login = ({ onSwitchToRegister, initialEmail = '', onAuthSuccess }) => {
             disabled={isLoading}
             className="h-12 sm:h-14 mt-2 sm:mt-4 rounded-2xl text-base sm:text-lg font-bold bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/30 transition-all group overflow-hidden relative"
           >
-             {isLoading ? <Loader2 className="w-6 h-6 animate-spin mx-auto text-white" /> : 'Log In'}
+             {isLoading ? <Loader2 className="w-6 h-6 animate-spin mx-auto text-white" /> : 'Kirish'}
           </Button>
        </form>
 
-       <div className="mt-8 text-center text-muted-foreground relative z-10 text-sm">
-           Don't have an account?{' '}
-           <button 
-             type="button" 
+       <div className="mt-5 text-center relative z-10">
+           <Link to="/forgot-password" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+               Parolni unutdingizmi?
+           </Link>
+       </div>
+
+       <div className="mt-6 text-center text-muted-foreground relative z-10 text-sm">
+           Hisobingiz yo&apos;qmi?{' '}
+           <button
+             type="button"
              onClick={onSwitchToRegister}
              className="text-primary font-bold hover:underline"
            >
-               Sign up here
+               Ro&apos;yxatdan o&apos;ting
            </button>
        </div>
     </div>

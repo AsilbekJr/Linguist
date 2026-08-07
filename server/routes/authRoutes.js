@@ -9,9 +9,23 @@ const {
   onboardSchema,
   syncQuestSchema,
   timezoneSchema,
+  forgotPasswordSchema,
+  resetPasswordSchema,
 } = require('../middleware/validate');
-const { generateAccessToken } = require('../utils/tokens');
-const { createSession, revokeSessionByCookie, findValidSession } = require('../services/authSessionService');
+const {
+  generateAccessToken,
+  generateResetToken,
+  hashToken,
+  RESET_TOKEN_TTL_MS,
+} = require('../utils/tokens');
+const {
+  createSession,
+  revokeSessionByCookie,
+  findValidSession,
+  revokeAllSessionsForUser,
+} = require('../services/authSessionService');
+const PasswordResetToken = require('../models/PasswordResetToken');
+const { sendMail, passwordResetEmail } = require('../services/mailer');
 const Word = require('../models/Word');
 const { userDayKey, isValidTimeZone } = require('../utils/dayKey');
 const {
@@ -189,6 +203,94 @@ router.post('/sync-quest', protect, validate(syncQuestSchema), async (req, res) 
   } catch (error) {
     console.error('Sync quest error:', error);
     res.status(500).json({ message: 'Server error during quest sync' });
+  }
+});
+
+// @desc    Parolni tiklash havolasini yuborish
+// @route   POST /api/auth/forgot-password
+router.post('/forgot-password', validate(forgotPasswordSchema), async (req, res) => {
+  const { email } = req.validated.body;
+
+  // MUHIM: javob har doim bir xil. Aks holda bu endpoint "bu email
+  // ro'yxatdan o'tganmi?" degan savolga javob beradigan vositaga aylanadi
+  // va foydalanuvchilar ro'yxatini yig'ish mumkin bo'ladi.
+  const genericResponse = {
+    message:
+      "Agar bu email ro'yxatdan o'tgan bo'lsa, tiklash havolasi yuborildi. Pochtangizni tekshiring.",
+  };
+
+  try {
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.json(genericResponse);
+    }
+
+    // Eski faol tokenlarni bekor qilamiz — bir vaqtda faqat bitta havola ishlasin
+    await PasswordResetToken.updateMany(
+      { user: user._id, usedAt: null },
+      { usedAt: new Date() }
+    );
+
+    const rawToken = generateResetToken();
+    await PasswordResetToken.create({
+      user: user._id,
+      tokenHash: hashToken(rawToken),
+      expiresAt: new Date(Date.now() + RESET_TOKEN_TTL_MS),
+    });
+
+    const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
+    const resetUrl = `${clientUrl}/reset-password?token=${rawToken}`;
+    const mail = passwordResetEmail(user.name, resetUrl);
+
+    await sendMail({ to: user.email, ...mail });
+
+    res.json(genericResponse);
+  } catch (error) {
+    console.error('Forgot password error:', error);
+    // Bu yerda ham umumiy javob — xato ham ma'lumot oshkor qilmasin
+    res.json(genericResponse);
+  }
+});
+
+// @desc    Yangi parolni o'rnatish
+// @route   POST /api/auth/reset-password
+router.post('/reset-password', validate(resetPasswordSchema), async (req, res) => {
+  try {
+    const { token, password } = req.validated.body;
+
+    const record = await PasswordResetToken.findOne({
+      tokenHash: hashToken(token),
+      usedAt: null,
+      expiresAt: { $gt: new Date() },
+    });
+
+    if (!record) {
+      return res.status(400).json({
+        message: "Havola yaroqsiz yoki muddati tugagan. Yangi havola so'rang.",
+        code: 'INVALID_RESET_TOKEN',
+      });
+    }
+
+    const user = await User.findById(record.user);
+    if (!user) {
+      return res.status(400).json({ message: 'Foydalanuvchi topilmadi' });
+    }
+
+    user.password = password; // pre('save') hash qiladi
+    await user.save();
+
+    // Token bir martalik
+    record.usedAt = new Date();
+    await record.save();
+
+    // Barcha ochiq sessiyalarni yopamiz: agar hisobni kimdir egallagan bo'lsa,
+    // parol almashishi bilan uning refresh tokeni ham kuchini yo'qotsin.
+    await revokeAllSessionsForUser(user._id);
+
+    res.json({ message: "Parol yangilandi. Endi yangi parol bilan kiring." });
+  } catch (error) {
+    console.error('Reset password error:', error);
+    res.status(500).json({ message: 'Server error' });
   }
 });
 

@@ -221,6 +221,20 @@ export const apiSlice = createApi({
         body: userData,
       }),
     }),
+    forgotPassword: builder.mutation({
+      query: (email) => ({
+        url: '/api/auth/forgot-password',
+        method: 'POST',
+        body: { email },
+      }),
+    }),
+    resetPassword: builder.mutation({
+      query: ({ token, password }) => ({
+        url: '/api/auth/reset-password',
+        method: 'POST',
+        body: { token, password },
+      }),
+    }),
     getMe: builder.query({
       query: () => '/api/auth/me',
       providesTags: ['User'],
@@ -318,6 +332,8 @@ export const {
   useCompleteChallengeMutation,
   useLoginMutation,
   useRegisterMutation,
+  useForgotPasswordMutation,
+  useResetPasswordMutation,
   useGetMeQuery,
   useGetPracticeSessionQuery,
   useGetPracticePromptMutation,

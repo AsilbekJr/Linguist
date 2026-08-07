@@ -1,5 +1,5 @@
 import React, { useState, useEffect, Suspense, lazy } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { logout } from './features/auth/authSlice';
 import { apiSlice, useGetMeQuery, useSetTimezoneMutation } from './features/api/apiSlice';
@@ -14,6 +14,8 @@ import Practice from './pages/Practice';
 import TopicVocabulary from './pages/TopicVocabulary';
 import { Loader2 } from 'lucide-react';
 
+const ForgotPassword = lazy(() => import('./components/Auth/ForgotPassword'));
+const ResetPassword = lazy(() => import('./components/Auth/ResetPassword'));
 const SpeakingLab = lazy(() => import('./pages/SpeakingLab'));
 const Roleplay = lazy(() => import('./pages/Roleplay'));
 const Challenge = lazy(() => import('./pages/Challenge'));
@@ -32,16 +34,15 @@ function App() {
   const isAuthenticated = useSelector((state) => state.auth.isAuthenticated);
   const token = useSelector((state) => state.auth.token);
   const lastAuthAt = useSelector((state) => state.auth.lastAuthAt);
-  const [showRegister, setShowRegister] = useState(false);
   const [loginPrefillEmail, setLoginPrefillEmail] = useState('');
   const dispatch = useDispatch();
+  const navigate = useNavigate();
 
   const { data: me, isError: isMeError, error: meError } = useGetMeQuery(undefined, { skip: !token });
   const [setTimezone] = useSetTimezoneMutation();
 
   useEffect(() => {
     if (isAuthenticated) {
-      setShowRegister(false);
       setLoginPrefillEmail('');
     }
   }, [isAuthenticated]);
@@ -77,31 +78,59 @@ function App() {
   }, [token, lastAuthAt, isMeError, meError, dispatch]);
 
   if (!isAuthenticated) {
+    // Haqiqiy route'lar: ilgari bu yerda shartli render bor edi, shuning uchun
+    // /login yoki /reset-password kabi URL'lar umuman mavjud emas edi —
+    // pochtadagi tiklash havolasini ochib bo'lmasdi.
     return (
       <div className="min-h-screen bg-background text-foreground selection:bg-primary/30 font-sans flex items-center justify-center p-4 sm:p-6">
         <div className="absolute top-4 right-4 z-50 pointer-events-auto">
           <ThemeToggle />
         </div>
-        {showRegister ? (
-          <Register
-            onSwitchToLogin={() => setShowRegister(false)}
-            onAuthSuccess={() => setShowRegister(false)}
-            onUserExists={(email) => {
-              setLoginPrefillEmail(email);
-              setShowRegister(false);
-            }}
+        <Routes>
+          <Route
+            path="/register"
+            element={
+              <Register
+                onSwitchToLogin={() => navigate('/login')}
+                onAuthSuccess={() => navigate('/')}
+                onUserExists={(email) => {
+                  setLoginPrefillEmail(email);
+                  navigate('/login');
+                }}
+              />
+            }
           />
-        ) : (
-          <Login
-            key={loginPrefillEmail || 'login'}
-            initialEmail={loginPrefillEmail}
-            onAuthSuccess={() => setShowRegister(false)}
-            onSwitchToRegister={() => {
-              setLoginPrefillEmail('');
-              setShowRegister(true);
-            }}
+          <Route
+            path="/forgot-password"
+            element={
+              <Suspense fallback={<PageLoader />}>
+                <ForgotPassword />
+              </Suspense>
+            }
           />
-        )}
+          <Route
+            path="/reset-password"
+            element={
+              <Suspense fallback={<PageLoader />}>
+                <ResetPassword />
+              </Suspense>
+            }
+          />
+          <Route
+            path="*"
+            element={
+              <Login
+                key={loginPrefillEmail || 'login'}
+                initialEmail={loginPrefillEmail}
+                onAuthSuccess={() => navigate('/')}
+                onSwitchToRegister={() => {
+                  setLoginPrefillEmail('');
+                  navigate('/register');
+                }}
+              />
+            }
+          />
+        </Routes>
       </div>
     );
   }

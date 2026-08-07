@@ -64,11 +64,24 @@ const createApp = ({ isProd = process.env.NODE_ENV === 'production', enableRateL
       message: { message: 'Too many auth attempts. Try again later.' },
     });
 
+    // Parolni tiklash alohida va qattiqroq cheklanadi:
+    // — /forgot-password spam yuborish vositasiga aylanmasin
+    // — /reset-password tokenni taxmin qilishga urinishdan himoyalansin
+    const passwordResetLimiter = rateLimit({
+      windowMs: 60 * 60 * 1000,
+      max: isProd ? 5 : 100,
+      standardHeaders: true,
+      legacyHeaders: false,
+      message: { message: "Juda ko'p urinish. Bir soatdan keyin qayta urinib ko'ring." },
+    });
+
     app.use(globalLimiter);
     app.use('/api/auth/login', authLimiter);
     app.use('/api/auth/register', authLimiter);
     // Refresh ham cheklanadi — ilgari cheklovsiz edi va cookie brute-force'ga ochiq qolardi
     app.use('/api/auth/refresh', authLimiter);
+    app.use('/api/auth/forgot-password', passwordResetLimiter);
+    app.use('/api/auth/reset-password', passwordResetLimiter);
   }
 
   app.get('/health', (req, res) => {
