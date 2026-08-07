@@ -123,7 +123,7 @@ const ReviewMode = () => {
           if (res.xpAwarded) toast.success(res.message || `+${res.xpAwarded} XP`);
           if (res.streakUpdated) {
             fireConfetti();
-            toast.success(res.message, { icon: '🔥' });
+            toast.success(res.message, { icon: res.streakFrozen ? '🧊' : '🔥' });
           }
         })
         .catch((err) => console.error('Failed to sync quest:', err));

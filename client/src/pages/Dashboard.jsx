@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { useSelector } from 'react-redux';
 import { useGetWordsQuery, useGetReviewDueQuery, useGetMeQuery } from '../features/api/apiSlice';
 import { Link } from 'react-router-dom';
-import { Flame, BookOpen, Mic, Star, Quote, ArrowRight, GraduationCap, Headphones } from 'lucide-react';
+import { Flame, BookOpen, Mic, Star, Quote, ArrowRight, GraduationCap, Headphones, Snowflake } from 'lucide-react';
 import quotesData from '../data/quotes.json';
 import TodayHub from '../components/TodayHub/TodayHub';
 import { getGoalRecommendation } from '../utils/learningUtils';
@@ -93,6 +93,20 @@ const Dashboard = () => {
             <div>
               <div className="text-xl font-black">{user?.currentStreak || 0}</div>
               <div className="text-[10px] uppercase font-bold tracking-wider">Streak</div>
+            </div>
+          </div>
+
+          {/* Muzlatish: bir kun o'tkazib yuborilsa streak saqlanadi.
+              Foydalanuvchi buni OLDINDAN bilishi kerak — aks holda mexanizm
+              retention'ga ta'sir qilmaydi. */}
+          <div
+            className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-sky-500/10 border border-sky-500/20 text-sky-600 dark:text-sky-400"
+            title="Bir kun o'tkazib yuborsangiz, streak avtomatik saqlanadi. Har oy 2 ta beriladi."
+          >
+            <Snowflake className="w-6 h-6" />
+            <div>
+              <div className="text-xl font-black">{user?.streakFreezesLeft ?? 0}</div>
+              <div className="text-[10px] uppercase font-bold tracking-wider">Muzlatish</div>
             </div>
           </div>
           <div className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-yellow-500/10 border border-yellow-500/20 text-yellow-600 dark:text-yellow-500">
