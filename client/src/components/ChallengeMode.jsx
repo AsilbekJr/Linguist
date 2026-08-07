@@ -100,7 +100,9 @@ const ChallengeMode = ({ onAddWord }) => {
       if (recognitionRef.current) {
           try {
               recognitionRef.current.stop();
-          } catch(e) {}
+          } catch {
+              // SpeechRecognition allaqachon to'xtagan bo'lsa xato tashlaydi — bu normal
+          }
       }
     }
   };

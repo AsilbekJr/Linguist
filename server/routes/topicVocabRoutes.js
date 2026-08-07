@@ -128,6 +128,10 @@ router.get('/current', protect, async (req, res) => {
       description: ctx.baseTopic.description,
       story: ctx.baseTopic.story || scenario.storyUz,
       scenarioEmoji: ctx.baseTopic.scenarioEmoji || scenario.emoji,
+      cefr: ctx.baseTopic.cefr,
+      grammarFocus: ctx.baseTopic.grammarFocus,
+      // Dialog — kunning asosiy kontenti. So'zlar aynan shu suhbatdan chiqadi.
+      dialogue: ctx.baseTopic.dialogue || [],
       words: dailyWords,
       wordTarget: ctx.wordTarget,
       requiredCount,

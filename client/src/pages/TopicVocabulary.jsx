@@ -4,6 +4,8 @@ import { useDispatch, useSelector } from 'react-redux';
 import {
   useGetCurrentTopicQuery,
   useGetTopicBacklogQuery,
+  useStartTopicQuizMutation,
+  useSubmitTopicQuizMutation,
   useFinishTopicDayMutation,
   useAddWordMutation,
   useGetWordsQuery,
@@ -26,55 +28,90 @@ import { playTTSAudio } from '../utils/audio';
 import { getDailyWordTarget } from '../utils/learningUtils';
 import { fireConfetti } from '../utils/celebration';
 
-const shuffle = (arr) => [...arr].sort(() => Math.random() - 0.5);
-const QUIZ_KEY = 'linguist_topic_quiz_passed';
-
-const FALLBACK_OPTIONS = ['Boshqa ma\'no', 'Noto\'g\'ri tarjima', 'Aksincha', 'Tanilmadi'];
-
-const TopicQuiz = ({ pack, onPass, onBack }) => {
-  const questions = useMemo(
-    () =>
-      pack.map((w) => {
-        const wrongFromPack = pack
-          .filter((x) => x.word !== w.word)
-          .map((x) => x.translation)
-          .filter(Boolean);
-        const wrong = shuffle([...wrongFromPack, ...FALLBACK_OPTIONS]).slice(0, 3);
-        const options = shuffle([w.translation, ...wrong].filter(Boolean).slice(0, 4));
-        return { word: w.word, correct: w.translation, options };
-      }),
-    [pack]
-  );
-
+/**
+ * Mini-test.
+ *
+ * Ilgari savollar ham, to'g'ri javob ham shu komponentda edi va natija
+ * `sessionStorage` ga yozilardi — DevTools'dan bitta qator bilan butun kunni
+ * o'tkazib yuborish mumkin edi. Chalg'ituvchi variantlar esa
+ * ['Boshqa ma'no', 'Noto'g'ri tarjima', ...] kabi shablonlar edi: foydalanuvchi
+ * bir necha savoldan keyin so'zni bilmasdan ham 100% to'plardi.
+ *
+ * Endi savollar serverdan keladi, to'g'ri javob mijozga umuman yuborilmaydi,
+ * baholash ham serverda bo'ladi.
+ */
+const TopicQuiz = ({ quiz, onPass, onBack, submitQuiz, isSubmitting }) => {
   const [idx, setIdx] = useState(0);
-  const [correct, setCorrect] = useState(0);
+  const [answers, setAnswers] = useState([]);
   const [selected, setSelected] = useState(null);
+  const [results, setResults] = useState(null);
 
+  const questions = quiz?.questions || [];
   const q = questions[idx];
-  if (!q) return null;
 
-  const handlePick = (opt) => {
-    if (selected) return;
-    setSelected(opt);
-    const isOk = opt === q.correct;
+  const finish = async (finalAnswers) => {
+    try {
+      const res = await submitQuiz({ quizId: quiz.quizId, answers: finalAnswers }).unwrap();
+      setResults(res);
+      if (res.passed) {
+        toast.success(`Test o'tdi — ${res.score}%`);
+        onPass(res);
+      } else {
+        toast.error(`Natija ${res.score}%. Kamida ${res.passPercent}% kerak.`);
+      }
+    } catch {
+      toast.error("Testni tekshirishda xatolik. Qayta urinib ko'ring.");
+    }
+  };
+
+  const handlePick = (optionIndex) => {
+    if (selected !== null || isSubmitting) return;
+    setSelected(optionIndex);
+    const next = [...answers, optionIndex];
+
     setTimeout(() => {
-      const newCorrect = isOk ? correct + 1 : correct;
+      setAnswers(next);
       if (idx < questions.length - 1) {
-        setCorrect(newCorrect);
         setIdx((i) => i + 1);
         setSelected(null);
       } else {
-        const score = Math.round((newCorrect / questions.length) * 100);
-        if (score >= 60) onPass(score);
-        else {
-          toast.error(`Natija ${score}%. Kamida 60% kerak — qayta urinib ko'ring.`);
-          setIdx(0);
-          setCorrect(0);
-          setSelected(null);
-        }
+        finish(next);
       }
-    }, 700);
+    }, 400);
   };
+
+  const retry = () => {
+    setIdx(0);
+    setAnswers([]);
+    setSelected(null);
+    setResults(null);
+    onBack();
+  };
+
+  if (results && !results.passed) {
+    return (
+      <div className="max-w-lg mx-auto text-center">
+        <div className="text-4xl mb-3">📚</div>
+        <h3 className="text-xl font-bold mb-2">Natija: {results.score}%</h3>
+        <p className="text-muted-foreground mb-6">
+          O'tish uchun {results.passPercent}% kerak. So'zlarni qayta ko'rib chiqing.
+        </p>
+        <div className="space-y-2 text-left mb-6">
+          {results.results.filter((r) => !r.correct).map((r) => (
+            <div key={r.word} className="p-3 rounded-xl border border-destructive/30 bg-destructive/5">
+              <span className="font-bold capitalize">{r.word}</span>
+              <span className="text-muted-foreground"> — {r.correctAnswer}</span>
+            </div>
+          ))}
+        </div>
+        <Button onClick={retry} className="rounded-full font-bold">
+          So'zlarga qaytish
+        </Button>
+      </div>
+    );
+  }
+
+  if (!q) return null;
 
   return (
     <div className="max-w-lg mx-auto">
@@ -86,17 +123,15 @@ const TopicQuiz = ({ pack, onPass, onBack }) => {
       </p>
       <h3 className="text-2xl font-black mb-6 capitalize">{q.word}</h3>
       <div className="space-y-3">
-        {q.options.map((opt) => (
+        {q.options.map((opt, optionIndex) => (
           <button
             key={opt}
             type="button"
-            onClick={() => handlePick(opt)}
-            disabled={!!selected}
-            className={`w-full text-left p-4 rounded-xl border font-medium ${
-              selected === opt
-                ? opt === q.correct
-                  ? 'border-green-500 bg-green-500/10'
-                  : 'border-destructive bg-destructive/10'
+            onClick={() => handlePick(optionIndex)}
+            disabled={selected !== null || isSubmitting}
+            className={`w-full text-left p-4 rounded-xl border font-medium transition-colors ${
+              selected === optionIndex
+                ? 'border-primary bg-primary/10'
                 : 'border-border hover:border-purple-500/50'
             }`}
           >
@@ -104,6 +139,9 @@ const TopicQuiz = ({ pack, onPass, onBack }) => {
           </button>
         ))}
       </div>
+      {isSubmitting && (
+        <p className="text-center text-sm text-muted-foreground mt-4">Tekshirilmoqda...</p>
+      )}
     </div>
   );
 };
@@ -116,15 +154,19 @@ const TopicVocabulary = () => {
   const { data: backlogData } = useGetTopicBacklogQuery(undefined, { skip: !topicData });
   const { data: user } = useGetMeQuery();
   const [finishTopicDay, { isLoading: isFinishing }] = useFinishTopicDayMutation();
+  const [startQuiz, { isLoading: isStartingQuiz }] = useStartTopicQuizMutation();
+  const [submitQuiz, { isLoading: isSubmittingQuiz }] = useSubmitTopicQuizMutation();
   const [addWord] = useAddWordMutation();
   const { data: userWords = [] } = useGetWordsQuery();
 
   const [step, setStep] = useState('intro');
   const [addingWords, setAddingWords] = useState({});
-  const [quizPassed, setQuizPassed] = useState(() => sessionStorage.getItem(QUIZ_KEY) === '1');
+  const [quiz, setQuiz] = useState(null);
   const [showBacklog, setShowBacklog] = useState(false);
   const healRef = useRef(false);
 
+  // Test o'tilgani SERVERDAN keladi. Ilgari bu sessionStorage'da edi.
+  const quizPassed = Boolean(topicData?.quizPassed);
   const pack = topicData?.words || [];
   const wordTarget = topicData?.wordTarget ?? user?.dailyWordTarget ?? getDailyWordTarget(user?.onboarding?.level);
   const requiredCount = topicData?.requiredCount ?? Math.min(wordTarget, pack.length || wordTarget);
@@ -148,17 +190,28 @@ const TopicVocabulary = () => {
 
   const handleFinishDay = useCallback(async () => {
     try {
-      const res = await finishTopicDay({ quizPassed: pack.length === 0 ? true : quizPassed }).unwrap();
+      // Test natijasini server o'zi tekshiradi — mijoz `quizPassed` yubormaydi
+      const res = await finishTopicDay({}).unwrap();
       applyUserUpdate(res.user);
-      sessionStorage.removeItem(QUIZ_KEY);
       fireConfetti();
       toast.success(res.message || 'Kunlik sahna bajarildi!');
       setStep('done');
     } catch (err) {
       const msg = err?.data?.error || 'Yakunlashda xatolik';
       toast.error(msg);
+      if (err?.data?.code === 'QUIZ_REQUIRED') setStep('learn');
     }
-  }, [finishTopicDay, quizPassed, pack.length, applyUserUpdate]);
+  }, [finishTopicDay, applyUserUpdate]);
+
+  const handleStartQuiz = useCallback(async () => {
+    try {
+      const res = await startQuiz().unwrap();
+      setQuiz(res);
+      setStep('quiz');
+    } catch (err) {
+      toast.error(err?.data?.error || "Testni boshlashda xatolik");
+    }
+  }, [startQuiz]);
 
   useEffect(() => {
     if (topicData?.topicQuestCompleted && step !== 'done') {
@@ -281,20 +334,103 @@ const TopicVocabulary = () => {
 
       {step === 'learn' && (
         <>
+          {topicData.dialogue?.length > 0 && (
+            <div className="bg-card border rounded-2xl p-4 sm:p-6 mb-6">
+              <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
+                <h3 className="font-bold flex items-center gap-2">
+                  <BookOpen className="w-4 h-4 text-purple-500" />
+                  Dialog
+                </h3>
+                <div className="flex items-center gap-2">
+                  {topicData.cefr && (
+                    <span className="text-[10px] font-bold px-2 py-1 rounded-full bg-purple-500/10 text-purple-600">
+                      {topicData.cefr}
+                    </span>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      playTTSAudio(topicData.dialogue.map((l) => l.en).join(' '), 'en-GB', 0.9)
+                    }
+                    className="text-xs font-bold text-purple-600 flex items-center gap-1"
+                  >
+                    <Volume2 className="w-4 h-4" /> Tinglash
+                  </button>
+                </div>
+              </div>
+
+              {topicData.grammarFocus && (
+                <p className="text-xs text-muted-foreground mb-4 px-3 py-2 rounded-lg bg-secondary/60">
+                  <span className="font-bold">Grammatika:</span> {topicData.grammarFocus}
+                </p>
+              )}
+
+              <div className="space-y-3">
+                {topicData.dialogue.map((line, i) => (
+                  <div key={i} className="flex gap-3">
+                    <span className="text-xs font-bold text-muted-foreground shrink-0 w-16 pt-1 truncate">
+                      {line.speaker}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium">{line.en}</p>
+                      <p className="text-sm text-muted-foreground">{line.uz}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => playTTSAudio(line.en, 'en-GB', 0.9)}
+                      className="shrink-0 text-muted-foreground hover:text-foreground self-start pt-1"
+                      aria-label="Tinglash"
+                    >
+                      <Volume2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div className="space-y-4 mb-6">
             {pack.map((w, index) => {
               const saved = userWords.some((uw) => uw.word.toLowerCase() === w.word.toLowerCase());
               return (
                 <div key={index} className="bg-card border rounded-2xl p-5">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h3 className="text-xl font-bold flex items-center gap-2">
-                        {w.word}
-                        <button type="button" onClick={() => playTTSAudio(w.word, 'en-GB', 1.0)}>
+                  <div className="flex justify-between items-start gap-3">
+                    <div className="min-w-0">
+                      <h3 className="text-xl font-bold flex items-center gap-2 flex-wrap">
+                        <span className="capitalize">{w.word}</span>
+                        <button type="button" onClick={() => playTTSAudio(w.word, 'en-GB', 1.0)} aria-label="Tinglash">
                           <Volume2 className="w-4 h-4 text-muted-foreground" />
                         </button>
+                        {w.phonetic && (
+                          <span className="text-sm font-normal text-muted-foreground">{w.phonetic}</span>
+                        )}
+                        {w.partOfSpeech && (
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-secondary text-muted-foreground">
+                            {w.partOfSpeech}
+                          </span>
+                        )}
                       </h3>
                       <p className="text-sm font-bold text-green-600 mt-2">{w.translation}</p>
+                      {w.definition && (
+                        <p className="text-sm text-muted-foreground mt-1">{w.definition}</p>
+                      )}
+                      {w.example && (
+                        <div className="mt-3 pl-3 border-l-2 border-purple-500/30">
+                          <p className="text-sm italic">{w.example}</p>
+                          {w.exampleUz && (
+                            <p className="text-xs text-muted-foreground">{w.exampleUz}</p>
+                          )}
+                        </div>
+                      )}
+                      {w.collocations?.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 mt-3">
+                          {w.collocations.map((c) => (
+                            <span key={c} className="text-[11px] px-2 py-1 rounded-full bg-secondary text-muted-foreground">
+                              {c}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </div>
                     <Button
                       variant="ghost"
@@ -322,8 +458,14 @@ const TopicVocabulary = () => {
               Orqaga
             </Button>
             {!quizPassed && pack.length > 0 && (
-              <Button onClick={() => setStep('quiz')} className="font-bold">
-                Mini-testga o'tish <Sparkles className="w-4 h-4 ml-2" />
+              <Button onClick={handleStartQuiz} disabled={isStartingQuiz} className="font-bold">
+                {isStartingQuiz ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <>
+                    Mini-testga o'tish <Sparkles className="w-4 h-4 ml-2" />
+                  </>
+                )}
               </Button>
             )}
             {canFinish && (
@@ -340,16 +482,13 @@ const TopicVocabulary = () => {
         </>
       )}
 
-      {step === 'quiz' && (
+      {step === 'quiz' && quiz && (
         <div className="bg-card border rounded-3xl p-6">
           <TopicQuiz
-            pack={pack}
-            onPass={() => {
-              setQuizPassed(true);
-              sessionStorage.setItem(QUIZ_KEY, '1');
-              toast.success('Test o\'tdi!');
-              setStep('learn');
-            }}
+            quiz={quiz}
+            submitQuiz={submitQuiz}
+            isSubmitting={isSubmittingQuiz}
+            onPass={() => setStep('learn')}
             onBack={() => setStep('learn')}
           />
         </div>

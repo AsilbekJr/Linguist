@@ -2,7 +2,7 @@ import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { logout } from './features/auth/authSlice';
-import { apiSlice, useGetMeQuery } from './features/api/apiSlice';
+import { apiSlice, useGetMeQuery, useSetTimezoneMutation } from './features/api/apiSlice';
 import { ThemeToggle } from './components/ThemeToggle';
 import Login from './components/Auth/Login';
 import Register from './components/Auth/Register';
@@ -36,7 +36,8 @@ function App() {
   const [loginPrefillEmail, setLoginPrefillEmail] = useState('');
   const dispatch = useDispatch();
 
-  const { isError: isMeError, error: meError } = useGetMeQuery(undefined, { skip: !token });
+  const { data: me, isError: isMeError, error: meError } = useGetMeQuery(undefined, { skip: !token });
+  const [setTimezone] = useSetTimezoneMutation();
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -44,6 +45,22 @@ function App() {
       setLoginPrefillEmail('');
     }
   }, [isAuthenticated]);
+
+  /**
+   * Brauzer zonasini serverga yuboramiz.
+   * Busiz streak va kunlik reja UTC bo'yicha hisoblanardi: O'zbekistonda
+   * "kun" mahalliy soat 05:00 da almashib, kechqurungi mashq ertangi kunga
+   * yozilardi va foydalanuvchi streak'ini bekorga yo'qotardi.
+   */
+  useEffect(() => {
+    if (!isAuthenticated || !me) return;
+    const browserZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    if (browserZone && browserZone !== me.timezone) {
+      setTimezone(browserZone).unwrap().catch(() => {
+        // muhim emas — server default zonaga qaytadi
+      });
+    }
+  }, [isAuthenticated, me, setTimezone]);
 
   useEffect(() => {
     if (!isAuthenticated) return;

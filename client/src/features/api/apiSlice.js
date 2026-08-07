@@ -99,6 +99,15 @@ export const apiSlice = createApi({
       }),
       invalidatesTags: ['Word', 'User'],
     }),
+    /** 4 darajali baholash: 0=Again, 1=Hard, 2=Good, 3=Easy */
+    gradeReview: builder.mutation({
+      query: ({ id, grade }) => ({
+        url: `/api/review/${id}/grade`,
+        method: 'POST',
+        body: { grade },
+      }),
+      invalidatesTags: ['Word', 'User'],
+    }),
     quickReview: builder.mutation({
       query: ({ id, known }) => ({
         url: `/api/review/${id}/quick`,
@@ -107,6 +116,11 @@ export const apiSlice = createApi({
       }),
       invalidatesTags: ['Word', 'User'],
     }),
+    getReviewStats: builder.query({
+      query: () => '/api/review/stats',
+      providesTags: ['Word'],
+      keepUnusedDataFor: 60,
+    }),
     translateSpeaking: builder.mutation({
       query: (text) => ({
         url: '/api/speaking/translate',
@@ -114,13 +128,8 @@ export const apiSlice = createApi({
         body: { text },
       }),
     }),
-    translateText: builder.mutation({
-      query: (data) => ({
-        url: '/api/speaking/translate-text',
-        method: 'POST',
-        body: data,
-      }),
-    }),
+    // `translateText` (/api/speaking/translate-text) olib tashlandi:
+    // u umumiy tarjimon edi — o'rganish funksiyasi emas, lekin AI limitini yerdi.
     evaluateSpeaking: builder.mutation({
       query: ({ targetSentence, spokenText }) => ({
         url: '/api/speaking/evaluate',
@@ -171,8 +180,27 @@ export const apiSlice = createApi({
       providesTags: ['Topic'],
       keepUnusedDataFor: 120,
     }),
+    /**
+     * Mini-testni boshlash. Savollar SERVERDA yaratiladi va to'g'ri javob
+     * mijozga yuborilmaydi — ilgari test butunlay brauzerda edi va uni
+     * sessionStorage orqali o'tkazib yuborish mumkin edi.
+     */
+    startTopicQuiz: builder.mutation({
+      query: () => ({
+        url: '/api/topics/quiz/start',
+        method: 'POST',
+      }),
+    }),
+    submitTopicQuiz: builder.mutation({
+      query: ({ quizId, answers }) => ({
+        url: '/api/topics/quiz/submit',
+        method: 'POST',
+        body: { quizId, answers },
+      }),
+      invalidatesTags: ['Topic'],
+    }),
     finishTopicDay: builder.mutation({
-      query: (body) => ({
+      query: (body = {}) => ({
         url: '/api/topics/finish',
         method: 'POST',
         body,
@@ -232,6 +260,14 @@ export const apiSlice = createApi({
       }),
       invalidatesTags: ['User'],
     }),
+    /** Streak va kunlik reja foydalanuvchi zonasida hisoblanishi uchun */
+    setTimezone: builder.mutation({
+      query: (timezone) => ({
+        url: '/api/auth/timezone',
+        method: 'POST',
+        body: { timezone },
+      }),
+    }),
     refreshToken: builder.mutation({
       query: () => ({
         url: '/api/auth/refresh',
@@ -270,9 +306,10 @@ export const {
   useAddWordMutation,
   useDeleteWordMutation,
   useCheckReviewMutation,
+  useGradeReviewMutation,
   useQuickReviewMutation,
+  useGetReviewStatsQuery,
   useTranslateSpeakingMutation,
-  useTranslateTextMutation,
   useEvaluateSpeakingMutation,
   useChatRoleplayMutation,
   useAskTeacherMutation,
@@ -288,9 +325,12 @@ export const {
   useGetReviewDueQuery,
   useGetCurrentTopicQuery,
   useGetTopicBacklogQuery,
+  useStartTopicQuizMutation,
+  useSubmitTopicQuizMutation,
   useFinishTopicDayMutation,
   useOnboardUserMutation,
   useSyncDailyQuestMutation,
+  useSetTimezoneMutation,
   useRefreshTokenMutation,
   useLogoutSessionMutation,
   useGetSubscriptionQuery,

@@ -122,7 +122,7 @@ const Pricing = () => {
                 onClick={() => handleUpgrade(plan.id)}
                 disabled={checkingOut}
               >
-                {checkingOut ? <Loader2 className="w-4 h-4 animate-spin" /> : `${plan.name} ga o\'tish`}
+                {checkingOut ? <Loader2 className="w-4 h-4 animate-spin" /> : `${plan.name} ga o'tish`}
               </Button>
             )}
           </div>
@@ -130,7 +130,8 @@ const Pricing = () => {
       </div>
 
       <p className="text-center text-xs text-muted-foreground">
-        O\'zbekiston uchun Payme/Click tez orada qo\'shiladi. Hozir xalqaro to\'lov — Stripe.
+        Hozircha faqat xalqaro to&apos;lov (Stripe). O&apos;zbekiston kartalari uchun Payme va Click
+        integratsiyasi ishlanmoqda.
       </p>
     </div>
   );
