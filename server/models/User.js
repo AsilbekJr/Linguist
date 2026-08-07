@@ -53,6 +53,12 @@ const userSchema = new mongoose.Schema({
     level: { type: String, default: 'beginner' },
     goal: { type: String, default: 'speaking' },
     planType: { type: String, default: 'standard' },
+    /**
+     * Placement testi natijasi (A1/A2/B1/B2).
+     * `level` dan farqi: bu O'LCHANGAN daraja, `level` esa ilova ichidagi
+     * uch bosqichli soddalashtirish. Foydalanuvchi o'zi tanlagan bo'lsa bu bo'sh.
+     */
+    placedCefr: { type: String, default: null },
   },
   dailyQuests: {
     date: { type: String, default: '' },

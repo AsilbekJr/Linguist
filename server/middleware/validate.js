@@ -99,6 +99,14 @@ const challengeCompleteSchema = z.object({
   }),
 });
 
+const placementAnswerSchema = z.object({
+  body: z.object({
+    sessionId: objectId,
+    itemId: z.string().min(2).max(40),
+    answered: z.number().int().min(0).max(3),
+  }),
+});
+
 const listeningCheckSchema = z.object({
   body: z.object({
     lineIndex: z.number().int().min(0).max(50),
@@ -217,6 +225,7 @@ module.exports = {
   challengeCompleteSchema,
   speakingEvaluateSchema,
   listeningCheckSchema,
+  placementAnswerSchema,
   timezoneSchema,
   forgotPasswordSchema,
   resetPasswordSchema,

@@ -45,7 +45,7 @@ const resolveTodayTopic = async (user) => {
   const logicalDay = isCompleteForToday
     ? Math.max(1, progress.currentDay - 1)
     : progress.currentDay;
-  const contentDay = resolveTopicDay(logicalDay, learnerLevel);
+  const contentDay = resolveTopicDay(logicalDay, topicsList);
 
   return {
     topic: topicsList.find((t) => t.day === contentDay),

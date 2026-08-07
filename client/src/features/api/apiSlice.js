@@ -240,6 +240,17 @@ export const apiSlice = createApi({
         body: userData,
       }),
     }),
+    startPlacement: builder.mutation({
+      query: () => ({ url: '/api/placement/start', method: 'POST' }),
+    }),
+    answerPlacement: builder.mutation({
+      query: (body) => ({ url: '/api/placement/answer', method: 'POST', body }),
+      invalidatesTags: (result) => (result?.done ? ['User', 'Topic', 'Listening'] : []),
+    }),
+    getPlacementResult: builder.query({
+      query: () => '/api/placement/result',
+      providesTags: ['User'],
+    }),
     forgotPassword: builder.mutation({
       query: (email) => ({
         url: '/api/auth/forgot-password',
@@ -356,6 +367,9 @@ export const {
   useRegisterMutation,
   useForgotPasswordMutation,
   useResetPasswordMutation,
+  useStartPlacementMutation,
+  useAnswerPlacementMutation,
+  useGetPlacementResultQuery,
   useGetMeQuery,
   useGetPracticeSessionQuery,
   useGetPracticePromptMutation,

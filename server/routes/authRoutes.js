@@ -25,7 +25,11 @@ const {
   revokeAllSessionsForUser,
 } = require('../services/authSessionService');
 const PasswordResetToken = require('../models/PasswordResetToken');
+const TopicProgress = require('../models/TopicProgress');
 const { sendMail, passwordResetEmail } = require('../services/mailer');
+const { getStartDayForLevel } = require('../utils/topicHelpers');
+const fs = require('fs');
+const path = require('path');
 const Word = require('../models/Word');
 const { userDayKey, isValidTimeZone } = require('../utils/dayKey');
 const {
@@ -132,12 +136,31 @@ router.post('/onboard', protect, validate(onboardSchema), async (req, res) => {
   try {
     const { level, goal, planType } = req.validated.body;
     req.user.onboarding = {
+      ...(req.user.onboarding?.toObject?.() || req.user.onboarding || {}),
       completed: true,
       level,
       goal,
       planType,
     };
     const updatedUser = await req.user.save();
+
+    // Kurs boshlanishini darajaga moslaymiz. Ilgari bu qilinmasdi va
+    // `resolveTopicDay` ham darajani e'tiborsiz qoldirardi — natijada
+    // "advanced" tanlagan foydalanuvchi ham 1-kun "Tanishuv" (A1) dan boshlardi.
+    const progress = await TopicProgress.findOne({ user: req.user._id });
+    if (!progress || progress.history.length === 0) {
+      const topicsList = JSON.parse(
+        fs.readFileSync(path.join(__dirname, '../data/topics.json'), 'utf8')
+      );
+      const startDay = getStartDayForLevel(topicsList, level);
+      if (progress) {
+        progress.currentDay = startDay;
+        await progress.save();
+      } else {
+        await TopicProgress.create({ user: req.user._id, currentDay: startDay, history: [] });
+      }
+    }
+
     res.status(200).json(await formatUser(updatedUser));
   } catch (error) {
     console.error('Onboarding error:', error);

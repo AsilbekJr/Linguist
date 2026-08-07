@@ -1,7 +1,37 @@
 const { getDailyWordTarget } = require('./gamification');
 
-/** Beginner users start on easier curated days (topics.json day numbers) */
-const BEGINNER_DAY_SEQUENCE = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31];
+/**
+ * CEFR → ilovadagi daraja va aksincha.
+ *
+ * Ilgari bu yerda `BEGINNER_DAY_SEQUENCE = [1,2,3,...,31]` bor edi va
+ * `resolveTopicDay` uni "beginner uchun oson kunlar" deb ishlatardi. Lekin bu
+ * massiv AYNIYAT edi — ya'ni beginner ham, advanced ham bir xil 1-kundan
+ * boshlardi va tanlangan daraja kontentga umuman ta'sir qilmasdi.
+ * Bundan tashqari uzunlik 31 ga qotirilgan edi, kontent esa 24 kun.
+ */
+const LEVEL_TO_CEFR = {
+  beginner: 'A1',
+  intermediate: 'B1',
+  advanced: 'B2',
+};
+
+/**
+ * Foydalanuvchi darajasiga mos birinchi kun.
+ * Kontentning o'zidan hisoblanadi — yangi blok qo'shilganda bu yer o'zgarmaydi.
+ */
+const getStartDayForLevel = (topicsList, learnerLevel) => {
+  const targetCefr = LEVEL_TO_CEFR[learnerLevel] || 'A1';
+  const exact = topicsList.find((t) => t.cefr === targetCefr);
+  if (exact) return exact.day;
+
+  // Aynan shu daraja hali yozilmagan (masalan B2) — mavjud eng yuqorisidan boshlaymiz
+  const order = ['A1', 'A2', 'B1', 'B2', 'C1'];
+  const targetRank = order.indexOf(targetCefr);
+  const candidates = topicsList
+    .filter((t) => order.indexOf(t.cefr) <= targetRank)
+    .sort((a, b) => order.indexOf(b.cefr) - order.indexOf(a.cefr) || a.day - b.day);
+  return candidates[0]?.day || 1;
+};
 
 const SCENARIO_META = {
   1: { emoji: '🏠', storyUz: "Bugun kundalik hayotda eng ko'p ishlatiladigan so'zlarni o'rganamiz — keyin mini-test va takrorlash." },
@@ -14,13 +44,14 @@ const getScenarioMeta = (day) => {
   return SCENARIO_META[key] || { emoji: '📚', storyUz: "Bugungi mavzuda yangi so'zlarni o'rganib, bugun takrorlaysiz." };
 };
 
-const resolveTopicDay = (currentDay, learnerLevel) => {
-  const maxDay = BEGINNER_DAY_SEQUENCE.length;
-  const safeDay = Math.min(Math.max(1, currentDay), maxDay);
-  if (learnerLevel === 'beginner') {
-    return BEGINNER_DAY_SEQUENCE[safeDay - 1] || safeDay;
-  }
-  return safeDay;
+/**
+ * `currentDay` endi to'g'ridan-to'g'ri kontent kuni.
+ * Boshlanish nuqtasi placement natijasiga qarab `TopicProgress.currentDay`
+ * ga yoziladi, shuning uchun bu yerda darajaga qarab qayta xaritalash kerak emas.
+ */
+const resolveTopicDay = (currentDay, topicsList) => {
+  const maxDay = Array.isArray(topicsList) && topicsList.length ? topicsList.length : 1;
+  return Math.min(Math.max(1, Number(currentDay) || 1), maxDay);
 };
 
 /** Bugungi sessiya so'zlari — har doim wordTarget ta (saqlangan/saqlanmagan aralash) */
@@ -85,6 +116,8 @@ const buildDistractorPool = (topicsList, excludeWords = []) => {
 
 module.exports = {
   getDailyWordTarget,
+  LEVEL_TO_CEFR,
+  getStartDayForLevel,
   resolveTopicDay,
   pickDailySessionWords,
   getTopicReviewDate,

@@ -3,12 +3,15 @@ import { useGetMeQuery, useOnboardUserMutation } from '../../features/api/apiSli
 import { Button } from "@/components/ui/button";
 import { Loader2, ArrowRight, Target, Brain, AlignLeft, Zap, Sparkles, BookOpen } from "lucide-react";
 import { toast } from "react-hot-toast";
+import PlacementTest from './PlacementTest';
 
 const OnboardingModal = () => {
     const { data: user, isLoading: isUserLoading, refetch } = useGetMeQuery();
     const [onboardUser, { isLoading: isSubmitting }] = useOnboardUserMutation();
 
-    const [step, setStep] = useState(1);
+    // 0 = daraja aniqlash testi. Foydalanuvchi o'tkazib yuborsa 1-qadamga o'tadi
+    // va darajani o'zi tanlaydi (eski xatti-harakat).
+    const [step, setStep] = useState(0);
     const [answers, setAnswers] = useState({
         level: '',
         goal: '',
@@ -19,6 +22,13 @@ const OnboardingModal = () => {
 
     // Only show if onboarding is not completed
     if (user.onboarding?.completed) return null;
+
+    const handlePlacementDone = (result) => {
+        // O'lchangan darajani oldindan to'ldiramiz va daraja savolini
+        // o'tkazib, to'g'ridan-to'g'ri maqsadga o'tamiz
+        setAnswers((prev) => ({ ...prev, level: result.learnerLevel }));
+        setStep(2);
+    };
 
     const handleNext = () => setStep(s => s + 1);
 
@@ -53,6 +63,13 @@ const OnboardingModal = () => {
                 </div>
 
                 <div className="p-5 sm:p-8">
+                    {step === 0 && (
+                        <PlacementTest
+                            onDone={handlePlacementDone}
+                            onSkip={() => setStep(1)}
+                        />
+                    )}
+
                     {step === 1 && (
                         <div className="animate-in slide-in-from-right-4">
                             <h3 className="text-xl md:text-2xl font-black mb-2 text-foreground">Ingliz tili darajangiz qanday?</h3>

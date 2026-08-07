@@ -72,7 +72,7 @@ const resolveDailyContext = async (user) => {
     : false;
 
   const logicalDay = isCompleteForToday ? Math.max(1, progress.currentDay - 1) : progress.currentDay;
-  const contentDay = resolveTopicDay(logicalDay, learnerLevel);
+  const contentDay = resolveTopicDay(logicalDay, topicsList);
   const baseTopic = topicsList.find((t) => t.day === contentDay);
 
   return {
@@ -261,7 +261,7 @@ router.get('/backlog', protect, async (req, res) => {
 
     const topicsList = loadTopicsData();
     const learnerLevel = req.user.onboarding?.level || 'beginner';
-    const contentDay = resolveTopicDay(progress.currentDay, learnerLevel);
+    const contentDay = resolveTopicDay(progress.currentDay, topicsList);
     const savedLower = await loadSavedWords(req.user._id);
     const words = buildBacklog(topicsList, contentDay, savedLower, 20);
 
