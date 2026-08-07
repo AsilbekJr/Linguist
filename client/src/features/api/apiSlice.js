@@ -1,7 +1,25 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import { setCredentials, logout } from '../auth/authSlice';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:5000';
+/**
+ * Backend manzili.
+ *
+ * Zaxira qiymat FAQAT ishlab chiqish uchun. Deploy qilingan build'da
+ * `VITE_API_URL` yozilmagan bo'lsa, ilova foydalanuvchining O'Z
+ * kompyuteridagi 127.0.0.1:5000 ga murojaat qilishga urinadi — bu esa
+ * https sahifadan http manzilga so'rov bo'lgani uchun brauzer tomonidan
+ * bloklanadi ("mixed content") va sabab hech qayerda ko'rinmaydi.
+ * Shuning uchun bu holatni baland ovozda aytamiz.
+ */
+const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '' : 'http://127.0.0.1:5000');
+
+if (import.meta.env.PROD && !import.meta.env.VITE_API_URL) {
+  console.error(
+    '[Linguist] VITE_API_URL sozlanmagan. Vercel → Settings → Environment Variables ' +
+      "ga uni qo'shing va deploymentni qayta ishga tushiring. Aks holda hech qanday " +
+      "so'rov ishlamaydi."
+  );
+}
 
 const rawBaseQuery = fetchBaseQuery({
   baseUrl: API_URL,
