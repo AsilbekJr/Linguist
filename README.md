@@ -94,6 +94,23 @@ Yuborilmaydi: reja tugagan, kuniga ikkinchi marta, onboarding tugamagan,
 Har bir xatda obunani bekor qilish havolasi bor va u **login talab qilmaydi** —
 aks holda odam "spam" tugmasini bosadi va domen obro'si tushadi.
 
+**Kanal tanlash:** qurilmada push obunasi bo'lsa push, aks holda email.
+Ikkalasini birga yuborish spam bo'lardi — bir xil eslatma ikki joydan kelsa
+foydalanuvchi ikkalasini ham o'chirib qo'yadi.
+
+Push uchun VAPID kalitlari kerak:
+
+```bash
+cd server && npm run push:keys   # kalitlarni generatsiya qiladi
+```
+
+Ruxsat **faqat foydalanuvchi tugmani bosgandan keyin** so'raladi. Sahifa
+yuklanishida avtomatik so'rash — "block" bosilishining eng keng tarqalgan
+sababi, va bir marta bloklangandan keyin qaytarish deyarli imkonsiz.
+
+Push xizmati 404/410 qaytarsa obuna darhol o'chiriladi (brauzer uni bekor
+qilgan); boshqa xatolarda 3 urinishdan keyin.
+
 Render bepul tarifida doimiy jarayon yo'q, shuning uchun tashqi cron
 soatiga bir marta chaqiradi:
 
@@ -136,7 +153,7 @@ takrorlashdan butunlay chiqib ketmaydi.
 ## Testlar
 
 ```bash
-cd server && npm test     # 132 ta test; pretest kontentni validatsiya qiladi
+cd server && npm test     # 143 ta test; pretest kontentni validatsiya qiladi
 cd client && npm run lint
 cd client && npm run build
 
@@ -161,6 +178,7 @@ npx playwright test
 | `GEMINI_API_KEY` | AI uchun | Yo'q bo'lsa AI funksiyalari 503 qaytaradi |
 | `DEFAULT_TIMEZONE` | yo'q | Default `Asia/Tashkent` |
 | `MAIL_PROVIDER` + kalit | tiklash uchun | `resend` yoki `brevo`; yo'q bo'lsa xat logga chiqadi |
+| `VAPID_*` | push uchun | `npm run push:keys` |
 | `CRON_SECRET` | eslatma uchun | Tashqi cron shu sir bilan chaqiradi |
 | `STRIPE_*` | to'lov uchun | Quyidagi izohga qarang |
 
@@ -184,9 +202,8 @@ Bu ro'yxat ataylab ochiq — mahsulot hali bularni qila olmaydi:
   deb ko'rsatmasligi kerak. Haqiqiy baho uchun fonema darajasidagi xizmat kerak.
 - **Kontent hajmi.** 30 kun (A1-B1). B2 hali yozilmagan — placement B2 desa ham
   kurs mavjud eng yuqori blokdan (B1) boshlanadi.
-- **Push bildirishnoma yo'q** — eslatma faqat email orqali. Web Push VAPID
-  kalitlari va `web-push` paketini talab qiladi; iOS'da esa faqat o'rnatilgan
-  PWA'da ishlaydi.
+- **iOS push** faqat o'rnatilgan PWA'da ishlaydi (Safari cheklovi). Foydalanuvchi
+  avval "Bosh ekranga qo'shish" qilishi kerak.
 - **i18n yo'q** — matnlar kodga qotirilgan, rus tiliga chiqish uchun refaktoring kerak.
 
 ## Analitika

@@ -64,7 +64,7 @@ export const apiSlice = createApi({
   refetchOnFocus: false,
   refetchOnReconnect: true,
   baseQuery: baseQueryWithReauth,
-  tagTypes: ['Word', 'Challenge', 'Topic', 'User', 'Billing', 'Practice', 'Listening', 'Notifications'],
+  tagTypes: ['Word', 'Challenge', 'Topic', 'User', 'Billing', 'Practice', 'Listening', 'Notifications', 'Push'],
   endpoints: (builder) => ({
     getWords: builder.query({
       query: () => '/api/words',
@@ -240,6 +240,28 @@ export const apiSlice = createApi({
         body: userData,
       }),
     }),
+    getPushStatus: builder.query({
+      query: () => '/api/push/status',
+      providesTags: ['Push'],
+    }),
+    getPushPublicKey: builder.query({
+      query: () => '/api/push/public-key',
+    }),
+    subscribePush: builder.mutation({
+      query: (body) => ({ url: '/api/push/subscribe', method: 'POST', body }),
+      invalidatesTags: ['Push'],
+    }),
+    unsubscribePush: builder.mutation({
+      query: (endpoint) => ({
+        url: '/api/push/unsubscribe',
+        method: 'POST',
+        body: { endpoint },
+      }),
+      invalidatesTags: ['Push'],
+    }),
+    sendTestPush: builder.mutation({
+      query: () => ({ url: '/api/push/test', method: 'POST' }),
+    }),
     getNotificationPrefs: builder.query({
       query: () => '/api/notifications/preferences',
       providesTags: ['Notifications'],
@@ -382,6 +404,11 @@ export const {
   useRegisterMutation,
   useForgotPasswordMutation,
   useResetPasswordMutation,
+  useGetPushStatusQuery,
+  useGetPushPublicKeyQuery,
+  useSubscribePushMutation,
+  useUnsubscribePushMutation,
+  useSendTestPushMutation,
   useGetNotificationPrefsQuery,
   useUpdateNotificationPrefsMutation,
   useUnsubscribeMutation,

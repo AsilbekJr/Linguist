@@ -99,6 +99,22 @@ const challengeCompleteSchema = z.object({
   }),
 });
 
+const pushSubscribeSchema = z.object({
+  body: z.object({
+    endpoint: z.string().url().max(1000),
+    keys: z.object({
+      p256dh: z.string().min(20).max(200),
+      auth: z.string().min(10).max(100),
+    }),
+  }),
+});
+
+const pushUnsubscribeSchema = z.object({
+  body: z.object({
+    endpoint: z.string().url().max(1000),
+  }),
+});
+
 const notificationPrefsSchema = z.object({
   body: z
     .object({
@@ -245,6 +261,8 @@ module.exports = {
   placementAnswerSchema,
   notificationPrefsSchema,
   unsubscribeSchema,
+  pushSubscribeSchema,
+  pushUnsubscribeSchema,
   timezoneSchema,
   forgotPasswordSchema,
   resetPasswordSchema,

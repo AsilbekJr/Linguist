@@ -32,6 +32,12 @@ services:
         value: https://linguist-eight.vercel.app
       - key: CLIENT_URL
         value: https://linguist-eight.vercel.app
+      - key: VAPID_PUBLIC_KEY
+        sync: false
+      - key: VAPID_PRIVATE_KEY
+        sync: false
+      - key: VAPID_SUBJECT
+        sync: false
       - key: CRON_SECRET
         generateValue: true
       - key: STRIPE_SECRET_KEY

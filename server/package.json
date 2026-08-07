@@ -10,7 +10,8 @@
     "test:watch": "node --test --watch \"tests/**/*.test.js\"",
     "content:build": "node content/build.js",
     "content:validate": "node content/validate.js",
-    "pretest": "node content/validate.js"
+    "pretest": "node content/validate.js",
+    "push:keys": "node scripts/generate-vapid-keys.js"
   },
   "keywords": [],
   "author": "",
@@ -31,6 +32,7 @@
     "lru-cache": "^11.5.1",
     "mongoose": "^9.2.1",
     "stripe": "^22.2.0",
+    "web-push": "^3.6.7",
     "zod": "^4.4.3"
   },
   "devDependencies": {
