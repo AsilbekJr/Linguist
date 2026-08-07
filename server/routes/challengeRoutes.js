@@ -2,27 +2,10 @@ const express = require('express');
 const router = express.Router();
 const Challenge = require('../models/Challenge');
 const Word = require('../models/Word');
-const { evaluatePronunciation } = require('../services/geminiService');
+const { evaluateSpokenAccuracy } = require('../services/geminiService');
 const { protect } = require('../middleware/authMiddleware');
-const { trackAiUsage } = require('../middleware/usageQuota');
-
-const TOPICS = [
-    "A Memorable Travel Experience",
-    "The Future of Technology",
-    "A Book or Movie That Changed My Life",
-    "The Importance of Mental Health",
-    "My Dream Career",
-    "Cultural Differences I've Noticed",
-    "The Best Advice I've Ever Received",
-    "How I Deal with Stress",
-    "A Challenge I Overcame",
-    "The Role of Social Media Today",
-    "If I Could Meet Anyone from History",
-    "The Most Delicious Meal I've Had",
-    "A Skill I Want to Learn",
-    "My Favorite Childhood Memory",
-    "The Impact of Artificial Intelligence"
-];
+const { validate, challengeCompleteSchema } = require('../middleware/validate');
+const { userDayKey } = require('../utils/dayKey');
 
 // Get current pending challenge (or create a new one for today)
 router.get('/current', protect, async (req, res) => {
@@ -36,9 +19,10 @@ router.get('/current', protect, async (req, res) => {
         }
 
         // If the last challenge is completed, check if it was completed today
-        const todayStr = new Date().toISOString().split('T')[0];
+        // (foydalanuvchi vaqt zonasida, UTC'da emas)
+        const todayStr = userDayKey(req.user);
         if (lastChallenge && lastChallenge.status === 'completed') {
-            const lastCompletedDateStr = lastChallenge.updatedAt.toISOString().split('T')[0];
+            const lastCompletedDateStr = userDayKey(req.user, lastChallenge.updatedAt);
             if (lastCompletedDateStr === todayStr) {
                  return res.json({ message: "You have already completed today's challenge! Come back tomorrow.", isCompleteForToday: true, lastChallenge });
             }
@@ -62,7 +46,7 @@ router.get('/current', protect, async (req, res) => {
         }
 
         let generatedText = null;
-        let randomTopic = TOPICS[(nextDaynum - 1) % TOPICS.length];
+        let randomTopic = `Day ${nextDaynum}`;
 
         try {
             const challengesData = require('../data/challenges.json');
@@ -120,48 +104,44 @@ router.get('/history', protect, async (req, res) => {
     }
 });
 
-// Complete a challenge (upload audio)
-router.post('/complete', protect, trackAiUsage, async (req, res) => {
+// Complete a challenge
+// Bu route AI chaqirmaydi (baholash mahalliy so'z mosligi), shuning uchun
+// trackAiUsage olib tashlandi — ilgari foydalanuvchi bekorga limit yo'qotardi.
+router.post('/complete', protect, validate(challengeCompleteSchema), async (req, res) => {
     try {
-        const { challengeId, audioData, spokenText } = req.body;
-
-        if (!challengeId || !audioData) {
-            return res.status(400).json({ error: 'Challenge ID and audio data are required' });
-        }
+        const { challengeId, audioData, spokenText } = req.validated.body;
 
         const challenge = await Challenge.findOne({ _id: challengeId, user: req.user._id });
-        
         if (!challenge) {
             return res.status(404).json({ error: 'Challenge not found' });
         }
-
         if (challenge.status === 'completed') {
-             return res.status(400).json({ error: 'Challenge is already completed' });
+            return res.status(400).json({ error: 'Challenge is already completed' });
         }
 
-        // Evaluate using Gemini if spokenText is provided
         if (spokenText && spokenText.trim().length > 0) {
-            try {
-                 const evalResult = await evaluatePronunciation(challenge.text, spokenText);
-                 if (evalResult) {
-                     challenge.score = evalResult.score;
-                     challenge.feedback = evalResult.feedback;
-                     challenge.color = evalResult.color;
-                 }
-            } catch (evalErr) {
-                 console.warn("AI Evaluation failed for Challenge:", evalErr);
-            }
+            const evalResult = evaluateSpokenAccuracy(challenge.text, spokenText);
+            challenge.score = evalResult.score;
+            challenge.feedback = evalResult.feedback;
+            challenge.color = evalResult.color;
+            challenge.evaluationMethod = evalResult.method;
         } else {
-            challenge.feedback = "Audio yozib olinganiga qaramay ovoz aniqlanmadi (SpeechRecognition). Talaffuzingiz aniqroq bo'lishi mumkin.";
-            challenge.score = 0;
-            challenge.color = 'red';
+            challenge.feedback =
+                "Ovoz matnga aylantirilmadi. Mikrofon ruxsatini va internetni tekshirib, qayta urinib ko'ring.";
+            challenge.score = null;
+            challenge.color = 'gray';
+            challenge.evaluationMethod = 'none';
         }
 
-        challenge.audioData = audioData;
+        if (audioData) {
+            challenge.audioData = audioData;
+        }
         challenge.status = 'completed';
         await challenge.save();
 
-        res.json({ message: 'Challenge completed successfully!', challenge });
+        // audioData'ni javobda qaytarmaymiz — mijozda allaqachon bor, bekorga trafik
+        const { audioData: _omit, ...payload } = challenge.toObject();
+        res.json({ message: 'Challenge completed successfully!', challenge: payload });
     } catch (error) {
         console.error("Error completing challenge:", error);
         res.status(500).json({ error: 'Server error while completing challenge' });

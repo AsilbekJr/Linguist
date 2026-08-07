@@ -61,13 +61,34 @@ const buildBacklog = (topicsList, targetDay, savedWordsLower, limit = 15) => {
   return backlog;
 };
 
+/**
+ * Mini-test uchun ishonchli chalg'ituvchi variantlar.
+ *
+ * Ilgari mijozda qattiq yozilgan ro'yxat ishlatilardi:
+ *   ['Boshqa ma\'no', 'Noto\'g\'ri tarjima', 'Aksincha', 'Tanilmadi']
+ * Foydalanuvchi bir necha savoldan keyin shablonni payqab, so'zni bilmasdan
+ * ham 100% to'plardi. Endi variantlar butun kontent bazasidagi HAQIQIY
+ * tarjimalardan olinadi — test haqiqatan bilimni tekshiradi.
+ */
+const buildDistractorPool = (topicsList, excludeWords = []) => {
+  const exclude = new Set(excludeWords.map((w) => w.translation));
+  const pool = new Set();
+  for (const topic of topicsList) {
+    for (const w of topic.words || []) {
+      if (w.translation && !exclude.has(w.translation)) {
+        pool.add(w.translation);
+      }
+    }
+  }
+  return [...pool];
+};
+
 module.exports = {
   getDailyWordTarget,
   resolveTopicDay,
   pickDailySessionWords,
-  pickDailyPack: pickDailySessionWords,
   getTopicReviewDate,
-  getTomorrowReviewDate,
   getScenarioMeta,
   buildBacklog,
+  buildDistractorPool,
 };

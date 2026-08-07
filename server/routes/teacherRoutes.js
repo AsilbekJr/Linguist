@@ -6,29 +6,35 @@ const { validate, teacherAskSchema } = require('../middleware/validate');
 const { trackAiUsage } = require('../middleware/usageQuota');
 
 // @route   POST /api/teacher/ask
-// @desc    Ustoz AI — grammar, phrase, vocabulary explanations
+// Ustoz AI — grammatika, ibora, leksika tushuntirishlari
 router.post('/ask', protect, validate(teacherAskSchema), trackAiUsage, async (req, res) => {
   const { question, category, chatHistory } = req.validated.body;
 
   try {
     const learnerLevel = req.user.onboarding?.level || 'beginner';
-    const answer = await generateTeacherResponse(
+    const result = await generateTeacherResponse(
       question,
       category,
       chatHistory,
       learnerLevel
     );
 
-    if (!answer) {
-      return res.status(503).json({ error: 'AI javob bera olmadi. Qayta urinib ko\'ring.' });
+    if (result.status === 'unavailable') {
+      await req.aiCall.refund();
+      return res.status(503).json({
+        error:
+          result.reason === 'QUOTA_EXCEEDED'
+            ? "AI limiti tugadi. Keyinroq urinib ko'ring."
+            : "Ustoz hozir javob bera olmadi. Qayta urinib ko'ring.",
+        code: result.reason,
+      });
     }
 
-    res.json({ answer });
+    req.aiCall.commit();
+    res.json({ answer: result.answer });
   } catch (error) {
     console.error('Teacher route error:', error);
-    if (error.type === 'QUOTA_EXCEEDED') {
-      return res.status(402).json({ error: error.message, type: 'QUOTA_EXCEEDED' });
-    }
+    await req.aiCall?.refund();
     res.status(500).json({ error: 'Server Error' });
   }
 });

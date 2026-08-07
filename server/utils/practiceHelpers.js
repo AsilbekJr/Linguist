@@ -1,6 +1,13 @@
-const bucketWordsByDay = (words) => {
-  const todayStart = new Date();
-  todayStart.setHours(0, 0, 0, 0);
+const { startOfUserDay } = require('./dayKey');
+
+/**
+ * So'zlarni "bugun / kecha / avvalgi" guruhlariga ajratadi.
+ * Chegara foydalanuvchi vaqt zonasidagi yarim tundan olinadi — ilgari server
+ * mahalliy vaqti ishlatilgani uchun Render'dagi UTC server O'zbekistondagi
+ * foydalanuvchining kunini 5 soatga siljitardi.
+ */
+const bucketWordsByDay = (words, user) => {
+  const todayStart = startOfUserDay(user);
   const yesterdayStart = new Date(todayStart);
   yesterdayStart.setDate(yesterdayStart.getDate() - 1);
 

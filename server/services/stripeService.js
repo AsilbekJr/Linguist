@@ -7,9 +7,27 @@ const getStripe = () => {
     return null;
   }
   if (!stripe) {
-    stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+    // API versiyasini pin qilamiz. Busiz Stripe hisobdagi versiya o'zgarganda
+    // javob shakli jimgina o'zgarib, webhook'lar buzilishi mumkin.
+    stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+      apiVersion: process.env.STRIPE_API_VERSION || '2025-10-29.clover',
+    });
   }
   return stripe;
+};
+
+/**
+ * `current_period_end` Stripe'ning yangi API versiyalarida subscription obyektidan
+ * subscription item'ga ko'chdi. Ikkalasini ham tekshiramiz — aks holda maydon
+ * `undefined` bo'lib qoladi va `getEffectivePlan()` muddat tekshiruvini o'tkazib
+ * yuboradi, ya'ni bekor qilingan obuna abadiy "active" bo'lib qoladi.
+ */
+const readPeriodEnd = (subscription) => {
+  const raw =
+    subscription?.items?.data?.[0]?.current_period_end ??
+    subscription?.current_period_end ??
+    null;
+  return raw ? new Date(raw * 1000) : null;
 };
 
 const PRICE_MAP = {
@@ -47,6 +65,12 @@ const createCheckoutSession = async ({ user, plan, successUrl, cancelUrl }) => {
     success_url: successUrl,
     cancel_url: cancelUrl,
     metadata: { userId: String(user._id), plan },
+    // MUHIM: checkout session metadata'si subscription obyektiga AVTOMATIK o'tmaydi.
+    // Busiz `customer.subscription.updated` webhook'ida userId topilmay,
+    // handler jimgina return qilardi — ya'ni obuna hech qachon yangilanmasdi.
+    subscription_data: {
+      metadata: { userId: String(user._id), plan },
+    },
   });
 
   return session;
@@ -77,6 +101,7 @@ const constructWebhookEvent = (rawBody, signature) => {
 
 module.exports = {
   getStripe,
+  readPeriodEnd,
   createCheckoutSession,
   createPortalSession,
   constructWebhookEvent,

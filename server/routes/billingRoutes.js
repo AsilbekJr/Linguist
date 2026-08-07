@@ -3,7 +3,6 @@ const router = express.Router();
 const { protect } = require('../middleware/authMiddleware');
 const { validate, checkoutSchema } = require('../middleware/validate');
 const { createCheckoutSession, createPortalSession } = require('../services/stripeService');
-const { createPaymeCheckout, createClickCheckout } = require('../services/paymeAdapter');
 
 const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
 
@@ -41,22 +40,13 @@ router.post('/portal', protect, async (req, res) => {
   }
 });
 
-router.post('/payme/checkout', protect, async (req, res) => {
-  try {
-    const result = await createPaymeCheckout(req.user, req.body);
-    res.json(result);
-  } catch (error) {
-    res.status(501).json({ message: error.message });
-  }
-});
-
-router.post('/click/checkout', protect, async (req, res) => {
-  try {
-    const result = await createClickCheckout(req.user, req.body);
-    res.json(result);
-  } catch (error) {
-    res.status(501).json({ message: error.message });
-  }
-});
+/**
+ * Payme/Click stub'lari olib tashlandi — ular faqat 501 tashlardi va
+ * "to'lov mavjud" degan noto'g'ri taassurot berardi.
+ *
+ * Real integratsiya alohida ish: O'zbekiston bozorida Stripe kartalar bilan
+ * ishlamaydi, ya'ni hozir mahsulotdan daromad olishning yo'li yo'q. Bu
+ * Faza 3 ning asosiy vazifasi.
+ */
 
 module.exports = router;

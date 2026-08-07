@@ -1,67 +1,68 @@
 const crypto = require('crypto');
-const { GoogleGenerativeAI } = require('@google/generative-ai');
+const { GoogleGenerativeAI, SchemaType } = require('@google/generative-ai');
 const { getGeminiCached, setGeminiCached } = require('../utils/cache');
-const { fetchMyMemoryUzEn } = require('../utils/fallbackTranslate');
+
+/**
+ * Gemini qatlami.
+ *
+ * Ikkita tamoyil:
+ *  1. AI ishlamasa — YOLG'ON JAVOB QAYTARMAYDI. Ilgari `checkSentence` xatoda
+ *     `{isCorrect:false}` qaytarardi va bu to'g'ridan-to'g'ri SRS'ga yozilib,
+ *     foydalanuvchining to'g'ri gapi "xato" deb belgilanardi. Endi
+ *     `{status:'unavailable'}` qaytadi va route hech narsani o'zgartirmaydi.
+ *  2. JSON — Gemini'ning structured output'i (`responseSchema`) orqali. Ilgari
+ *     4 qatlamli qo'lbola parser bor edi (parseJson → extractLooseFields →
+ *     parseJsonSafe → parseTranslateLines); endi model sxemaga majburlanadi.
+ */
 
 let genAI;
 if (process.env.GEMINI_API_KEY) {
   genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 }
 
-const MODEL = process.env.GEMINI_MODEL || 'gemini-flash-latest';
+const MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
 
-const levelTag = (level) =>
-  ({ beginner: 'A1', intermediate: 'B1', advanced: 'C1' })[level] || 'A1';
+const isGeminiReady = () => Boolean(genAI && process.env.GEMINI_API_KEY);
+
+// ─── Xato turlari ────────────────────────────────────────────────────────────
+
+class AiUnavailableError extends Error {
+  constructor(reason = 'AI_ERROR', message = "AI xizmati vaqtincha ishlamayapti.") {
+    super(message);
+    this.name = 'AiUnavailableError';
+    this.reason = reason;
+  }
+}
+
+const isQuotaError = (error) => {
+  const msg = String(error?.message || '');
+  return (
+    error?.status === 429 ||
+    /429|Too Many Requests|quota|RESOURCE_EXHAUSTED|Overloaded|503|UNAVAILABLE/i.test(msg)
+  );
+};
+
+const UNAVAILABLE = (reason = 'AI_ERROR') => ({ status: 'unavailable', reason });
+
+// ─── Umumiy yordamchilar ─────────────────────────────────────────────────────
+
+const LEVEL_TAG = { beginner: 'A1-A2', intermediate: 'B1-B2', advanced: 'C1' };
+const levelTag = (level) => LEVEL_TAG[level] || 'A1-A2';
+
+const SYSTEM_INSTRUCTION = `You are an English tutor for Uzbek-speaking learners.
+Rules you never break:
+- All explanations and feedback are written in Uzbek (latin script). English only for the English examples themselves.
+- Be concrete. Point at the exact word or structure that is wrong, never give vague praise.
+- Match the learner's CEFR level: never explain with vocabulary above their level.
+- Uzbek learners share predictable interference errors (missing articles a/the, wrong preposition,
+  word order after question words, using present simple for ongoing actions). Watch for these first.
+- Never invent a mistake in a sentence that is already correct.`;
 
 const truncateHistory = (chatHistory, maxTurns = 6, maxChars = 280) =>
-  (chatHistory || [])
-    .slice(-maxTurns)
-    .map((m) => ({
-      role: m.role,
-      content: String(m.content || '').slice(0, maxChars),
-    }));
-
-const parseJson = (text) => {
-  const raw = String(text)
-    .replace(/```json/gi, '')
-    .replace(/```/g, '')
-    .trim();
-
-  try {
-    return JSON.parse(raw);
-  } catch {
-    const block = raw.match(/\{[\s\S]*\}/);
-    if (!block) throw new Error('No JSON object in response');
-    const cleaned = block[0].replace(/,\s*([}\]])/g, '$1');
-    return JSON.parse(cleaned);
-  }
-};
-
-const extractLooseFields = (text) => {
-  const raw = String(text);
-  const casual = raw.match(/"casual"\s*:\s*"((?:[^"\\]|\\.)*)"/i);
-  const advanced = raw.match(/"advanced"\s*:\s*"((?:[^"\\]|\\.)*)"/i);
-  if (casual || advanced) {
-    return {
-      casual: casual?.[1]?.replace(/\\"/g, '"'),
-      advanced: advanced?.[1]?.replace(/\\"/g, '"'),
-    };
-  }
-  const casualLine = raw.match(/CASUAL:\s*(.+)/i);
-  const advancedLine = raw.match(/ADVANCED:\s*(.+)/i);
-  if (casualLine || advancedLine) {
-    return { casual: casualLine?.[1]?.trim(), advanced: advancedLine?.[1]?.trim() };
-  }
-  return null;
-};
-
-const parseJsonSafe = (text) => {
-  try {
-    return parseJson(text);
-  } catch {
-    return extractLooseFields(text);
-  }
-};
+  (chatHistory || []).slice(-maxTurns).map((m) => ({
+    role: m.role,
+    content: String(m.content || '').slice(0, maxChars),
+  }));
 
 const cacheKey = (...parts) =>
   crypto.createHash('sha256').update(JSON.stringify(parts)).digest('hex').slice(0, 40);
@@ -70,80 +71,216 @@ const withCache = async (key, fetcher) => {
   const hit = getGeminiCached(key);
   if (hit) return hit;
   const value = await fetcher();
-  if (value != null) setGeminiCached(key, value);
+  // xato holatlarini keshlamaymiz — aks holda 2 soat davomida yopishib qoladi
+  if (value != null && value.status !== 'unavailable') setGeminiCached(key, value);
   return value;
 };
 
-const normalizeTranslateResult = (parsed) => {
-  if (!parsed || typeof parsed !== 'object') return null;
-  const casual =
-    parsed.casual || parsed.Casual || parsed.informal || parsed.simple || '';
-  const advanced =
-    parsed.advanced || parsed.Advanced || parsed.formal || parsed.professional || '';
-  if (!casual && !advanced) return null;
-  return {
-    casual: String(casual || advanced).trim(),
-    advanced: String(advanced || casual).trim(),
-  };
+/** Oxirgi chora: model sxemani buzsa ham JSON'ni ajratib olishga urinish */
+const looseJson = (text) => {
+  const raw = String(text).replace(/```json/gi, '').replace(/```/g, '').trim();
+  try {
+    return JSON.parse(raw);
+  } catch {
+    const block = raw.match(/\{[\s\S]*\}/);
+    if (!block) return null;
+    try {
+      return JSON.parse(block[0].replace(/,\s*([}\]])/g, '$1'));
+    } catch {
+      return null;
+    }
+  }
 };
 
-const getModel = (maxOutputTokens, temperature = 0.3) => {
-  if (!genAI) return null;
-  return genAI.getGenerativeModel({
-    model: MODEL,
-    generationConfig: { maxOutputTokens, temperature },
+// ─── Model chaqiruvlari ──────────────────────────────────────────────────────
+
+/**
+ * Sxemaga majburlangan JSON javob.
+ * @throws {AiUnavailableError} model yo'q, limit tugagan yoki javob yaroqsiz bo'lsa
+ */
+const runStructured = async (prompt, responseSchema, { maxTokens = 512, temperature = 0.3 } = {}) => {
+  if (!genAI) throw new AiUnavailableError('NO_API_KEY', 'AI xizmati sozlanmagan.');
+
+  let text;
+  try {
+    const model = genAI.getGenerativeModel({
+      model: MODEL,
+      systemInstruction: SYSTEM_INSTRUCTION,
+      generationConfig: {
+        maxOutputTokens: maxTokens,
+        temperature,
+        responseMimeType: 'application/json',
+        responseSchema,
+      },
+    });
+    const result = await model.generateContent(prompt);
+    text = (await result.response).text();
+  } catch (error) {
+    if (isQuotaError(error)) {
+      throw new AiUnavailableError('QUOTA_EXCEEDED', "AI limiti tugadi. Keyinroq urinib ko'ring.");
+    }
+    console.error('Gemini structured error:', error.message);
+    throw new AiUnavailableError('AI_ERROR');
+  }
+
+  const parsed = looseJson(text);
+  if (!parsed || typeof parsed !== 'object') {
+    console.error('Gemini: sxemaga mos JSON kelmadi:', String(text).slice(0, 200));
+    throw new AiUnavailableError('BAD_RESPONSE');
+  }
+  return parsed;
+};
+
+/** Erkin matnli javob (roleplay kabi suhbat oqimlari uchun) */
+const runText = async (prompt, { maxTokens = 400, temperature = 0.6 } = {}) => {
+  if (!genAI) throw new AiUnavailableError('NO_API_KEY', 'AI xizmati sozlanmagan.');
+  try {
+    const model = genAI.getGenerativeModel({
+      model: MODEL,
+      systemInstruction: SYSTEM_INSTRUCTION,
+      generationConfig: { maxOutputTokens: maxTokens, temperature },
+    });
+    const result = await model.generateContent(prompt);
+    const text = (await result.response).text().trim();
+    if (!text) throw new AiUnavailableError('EMPTY_RESPONSE');
+    return text;
+  } catch (error) {
+    if (error instanceof AiUnavailableError) throw error;
+    if (isQuotaError(error)) {
+      throw new AiUnavailableError('QUOTA_EXCEEDED', "AI limiti tugadi. Keyinroq urinib ko'ring.");
+    }
+    console.error('Gemini text error:', error.message);
+    throw new AiUnavailableError('AI_ERROR');
+  }
+};
+
+// ─── Sxemalar ────────────────────────────────────────────────────────────────
+
+const S = SchemaType;
+
+const sentenceCheckSchema = {
+  type: S.OBJECT,
+  properties: {
+    isCorrect: { type: S.BOOLEAN, description: 'Gap grammatik jihatdan to\'g\'ri va so\'z to\'g\'ri ishlatilganmi' },
+    usedTargetWord: { type: S.BOOLEAN, description: 'Maqsadli so\'z haqiqatan ishlatilganmi' },
+    feedback: { type: S.STRING, description: 'O\'zbekcha, 1-2 gap, aniq xatoni ko\'rsatuvchi' },
+    corrected: { type: S.STRING, description: 'Tuzatilgan inglizcha gap. Agar xato bo\'lmasa bo\'sh qoldiring.' },
+    errorType: {
+      type: S.STRING,
+      enum: ['none', 'article', 'preposition', 'word_order', 'tense', 'word_choice', 'spelling', 'other'],
+    },
+  },
+  required: ['isCorrect', 'usedTargetWord', 'feedback', 'errorType'],
+};
+
+const practicePromptSchema = {
+  type: S.OBJECT,
+  properties: {
+    promptUz: { type: S.STRING, description: 'O\'zbekcha vaziyat tavsifi, 2 gap' },
+    targetWords: { type: S.ARRAY, items: { type: S.STRING } },
+    miniTipUz: { type: S.STRING },
+  },
+  required: ['promptUz', 'targetWords', 'miniTipUz'],
+};
+
+const practiceCheckSchema = {
+  type: S.OBJECT,
+  properties: {
+    isCorrect: { type: S.BOOLEAN },
+    feedback: { type: S.STRING, description: 'O\'zbekcha izoh' },
+    corrected: { type: S.STRING },
+    wordsUsed: { type: S.ARRAY, items: { type: S.STRING }, description: 'To\'g\'ri ishlatilgan maqsadli so\'zlar' },
+  },
+  required: ['isCorrect', 'feedback', 'wordsUsed'],
+};
+
+const teacherSchema = {
+  type: S.OBJECT,
+  properties: {
+    title: { type: S.STRING },
+    explanation: { type: S.STRING, description: 'O\'zbekcha, 2 qisqa xatboshi' },
+    rule: { type: S.STRING, description: 'Bitta qatorli inglizcha qoida' },
+    examples: {
+      type: S.ARRAY,
+      items: {
+        type: S.OBJECT,
+        properties: { en: { type: S.STRING }, uz: { type: S.STRING } },
+        required: ['en', 'uz'],
+      },
+    },
+    commonMistake: { type: S.STRING, description: 'O\'zbeklar ko\'p qiladigan xato' },
+    tip: { type: S.STRING },
+  },
+  required: ['title', 'explanation', 'rule', 'examples'],
+};
+
+const translateSchema = {
+  type: S.OBJECT,
+  properties: {
+    casual: { type: S.STRING, description: 'Kundalik og\'zaki ingliz tili' },
+    advanced: { type: S.STRING, description: 'Rasmiyroq / boyroq variant' },
+  },
+  required: ['casual', 'advanced'],
+};
+
+// ─── Ommaviy API ─────────────────────────────────────────────────────────────
+
+/**
+ * Takrorlashdagi gapni tekshirish.
+ * @returns {{status:'ok', isCorrect, usedTargetWord, feedback, corrected, errorType}
+ *          | {status:'unavailable', reason}}
+ *
+ * MUHIM: 'unavailable' holatida chaqiruvchi SRS'ni O'ZGARTIRMASLIGI shart.
+ */
+const checkSentence = async (word, sentence, learnerLevel = 'beginner') => {
+  const key = cacheKey('check-v2', word, sentence, learnerLevel);
+  return withCache(key, async () => {
+    try {
+      const parsed = await runStructured(
+        `Talaba darajasi: ${levelTag(learnerLevel)}.
+Maqsadli so'z: "${word}"
+Talaba yozgan gap: "${String(sentence).slice(0, 500)}"
+
+Baholang: (1) so'z ma'nosiga mos ishlatilganmi, (2) gap grammatik to'g'rimi.
+Agar gap to'g'ri bo'lsa isCorrect=true va corrected bo'sh bo'lsin — sun'iy xato o'ylab topmang.`,
+        sentenceCheckSchema,
+        { maxTokens: 400 }
+      );
+      return {
+        status: 'ok',
+        isCorrect: Boolean(parsed.isCorrect),
+        usedTargetWord: Boolean(parsed.usedTargetWord),
+        feedback: String(parsed.feedback || '').trim(),
+        corrected: String(parsed.corrected || '').trim(),
+        errorType: parsed.errorType || 'none',
+      };
+    } catch (error) {
+      return UNAVAILABLE(error.reason);
+    }
   });
 };
 
-const runJson = async (prompt, maxTokens = 512) => {
-  if (!genAI) return null;
-  try {
-    const model = getModel(maxTokens, 0.3);
-    const result = await model.generateContent(prompt);
-    const text = (await result.response).text();
-    const parsed = parseJsonSafe(text);
-    if (!parsed) {
-      console.error('Gemini JSON error: could not parse response');
-      return null;
+const translateUzbekToEnglish = async (uzbekText) => {
+  const key = cacheKey('uz-en-v2', uzbekText);
+  return withCache(key, async () => {
+    try {
+      const parsed = await runStructured(
+        `O'zbekcha gapni ikki xil inglizchaga tarjima qiling.
+O'zbekcha: "${String(uzbekText).slice(0, 400)}"`,
+        translateSchema,
+        { maxTokens: 300, temperature: 0.4 }
+      );
+      const casual = String(parsed.casual || parsed.advanced || '').trim();
+      const advanced = String(parsed.advanced || parsed.casual || '').trim();
+      if (!casual) return UNAVAILABLE('EMPTY_RESPONSE');
+      return { status: 'ok', casual, advanced };
+    } catch (error) {
+      return UNAVAILABLE(error.reason);
     }
-    return parsed;
-  } catch (error) {
-    if (isQuotaError(error)) throw error;
-    console.error('Gemini JSON error:', error.message);
-    return null;
-  }
+  });
 };
 
-const isGeminiReady = () => Boolean(genAI && process.env.GEMINI_API_KEY);
-
-const runText = async (prompt, maxTokens = 400) => {
-  const model = getModel(maxTokens, 0.45);
-  if (!model) return null;
-  try {
-    const result = await model.generateContent(prompt);
-    return (await result.response).text().trim();
-  } catch (error) {
-    if (isQuotaError(error)) throw error;
-    console.error('Gemini text error:', error.message);
-    return null;
-  }
-};
-
-const isQuotaError = (error) =>
-  error?.type === 'QUOTA_EXCEEDED' ||
-  error?.message?.includes('429') ||
-  error?.message?.includes('Too Many Requests') ||
-  error?.message?.includes('Quota') ||
-  error?.message?.includes('quota') ||
-  error?.message?.includes('RESOURCE_EXHAUSTED') ||
-  error?.message?.includes('Overloaded');
-
-const quotaThrow = () => {
-  throw {
-    type: 'QUOTA_EXCEEDED',
-    message: "AI xizmatiga ulanib bo'lmadi. Keyinroq urinib ko'ring.",
-  };
-};
+// ─── Gapirilgan matn aniqligi ────────────────────────────────────────────────
 
 const normalizeWords = (s) =>
   String(s)
@@ -152,137 +289,47 @@ const normalizeWords = (s) =>
     .split(/\s+/)
     .filter(Boolean);
 
-const pronunciationOverlapScore = (target, spoken) => {
-  const t = normalizeWords(target);
-  const s = normalizeWords(spoken);
-  if (!t.length) return 0;
-  const hits = t.filter((w) => s.includes(w)).length;
-  return Math.round((hits / t.length) * 100);
-};
-
-const checkSentenceCore = async (word, sentence, learnerLevel, extraRule = '') => {
-  const key = cacheKey('check', word, sentence, learnerLevel, extraRule);
-  return withCache(key, async () => {
-    if (!genAI) return null;
-    const prompt = `English teacher (${levelTag(learnerLevel)}). Word "${word}" in: "${sentence}". ${extraRule} JSON: {"isCorrect":bool,"feedback":"short Uzbek"}`;
-    return runJson(prompt, 256);
-  });
-};
-
-const checkSentence = (word, sentence, learnerLevel = 'beginner') =>
-  checkSentenceCore(word, sentence, learnerLevel).catch(() => ({
-    isCorrect: false,
-    feedback: 'AI vaqtincha ishlamayapti.',
-  }));
-
-const parseTranslateLines = (rawText) => {
-  const fromFields = normalizeTranslateResult(extractLooseFields(rawText));
-  if (fromFields) return fromFields;
-
-  const fromJson = normalizeTranslateResult(parseJsonSafe(rawText));
-  if (fromJson) return fromJson;
-
-  const lines = String(rawText)
-    .split('\n')
-    .map((line) =>
-      line
-        .replace(/^\s*(?:\d+[\).:-]|[-*•])\s*/, '')
-        .replace(/^(casual|advanced|informal|formal)\s*:\s*/i, '')
-        .trim()
-    )
-    .filter((line) => line.length > 1 && !line.startsWith('{'));
-
-  if (lines.length >= 2) {
-    return { casual: lines[0], advanced: lines[1] };
-  }
-  if (lines.length === 1) {
-    return { casual: lines[0], advanced: lines[0] };
-  }
-  return null;
-};
-
-const tryGeminiUzEn = async (text) => {
-  if (!genAI) return null;
-
-  const prompt = `Translate this Uzbek sentence into English two ways.
-Uzbek: "${text}"
-
-Reply with EXACTLY two lines and nothing else:
-CASUAL: [everyday spoken English]
-ADVANCED: [more formal English]`;
-
-  const rawText = await runText(prompt, 256);
-  const parsed = parseTranslateLines(rawText);
-  if (!parsed) {
-    console.error('tryGeminiUzEn parse failed:', rawText?.slice(0, 160));
-    return null;
-  }
-  return { ...parsed, _source: 'gemini' };
-};
-
-const translateUzbekToEnglish = async (uzbekText) => {
-  const key = cacheKey('uz-en', uzbekText);
-  return withCache(key, async () => {
-    const text = uzbekText.slice(0, 400);
-
-    try {
-      const gemini = await tryGeminiUzEn(text);
-      if (gemini) return gemini;
-    } catch (error) {
-      if (isQuotaError(error)) {
-        console.warn('Gemini limit — zaxira tarjima ishlatilmoqda');
-      } else {
-        console.error('translateUzbekToEnglish gemini:', error.message);
-      }
-    }
-
-    const fallback = await fetchMyMemoryUzEn(text);
-    if (fallback) {
-      console.log('translateUzbekToEnglish: MyMemory fallback OK');
-      return fallback;
-    }
-
-    return null;
-  });
-};
-
-const translateText = async (text, fromLang, toLang) => {
-  const key = cacheKey('tr', fromLang, toLang, text);
-  return withCache(key, async () => {
-    if (!genAI) return null;
-    const prompt = `Translate ${fromLang}→${toLang}. Output translation only:\n"${text.slice(0, 500)}"`;
-    return runText(prompt, 400);
-  }).catch((error) => {
-    if (isQuotaError(error)) quotaThrow();
-    return 'Tarjima vaqtincha ishlamayapti.';
-  });
-};
-
-const buildLocalEvaluation = (targetSentence, spokenText) => {
-  const overlap = pronunciationOverlapScore(targetSentence, spokenText);
+/**
+ * DIQQAT: bu talaffuz baholovchi EMAS.
+ *
+ * Kirish `spokenText` brauzerning SpeechRecognition'idan keladi va u allaqachon
+ * to'g'ri inglizcha so'zlarga normallashtirilgan. Ya'ni bu o'lchov "aksent qanchalik
+ * to'g'ri" degan savolga javob bermaydi — u faqat "aytilgan so'zlar matnga mos keldimi"
+ * ni tekshiradi. Shuning uchun natija `method: 'transcript_match'` bilan belgilanadi
+ * va UI uni "talaffuz bahosi" deb ko'rsatmasligi kerak.
+ *
+ * Haqiqiy talaffuz bahosi uchun fonema darajasidagi xizmat kerak (Azure Pronunciation
+ * Assessment yoki shunga o'xshash) — bu keyingi bosqichda.
+ */
+const evaluateSpokenAccuracy = (targetSentence, spokenText) => {
   const target = normalizeWords(targetSentence);
-  const spoken = normalizeWords(spokenText);
-  const missed = target.filter((w) => w.length > 1 && !spoken.includes(w));
+  const spoken = new Set(normalizeWords(spokenText));
+
+  if (!target.length) {
+    return { score: 0, feedback: 'Matn topilmadi.', color: 'red', method: 'transcript_match', missedWords: [] };
+  }
+
+  const missedWords = target.filter((w) => w.length > 1 && !spoken.has(w));
+  const hits = target.length - target.filter((w) => !spoken.has(w)).length;
+  const score = Math.round((hits / target.length) * 100);
 
   let feedback;
-  if (overlap >= 90) {
-    feedback = "Juda yaxshi! So'zlar aniq aytilgan.";
-  } else if (missed.length > 0) {
-    feedback = `Quyidagi so'zlarni aniqroq aytib ko'ring: ${missed.slice(0, 6).join(', ')}`;
+  if (score >= 90) {
+    feedback = "Ajoyib — matndagi so'zlarning deyarli hammasi aniq eshitildi.";
+  } else if (missedWords.length > 0) {
+    feedback = `Bu so'zlar eshitilmadi yoki boshqacha aytildi: ${missedWords.slice(0, 6).join(', ')}. Sekinroq va aniqroq takrorlang.`;
   } else {
-    feedback = "Yaxshi urinish! Jumlani yana bir bor sekin va aniq o'qib ko'ring.";
+    feedback = "Yaxshi urinish. Jumlani yana bir bor sekin o'qib ko'ring.";
   }
 
   return {
-    score: overlap,
+    score,
     feedback,
-    color: overlap >= 90 ? 'green' : overlap >= 50 ? 'yellow' : 'red',
+    color: score >= 90 ? 'green' : score >= 50 ? 'yellow' : 'red',
+    missedWords: missedWords.slice(0, 10),
+    method: 'transcript_match',
   };
 };
-
-/** Mahalliy so'z mosligi — AI token sarflamaydi, limitga bog'liq emas */
-const evaluatePronunciation = async (targetSentence, spokenText) =>
-  buildLocalEvaluation(targetSentence, spokenText);
 
 const generateRoleplayResponse = async (
   scenario,
@@ -292,21 +339,28 @@ const generateRoleplayResponse = async (
   learnerLevel = 'beginner'
 ) => {
   try {
-    if (!genAI) return null;
-
-    const history = truncateHistory(chatHistory);
-    const historyText = history
-      .map((m) => `${m.role === 'user' ? 'U' : 'A'}: ${m.content}`)
+    const history = truncateHistory(chatHistory)
+      .map((m) => `${m.role === 'user' ? 'Talaba' : 'Siz'}: ${m.content}`)
       .join('\n');
     const words = (targetWords || []).slice(0, 8).join(', ');
-    const msg = String(userMessage || '').slice(0, 400);
 
-    const prompt = `Roleplay (${levelTag(learnerLevel)}). Scene: ${scenario.slice(0, 120)}. Words: [${words}]. History:\n${historyText}\nU: ${msg}\nReply 1-2 English sentences. Use 1 target word. Tiny Uzbek grammar tip in () if needed. Text only.`;
+    const reply = await runText(
+      `Rol o'ynash mashqi. Talaba darajasi: ${levelTag(learnerLevel)}.
+Vaziyat: ${String(scenario).slice(0, 160)}
+Talaba takrorlashi kerak bo'lgan so'zlar: [${words || '—'}]
 
-    return await runText(prompt, 280);
+Suhbat:
+${history || '(boshlanishi)'}
+Talaba: ${String(userMessage || '').slice(0, 400)}
+
+Rolda qoling. 1-2 ta inglizcha gap bilan javob bering va suhbatni davom ettiradigan savol qo'shing.
+Iloji bo'lsa maqsadli so'zlardan bittasini tabiiy ishlating.
+Agar talaba jiddiy grammatik xato qilgan bo'lsa, oxirida qavs ichida bitta qisqa o'zbekcha maslahat bering.`,
+      { maxTokens: 300, temperature: 0.75 }
+    );
+    return { status: 'ok', reply };
   } catch (error) {
-    if (isQuotaError(error)) quotaThrow();
-    return "Kechirasiz, hozir javob bera olmayman.";
+    return UNAVAILABLE(error.reason);
   }
 };
 
@@ -316,57 +370,69 @@ const generateTeacherResponse = async (
   chatHistory = [],
   learnerLevel = 'beginner'
 ) => {
-  try {
-    if (!genAI) return null;
+  const q = String(question).slice(0, 300);
+  const history = truncateHistory(chatHistory, 4, 200);
+  const historyText = history
+    .map((m) => `${m.role === 'user' ? 'Talaba' : 'Ustoz'}: ${m.content}`)
+    .join('\n');
 
-    const q = String(question).slice(0, 300);
-    const history = truncateHistory(chatHistory, 4, 200);
-    const historyText = history
-      .map((m) => `${m.role === 'user' ? 'S' : 'T'}: ${m.content}`)
-      .join('\n');
+  const fetch = async () => {
+    try {
+      const parsed = await runStructured(
+        `Siz "Ustoz AI"siz. Talaba darajasi: ${levelTag(learnerLevel)}. Mavzu turi: ${category}.
+${historyText ? `Oldingi suhbat:\n${historyText}\n` : ''}
+Talaba savoli: "${q}"
 
-    const key =
-      history.length === 0
-        ? cacheKey('teacher', learnerLevel, category, q)
-        : null;
+Tushuntirishni o'zbek tilida yozing. 2-3 ta misol bering. commonMistake'da aynan o'zbek tilida
+so'zlashuvchilar shu mavzuda qiladigan tipik xatoni ko'rsating.`,
+        teacherSchema,
+        { maxTokens: 900, temperature: 0.35 }
+      );
+      return { status: 'ok', answer: parsed };
+    } catch (error) {
+      return UNAVAILABLE(error.reason);
+    }
+  };
 
-    const fetch = async () => {
-      const prompt = `Ustoz AI (${levelTag(learnerLevel)}, ${category}). Prior:\n${historyText || '-'}\nQ: "${q}"\nJSON: {"title":"","explanation":"Uzbek 2 short paras","rule":"1 line EN","examples":[{"en":"","uz":""}],"commonMistake":"","tip":""}`;
-      return runJson(prompt, 640);
-    };
-
-    if (key) return withCache(key, fetch);
-    return fetch();
-  } catch (error) {
-    if (isQuotaError(error)) quotaThrow();
-    return null;
+  // Suhbat konteksti bo'lmasa keshlash mumkin
+  if (history.length === 0) {
+    return withCache(cacheKey('teacher-v2', learnerLevel, category, q), fetch);
   }
+  return fetch();
 };
 
 const generatePracticePrompt = async (words, bucketLabel, learnerLevel = 'beginner') => {
-  const wordList = words
-    .slice(0, 6)
-    .map((w) => w.word)
-    .join(', ');
+  const wordList = words.slice(0, 6).map((w) => w.word).join(', ');
+
+  // AI bo'lmasa ham mashq to'xtamasligi kerak — bu o'rganishga to'sqinlik qilmaydigan zaxira
   const fallback = {
+    status: 'fallback',
     promptUz: `${bucketLabel}: ${wordList} so'zlaridan kamida 2 tasini ishlatib inglizcha gap yozing.`,
     targetWords: words.slice(0, 3).map((w) => w.word),
     miniTipUz: "So'zlarni tabiiy jumla ichida ishlating.",
   };
 
   try {
-    const key = cacheKey('practice-p', wordList, bucketLabel, learnerLevel);
-    const cached = await withCache(key, async () => {
-      if (!genAI) return fallback;
-      const prompt = `Coach (${levelTag(learnerLevel)}). Words: ${wordList}. JSON: {"promptUz":"2 uz sentences","targetWords":["w1"],"miniTipUz":"tip"}`;
-      const parsed = await runJson(prompt, 256);
-      return {
-        promptUz: parsed.promptUz || fallback.promptUz,
-        targetWords: Array.isArray(parsed.targetWords) ? parsed.targetWords : fallback.targetWords,
-        miniTipUz: parsed.miniTipUz || fallback.miniTipUz,
-      };
-    });
-    return cached || fallback;
+    return await withCache(
+      cacheKey('practice-p-v2', wordList, bucketLabel, learnerLevel),
+      async () => {
+        const parsed = await runStructured(
+          `Talaba darajasi: ${levelTag(learnerLevel)}. Takrorlanayotgan so'zlar: ${wordList}.
+Shu so'zlarni ishlatishga majbur qiladigan real hayotiy vaziyat o'ylab toping.
+promptUz — o'zbekcha, 2 gap, "siz ..." shaklida murojaat qiling.`,
+          practicePromptSchema,
+          { maxTokens: 320, temperature: 0.7 }
+        );
+        return {
+          status: 'ok',
+          promptUz: parsed.promptUz || fallback.promptUz,
+          targetWords: Array.isArray(parsed.targetWords) && parsed.targetWords.length
+            ? parsed.targetWords
+            : fallback.targetWords,
+          miniTipUz: parsed.miniTipUz || fallback.miniTipUz,
+        };
+      }
+    );
   } catch {
     return fallback;
   }
@@ -374,45 +440,41 @@ const generatePracticePrompt = async (words, bucketLabel, learnerLevel = 'beginn
 
 const checkPracticeSentence = async (words, sentence, learnerLevel = 'beginner') => {
   const targetList = words.map((w) => w.word).join(', ');
-  const usedCount = words.filter((w) =>
-    sentence.toLowerCase().includes(w.word.toLowerCase())
-  ).length;
-
-  const fallback = {
-    isCorrect: usedCount >= Math.min(2, words.length),
-    feedback:
-      usedCount >= 2
-        ? "Yaxshi! So'zlar ishlatilgan."
-        : `Kamida ${Math.min(2, words.length)} ta so'z ishlating: ${targetList}`,
-    wordsUsed: Object.fromEntries(
-      words.map((w) => [w.word, sentence.toLowerCase().includes(w.word.toLowerCase())])
-    ),
-  };
 
   try {
-    const key = cacheKey('practice-c', targetList, sentence, learnerLevel);
-    const cached = await withCache(key, async () => {
-      if (!genAI) return fallback;
-      const prompt = `Check (${levelTag(learnerLevel)}). Words: ${targetList}. Sentence: "${sentence.slice(0, 300)}". Need 2+ words used well. JSON: {"isCorrect":bool,"feedback":"Uzbek","wordsUsed":{}}`;
-      const parsed = await runJson(prompt, 256);
-      return {
-        isCorrect: !!parsed.isCorrect,
-        feedback: parsed.feedback || fallback.feedback,
-        wordsUsed: parsed.wordsUsed || fallback.wordsUsed,
-      };
-    });
-    return cached || fallback;
-  } catch {
-    return fallback;
+    return await withCache(
+      cacheKey('practice-c-v2', targetList, sentence, learnerLevel),
+      async () => {
+        const parsed = await runStructured(
+          `Talaba darajasi: ${levelTag(learnerLevel)}.
+Maqsadli so'zlar: ${targetList}
+Talaba yozgan gap: "${String(sentence).slice(0, 400)}"
+
+Kamida 2 ta maqsadli so'z ma'noga mos ishlatilgan bo'lishi kerak.
+wordsUsed'ga faqat HAQIQATAN va TO'G'RI ishlatilgan so'zlarni kiriting.`,
+          practiceCheckSchema,
+          { maxTokens: 400 }
+        );
+        return {
+          status: 'ok',
+          isCorrect: Boolean(parsed.isCorrect),
+          feedback: String(parsed.feedback || '').trim(),
+          corrected: String(parsed.corrected || '').trim(),
+          wordsUsed: Array.isArray(parsed.wordsUsed) ? parsed.wordsUsed : [],
+        };
+      }
+    );
+  } catch (error) {
+    return UNAVAILABLE(error.reason);
   }
 };
 
 module.exports = {
   isGeminiReady,
+  AiUnavailableError,
   checkSentence,
   translateUzbekToEnglish,
-  translateText,
-  evaluatePronunciation,
+  evaluateSpokenAccuracy,
   generateRoleplayResponse,
   generateTeacherResponse,
   generatePracticePrompt,

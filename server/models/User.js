@@ -32,6 +32,22 @@ const userSchema = new mongoose.Schema({
     type: Date,
     default: null,
   },
+  /** Oxirgi streak hisoblangan kun ('YYYY-MM-DD', foydalanuvchi zonasida) */
+  lastStreakDay: {
+    type: String,
+    default: '',
+  },
+  /** IANA zona nomi — kunlik reja, streak va kvota shunga qarab hisoblanadi */
+  timezone: {
+    type: String,
+    default: 'Asia/Tashkent',
+  },
+  /** Streak muzlatish: kun o'tkazib yuborilsa streak saqlanadi */
+  streakFreeze: {
+    available: { type: Number, default: 2 },
+    lastGrantedMonth: { type: String, default: '' },
+    lastUsedDay: { type: String, default: '' },
+  },
   onboarding: {
     completed: { type: Boolean, default: false },
     level: { type: String, default: 'beginner' },
@@ -56,6 +72,7 @@ const userSchema = new mongoose.Schema({
     stripeSubscriptionId: String,
     paymeSubscriptionId: String,
     currentPeriodEnd: Date,
+    cancelAtPeriodEnd: { type: Boolean, default: false },
   },
   usage: {
     aiCallsToday: { type: Number, default: 0 },

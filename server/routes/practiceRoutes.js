@@ -28,7 +28,7 @@ router.get('/session', protect, async (req, res) => {
       });
     }
 
-    const buckets = bucketWordsByDay(words);
+    const buckets = bucketWordsByDay(words, req.user);
     const rounds = buildPracticeRounds(buckets).map((r, index) => ({
       roundIndex: index,
       bucket: r.bucket,
@@ -73,9 +73,17 @@ router.post('/prompt', protect, validate(practicePromptSchema), trackAiUsage, as
       level
     );
 
+    // Zaxira variant ishlatildi — AI chaqirilmadi, demak limitni yemaymiz
+    if (prompt.status === 'fallback') {
+      await req.aiCall.refund();
+    } else {
+      req.aiCall.commit();
+    }
+
     res.json(prompt);
   } catch (error) {
     console.error('Practice prompt error:', error);
+    await req.aiCall?.refund();
     res.status(500).json({ message: 'Server Error' });
   }
 });
@@ -101,9 +109,22 @@ router.post('/check', protect, validate(practiceCheckSchema), trackAiUsage, asyn
       level
     );
 
+    if (result.status === 'unavailable') {
+      await req.aiCall.refund();
+      return res.status(503).json({
+        error:
+          result.reason === 'QUOTA_EXCEEDED'
+            ? "AI limiti tugadi. Keyinroq urinib ko'ring."
+            : "AI hozir tekshira olmadi. Qayta urinib ko'ring.",
+        code: result.reason,
+      });
+    }
+
+    req.aiCall.commit();
     res.json(result);
   } catch (error) {
     console.error('Practice check error:', error);
+    await req.aiCall?.refund();
     res.status(500).json({ message: 'Server Error' });
   }
 });

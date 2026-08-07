@@ -2,12 +2,22 @@ const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
 const { protect } = require('../middleware/authMiddleware');
-const { validate, authRegisterSchema, authLoginSchema, onboardSchema, syncQuestSchema } = require('../middleware/validate');
+const {
+  validate,
+  authRegisterSchema,
+  authLoginSchema,
+  onboardSchema,
+  syncQuestSchema,
+  timezoneSchema,
+} = require('../middleware/validate');
 const { generateAccessToken } = require('../utils/tokens');
 const { createSession, revokeSessionByCookie, findValidSession } = require('../services/authSessionService');
 const Word = require('../models/Word');
+const { userDayKey, isValidTimeZone } = require('../utils/dayKey');
 const {
   enrichUserProfile,
+  advanceStreak,
+  rollDailyQuests,
   QUEST_STEP_XP,
   DAILY_BONUS_XP,
 } = require('../utils/gamification');
@@ -124,27 +134,11 @@ router.post('/onboard', protect, validate(onboardSchema), async (req, res) => {
 router.post('/sync-quest', protect, validate(syncQuestSchema), async (req, res) => {
   try {
     const { type } = req.validated.body;
-    const today = new Date().toISOString().split('T')[0];
-    let isStreakUpdated = false;
+    // Foydalanuvchi zonasidagi kun. Ilgari UTC ishlatilardi va O'zbekistonda
+    // "kun" mahalliy soat 05:00 da almashib, kechqurungi mashq ertangi kunga yozilardi.
+    const today = userDayKey(req.user);
 
-    if (req.user.dailyQuests.date !== today) {
-      req.user.dailyQuests = {
-        date: today,
-        reviewCompleted: false,
-        topicCompleted: false,
-        immersionCompleted: false,
-      };
-
-      if (req.user.lastActiveDate) {
-        const yesterday = new Date();
-        yesterday.setDate(yesterday.getDate() - 1);
-        const yesterdayStr = yesterday.toISOString().split('T')[0];
-        const lastActiveStr = req.user.lastActiveDate.toISOString().split('T')[0];
-        if (lastActiveStr !== yesterdayStr && lastActiveStr !== today) {
-          req.user.currentStreak = 0;
-        }
-      }
-    }
+    rollDailyQuests(req.user, today);
 
     const questKeyMap = {
       review: 'reviewCompleted',
@@ -159,41 +153,61 @@ router.post('/sync-quest', protect, validate(syncQuestSchema), async (req, res) 
       req.user.xp += QUEST_STEP_XP;
       xpAwarded += QUEST_STEP_XP;
     }
-
     req.user.dailyQuests[questKey] = true;
 
     const { reviewCompleted, topicCompleted, immersionCompleted } = req.user.dailyQuests;
     const allCompletedNow = reviewCompleted && topicCompleted && immersionCompleted;
-    const lastActiveStr = req.user.lastActiveDate
-      ? req.user.lastActiveDate.toISOString().split('T')[0]
-      : null;
 
-    if (allCompletedNow && lastActiveStr !== today) {
-      req.user.currentStreak += 1;
-      req.user.xp += DAILY_BONUS_XP;
-      xpAwarded += DAILY_BONUS_XP;
-      req.user.lastActiveDate = new Date();
-      if (req.user.currentStreak > req.user.longestStreak) {
-        req.user.longestStreak = req.user.currentStreak;
+    let streakResult = { changed: false, streakFrozen: false };
+    if (allCompletedNow) {
+      streakResult = advanceStreak(req.user, today);
+      if (streakResult.changed) {
+        req.user.xp += DAILY_BONUS_XP;
+        xpAwarded += DAILY_BONUS_XP;
       }
-      isStreakUpdated = true;
     }
 
     const updatedUser = await req.user.save();
     const profile = await formatUser(updatedUser);
+
+    let message = 'Quest synced.';
+    if (streakResult.changed && streakResult.streakFrozen) {
+      message = `Kunlik reja tugadi! +${xpAwarded} XP · Streak muzlatish ishlatildi, ketma-ketlik saqlandi 🧊`;
+    } else if (streakResult.changed) {
+      message = `Kunlik reja tugadi! +${xpAwarded} XP va streak yangilandi`;
+    } else if (xpAwarded > 0) {
+      message = `Qadam bajarildi! +${xpAwarded} XP`;
+    }
+
     res.status(200).json({
       user: profile,
-      streakUpdated: isStreakUpdated,
+      streakUpdated: streakResult.changed,
+      streakFrozen: streakResult.streakFrozen,
       xpAwarded,
-      message: isStreakUpdated
-        ? `Kunlik reja tugadi! +${xpAwarded} XP va streak yangilandi`
-        : xpAwarded > 0
-          ? `Qadam bajarildi! +${xpAwarded} XP`
-          : 'Quest synced.',
+      message,
     });
   } catch (error) {
     console.error('Sync quest error:', error);
     res.status(500).json({ message: 'Server error during quest sync' });
+  }
+});
+
+// @desc    Vaqt zonasini saqlash — mijoz Intl orqali aniqlaydi
+// @route   POST /api/auth/timezone
+router.post('/timezone', protect, validate(timezoneSchema), async (req, res) => {
+  try {
+    const { timezone } = req.validated.body;
+    if (!isValidTimeZone(timezone)) {
+      return res.status(400).json({ message: 'Yaroqsiz vaqt zonasi' });
+    }
+    if (req.user.timezone !== timezone) {
+      req.user.timezone = timezone;
+      await req.user.save();
+    }
+    res.json({ timezone: req.user.timezone });
+  } catch (error) {
+    console.error('Timezone update error:', error);
+    res.status(500).json({ message: 'Server error' });
   }
 });
 
