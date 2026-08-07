@@ -109,6 +109,23 @@ self.addEventListener('notificationclick', (event) => {
 const isApiRequest = (url) =>
   url.pathname.startsWith('/api/') || url.pathname === '/health';
 
+/**
+ * Javobni keshlash mumkinmi.
+ *
+ * `redirected` tekshiruvi muhim: Vercel'ning "Deployment Protection" (SSO)
+ * yoqilgan bo'lsa, har bir so'rov `vercel.com/sso-api` ga yo'naltiriladi.
+ * Bunday javobni keshlash keshni buzadi — foydalanuvchi keyinchalik ilova
+ * o'rniga login sahifasining bo'lagini oladi.
+ *
+ * `type === 'basic'` — faqat o'z originimizdan kelgan to'liq javob.
+ * Opaque javoblarning statusi ko'rinmaydi, ya'ni xatoni ham keshlab qo'yish mumkin.
+ */
+const isCacheable = (response) =>
+  response &&
+  response.ok &&
+  !response.redirected &&
+  response.type === 'basic';
+
 self.addEventListener('fetch', (event) => {
   const { request } = event;
 
@@ -125,8 +142,11 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(
       fetch(request)
         .then((response) => {
-          const copy = response.clone();
-          caches.open(SHELL_CACHE).then((cache) => cache.put('/index.html', copy));
+          // SSO yo'naltirishini app shell sifatida keshlab qo'ymaymiz
+          if (isCacheable(response)) {
+            const copy = response.clone();
+            caches.open(SHELL_CACHE).then((cache) => cache.put('/index.html', copy));
+          }
           return response;
         })
         .catch(async () => {
@@ -150,14 +170,36 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(
     caches.open(ASSET_CACHE).then(async (cache) => {
       const cached = await cache.match(request);
-      const network = fetch(request)
-        .then((response) => {
-          if (response.ok) cache.put(request, response.clone());
-          return response;
-        })
-        .catch(() => cached);
 
-      return cached || network;
+      if (cached) {
+        // Fonda yangilaymiz, lekin javobni kutmaymiz
+        fetch(request)
+          .then((response) => {
+            if (isCacheable(response)) cache.put(request, response.clone());
+          })
+          .catch(() => {});
+        return cached;
+      }
+
+      try {
+        const response = await fetch(request);
+        if (isCacheable(response)) cache.put(request, response.clone());
+        return response;
+      } catch {
+        /**
+         * MUHIM: bu yerda har doim Response qaytishi SHART.
+         *
+         * Ilgari `.catch(() => cached)` yozilgan edi va kesh bo'sh bo'lganda
+         * `undefined` qaytardi. `respondWith(undefined)` esa
+         * "TypeError: Failed to convert value to 'Response'" beradi va
+         * so'rov butunlay uziladi — brauzer hech qanday javob olmaydi.
+         */
+        return new Response('', {
+          status: 504,
+          statusText: 'Offline',
+          headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+        });
+      }
     })
   );
 });

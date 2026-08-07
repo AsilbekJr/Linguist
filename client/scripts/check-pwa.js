@@ -69,7 +69,19 @@ const swPath = path.join(publicDir, 'sw.js');
 if (!fs.existsSync(swPath)) {
   problems.push('sw.js topilmadi');
 } else {
-  const sw = fs.readFileSync(swPath, 'utf8');
+  const raw = fs.readFileSync(swPath, 'utf8');
+
+  /**
+   * Izohlarni olib tashlaymiz.
+   *
+   * Busiz tekshiruv soxta ijobiy beradi: izoh ichida xatoli namunani
+   * tushuntirish uchun yozilgan matn ham "kod" deb hisoblanardi. Aynan
+   * shu holat yuz berdi — `.catch(() => cached)` izohda eslatilgani uchun
+   * tuzatilgan fayl "buzuq" deb belgilandi.
+   */
+  const sw = raw
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/(^|[^:])\/\/.*$/gm, '$1');
 
   // Eng muhim tekshiruv: API so'rovlari keshdan chetlab o'tilishi kerak
   const hasApiGuard = /isApiRequest|\/api\//.test(sw) && /return;/.test(sw);
@@ -91,6 +103,29 @@ if (!fs.existsSync(swPath)) {
   if (!/request\.method !== 'GET'/.test(sw)) {
     problems.push('sw.js: faqat GET keshlanishi tekshirilmagan');
   }
+
+  /**
+   * `respondWith` ga undefined uzatilsa brauzer
+   * "TypeError: Failed to convert value to 'Response'" beradi va so'rov
+   * BUTUNLAY uziladi. Bu real xato edi: `.catch(() => cached)` kesh bo'sh
+   * bo'lganda undefined qaytarardi.
+   */
+  if (/\.catch\(\(\)\s*=>\s*cached\)/.test(sw)) {
+    problems.push(
+      "sw.js: `.catch(() => cached)` — kesh bo'sh bo'lsa undefined qaytadi va " +
+        "respondWith uziladi. Har doim Response qaytaring."
+    );
+  }
+  if (!/new Response\([\s\S]*?504|statusText: 'Offline'/.test(sw)) {
+    problems.push("sw.js: tarmoq xatosida zaxira Response yo'q");
+  }
+  if (!/redirected/.test(sw)) {
+    problems.push(
+      "sw.js: yo'naltirilgan javob keshlanishidan himoya yo'q " +
+        '(Vercel SSO/Deployment Protection keshni buzadi)'
+    );
+  }
+
   if (!problems.length) ok.push('sw.js himoyalari joyida');
 }
 
