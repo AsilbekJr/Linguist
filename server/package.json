@@ -7,7 +7,10 @@
     "start": "node index.js",
     "dev": "node --watch index.js",
     "test": "node --test \"tests/**/*.test.js\"",
-    "test:watch": "node --test --watch \"tests/**/*.test.js\""
+    "test:watch": "node --test --watch \"tests/**/*.test.js\"",
+    "content:build": "node content/build.js",
+    "content:validate": "node content/validate.js",
+    "pretest": "node content/validate.js"
   },
   "keywords": [],
   "author": "",

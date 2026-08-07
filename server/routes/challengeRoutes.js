@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Challenge = require('../models/Challenge');
-const Word = require('../models/Word');
+const CHALLENGES = require('../data/challenges.json');
 const { evaluateSpokenAccuracy } = require('../services/geminiService');
 const { protect } = require('../middleware/authMiddleware');
 const { validate, challengeCompleteSchema } = require('../middleware/validate');
@@ -28,60 +28,42 @@ router.get('/current', protect, async (req, res) => {
             }
         }
 
-        // Otherwise, we need to create a NEW challenge
-        let nextDaynum = lastChallenge ? lastChallenge.dayNumber + 1 : 1;
-        if (nextDaynum > 100) {
-            return res.json({ message: "Congratulations! You have completed the 100 Days Challenge!", isFinished: true });
+        // Yangi challenge yaratamiz
+        const nextDaynum = lastChallenge ? lastChallenge.dayNumber + 1 : 1;
+
+        // Kunlar soni REAL kontent hajmiga teng. Ilgari bu yerda qattiq "100"
+        // yozilgan edi, lekin haqiqiy matn atigi 4 ta shablondan iborat edi.
+        if (nextDaynum > CHALLENGES.length) {
+            return res.json({
+                message: `Tabriklaymiz! ${CHALLENGES.length} kunlik gapirish mashqini tugatdingiz.`,
+                isFinished: true,
+                totalDays: CHALLENGES.length,
+            });
         }
 
-        let targetWords = [];
-        try {
-            const activeWords = await Word.aggregate([
-                { $match: { user: req.user._id, mastered: false, reviewStage: { $lt: 5 } } },
-                { $sample: { size: 5 } }
-            ]);
-            targetWords = activeWords.map(w => w.word);
-        } catch (e) {
-            console.warn("Could not fetch target words for challenge:", e);
+        const dayData = CHALLENGES.find((c) => c.dayNumber === nextDaynum);
+        if (!dayData) {
+            return res.status(404).json({ error: 'Challenge topilmadi' });
         }
 
-        let generatedText = null;
-        let randomTopic = `Day ${nextDaynum}`;
-
-        try {
-            const challengesData = require('../data/challenges.json');
-            const dayData = challengesData.find((c) => c.dayNumber === nextDaynum);
-            if (dayData) {
-                randomTopic = dayData.topic;
-                generatedText = dayData.textTemplate;
-                const injection =
-                    targetWords.length > 0
-                        ? `\n\nFocus words: **${targetWords.join('**, **')}**.`
-                        : '';
-                generatedText = generatedText.replace(
-                    '(Target words will be dynamically injected here in the route).',
-                    injection
-                );
-            }
-        } catch (err) {
-            console.error('Challenge JSON load failed:', err.message);
-        }
-
-        if (!generatedText?.trim()) {
-            generatedText = `Day ${nextDaynum}: practice these words in your own sentences:\n\n**${targetWords.join('**, **')}**`;
-        }
-
-        // 4. Save to DB
         const newChallenge = new Challenge({
             user: req.user._id,
             dayNumber: nextDaynum,
-            topic: randomTopic,
-            text: generatedText,
-            status: 'pending'
+            topic: dayData.topic,
+            text: dayData.text,
+            status: 'pending',
         });
         await newChallenge.save();
 
-        res.json(newChallenge);
+        res.json({
+            ...newChallenge.toObject(),
+            topicUz: dayData.topicUz,
+            cefr: dayData.cefr,
+            lines: dayData.lines,
+            focusWords: dayData.focusWords,
+            instructionUz: dayData.instructionUz,
+            totalDays: CHALLENGES.length,
+        });
 
     } catch (error) {
         console.error("Error fetching/creating current challenge:", error);

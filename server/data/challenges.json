@@ -1,502 +1,593 @@
 [
   {
     "dayNumber": 1,
-    "topic": "A Memorable Travel Experience",
-    "textTemplate": "Welcome to day 1 of your challenge! Today's topic is: A Memorable Travel Experience. This is a short introductory reading. The world is full of interesting things. We must always keep learning. Focus on your pronunciation and fluidity. Practice makes perfect. (Target words will be dynamically injected here in the route)."
+    "cefr": "A1",
+    "topic": "Meeting Someone New",
+    "topicUz": "Tanishuv",
+    "text": "Hello! My name is Aziz. What is your name? Hello, Aziz. I am Sara. Nice to meet you. Nice to meet you too. Where are you from? I am from Samarkand, but I live in Tashkent now. Are you a student? Yes. I am twenty years old and I study English. Thank you for your time. See you soon!",
+    "lines": [
+      "Hello! My name is Aziz. What is your name?",
+      "Hello, Aziz. I am Sara. Nice to meet you.",
+      "Nice to meet you too. Where are you from?",
+      "I am from Samarkand, but I live in Tashkent now.",
+      "Are you a student?",
+      "Yes. I am twenty years old and I study English.",
+      "Thank you for your time. See you soon!"
+    ],
+    "focusWords": [
+      "hello",
+      "name",
+      "meet",
+      "from",
+      "live"
+    ],
+    "instructionUz": "\"Tanishuv\" dialogini ovoz chiqarib o'qing. E'tibor bering: hello, name, meet, from, live."
   },
   {
     "dayNumber": 2,
-    "topic": "The Future of Technology",
-    "textTemplate": "Welcome to day 2 of your challenge! Today's topic is: The Future of Technology. This is a short introductory reading. The world is full of interesting things. We must always keep learning. Focus on your pronunciation and fluidity. Practice makes perfect. (Target words will be dynamically injected here in the route)."
+    "cefr": "A1",
+    "topic": "My Family",
+    "topicUz": "Oilam",
+    "text": "Do you have a big family? Yes. My mother, my father, my brother and my sister live together. Is your brother married? Yes, he has one son and one daughter. How old is his daughter? She is a small child. My grandmother helps with her.",
+    "lines": [
+      "Do you have a big family?",
+      "Yes. My mother, my father, my brother and my sister live together.",
+      "Is your brother married?",
+      "Yes, he has one son and one daughter.",
+      "How old is his daughter?",
+      "She is a small child. My grandmother helps with her."
+    ],
+    "focusWords": [
+      "family",
+      "mother",
+      "father",
+      "brother",
+      "sister"
+    ],
+    "instructionUz": "\"Oilam\" dialogini ovoz chiqarib o'qing. E'tibor bering: family, mother, father, brother, sister."
   },
   {
     "dayNumber": 3,
-    "topic": "A Book or Movie That Changed My Life",
-    "textTemplate": "Welcome to day 3 of your challenge! Today's topic is: A Book or Movie That Changed My Life. This is a short introductory reading. The world is full of interesting things. We must always keep learning. Focus on your pronunciation and fluidity. Practice makes perfect. (Target words will be dynamically injected here in the route)."
+    "cefr": "A1",
+    "topic": "Time and Numbers",
+    "topicUz": "Vaqt va raqamlar",
+    "text": "What time is it now? It is nine in the morning. Our lesson starts in one hour. We have thirty minutes to walk there. Do not be late. Is the lesson today or tomorrow? Today. Tomorrow evening we have a free week. Give me your phone number, please.",
+    "lines": [
+      "What time is it now?",
+      "It is nine in the morning.",
+      "Our lesson starts in one hour.",
+      "We have thirty minutes to walk there. Do not be late.",
+      "Is the lesson today or tomorrow?",
+      "Today. Tomorrow evening we have a free week.",
+      "Give me your phone number, please."
+    ],
+    "focusWords": [
+      "time",
+      "hour",
+      "minute",
+      "morning",
+      "evening"
+    ],
+    "instructionUz": "\"Vaqt va raqamlar\" dialogini ovoz chiqarib o'qing. E'tibor bering: time, hour, minute, morning, evening."
   },
   {
     "dayNumber": 4,
-    "topic": "The Importance of Mental Health",
-    "textTemplate": "Welcome to day 4 of your challenge! Today's topic is: The Importance of Mental Health. This is a short introductory reading. The world is full of interesting things. We must always keep learning. Focus on your pronunciation and fluidity. Practice makes perfect. (Target words will be dynamically injected here in the route)."
+    "cefr": "A1",
+    "topic": "At the Shop",
+    "topicUz": "Do'konda",
+    "text": "Hello! Can I help you? Yes, I need a new bag. This one is a good size. The price is fifty thousand som. That is expensive. Do you have a cheap one? Yes, this bag is cheap and strong. Good, I will buy it. Can I pay with money or card? Both are fine. Thank you for coming to our shop.",
+    "lines": [
+      "Hello! Can I help you?",
+      "Yes, I need a new bag.",
+      "This one is a good size. The price is fifty thousand som.",
+      "That is expensive. Do you have a cheap one?",
+      "Yes, this bag is cheap and strong.",
+      "Good, I will buy it. Can I pay with money or card?",
+      "Both are fine. Thank you for coming to our shop."
+    ],
+    "focusWords": [
+      "shop",
+      "buy",
+      "price",
+      "money",
+      "cheap"
+    ],
+    "instructionUz": "\"Do'konda\" dialogini ovoz chiqarib o'qing. E'tibor bering: shop, buy, price, money, cheap."
   },
   {
     "dayNumber": 5,
-    "topic": "My Dream Career",
-    "textTemplate": "Welcome to day 5 of your challenge! Today's topic is: My Dream Career. This is a short introductory reading. The world is full of interesting things. We must always keep learning. Focus on your pronunciation and fluidity. Practice makes perfect. (Target words will be dynamically injected here in the route)."
+    "cefr": "A1",
+    "topic": "Food and Drink",
+    "topicUz": "Ovqat va ichimlik",
+    "text": "Are you hungry? Yes, very. I want to eat something. We have bread, meat and fruit at home. That is good food. I am also thirsty. Do you want to drink water or tea? Green tea, please.",
+    "lines": [
+      "Are you hungry?",
+      "Yes, very. I want to eat something.",
+      "We have bread, meat and fruit at home.",
+      "That is good food. I am also thirsty.",
+      "Do you want to drink water or tea?",
+      "Green tea, please."
+    ],
+    "focusWords": [
+      "food",
+      "bread",
+      "water",
+      "tea",
+      "meat"
+    ],
+    "instructionUz": "\"Ovqat va ichimlik\" dialogini ovoz chiqarib o'qing. E'tibor bering: food, bread, water, tea, meat."
   },
   {
     "dayNumber": 6,
-    "topic": "Cultural Differences I've Noticed",
-    "textTemplate": "Welcome to day 6 of your challenge! Today's topic is: Cultural Differences I've Noticed. This is a short introductory reading. The world is full of interesting things. We must always keep learning. Focus on your pronunciation and fluidity. Practice makes perfect. (Target words will be dynamically injected here in the route)."
+    "cefr": "A1",
+    "topic": "My Home",
+    "topicUz": "Uyim",
+    "text": "Is your house big or small? It is not big. We have three rooms and a kitchen. Does your room have a window? Yes, a big window near the table. Do you have a chair there too? Yes. Please close the door — I want to clean the small room.",
+    "lines": [
+      "Is your house big or small?",
+      "It is not big. We have three rooms and a kitchen.",
+      "Does your room have a window?",
+      "Yes, a big window near the table.",
+      "Do you have a chair there too?",
+      "Yes. Please close the door — I want to clean the small room."
+    ],
+    "focusWords": [
+      "house",
+      "room",
+      "kitchen",
+      "door",
+      "window"
+    ],
+    "instructionUz": "\"Uyim\" dialogini ovoz chiqarib o'qing. E'tibor bering: house, room, kitchen, door, window."
   },
   {
     "dayNumber": 7,
-    "topic": "The Best Advice I've Ever Received",
-    "textTemplate": "Welcome to day 7 of your challenge! Today's topic is: The Best Advice I've Ever Received. This is a short introductory reading. The world is full of interesting things. We must always keep learning. Focus on your pronunciation and fluidity. Practice makes perfect. (Target words will be dynamically injected here in the route)."
+    "cefr": "A1",
+    "topic": "My Daily Routine",
+    "topicUz": "Kundalik tartibim",
+    "text": "What time do you wake up? I always wake up at six. When do you start work? I start at eight and finish at five. I am usually busy. Are you tired in the evening? Yes, I sleep early. I never sleep late.",
+    "lines": [
+      "What time do you wake up?",
+      "I always wake up at six.",
+      "When do you start work?",
+      "I start at eight and finish at five. I am usually busy.",
+      "Are you tired in the evening?",
+      "Yes, I sleep early. I never sleep late."
+    ],
+    "focusWords": [
+      "wake",
+      "sleep",
+      "work",
+      "start",
+      "finish"
+    ],
+    "instructionUz": "\"Kundalik tartibim\" dialogini ovoz chiqarib o'qing. E'tibor bering: wake, sleep, work, start, finish."
   },
   {
     "dayNumber": 8,
-    "topic": "How I Deal with Stress",
-    "textTemplate": "Welcome to day 8 of your challenge! Today's topic is: How I Deal with Stress. This is a short introductory reading. The world is full of interesting things. We must always keep learning. Focus on your pronunciation and fluidity. Practice makes perfect. (Target words will be dynamically injected here in the route)."
+    "cefr": "A1",
+    "topic": "The Weather",
+    "topicUz": "Ob-havo",
+    "text": "What is the weather like today? It is cold and there is a strong wind. Will it rain? Maybe. In winter we also have snow here. Which season do you like? Spring. It is warm and the sun is bright. Summer is too hot. Take an umbrella — the street is wet.",
+    "lines": [
+      "What is the weather like today?",
+      "It is cold and there is a strong wind.",
+      "Will it rain?",
+      "Maybe. In winter we also have snow here.",
+      "Which season do you like?",
+      "Spring. It is warm and the sun is bright. Summer is too hot.",
+      "Take an umbrella — the street is wet."
+    ],
+    "focusWords": [
+      "weather",
+      "hot",
+      "cold",
+      "rain",
+      "snow"
+    ],
+    "instructionUz": "\"Ob-havo\" dialogini ovoz chiqarib o'qing. E'tibor bering: weather, hot, cold, rain, snow."
   },
   {
     "dayNumber": 9,
-    "topic": "A Challenge I Overcame",
-    "textTemplate": "Welcome to day 9 of your challenge! Today's topic is: A Challenge I Overcame. This is a short introductory reading. The world is full of interesting things. We must always keep learning. Focus on your pronunciation and fluidity. Practice makes perfect. (Target words will be dynamically injected here in the route)."
+    "cefr": "A2",
+    "topic": "Asking for Directions",
+    "topicUz": "Yo'l so'rash",
+    "text": "Excuse me, can you show me the way to the station? Yes. Go straight down this street. Is it far from here? No, it is near. About five minutes on foot. At the corner, turn left. Left or right? Turn left, then the station is on your right. Thank you. I have a map but it is not clear.",
+    "lines": [
+      "Excuse me, can you show me the way to the station?",
+      "Yes. Go straight down this street.",
+      "Is it far from here?",
+      "No, it is near. About five minutes on foot.",
+      "At the corner, turn left.",
+      "Left or right?",
+      "Turn left, then the station is on your right.",
+      "Thank you. I have a map but it is not clear."
+    ],
+    "focusWords": [
+      "street",
+      "turn",
+      "left",
+      "right",
+      "straight"
+    ],
+    "instructionUz": "\"Yo'l so'rash\" dialogini ovoz chiqarib o'qing. E'tibor bering: street, turn, left, right, straight."
   },
   {
     "dayNumber": 10,
-    "topic": "The Role of Social Media Today",
-    "textTemplate": "Welcome to day 10 of your challenge! Today's topic is: The Role of Social Media Today. This is a short introductory reading. The world is full of interesting things. We must always keep learning. Focus on your pronunciation and fluidity. Practice makes perfect. (Target words will be dynamically injected here in the route)."
+    "cefr": "A2",
+    "topic": "Getting Around",
+    "topicUz": "Transport",
+    "text": "How do you travel to work? I take the bus. Sometimes I drive. Where is the bus stop? Near the station. You can buy a ticket there. What time does the bus leave? It leaves at eight and we arrive at half past eight. Do we need to wait long? No. The train is faster, but the bus is cheaper.",
+    "lines": [
+      "How do you travel to work?",
+      "I take the bus. Sometimes I drive.",
+      "Where is the bus stop?",
+      "Near the station. You can buy a ticket there.",
+      "What time does the bus leave?",
+      "It leaves at eight and we arrive at half past eight.",
+      "Do we need to wait long?",
+      "No. The train is faster, but the bus is cheaper."
+    ],
+    "focusWords": [
+      "bus",
+      "train",
+      "ticket",
+      "station",
+      "drive"
+    ],
+    "instructionUz": "\"Transport\" dialogini ovoz chiqarib o'qing. E'tibor bering: bus, train, ticket, station, drive."
   },
   {
     "dayNumber": 11,
-    "topic": "If I Could Meet Anyone from History",
-    "textTemplate": "Welcome to day 11 of your challenge! Today's topic is: If I Could Meet Anyone from History. This is a short introductory reading. The world is full of interesting things. We must always keep learning. Focus on your pronunciation and fluidity. Practice makes perfect. (Target words will be dynamically injected here in the route)."
+    "cefr": "A2",
+    "topic": "Ordering at a Café",
+    "topicUz": "Kafeda buyurtma",
+    "text": "Good afternoon. Here is the menu. Thank you. I need a minute to choose. Are you ready to order? Yes. One coffee with sugar, please. And a dessert. Our cake is very delicious. Perfect. A cup of coffee and that cake. Excuse me, waiter! Can I have the bill, please? Of course. One moment.",
+    "lines": [
+      "Good afternoon. Here is the menu.",
+      "Thank you. I need a minute to choose.",
+      "Are you ready to order?",
+      "Yes. One coffee with sugar, please. And a dessert.",
+      "Our cake is very delicious.",
+      "Perfect. A cup of coffee and that cake.",
+      "Excuse me, waiter! Can I have the bill, please?",
+      "Of course. One moment."
+    ],
+    "focusWords": [
+      "order",
+      "menu",
+      "waiter",
+      "coffee",
+      "sugar"
+    ],
+    "instructionUz": "\"Kafeda buyurtma\" dialogini ovoz chiqarib o'qing. E'tibor bering: order, menu, waiter, coffee, sugar."
   },
   {
     "dayNumber": 12,
-    "topic": "The Most Delicious Meal I've Had",
-    "textTemplate": "Welcome to day 12 of your challenge! Today's topic is: The Most Delicious Meal I've Had. This is a short introductory reading. The world is full of interesting things. We must always keep learning. Focus on your pronunciation and fluidity. Practice makes perfect. (Target words will be dynamically injected here in the route)."
+    "cefr": "A2",
+    "topic": "Clothes and Shopping",
+    "topicUz": "Kiyim tanlash",
+    "text": "I want to buy new clothes for winter. What do you need? A warm coat and shoes. What colour do you like? Dark blue. Can I try this coat? Yes. Does it fit you? It is a little big. This cotton shirt is nice too. And that dress? You can wear it to the party.",
+    "lines": [
+      "I want to buy new clothes for winter.",
+      "What do you need?",
+      "A warm coat and shoes.",
+      "What colour do you like?",
+      "Dark blue. Can I try this coat?",
+      "Yes. Does it fit you?",
+      "It is a little big. This cotton shirt is nice too.",
+      "And that dress? You can wear it to the party."
+    ],
+    "focusWords": [
+      "clothes",
+      "wear",
+      "shirt",
+      "shoes",
+      "coat"
+    ],
+    "instructionUz": "\"Kiyim tanlash\" dialogini ovoz chiqarib o'qing. E'tibor bering: clothes, wear, shirt, shoes, coat."
   },
   {
     "dayNumber": 13,
-    "topic": "A Skill I Want to Learn",
-    "textTemplate": "Welcome to day 13 of your challenge! Today's topic is: A Skill I Want to Learn. This is a short introductory reading. The world is full of interesting things. We must always keep learning. Focus on your pronunciation and fluidity. Practice makes perfect. (Target words will be dynamically injected here in the route)."
+    "cefr": "A2",
+    "topic": "At the Doctor",
+    "topicUz": "Shifokorda",
+    "text": "Good morning. What is the problem? I feel ill. I have a bad headache. Do you have a fever? Yes, since yesterday. My throat hurts too. Where is the pain? Here. Is it serious? No. Take this medicine and rest at home. You will feel better in two days. Your health is good. Thank you, doctor. Should I come again next week?",
+    "lines": [
+      "Good morning. What is the problem?",
+      "I feel ill. I have a bad headache.",
+      "Do you have a fever?",
+      "Yes, since yesterday. My throat hurts too.",
+      "Where is the pain?",
+      "Here. Is it serious?",
+      "No. Take this medicine and rest at home.",
+      "You will feel better in two days. Your health is good.",
+      "Thank you, doctor. Should I come again next week?"
+    ],
+    "focusWords": [
+      "doctor",
+      "ill",
+      "pain",
+      "medicine",
+      "headache"
+    ],
+    "instructionUz": "\"Shifokorda\" dialogini ovoz chiqarib o'qing. E'tibor bering: doctor, ill, pain, medicine, headache."
   },
   {
     "dayNumber": 14,
-    "topic": "My Favorite Childhood Memory",
-    "textTemplate": "Welcome to day 14 of your challenge! Today's topic is: My Favorite Childhood Memory. This is a short introductory reading. The world is full of interesting things. We must always keep learning. Focus on your pronunciation and fluidity. Practice makes perfect. (Target words will be dynamically injected here in the route)."
+    "cefr": "A2",
+    "topic": "On the Phone",
+    "topicUz": "Telefonda gaplashish",
+    "text": "Hello, can I speak to Sara? Speaking. Who is this? It is Aziz. Sorry, I cannot hear you well. The line is bad. Your voice is very quiet. Can you repeat that, please? I said I will call you later. Fine. If I do not answer, send me a message.",
+    "lines": [
+      "Hello, can I speak to Sara?",
+      "Speaking. Who is this?",
+      "It is Aziz. Sorry, I cannot hear you well.",
+      "The line is bad. Your voice is very quiet.",
+      "Can you repeat that, please?",
+      "I said I will call you later.",
+      "Fine. If I do not answer, send me a message."
+    ],
+    "focusWords": [
+      "call",
+      "answer",
+      "message",
+      "speak",
+      "hear"
+    ],
+    "instructionUz": "\"Telefonda gaplashish\" dialogini ovoz chiqarib o'qing. E'tibor bering: call, answer, message, speak, hear."
   },
   {
     "dayNumber": 15,
-    "topic": "The Impact of Artificial Intelligence",
-    "textTemplate": "Welcome to day 15 of your challenge! Today's topic is: The Impact of Artificial Intelligence. This is a short introductory reading. The world is full of interesting things. We must always keep learning. Focus on your pronunciation and fluidity. Practice makes perfect. (Target words will be dynamically injected here in the route)."
+    "cefr": "A2",
+    "topic": "Making Plans with Friends",
+    "topicUz": "Do'stlar bilan reja",
+    "text": "Are you free this weekend? I think so. Do you have a plan? I want to invite you to a party on Saturday. That is a good idea. Who else is coming? Some friends from work. We can go together. Maybe I will be a little late. No problem. Are you ready by seven? Yes, I agree. See you then.",
+    "lines": [
+      "Are you free this weekend?",
+      "I think so. Do you have a plan?",
+      "I want to invite you to a party on Saturday.",
+      "That is a good idea. Who else is coming?",
+      "Some friends from work. We can go together.",
+      "Maybe I will be a little late.",
+      "No problem. Are you ready by seven?",
+      "Yes, I agree. See you then."
+    ],
+    "focusWords": [
+      "plan",
+      "free",
+      "invite",
+      "party",
+      "weekend"
+    ],
+    "instructionUz": "\"Do'stlar bilan reja\" dialogini ovoz chiqarib o'qing. E'tibor bering: plan, free, invite, party, weekend."
   },
   {
     "dayNumber": 16,
-    "topic": "Climate Change and Us",
-    "textTemplate": "Welcome to day 16 of your challenge! Today's topic is: Climate Change and Us. This is a short introductory reading. The world is full of interesting things. We must always keep learning. Focus on your pronunciation and fluidity. Practice makes perfect. (Target words will be dynamically injected here in the route)."
+    "cefr": "A2",
+    "topic": "Jobs and Work",
+    "topicUz": "Kasblar va ish",
+    "text": "What is your job? I am an engineer. I work in a small company. Do you like your office? Yes, and my boss is kind. We have a meeting every Monday. Is the salary good? It is fine. My sister is a teacher and earns less. I want to apply for a new job. You have good experience. You will find one.",
+    "lines": [
+      "What is your job?",
+      "I am an engineer. I work in a small company.",
+      "Do you like your office?",
+      "Yes, and my boss is kind. We have a meeting every Monday.",
+      "Is the salary good?",
+      "It is fine. My sister is a teacher and earns less.",
+      "I want to apply for a new job.",
+      "You have good experience. You will find one."
+    ],
+    "focusWords": [
+      "job",
+      "teacher",
+      "engineer",
+      "office",
+      "salary"
+    ],
+    "instructionUz": "\"Kasblar va ish\" dialogini ovoz chiqarib o'qing. E'tibor bering: job, teacher, engineer, office, salary."
   },
   {
     "dayNumber": 17,
-    "topic": "Why Sleep is Important",
-    "textTemplate": "Welcome to day 17 of your challenge! Today's topic is: Why Sleep is Important. This is a short introductory reading. The world is full of interesting things. We must always keep learning. Focus on your pronunciation and fluidity. Practice makes perfect. (Target words will be dynamically injected here in the route)."
+    "cefr": "A2",
+    "topic": "Travel and the Hotel",
+    "topicUz": "Sayohat va mehmonxona",
+    "text": "Good evening. I have a booking for two nights. May I see your passport, please? Here it is. Is breakfast included? Yes, from seven to ten. Here is your key. Thank you. Where is my luggage? Our staff will bring it to your room. One more question — do you have a tour to the old city? Yes, the guide leaves every morning at nine. Perfect. It is my first time abroad.",
+    "lines": [
+      "Good evening. I have a booking for two nights.",
+      "May I see your passport, please?",
+      "Here it is. Is breakfast included?",
+      "Yes, from seven to ten. Here is your key.",
+      "Thank you. Where is my luggage?",
+      "Our staff will bring it to your room.",
+      "One more question — do you have a tour to the old city?",
+      "Yes, the guide leaves every morning at nine.",
+      "Perfect. It is my first time abroad."
+    ],
+    "focusWords": [
+      "booking",
+      "passport",
+      "breakfast",
+      "key",
+      "luggage"
+    ],
+    "instructionUz": "\"Sayohat va mehmonxona\" dialogini ovoz chiqarib o'qing. E'tibor bering: booking, passport, breakfast, key, luggage."
   },
   {
     "dayNumber": 18,
-    "topic": "My Fitness Journey",
-    "textTemplate": "Welcome to day 18 of your challenge! Today's topic is: My Fitness Journey. This is a short introductory reading. The world is full of interesting things. We must always keep learning. Focus on your pronunciation and fluidity. Practice makes perfect. (Target words will be dynamically injected here in the route)."
+    "cefr": "A2",
+    "topic": "Money and the Bank",
+    "topicUz": "Pul va bank",
+    "text": "Good morning. I want to open a bank account. Of course. Do you want a debit card too? Yes, please. What is the monthly cost? It is free for students. Do you want to change money as well? Yes, I need to change dollars into som. The rate today is good. How much do you want to exchange? Two hundred. Can I also save some money in the account? Yes, and you will earn a small interest.",
+    "lines": [
+      "Good morning. I want to open a bank account.",
+      "Of course. Do you want a debit card too?",
+      "Yes, please. What is the monthly cost?",
+      "It is free for students. Do you want to change money as well?",
+      "Yes, I need to change dollars into som.",
+      "The rate today is good. How much do you want to exchange?",
+      "Two hundred. Can I also save some money in the account?",
+      "Yes, and you will earn a small interest."
+    ],
+    "focusWords": [
+      "bank",
+      "account",
+      "card",
+      "cost",
+      "change"
+    ],
+    "instructionUz": "\"Pul va bank\" dialogini ovoz chiqarib o'qing. E'tibor bering: bank, account, card, cost, change."
   },
   {
     "dayNumber": 19,
-    "topic": "The Value of Friendship",
-    "textTemplate": "Welcome to day 19 of your challenge! Today's topic is: The Value of Friendship. This is a short introductory reading. The world is full of interesting things. We must always keep learning. Focus on your pronunciation and fluidity. Practice makes perfect. (Target words will be dynamically injected here in the route)."
+    "cefr": "A2",
+    "topic": "Internet and Devices",
+    "topicUz": "Internet va qurilmalar",
+    "text": "My internet is very slow today. Did you restart the router? Yes, but the connection is still bad. Can you open any website? No. And this app does not work on my phone. Maybe you need to update it. I forgot my password too. Click on the link and download the new version.",
+    "lines": [
+      "My internet is very slow today.",
+      "Did you restart the router?",
+      "Yes, but the connection is still bad.",
+      "Can you open any website?",
+      "No. And this app does not work on my phone.",
+      "Maybe you need to update it.",
+      "I forgot my password too.",
+      "Click on the link and download the new version."
+    ],
+    "focusWords": [
+      "internet",
+      "connection",
+      "website",
+      "app",
+      "phone"
+    ],
+    "instructionUz": "\"Internet va qurilmalar\" dialogini ovoz chiqarib o'qing. E'tibor bering: internet, connection, website, app, phone."
   },
   {
     "dayNumber": 20,
-    "topic": "Living in a Big City vs. Countryside",
-    "textTemplate": "Welcome to day 20 of your challenge! Today's topic is: Living in a Big City vs. Countryside. As you progress, the readings become slightly more complex. When thinking about this topic, it's important to consider various perspectives. Experiences shape who we are. Continue to build your vocabulary and pay attention to sentence structure. Remember that consistency is the key to success in language learning. Keep up the great work! (Target words will be dynamically injected here in the route)."
+    "cefr": "A2",
+    "topic": "Sport and Free Time",
+    "topicUz": "Sport va bo'sh vaqt",
+    "text": "What sport do you play? I love swimming. And I run twice a week. Do you go to a gym? Yes, near my house. What about you? I prefer team games. I am a member of a football club. Did you win your last match? No, we lost. But nobody likes to lose, right? In my free time I also enjoy reading.",
+    "lines": [
+      "What sport do you play?",
+      "I love swimming. And I run twice a week.",
+      "Do you go to a gym?",
+      "Yes, near my house. What about you?",
+      "I prefer team games. I am a member of a football club.",
+      "Did you win your last match?",
+      "No, we lost. But nobody likes to lose, right?",
+      "In my free time I also enjoy reading."
+    ],
+    "focusWords": [
+      "sport",
+      "swimming",
+      "run",
+      "gym",
+      "team"
+    ],
+    "instructionUz": "\"Sport va bo'sh vaqt\" dialogini ovoz chiqarib o'qing. E'tibor bering: sport, swimming, run, gym, team."
   },
   {
     "dayNumber": 21,
-    "topic": "A Memorable Travel Experience",
-    "textTemplate": "Welcome to day 21 of your challenge! Today's topic is: A Memorable Travel Experience. As you progress, the readings become slightly more complex. When thinking about this topic, it's important to consider various perspectives. Experiences shape who we are. Continue to build your vocabulary and pay attention to sentence structure. Remember that consistency is the key to success in language learning. Keep up the great work! (Target words will be dynamically injected here in the route)."
+    "cefr": "A2",
+    "topic": "School and Studying",
+    "topicUz": "Maktab va o'qish",
+    "text": "Where did you study? At a technical university. I studied five years. Was the exam difficult? Very. But I passed with a good mark. Did anyone fail? Two students failed and repeated the course. What was your favourite subject? Mathematics. Our lesson was always interesting.",
+    "lines": [
+      "Where did you study?",
+      "At a technical university. I studied five years.",
+      "Was the exam difficult?",
+      "Very. But I passed with a good mark.",
+      "Did anyone fail?",
+      "Two students failed and repeated the course.",
+      "What was your favourite subject?",
+      "Mathematics. Our lesson was always interesting."
+    ],
+    "focusWords": [
+      "study",
+      "university",
+      "exam",
+      "pass",
+      "fail"
+    ],
+    "instructionUz": "\"Maktab va o'qish\" dialogini ovoz chiqarib o'qing. E'tibor bering: study, university, exam, pass, fail."
   },
   {
     "dayNumber": 22,
-    "topic": "The Future of Technology",
-    "textTemplate": "Welcome to day 22 of your challenge! Today's topic is: The Future of Technology. As you progress, the readings become slightly more complex. When thinking about this topic, it's important to consider various perspectives. Experiences shape who we are. Continue to build your vocabulary and pay attention to sentence structure. Remember that consistency is the key to success in language learning. Keep up the great work! (Target words will be dynamically injected here in the route)."
+    "cefr": "A2",
+    "topic": "Giving Your Opinion",
+    "topicUz": "Fikr bildirish",
+    "text": "What do you think about online learning? In my opinion it is useful, because you save time. I disagree. I prefer a real classroom. Why do you prefer that? Because I can ask the teacher immediately. That is the main reason. That is an important point. Perhaps both are good. Yes. It depends on the person. I am sure you are right about that.",
+    "lines": [
+      "What do you think about online learning?",
+      "In my opinion it is useful, because you save time.",
+      "I disagree. I prefer a real classroom.",
+      "Why do you prefer that?",
+      "Because I can ask the teacher immediately. That is the main reason.",
+      "That is an important point. Perhaps both are good.",
+      "Yes. It depends on the person.",
+      "I am sure you are right about that."
+    ],
+    "focusWords": [
+      "think",
+      "opinion",
+      "because",
+      "reason",
+      "important"
+    ],
+    "instructionUz": "\"Fikr bildirish\" dialogini ovoz chiqarib o'qing. E'tibor bering: think, opinion, because, reason, important."
   },
   {
     "dayNumber": 23,
-    "topic": "A Book or Movie That Changed My Life",
-    "textTemplate": "Welcome to day 23 of your challenge! Today's topic is: A Book or Movie That Changed My Life. As you progress, the readings become slightly more complex. When thinking about this topic, it's important to consider various perspectives. Experiences shape who we are. Continue to build your vocabulary and pay attention to sentence structure. Remember that consistency is the key to success in language learning. Keep up the great work! (Target words will be dynamically injected here in the route)."
+    "cefr": "A2",
+    "topic": "Describing People",
+    "topicUz": "Odamlarni tasvirlash",
+    "text": "Can you describe your new colleague? He is a tall young man with short dark hair. What is his character like? Very polite and quiet. He never shouts. Is he friendly with the team? Yes, and he is honest. Everybody trusts him. Is he strong enough for this hard job? I think so. He looks serious about it.",
+    "lines": [
+      "Can you describe your new colleague?",
+      "He is a tall young man with short dark hair.",
+      "What is his character like?",
+      "Very polite and quiet. He never shouts.",
+      "Is he friendly with the team?",
+      "Yes, and he is honest. Everybody trusts him.",
+      "Is he strong enough for this hard job?",
+      "I think so. He looks serious about it."
+    ],
+    "focusWords": [
+      "describe",
+      "tall",
+      "young",
+      "hair",
+      "character"
+    ],
+    "instructionUz": "\"Odamlarni tasvirlash\" dialogini ovoz chiqarib o'qing. E'tibor bering: describe, tall, young, hair, character."
   },
   {
     "dayNumber": 24,
-    "topic": "The Importance of Mental Health",
-    "textTemplate": "Welcome to day 24 of your challenge! Today's topic is: The Importance of Mental Health. As you progress, the readings become slightly more complex. When thinking about this topic, it's important to consider various perspectives. Experiences shape who we are. Continue to build your vocabulary and pay attention to sentence structure. Remember that consistency is the key to success in language learning. Keep up the great work! (Target words will be dynamically injected here in the route)."
-  },
-  {
-    "dayNumber": 25,
-    "topic": "My Dream Career",
-    "textTemplate": "Welcome to day 25 of your challenge! Today's topic is: My Dream Career. As you progress, the readings become slightly more complex. When thinking about this topic, it's important to consider various perspectives. Experiences shape who we are. Continue to build your vocabulary and pay attention to sentence structure. Remember that consistency is the key to success in language learning. Keep up the great work! (Target words will be dynamically injected here in the route)."
-  },
-  {
-    "dayNumber": 26,
-    "topic": "Cultural Differences I've Noticed",
-    "textTemplate": "Welcome to day 26 of your challenge! Today's topic is: Cultural Differences I've Noticed. As you progress, the readings become slightly more complex. When thinking about this topic, it's important to consider various perspectives. Experiences shape who we are. Continue to build your vocabulary and pay attention to sentence structure. Remember that consistency is the key to success in language learning. Keep up the great work! (Target words will be dynamically injected here in the route)."
-  },
-  {
-    "dayNumber": 27,
-    "topic": "The Best Advice I've Ever Received",
-    "textTemplate": "Welcome to day 27 of your challenge! Today's topic is: The Best Advice I've Ever Received. As you progress, the readings become slightly more complex. When thinking about this topic, it's important to consider various perspectives. Experiences shape who we are. Continue to build your vocabulary and pay attention to sentence structure. Remember that consistency is the key to success in language learning. Keep up the great work! (Target words will be dynamically injected here in the route)."
-  },
-  {
-    "dayNumber": 28,
-    "topic": "How I Deal with Stress",
-    "textTemplate": "Welcome to day 28 of your challenge! Today's topic is: How I Deal with Stress. As you progress, the readings become slightly more complex. When thinking about this topic, it's important to consider various perspectives. Experiences shape who we are. Continue to build your vocabulary and pay attention to sentence structure. Remember that consistency is the key to success in language learning. Keep up the great work! (Target words will be dynamically injected here in the route)."
-  },
-  {
-    "dayNumber": 29,
-    "topic": "A Challenge I Overcame",
-    "textTemplate": "Welcome to day 29 of your challenge! Today's topic is: A Challenge I Overcame. As you progress, the readings become slightly more complex. When thinking about this topic, it's important to consider various perspectives. Experiences shape who we are. Continue to build your vocabulary and pay attention to sentence structure. Remember that consistency is the key to success in language learning. Keep up the great work! (Target words will be dynamically injected here in the route)."
-  },
-  {
-    "dayNumber": 30,
-    "topic": "The Role of Social Media Today",
-    "textTemplate": "Welcome to day 30 of your challenge! Today's topic is: The Role of Social Media Today. As you progress, the readings become slightly more complex. When thinking about this topic, it's important to consider various perspectives. Experiences shape who we are. Continue to build your vocabulary and pay attention to sentence structure. Remember that consistency is the key to success in language learning. Keep up the great work! (Target words will be dynamically injected here in the route)."
-  },
-  {
-    "dayNumber": 31,
-    "topic": "If I Could Meet Anyone from History",
-    "textTemplate": "Welcome to day 31 of your challenge! Today's topic is: If I Could Meet Anyone from History. As you progress, the readings become slightly more complex. When thinking about this topic, it's important to consider various perspectives. Experiences shape who we are. Continue to build your vocabulary and pay attention to sentence structure. Remember that consistency is the key to success in language learning. Keep up the great work! (Target words will be dynamically injected here in the route)."
-  },
-  {
-    "dayNumber": 32,
-    "topic": "The Most Delicious Meal I've Had",
-    "textTemplate": "Welcome to day 32 of your challenge! Today's topic is: The Most Delicious Meal I've Had. As you progress, the readings become slightly more complex. When thinking about this topic, it's important to consider various perspectives. Experiences shape who we are. Continue to build your vocabulary and pay attention to sentence structure. Remember that consistency is the key to success in language learning. Keep up the great work! (Target words will be dynamically injected here in the route)."
-  },
-  {
-    "dayNumber": 33,
-    "topic": "A Skill I Want to Learn",
-    "textTemplate": "Welcome to day 33 of your challenge! Today's topic is: A Skill I Want to Learn. As you progress, the readings become slightly more complex. When thinking about this topic, it's important to consider various perspectives. Experiences shape who we are. Continue to build your vocabulary and pay attention to sentence structure. Remember that consistency is the key to success in language learning. Keep up the great work! (Target words will be dynamically injected here in the route)."
-  },
-  {
-    "dayNumber": 34,
-    "topic": "My Favorite Childhood Memory",
-    "textTemplate": "Welcome to day 34 of your challenge! Today's topic is: My Favorite Childhood Memory. As you progress, the readings become slightly more complex. When thinking about this topic, it's important to consider various perspectives. Experiences shape who we are. Continue to build your vocabulary and pay attention to sentence structure. Remember that consistency is the key to success in language learning. Keep up the great work! (Target words will be dynamically injected here in the route)."
-  },
-  {
-    "dayNumber": 35,
-    "topic": "The Impact of Artificial Intelligence",
-    "textTemplate": "Welcome to day 35 of your challenge! Today's topic is: The Impact of Artificial Intelligence. As you progress, the readings become slightly more complex. When thinking about this topic, it's important to consider various perspectives. Experiences shape who we are. Continue to build your vocabulary and pay attention to sentence structure. Remember that consistency is the key to success in language learning. Keep up the great work! (Target words will be dynamically injected here in the route)."
-  },
-  {
-    "dayNumber": 36,
-    "topic": "Climate Change and Us",
-    "textTemplate": "Welcome to day 36 of your challenge! Today's topic is: Climate Change and Us. As you progress, the readings become slightly more complex. When thinking about this topic, it's important to consider various perspectives. Experiences shape who we are. Continue to build your vocabulary and pay attention to sentence structure. Remember that consistency is the key to success in language learning. Keep up the great work! (Target words will be dynamically injected here in the route)."
-  },
-  {
-    "dayNumber": 37,
-    "topic": "Why Sleep is Important",
-    "textTemplate": "Welcome to day 37 of your challenge! Today's topic is: Why Sleep is Important. As you progress, the readings become slightly more complex. When thinking about this topic, it's important to consider various perspectives. Experiences shape who we are. Continue to build your vocabulary and pay attention to sentence structure. Remember that consistency is the key to success in language learning. Keep up the great work! (Target words will be dynamically injected here in the route)."
-  },
-  {
-    "dayNumber": 38,
-    "topic": "My Fitness Journey",
-    "textTemplate": "Welcome to day 38 of your challenge! Today's topic is: My Fitness Journey. As you progress, the readings become slightly more complex. When thinking about this topic, it's important to consider various perspectives. Experiences shape who we are. Continue to build your vocabulary and pay attention to sentence structure. Remember that consistency is the key to success in language learning. Keep up the great work! (Target words will be dynamically injected here in the route)."
-  },
-  {
-    "dayNumber": 39,
-    "topic": "The Value of Friendship",
-    "textTemplate": "Welcome to day 39 of your challenge! Today's topic is: The Value of Friendship. As you progress, the readings become slightly more complex. When thinking about this topic, it's important to consider various perspectives. Experiences shape who we are. Continue to build your vocabulary and pay attention to sentence structure. Remember that consistency is the key to success in language learning. Keep up the great work! (Target words will be dynamically injected here in the route)."
-  },
-  {
-    "dayNumber": 40,
-    "topic": "Living in a Big City vs. Countryside",
-    "textTemplate": "Welcome to day 40 of your challenge! Today's topic is: Living in a Big City vs. Countryside. As you progress, the readings become slightly more complex. When thinking about this topic, it's important to consider various perspectives. Experiences shape who we are. Continue to build your vocabulary and pay attention to sentence structure. Remember that consistency is the key to success in language learning. Keep up the great work! (Target words will be dynamically injected here in the route)."
-  },
-  {
-    "dayNumber": 41,
-    "topic": "A Memorable Travel Experience",
-    "textTemplate": "Welcome to day 41 of your challenge! Today's topic is: A Memorable Travel Experience. As you progress, the readings become slightly more complex. When thinking about this topic, it's important to consider various perspectives. Experiences shape who we are. Continue to build your vocabulary and pay attention to sentence structure. Remember that consistency is the key to success in language learning. Keep up the great work! (Target words will be dynamically injected here in the route)."
-  },
-  {
-    "dayNumber": 42,
-    "topic": "The Future of Technology",
-    "textTemplate": "Welcome to day 42 of your challenge! Today's topic is: The Future of Technology. As you progress, the readings become slightly more complex. When thinking about this topic, it's important to consider various perspectives. Experiences shape who we are. Continue to build your vocabulary and pay attention to sentence structure. Remember that consistency is the key to success in language learning. Keep up the great work! (Target words will be dynamically injected here in the route)."
-  },
-  {
-    "dayNumber": 43,
-    "topic": "A Book or Movie That Changed My Life",
-    "textTemplate": "Welcome to day 43 of your challenge! Today's topic is: A Book or Movie That Changed My Life. As you progress, the readings become slightly more complex. When thinking about this topic, it's important to consider various perspectives. Experiences shape who we are. Continue to build your vocabulary and pay attention to sentence structure. Remember that consistency is the key to success in language learning. Keep up the great work! (Target words will be dynamically injected here in the route)."
-  },
-  {
-    "dayNumber": 44,
-    "topic": "The Importance of Mental Health",
-    "textTemplate": "Welcome to day 44 of your challenge! Today's topic is: The Importance of Mental Health. As you progress, the readings become slightly more complex. When thinking about this topic, it's important to consider various perspectives. Experiences shape who we are. Continue to build your vocabulary and pay attention to sentence structure. Remember that consistency is the key to success in language learning. Keep up the great work! (Target words will be dynamically injected here in the route)."
-  },
-  {
-    "dayNumber": 45,
-    "topic": "My Dream Career",
-    "textTemplate": "Welcome to day 45 of your challenge! Today's topic is: My Dream Career. As you progress, the readings become slightly more complex. When thinking about this topic, it's important to consider various perspectives. Experiences shape who we are. Continue to build your vocabulary and pay attention to sentence structure. Remember that consistency is the key to success in language learning. Keep up the great work! (Target words will be dynamically injected here in the route)."
-  },
-  {
-    "dayNumber": 46,
-    "topic": "Cultural Differences I've Noticed",
-    "textTemplate": "Welcome to day 46 of your challenge! Today's topic is: Cultural Differences I've Noticed. As you progress, the readings become slightly more complex. When thinking about this topic, it's important to consider various perspectives. Experiences shape who we are. Continue to build your vocabulary and pay attention to sentence structure. Remember that consistency is the key to success in language learning. Keep up the great work! (Target words will be dynamically injected here in the route)."
-  },
-  {
-    "dayNumber": 47,
-    "topic": "The Best Advice I've Ever Received",
-    "textTemplate": "Welcome to day 47 of your challenge! Today's topic is: The Best Advice I've Ever Received. As you progress, the readings become slightly more complex. When thinking about this topic, it's important to consider various perspectives. Experiences shape who we are. Continue to build your vocabulary and pay attention to sentence structure. Remember that consistency is the key to success in language learning. Keep up the great work! (Target words will be dynamically injected here in the route)."
-  },
-  {
-    "dayNumber": 48,
-    "topic": "How I Deal with Stress",
-    "textTemplate": "Welcome to day 48 of your challenge! Today's topic is: How I Deal with Stress. As you progress, the readings become slightly more complex. When thinking about this topic, it's important to consider various perspectives. Experiences shape who we are. Continue to build your vocabulary and pay attention to sentence structure. Remember that consistency is the key to success in language learning. Keep up the great work! (Target words will be dynamically injected here in the route)."
-  },
-  {
-    "dayNumber": 49,
-    "topic": "A Challenge I Overcame",
-    "textTemplate": "Welcome to day 49 of your challenge! Today's topic is: A Challenge I Overcame. As you progress, the readings become slightly more complex. When thinking about this topic, it's important to consider various perspectives. Experiences shape who we are. Continue to build your vocabulary and pay attention to sentence structure. Remember that consistency is the key to success in language learning. Keep up the great work! (Target words will be dynamically injected here in the route)."
-  },
-  {
-    "dayNumber": 50,
-    "topic": "The Role of Social Media Today",
-    "textTemplate": "Welcome to day 50 of your challenge! Today's topic is: The Role of Social Media Today. You are now in the advanced stages of the challenge. Exploring this topic requires deeper thought and more sophisticated language. Notice how different arguments can be constructed. By now, your fluency should have improved significantly. Do not shy away from using complex grammar or new idioms. It is through these challenges that real growth occurs. (Target words will be dynamically injected here in the route)."
-  },
-  {
-    "dayNumber": 51,
-    "topic": "If I Could Meet Anyone from History",
-    "textTemplate": "Welcome to day 51 of your challenge! Today's topic is: If I Could Meet Anyone from History. You are now in the advanced stages of the challenge. Exploring this topic requires deeper thought and more sophisticated language. Notice how different arguments can be constructed. By now, your fluency should have improved significantly. Do not shy away from using complex grammar or new idioms. It is through these challenges that real growth occurs. (Target words will be dynamically injected here in the route)."
-  },
-  {
-    "dayNumber": 52,
-    "topic": "The Most Delicious Meal I've Had",
-    "textTemplate": "Welcome to day 52 of your challenge! Today's topic is: The Most Delicious Meal I've Had. You are now in the advanced stages of the challenge. Exploring this topic requires deeper thought and more sophisticated language. Notice how different arguments can be constructed. By now, your fluency should have improved significantly. Do not shy away from using complex grammar or new idioms. It is through these challenges that real growth occurs. (Target words will be dynamically injected here in the route)."
-  },
-  {
-    "dayNumber": 53,
-    "topic": "A Skill I Want to Learn",
-    "textTemplate": "Welcome to day 53 of your challenge! Today's topic is: A Skill I Want to Learn. You are now in the advanced stages of the challenge. Exploring this topic requires deeper thought and more sophisticated language. Notice how different arguments can be constructed. By now, your fluency should have improved significantly. Do not shy away from using complex grammar or new idioms. It is through these challenges that real growth occurs. (Target words will be dynamically injected here in the route)."
-  },
-  {
-    "dayNumber": 54,
-    "topic": "My Favorite Childhood Memory",
-    "textTemplate": "Welcome to day 54 of your challenge! Today's topic is: My Favorite Childhood Memory. You are now in the advanced stages of the challenge. Exploring this topic requires deeper thought and more sophisticated language. Notice how different arguments can be constructed. By now, your fluency should have improved significantly. Do not shy away from using complex grammar or new idioms. It is through these challenges that real growth occurs. (Target words will be dynamically injected here in the route)."
-  },
-  {
-    "dayNumber": 55,
-    "topic": "The Impact of Artificial Intelligence",
-    "textTemplate": "Welcome to day 55 of your challenge! Today's topic is: The Impact of Artificial Intelligence. You are now in the advanced stages of the challenge. Exploring this topic requires deeper thought and more sophisticated language. Notice how different arguments can be constructed. By now, your fluency should have improved significantly. Do not shy away from using complex grammar or new idioms. It is through these challenges that real growth occurs. (Target words will be dynamically injected here in the route)."
-  },
-  {
-    "dayNumber": 56,
-    "topic": "Climate Change and Us",
-    "textTemplate": "Welcome to day 56 of your challenge! Today's topic is: Climate Change and Us. You are now in the advanced stages of the challenge. Exploring this topic requires deeper thought and more sophisticated language. Notice how different arguments can be constructed. By now, your fluency should have improved significantly. Do not shy away from using complex grammar or new idioms. It is through these challenges that real growth occurs. (Target words will be dynamically injected here in the route)."
-  },
-  {
-    "dayNumber": 57,
-    "topic": "Why Sleep is Important",
-    "textTemplate": "Welcome to day 57 of your challenge! Today's topic is: Why Sleep is Important. You are now in the advanced stages of the challenge. Exploring this topic requires deeper thought and more sophisticated language. Notice how different arguments can be constructed. By now, your fluency should have improved significantly. Do not shy away from using complex grammar or new idioms. It is through these challenges that real growth occurs. (Target words will be dynamically injected here in the route)."
-  },
-  {
-    "dayNumber": 58,
-    "topic": "My Fitness Journey",
-    "textTemplate": "Welcome to day 58 of your challenge! Today's topic is: My Fitness Journey. You are now in the advanced stages of the challenge. Exploring this topic requires deeper thought and more sophisticated language. Notice how different arguments can be constructed. By now, your fluency should have improved significantly. Do not shy away from using complex grammar or new idioms. It is through these challenges that real growth occurs. (Target words will be dynamically injected here in the route)."
-  },
-  {
-    "dayNumber": 59,
-    "topic": "The Value of Friendship",
-    "textTemplate": "Welcome to day 59 of your challenge! Today's topic is: The Value of Friendship. You are now in the advanced stages of the challenge. Exploring this topic requires deeper thought and more sophisticated language. Notice how different arguments can be constructed. By now, your fluency should have improved significantly. Do not shy away from using complex grammar or new idioms. It is through these challenges that real growth occurs. (Target words will be dynamically injected here in the route)."
-  },
-  {
-    "dayNumber": 60,
-    "topic": "Living in a Big City vs. Countryside",
-    "textTemplate": "Welcome to day 60 of your challenge! Today's topic is: Living in a Big City vs. Countryside. You are now in the advanced stages of the challenge. Exploring this topic requires deeper thought and more sophisticated language. Notice how different arguments can be constructed. By now, your fluency should have improved significantly. Do not shy away from using complex grammar or new idioms. It is through these challenges that real growth occurs. (Target words will be dynamically injected here in the route)."
-  },
-  {
-    "dayNumber": 61,
-    "topic": "A Memorable Travel Experience",
-    "textTemplate": "Welcome to day 61 of your challenge! Today's topic is: A Memorable Travel Experience. You are now in the advanced stages of the challenge. Exploring this topic requires deeper thought and more sophisticated language. Notice how different arguments can be constructed. By now, your fluency should have improved significantly. Do not shy away from using complex grammar or new idioms. It is through these challenges that real growth occurs. (Target words will be dynamically injected here in the route)."
-  },
-  {
-    "dayNumber": 62,
-    "topic": "The Future of Technology",
-    "textTemplate": "Welcome to day 62 of your challenge! Today's topic is: The Future of Technology. You are now in the advanced stages of the challenge. Exploring this topic requires deeper thought and more sophisticated language. Notice how different arguments can be constructed. By now, your fluency should have improved significantly. Do not shy away from using complex grammar or new idioms. It is through these challenges that real growth occurs. (Target words will be dynamically injected here in the route)."
-  },
-  {
-    "dayNumber": 63,
-    "topic": "A Book or Movie That Changed My Life",
-    "textTemplate": "Welcome to day 63 of your challenge! Today's topic is: A Book or Movie That Changed My Life. You are now in the advanced stages of the challenge. Exploring this topic requires deeper thought and more sophisticated language. Notice how different arguments can be constructed. By now, your fluency should have improved significantly. Do not shy away from using complex grammar or new idioms. It is through these challenges that real growth occurs. (Target words will be dynamically injected here in the route)."
-  },
-  {
-    "dayNumber": 64,
-    "topic": "The Importance of Mental Health",
-    "textTemplate": "Welcome to day 64 of your challenge! Today's topic is: The Importance of Mental Health. You are now in the advanced stages of the challenge. Exploring this topic requires deeper thought and more sophisticated language. Notice how different arguments can be constructed. By now, your fluency should have improved significantly. Do not shy away from using complex grammar or new idioms. It is through these challenges that real growth occurs. (Target words will be dynamically injected here in the route)."
-  },
-  {
-    "dayNumber": 65,
-    "topic": "My Dream Career",
-    "textTemplate": "Welcome to day 65 of your challenge! Today's topic is: My Dream Career. You are now in the advanced stages of the challenge. Exploring this topic requires deeper thought and more sophisticated language. Notice how different arguments can be constructed. By now, your fluency should have improved significantly. Do not shy away from using complex grammar or new idioms. It is through these challenges that real growth occurs. (Target words will be dynamically injected here in the route)."
-  },
-  {
-    "dayNumber": 66,
-    "topic": "Cultural Differences I've Noticed",
-    "textTemplate": "Welcome to day 66 of your challenge! Today's topic is: Cultural Differences I've Noticed. You are now in the advanced stages of the challenge. Exploring this topic requires deeper thought and more sophisticated language. Notice how different arguments can be constructed. By now, your fluency should have improved significantly. Do not shy away from using complex grammar or new idioms. It is through these challenges that real growth occurs. (Target words will be dynamically injected here in the route)."
-  },
-  {
-    "dayNumber": 67,
-    "topic": "The Best Advice I've Ever Received",
-    "textTemplate": "Welcome to day 67 of your challenge! Today's topic is: The Best Advice I've Ever Received. You are now in the advanced stages of the challenge. Exploring this topic requires deeper thought and more sophisticated language. Notice how different arguments can be constructed. By now, your fluency should have improved significantly. Do not shy away from using complex grammar or new idioms. It is through these challenges that real growth occurs. (Target words will be dynamically injected here in the route)."
-  },
-  {
-    "dayNumber": 68,
-    "topic": "How I Deal with Stress",
-    "textTemplate": "Welcome to day 68 of your challenge! Today's topic is: How I Deal with Stress. You are now in the advanced stages of the challenge. Exploring this topic requires deeper thought and more sophisticated language. Notice how different arguments can be constructed. By now, your fluency should have improved significantly. Do not shy away from using complex grammar or new idioms. It is through these challenges that real growth occurs. (Target words will be dynamically injected here in the route)."
-  },
-  {
-    "dayNumber": 69,
-    "topic": "A Challenge I Overcame",
-    "textTemplate": "Welcome to day 69 of your challenge! Today's topic is: A Challenge I Overcame. You are now in the advanced stages of the challenge. Exploring this topic requires deeper thought and more sophisticated language. Notice how different arguments can be constructed. By now, your fluency should have improved significantly. Do not shy away from using complex grammar or new idioms. It is through these challenges that real growth occurs. (Target words will be dynamically injected here in the route)."
-  },
-  {
-    "dayNumber": 70,
-    "topic": "The Role of Social Media Today",
-    "textTemplate": "Welcome to day 70 of your challenge! Today's topic is: The Role of Social Media Today. You are now in the advanced stages of the challenge. Exploring this topic requires deeper thought and more sophisticated language. Notice how different arguments can be constructed. By now, your fluency should have improved significantly. Do not shy away from using complex grammar or new idioms. It is through these challenges that real growth occurs. (Target words will be dynamically injected here in the route)."
-  },
-  {
-    "dayNumber": 71,
-    "topic": "If I Could Meet Anyone from History",
-    "textTemplate": "Welcome to day 71 of your challenge! Today's topic is: If I Could Meet Anyone from History. You are now in the advanced stages of the challenge. Exploring this topic requires deeper thought and more sophisticated language. Notice how different arguments can be constructed. By now, your fluency should have improved significantly. Do not shy away from using complex grammar or new idioms. It is through these challenges that real growth occurs. (Target words will be dynamically injected here in the route)."
-  },
-  {
-    "dayNumber": 72,
-    "topic": "The Most Delicious Meal I've Had",
-    "textTemplate": "Welcome to day 72 of your challenge! Today's topic is: The Most Delicious Meal I've Had. You are now in the advanced stages of the challenge. Exploring this topic requires deeper thought and more sophisticated language. Notice how different arguments can be constructed. By now, your fluency should have improved significantly. Do not shy away from using complex grammar or new idioms. It is through these challenges that real growth occurs. (Target words will be dynamically injected here in the route)."
-  },
-  {
-    "dayNumber": 73,
-    "topic": "A Skill I Want to Learn",
-    "textTemplate": "Welcome to day 73 of your challenge! Today's topic is: A Skill I Want to Learn. You are now in the advanced stages of the challenge. Exploring this topic requires deeper thought and more sophisticated language. Notice how different arguments can be constructed. By now, your fluency should have improved significantly. Do not shy away from using complex grammar or new idioms. It is through these challenges that real growth occurs. (Target words will be dynamically injected here in the route)."
-  },
-  {
-    "dayNumber": 74,
-    "topic": "My Favorite Childhood Memory",
-    "textTemplate": "Welcome to day 74 of your challenge! Today's topic is: My Favorite Childhood Memory. You are now in the advanced stages of the challenge. Exploring this topic requires deeper thought and more sophisticated language. Notice how different arguments can be constructed. By now, your fluency should have improved significantly. Do not shy away from using complex grammar or new idioms. It is through these challenges that real growth occurs. (Target words will be dynamically injected here in the route)."
-  },
-  {
-    "dayNumber": 75,
-    "topic": "The Impact of Artificial Intelligence",
-    "textTemplate": "Welcome to day 75 of your challenge! Today's topic is: The Impact of Artificial Intelligence. You are now in the advanced stages of the challenge. Exploring this topic requires deeper thought and more sophisticated language. Notice how different arguments can be constructed. By now, your fluency should have improved significantly. Do not shy away from using complex grammar or new idioms. It is through these challenges that real growth occurs. (Target words will be dynamically injected here in the route)."
-  },
-  {
-    "dayNumber": 76,
-    "topic": "Climate Change and Us",
-    "textTemplate": "Welcome to day 76 of your challenge! Today's topic is: Climate Change and Us. You are now in the advanced stages of the challenge. Exploring this topic requires deeper thought and more sophisticated language. Notice how different arguments can be constructed. By now, your fluency should have improved significantly. Do not shy away from using complex grammar or new idioms. It is through these challenges that real growth occurs. (Target words will be dynamically injected here in the route)."
-  },
-  {
-    "dayNumber": 77,
-    "topic": "Why Sleep is Important",
-    "textTemplate": "Welcome to day 77 of your challenge! Today's topic is: Why Sleep is Important. You are now in the advanced stages of the challenge. Exploring this topic requires deeper thought and more sophisticated language. Notice how different arguments can be constructed. By now, your fluency should have improved significantly. Do not shy away from using complex grammar or new idioms. It is through these challenges that real growth occurs. (Target words will be dynamically injected here in the route)."
-  },
-  {
-    "dayNumber": 78,
-    "topic": "My Fitness Journey",
-    "textTemplate": "Welcome to day 78 of your challenge! Today's topic is: My Fitness Journey. You are now in the advanced stages of the challenge. Exploring this topic requires deeper thought and more sophisticated language. Notice how different arguments can be constructed. By now, your fluency should have improved significantly. Do not shy away from using complex grammar or new idioms. It is through these challenges that real growth occurs. (Target words will be dynamically injected here in the route)."
-  },
-  {
-    "dayNumber": 79,
-    "topic": "The Value of Friendship",
-    "textTemplate": "Welcome to day 79 of your challenge! Today's topic is: The Value of Friendship. You are now in the advanced stages of the challenge. Exploring this topic requires deeper thought and more sophisticated language. Notice how different arguments can be constructed. By now, your fluency should have improved significantly. Do not shy away from using complex grammar or new idioms. It is through these challenges that real growth occurs. (Target words will be dynamically injected here in the route)."
-  },
-  {
-    "dayNumber": 80,
-    "topic": "Living in a Big City vs. Countryside",
-    "textTemplate": "Welcome to day 80 of your challenge! Today's topic is: Living in a Big City vs. Countryside. You have almost reached the end of the 100 days! This topic represents a culmination of your efforts. The ability to articulate complex thoughts on such matters is a testament to your hard work. Reflect on how far you have come since day one. The vocabulary you use now is richer, and your comprehension is much sharper. Finish strong! (Target words will be dynamically injected here in the route)."
-  },
-  {
-    "dayNumber": 81,
-    "topic": "A Memorable Travel Experience",
-    "textTemplate": "Welcome to day 81 of your challenge! Today's topic is: A Memorable Travel Experience. You have almost reached the end of the 100 days! This topic represents a culmination of your efforts. The ability to articulate complex thoughts on such matters is a testament to your hard work. Reflect on how far you have come since day one. The vocabulary you use now is richer, and your comprehension is much sharper. Finish strong! (Target words will be dynamically injected here in the route)."
-  },
-  {
-    "dayNumber": 82,
-    "topic": "The Future of Technology",
-    "textTemplate": "Welcome to day 82 of your challenge! Today's topic is: The Future of Technology. You have almost reached the end of the 100 days! This topic represents a culmination of your efforts. The ability to articulate complex thoughts on such matters is a testament to your hard work. Reflect on how far you have come since day one. The vocabulary you use now is richer, and your comprehension is much sharper. Finish strong! (Target words will be dynamically injected here in the route)."
-  },
-  {
-    "dayNumber": 83,
-    "topic": "A Book or Movie That Changed My Life",
-    "textTemplate": "Welcome to day 83 of your challenge! Today's topic is: A Book or Movie That Changed My Life. You have almost reached the end of the 100 days! This topic represents a culmination of your efforts. The ability to articulate complex thoughts on such matters is a testament to your hard work. Reflect on how far you have come since day one. The vocabulary you use now is richer, and your comprehension is much sharper. Finish strong! (Target words will be dynamically injected here in the route)."
-  },
-  {
-    "dayNumber": 84,
-    "topic": "The Importance of Mental Health",
-    "textTemplate": "Welcome to day 84 of your challenge! Today's topic is: The Importance of Mental Health. You have almost reached the end of the 100 days! This topic represents a culmination of your efforts. The ability to articulate complex thoughts on such matters is a testament to your hard work. Reflect on how far you have come since day one. The vocabulary you use now is richer, and your comprehension is much sharper. Finish strong! (Target words will be dynamically injected here in the route)."
-  },
-  {
-    "dayNumber": 85,
-    "topic": "My Dream Career",
-    "textTemplate": "Welcome to day 85 of your challenge! Today's topic is: My Dream Career. You have almost reached the end of the 100 days! This topic represents a culmination of your efforts. The ability to articulate complex thoughts on such matters is a testament to your hard work. Reflect on how far you have come since day one. The vocabulary you use now is richer, and your comprehension is much sharper. Finish strong! (Target words will be dynamically injected here in the route)."
-  },
-  {
-    "dayNumber": 86,
-    "topic": "Cultural Differences I've Noticed",
-    "textTemplate": "Welcome to day 86 of your challenge! Today's topic is: Cultural Differences I've Noticed. You have almost reached the end of the 100 days! This topic represents a culmination of your efforts. The ability to articulate complex thoughts on such matters is a testament to your hard work. Reflect on how far you have come since day one. The vocabulary you use now is richer, and your comprehension is much sharper. Finish strong! (Target words will be dynamically injected here in the route)."
-  },
-  {
-    "dayNumber": 87,
-    "topic": "The Best Advice I've Ever Received",
-    "textTemplate": "Welcome to day 87 of your challenge! Today's topic is: The Best Advice I've Ever Received. You have almost reached the end of the 100 days! This topic represents a culmination of your efforts. The ability to articulate complex thoughts on such matters is a testament to your hard work. Reflect on how far you have come since day one. The vocabulary you use now is richer, and your comprehension is much sharper. Finish strong! (Target words will be dynamically injected here in the route)."
-  },
-  {
-    "dayNumber": 88,
-    "topic": "How I Deal with Stress",
-    "textTemplate": "Welcome to day 88 of your challenge! Today's topic is: How I Deal with Stress. You have almost reached the end of the 100 days! This topic represents a culmination of your efforts. The ability to articulate complex thoughts on such matters is a testament to your hard work. Reflect on how far you have come since day one. The vocabulary you use now is richer, and your comprehension is much sharper. Finish strong! (Target words will be dynamically injected here in the route)."
-  },
-  {
-    "dayNumber": 89,
-    "topic": "A Challenge I Overcame",
-    "textTemplate": "Welcome to day 89 of your challenge! Today's topic is: A Challenge I Overcame. You have almost reached the end of the 100 days! This topic represents a culmination of your efforts. The ability to articulate complex thoughts on such matters is a testament to your hard work. Reflect on how far you have come since day one. The vocabulary you use now is richer, and your comprehension is much sharper. Finish strong! (Target words will be dynamically injected here in the route)."
-  },
-  {
-    "dayNumber": 90,
-    "topic": "The Role of Social Media Today",
-    "textTemplate": "Welcome to day 90 of your challenge! Today's topic is: The Role of Social Media Today. You have almost reached the end of the 100 days! This topic represents a culmination of your efforts. The ability to articulate complex thoughts on such matters is a testament to your hard work. Reflect on how far you have come since day one. The vocabulary you use now is richer, and your comprehension is much sharper. Finish strong! (Target words will be dynamically injected here in the route)."
-  },
-  {
-    "dayNumber": 91,
-    "topic": "If I Could Meet Anyone from History",
-    "textTemplate": "Welcome to day 91 of your challenge! Today's topic is: If I Could Meet Anyone from History. You have almost reached the end of the 100 days! This topic represents a culmination of your efforts. The ability to articulate complex thoughts on such matters is a testament to your hard work. Reflect on how far you have come since day one. The vocabulary you use now is richer, and your comprehension is much sharper. Finish strong! (Target words will be dynamically injected here in the route)."
-  },
-  {
-    "dayNumber": 92,
-    "topic": "The Most Delicious Meal I've Had",
-    "textTemplate": "Welcome to day 92 of your challenge! Today's topic is: The Most Delicious Meal I've Had. You have almost reached the end of the 100 days! This topic represents a culmination of your efforts. The ability to articulate complex thoughts on such matters is a testament to your hard work. Reflect on how far you have come since day one. The vocabulary you use now is richer, and your comprehension is much sharper. Finish strong! (Target words will be dynamically injected here in the route)."
-  },
-  {
-    "dayNumber": 93,
-    "topic": "A Skill I Want to Learn",
-    "textTemplate": "Welcome to day 93 of your challenge! Today's topic is: A Skill I Want to Learn. You have almost reached the end of the 100 days! This topic represents a culmination of your efforts. The ability to articulate complex thoughts on such matters is a testament to your hard work. Reflect on how far you have come since day one. The vocabulary you use now is richer, and your comprehension is much sharper. Finish strong! (Target words will be dynamically injected here in the route)."
-  },
-  {
-    "dayNumber": 94,
-    "topic": "My Favorite Childhood Memory",
-    "textTemplate": "Welcome to day 94 of your challenge! Today's topic is: My Favorite Childhood Memory. You have almost reached the end of the 100 days! This topic represents a culmination of your efforts. The ability to articulate complex thoughts on such matters is a testament to your hard work. Reflect on how far you have come since day one. The vocabulary you use now is richer, and your comprehension is much sharper. Finish strong! (Target words will be dynamically injected here in the route)."
-  },
-  {
-    "dayNumber": 95,
-    "topic": "The Impact of Artificial Intelligence",
-    "textTemplate": "Welcome to day 95 of your challenge! Today's topic is: The Impact of Artificial Intelligence. You have almost reached the end of the 100 days! This topic represents a culmination of your efforts. The ability to articulate complex thoughts on such matters is a testament to your hard work. Reflect on how far you have come since day one. The vocabulary you use now is richer, and your comprehension is much sharper. Finish strong! (Target words will be dynamically injected here in the route)."
-  },
-  {
-    "dayNumber": 96,
-    "topic": "Climate Change and Us",
-    "textTemplate": "Welcome to day 96 of your challenge! Today's topic is: Climate Change and Us. You have almost reached the end of the 100 days! This topic represents a culmination of your efforts. The ability to articulate complex thoughts on such matters is a testament to your hard work. Reflect on how far you have come since day one. The vocabulary you use now is richer, and your comprehension is much sharper. Finish strong! (Target words will be dynamically injected here in the route)."
-  },
-  {
-    "dayNumber": 97,
-    "topic": "Why Sleep is Important",
-    "textTemplate": "Welcome to day 97 of your challenge! Today's topic is: Why Sleep is Important. You have almost reached the end of the 100 days! This topic represents a culmination of your efforts. The ability to articulate complex thoughts on such matters is a testament to your hard work. Reflect on how far you have come since day one. The vocabulary you use now is richer, and your comprehension is much sharper. Finish strong! (Target words will be dynamically injected here in the route)."
-  },
-  {
-    "dayNumber": 98,
-    "topic": "My Fitness Journey",
-    "textTemplate": "Welcome to day 98 of your challenge! Today's topic is: My Fitness Journey. You have almost reached the end of the 100 days! This topic represents a culmination of your efforts. The ability to articulate complex thoughts on such matters is a testament to your hard work. Reflect on how far you have come since day one. The vocabulary you use now is richer, and your comprehension is much sharper. Finish strong! (Target words will be dynamically injected here in the route)."
-  },
-  {
-    "dayNumber": 99,
-    "topic": "The Value of Friendship",
-    "textTemplate": "Welcome to day 99 of your challenge! Today's topic is: The Value of Friendship. You have almost reached the end of the 100 days! This topic represents a culmination of your efforts. The ability to articulate complex thoughts on such matters is a testament to your hard work. Reflect on how far you have come since day one. The vocabulary you use now is richer, and your comprehension is much sharper. Finish strong! (Target words will be dynamically injected here in the route)."
-  },
-  {
-    "dayNumber": 100,
-    "topic": "Living in a Big City vs. Countryside",
-    "textTemplate": "Welcome to day 100 of your challenge! Today's topic is: Living in a Big City vs. Countryside. You have almost reached the end of the 100 days! This topic represents a culmination of your efforts. The ability to articulate complex thoughts on such matters is a testament to your hard work. Reflect on how far you have come since day one. The vocabulary you use now is richer, and your comprehension is much sharper. Finish strong! (Target words will be dynamically injected here in the route)."
+    "cefr": "A2",
+    "topic": "A Job Interview",
+    "topicUz": "Ish suhbati",
+    "text": "Welcome. Thank you for coming to the interview. Tell me about your background, please. I have worked as an engineer for three years. What are your main skills? I can solve difficult problems and I learn quickly. Why do you want to join our team? Your projects are interesting and I want to grow. What is your biggest weakness? Sometimes I am too careful, so I work slowly. I am improving that. Thank you. We will contact you next week.",
+    "lines": [
+      "Welcome. Thank you for coming to the interview.",
+      "Tell me about your background, please.",
+      "I have worked as an engineer for three years.",
+      "What are your main skills?",
+      "I can solve difficult problems and I learn quickly.",
+      "Why do you want to join our team?",
+      "Your projects are interesting and I want to grow.",
+      "What is your biggest weakness?",
+      "Sometimes I am too careful, so I work slowly. I am improving that.",
+      "Thank you. We will contact you next week."
+    ],
+    "focusWords": [
+      "interview",
+      "background",
+      "skill",
+      "solve",
+      "problem"
+    ],
+    "instructionUz": "\"Ish suhbati\" dialogini ovoz chiqarib o'qing. E'tibor bering: interview, background, skill, solve, problem."
   }
 ]
