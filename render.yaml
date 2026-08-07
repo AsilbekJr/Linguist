@@ -19,7 +19,15 @@ services:
       - key: GEMINI_API_KEY
         sync: false
       - key: GEMINI_MODEL
-        value: gemini-2.0-flash
+        value: gemini-2.5-flash
+      - key: DEFAULT_TIMEZONE
+        value: Asia/Tashkent
+      - key: MAIL_PROVIDER
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
+      - key: MAIL_FROM
+        sync: false
       - key: ALLOWED_ORIGIN
         value: https://linguist-eight.vercel.app
       - key: CLIENT_URL
