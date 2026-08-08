@@ -101,6 +101,28 @@ const getOriginPattern = () => {
   return cachedPattern;
 };
 
+/**
+ * Ishlab chiqish paytida lokal tarmoqdan kirishga ruxsat.
+ *
+ * Telefonda sinash uchun `http://192.168.1.50:5173` kabi manzil ishlatiladi
+ * va uni har safar qo'lda ALLOWED_ORIGIN ga yozish noqulay.
+ *
+ * XAVFSIZLIK: faqat `NODE_ENV !== 'production'` da va faqat XUSUSIY IP
+ * diapazonlari uchun. Ishlab chiqish serveri internetga chiqmaydi, shuning
+ * uchun bu xavf tug'dirmaydi. Productionda bu funksiya umuman chaqirilmaydi.
+ */
+const PRIVATE_HOST = /^(?:10\.\d{1,3}\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3}|172\.(?:1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}|\[?::1\]?|localhost|127\.\d{1,3}\.\d{1,3}\.\d{1,3})$/;
+
+const isPrivateDevOrigin = (origin) => {
+  try {
+    const url = new URL(origin);
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') return false;
+    return PRIVATE_HOST.test(url.hostname);
+  } catch {
+    return false;
+  }
+};
+
 /** Ruxsat etilgan originlar ro'yxati — /health uchun ham kerak */
 const getAllowedOrigins = (isProd) => {
   const devDefaults = ['http://localhost:5173', 'http://127.0.0.1:5173'];
@@ -139,7 +161,9 @@ const getCorsOptions = (isProd) => {
         (entry) => normalizeOrigin(entry) === requestOrigin
       );
       const pattern = getOriginPattern();
-      if (inList || (pattern && pattern.test(requestOrigin))) {
+      // Dev rejimida lokal tarmoq (telefonda sinash uchun)
+      const devLan = !isProd && isPrivateDevOrigin(requestOrigin);
+      if (inList || devLan || (pattern && pattern.test(requestOrigin))) {
         callback(null, true);
         return;
       }
@@ -186,6 +210,7 @@ const isOriginAllowed = (origin, isProd) => {
   if (!origin) return true; // server-server, curl
   const normalized = normalizeOrigin(origin);
   if (getAllowedOrigins(isProd).some((e) => normalizeOrigin(e) === normalized)) return true;
+  if (!isProd && isPrivateDevOrigin(normalized)) return true;
   const pattern = getOriginPattern();
   return Boolean(pattern && pattern.test(normalized));
 };
@@ -196,6 +221,7 @@ module.exports = {
   corsRejectionHandler,
   isOriginAllowed,
   compileOriginPattern,
+  isPrivateDevOrigin,
   parseOrigins,
   normalizeOrigin,
   isValidOrigin,

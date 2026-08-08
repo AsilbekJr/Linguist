@@ -12,18 +12,33 @@ kunlik kurs, SM-2 oraliqli takrorlash, tinglab yozish, AI o'qituvchi va gapirish
 ## Tez boshlash
 
 ```bash
-# Server
-cd server
-cp .env.example .env      # MONGO_URI, JWT_SECRET, GEMINI_API_KEY ni to'ldiring
-npm install
-npm run dev               # :5000
+cp server/.env.example server/.env   # MONGO_URI, JWT_SECRET, GEMINI_API_KEY
+cp client/.env.example client/.env
 
-# Client
-cd client
-cp .env.example .env
-npm install
-npm run dev               # :5173
+npm run install:all
+npm run dev          # ikkala serverni ko'taradi + telefon manzilini ko'rsatadi
 ```
+
+Alohida ishga tushirish ham mumkin: `npm --prefix server run dev` va
+`npm --prefix client run dev`.
+
+Tekshiruv: `npm run check` (testlar + lint + build).
+
+### Telefonda sinash
+
+`npm run dev` lokal tarmoq manzilini chiqaradi (`http://192.168.x.x:5173`) —
+bir xil Wi-Fi'dagi telefondan ochish uchun. Dev rejimida CORS xususiy IP
+diapazonlariga avtomatik ruxsat beradi; productionda bu **ishlamaydi**.
+
+**PWA va bildirishnomalarni sinash uchun bu yetarli emas:** service worker
+faqat HTTPS yoki `localhost`da ishlaydi, `http://192.168.x.x` da esa
+ro'yxatdan o'tmaydi. Chrome'ning USB port forwarding'idan foydalaning —
+telefon manzilni `localhost` deb ko'radi va PWA to'liq ishlaydi:
+
+1. Telefonda: Sozlamalar → Developer options → **USB debugging**
+2. Kompyuterda Chrome: `chrome://inspect/#devices`
+3. **Port forwarding** → `5173` → `localhost:5173` → Enable
+4. Telefon Chrome'da: `http://localhost:5173`
 
 `GEMINI_API_KEY` bo'lmasa ilova ishlaydi — AI'ga bog'liq bo'lmagan barcha
 funksiyalar (kunlik sahna, mini-test, flashcard, SRS) to'liq ishlaydi, AI

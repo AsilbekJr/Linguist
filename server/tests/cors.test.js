@@ -154,6 +154,48 @@ test('shablon sozlanmagan bo\'lsa faqat ro\'yxat ishlaydi', () => {
   );
 });
 
+// ── Lokal tarmoq (telefonda sinash) ───────────────────────────────────────
+
+const { isPrivateDevOrigin } = require('../utils/corsConfig');
+
+test('xususiy IP manzillar aniqlanadi', () => {
+  for (const good of [
+    'http://192.168.1.50:5173',
+    'http://10.0.0.5:5173',
+    'http://172.16.4.2:5173',
+    'http://172.31.255.1:5173',
+    'http://localhost:5173',
+    'http://127.0.0.1:5000',
+  ]) {
+    assert.equal(isPrivateDevOrigin(good), true, `xususiy deb topilmadi: ${good}`);
+  }
+});
+
+test('ommaviy manzillar xususiy DEB HISOBLANMAYDI', () => {
+  for (const bad of [
+    'https://evil.example',
+    'http://8.8.8.8',
+    'http://172.32.0.1', // diapazondan tashqarida
+    'http://172.15.0.1', // diapazondan tashqarida
+    'http://192.169.1.1', // 192.168 emas
+    'http://11.0.0.1', // 10.x emas
+    'ftp://192.168.1.1',
+  ]) {
+    assert.equal(isPrivateDevOrigin(bad), false, `xato: ${bad} xususiy deb topildi`);
+  }
+});
+
+test('lokal tarmoq faqat DEV da ruxsat etiladi', () => {
+  withEnv({ ALLOWED_ORIGIN: 'https://app.example.uz', CLIENT_URL: '' }, () => {
+    assert.equal(isOriginAllowed('http://192.168.1.50:5173', false), true, 'dev da ruxsat');
+    assert.equal(
+      isOriginAllowed('http://192.168.1.50:5173', true),
+      false,
+      'PRODUCTIONDA lokal tarmoq ruxsat etilmasligi kerak'
+    );
+  });
+});
+
 test('ALLOWED_ORIGIN va CLIENT_URL birlashadi, dublikat bo\'lmaydi', () => {
   withEnv(
     { ALLOWED_ORIGIN: 'https://a.uz', CLIENT_URL: 'https://a.uz' },
