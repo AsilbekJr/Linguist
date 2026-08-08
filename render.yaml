@@ -32,6 +32,15 @@ services:
         value: https://linguist-eight.vercel.app
       - key: CLIENT_URL
         value: https://linguist-eight.vercel.app
+      # Vercel preview URL'lari har branchda o'zgaradi. Bu shablon ularni
+      # qo'lda qo'shmasdan qabul qilish imkonini beradi.
+      #
+      # XAVFSIZLIK: shablon ^ va $ bilan bog'lanmasa yoki begona manzilga
+      # mos kelsa, server uni E'TIBORSIZ qoldiradi va logga xato yozadi
+      # (utils/corsConfig.js dagi compileOriginPattern).
+      # Loyiha nomingizga moslab o'zgartiring.
+      - key: ALLOWED_ORIGIN_PATTERN
+        value: ^https://linguist-git-[a-z0-9-]+-asilbekjrs-projects\.vercel\.app$
       - key: VAPID_PUBLIC_KEY
         sync: false
       - key: VAPID_PRIVATE_KEY
@@ -47,4 +56,57 @@ services:
       - key: STRIPE_PRICE_PRO
         sync: false
       - key: STRIPE_PRICE_PREMIUM
+        sync: false
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Preview backend.
+  #
+  # Nega alohida servis: yangi kod User, Word va TopicProgress sxemalariga
+  # maydon qo'shadi va kontent almashadi. Buni production bazasida sinash
+  # real foydalanuvchilar progressiga ta'sir qiladi, shuning uchun
+  # MONGO_URI ga ALOHIDA test bazasi berilishi shart.
+  #
+  # Render'da: New → Blueprint → shu repo → branch tanlang.
+  # Keyin Vercel Preview'dagi VITE_API_URL ni shu servis manziliga qarating.
+  # ─────────────────────────────────────────────────────────────────────────
+  - type: web
+    name: linguist-backend-preview
+    env: node
+    plan: free
+    rootDir: server
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    # Bu servis avtomatik deploy qilinmaydi — kerak bo'lganda qo'lda yoqasiz
+    autoDeploy: false
+    envVars:
+      - key: NODE_VERSION
+        value: 20.11.0
+      - key: NODE_ENV
+        value: production
+      # DIQQAT: production bazasini EMAS, alohida test bazasini bering
+      - key: MONGO_URI
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GEMINI_MODEL
+        value: gemini-2.5-flash
+      - key: DEFAULT_TIMEZONE
+        value: Asia/Tashkent
+      # Preview uchun aniq URL o'rniga shablon yetarli
+      - key: ALLOWED_ORIGIN_PATTERN
+        value: ^https://linguist-git-[a-z0-9-]+-asilbekjrs-projects\.vercel\.app$
+      - key: CLIENT_URL
+        sync: false
+      - key: MAIL_PROVIDER
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
+      - key: VAPID_PUBLIC_KEY
+        sync: false
+      - key: VAPID_PRIVATE_KEY
+        sync: false
+      - key: VAPID_SUBJECT
         sync: false

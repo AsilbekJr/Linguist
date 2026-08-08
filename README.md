@@ -190,6 +190,32 @@ node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 `ALLOWED_ORIGIN` uchun `*` ishlatib bo'lmaydi — cookie bilan ishlaydigan CORS
 aniq URL talab qiladi.
 
+### Preview deploymentlar
+
+Vercel har bir branch uchun alohida URL beradi va uni har safar
+`ALLOWED_ORIGIN` ga qo'shish unutiladi — natijada brauzerda tushunarsiz
+"Failed to fetch" chiqadi. Shuning uchun shablon qo'llab-quvvatlanadi:
+
+```env
+ALLOWED_ORIGIN_PATTERN=^https://<loyiha>-git-[a-z0-9-]+-<jamoa>\.vercel\.app$
+```
+
+Shablon quyidagi shartlarni bajarmasa server uni **e'tiborsiz qoldiradi** va
+logga xato yozadi (`utils/corsConfig.js` → `compileOriginPattern`):
+
+- `^` va `$` bilan bog'langan bo'lishi;
+- begona manzilga (`https://evil.example`, `https://attacker.vercel.app`)
+  mos kelmasligi.
+
+Bu cookie bilan ishlaydigan CORS bo'lgani uchun juda ehtiyot bo'lish kerak:
+haddan tashqari keng shablon istalgan saytga foydalanuvchi nomidan so'rov
+yuborish imkonini berardi.
+
+To'liq preview uchun backend ham o'sha branchdan turishi kerak —
+`render.yaml` da `linguist-backend-preview` servisi shu uchun.
+**`MONGO_URI` ga alohida test bazasi bering:** yangi kod sxemalarga maydon
+qo'shadi va kontent almashadi.
+
 ## Ma'lum cheklovlar
 
 Bu ro'yxat ataylab ochiq — mahsulot hali bularni qila olmaydi:

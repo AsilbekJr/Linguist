@@ -73,6 +73,87 @@ test('yaroqsiz origin aniqlanadi', () => {
   assert.equal(isValidOrigin(''), false);
 });
 
+// ── Preview shabloni ──────────────────────────────────────────────────────
+
+const { compileOriginPattern, isOriginAllowed } = require('../utils/corsConfig');
+
+const PREVIEW_PATTERN =
+  '^https://linguist-git-[a-z0-9-]+-asilbekjrs-projects\\.vercel\\.app$';
+
+test('to\'g\'ri yozilgan preview shabloni qabul qilinadi', () => {
+  const regex = compileOriginPattern(PREVIEW_PATTERN);
+  assert.ok(regex, 'shablon rad etildi');
+  assert.equal(
+    regex.test('https://linguist-git-fix-phase-0-critical-asilbekjrs-projects.vercel.app'),
+    true
+  );
+  assert.equal(regex.test('https://linguist-git-another-branch-asilbekjrs-projects.vercel.app'), true);
+});
+
+test('shablon begona manzillarga mos kelmaydi', () => {
+  const regex = compileOriginPattern(PREVIEW_PATTERN);
+  for (const bad of [
+    'https://evil.example',
+    'https://attacker.vercel.app',
+    'https://linguist-git-x-someoneelse-projects.vercel.app',
+    'http://linguist-git-x-asilbekjrs-projects.vercel.app', // http
+    'https://linguist-git-x-asilbekjrs-projects.vercel.app.evil.com',
+  ]) {
+    assert.equal(regex.test(bad), false, `begona manzil o'tdi: ${bad}`);
+  }
+});
+
+test('bog\'lanmagan shablon RAD ETILADI', () => {
+  // ^ va $ bo'lmasa "https://evil.com/linguist-git-..." ham mos kelib qolardi
+  assert.equal(compileOriginPattern('https://.*\\.vercel\\.app'), null);
+  assert.equal(compileOriginPattern('^https://.*\\.vercel\\.app'), null, '$ yo\'q');
+  assert.equal(compileOriginPattern('https://.*\\.vercel\\.app$'), null, '^ yo\'q');
+});
+
+test('haddan tashqari keng shablon RAD ETILADI', () => {
+  assert.equal(compileOriginPattern('^.*$'), null);
+  assert.equal(compileOriginPattern('^.+$'), null);
+  assert.equal(compileOriginPattern('^https://.*$'), null, 'har qanday https o\'tib ketardi');
+});
+
+test('yaroqsiz regex xato bermaydi, shunchaki o\'chiq qoladi', () => {
+  assert.equal(compileOriginPattern('^https://[unclosed$'), null);
+  assert.equal(compileOriginPattern(''), null);
+  assert.equal(compileOriginPattern(undefined), null);
+});
+
+test('isOriginAllowed ro\'yxat va shablonni birga tekshiradi', () => {
+  withEnv(
+    {
+      ALLOWED_ORIGIN: 'https://linguist-eight.vercel.app',
+      CLIENT_URL: '',
+      ALLOWED_ORIGIN_PATTERN: PREVIEW_PATTERN,
+    },
+    () => {
+      assert.equal(isOriginAllowed('https://linguist-eight.vercel.app', true), true, 'ro\'yxatdan');
+      assert.equal(
+        isOriginAllowed('https://linguist-git-abc-asilbekjrs-projects.vercel.app', true),
+        true,
+        'shablondan'
+      );
+      assert.equal(isOriginAllowed('https://evil.example', true), false);
+      assert.equal(isOriginAllowed(null, true), true, 'originsiz so\'rov (curl)');
+    }
+  );
+});
+
+test('shablon sozlanmagan bo\'lsa faqat ro\'yxat ishlaydi', () => {
+  withEnv(
+    { ALLOWED_ORIGIN: 'https://linguist-eight.vercel.app', CLIENT_URL: '', ALLOWED_ORIGIN_PATTERN: '' },
+    () => {
+      assert.equal(
+        isOriginAllowed('https://linguist-git-abc-asilbekjrs-projects.vercel.app', true),
+        false
+      );
+    }
+  );
+});
+
 test('ALLOWED_ORIGIN va CLIENT_URL birlashadi, dublikat bo\'lmaydi', () => {
   withEnv(
     { ALLOWED_ORIGIN: 'https://a.uz', CLIENT_URL: 'https://a.uz' },
