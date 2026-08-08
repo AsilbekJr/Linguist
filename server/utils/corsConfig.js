@@ -35,6 +35,72 @@ const parseOrigins = (...sources) => {
   }
   return [...origins];
 };
+/**
+ * Preview originlari uchun shablon (ixtiyoriy).
+ *
+ * Muammo: Vercel har bir branch uchun alohida URL beradi va uni har safar
+ * qo'lda `ALLOWED_ORIGIN` ga qo'shish kerak bo'ladi. Unutilsa — CORS xatosi,
+ * sababi esa brauzerda "Failed to fetch" bo'lib ko'rinadi.
+ *
+ * Yechim: `ALLOWED_ORIGIN_PATTERN` — operator o'zi yozadigan ANIQ regex.
+ *
+ * XAVFSIZLIK: bu cookie bilan ishlaydigan CORS bo'lgani uchun juda ehtiyot
+ * bo'lish kerak. Shuning uchun shablon quyidagi shartlarni bajarishi shart,
+ * aks holda umuman qo'llanilmaydi:
+ *   - ^ va $ bilan bog'langan bo'lishi;
+ *   - `https://` bilan boshlanishi;
+ *   - ixtiyoriy manzilni (masalan https://evil.com) mos deb topmasligi.
+ */
+const compileOriginPattern = (raw) => {
+  if (!raw || !String(raw).trim()) return null;
+  const source = String(raw).trim();
+
+  if (!source.startsWith('^') || !source.endsWith('$')) {
+    console.error(
+      `ALLOWED_ORIGIN_PATTERN e'tiborsiz qoldirildi: shablon ^ va $ bilan bog'lanishi shart. Berilgan: ${source}`
+    );
+    return null;
+  }
+
+  let regex;
+  try {
+    regex = new RegExp(source);
+  } catch (err) {
+    console.error(`ALLOWED_ORIGIN_PATTERN yaroqsiz regex: ${err.message}`);
+    return null;
+  }
+
+  // Shablon haddan tashqari keng emasligini tekshiramiz
+  const mustNotMatch = [
+    'https://evil.example',
+    'https://attacker.vercel.app',
+    'http://localhost:5173',
+    'https://a.b',
+    'null',
+  ];
+  const leak = mustNotMatch.find((origin) => regex.test(origin));
+  if (leak) {
+    console.error(
+      `ALLOWED_ORIGIN_PATTERN e'tiborsiz qoldirildi: u begona manzilga ham mos keldi ("${leak}"). Shablonni aniqroq yozing.`
+    );
+    return null;
+  }
+
+  console.log(`CORS preview shabloni yoqildi: ${source}`);
+  return regex;
+};
+
+let cachedPattern;
+let cachedPatternSource;
+const getOriginPattern = () => {
+  const raw = process.env.ALLOWED_ORIGIN_PATTERN;
+  if (raw !== cachedPatternSource) {
+    cachedPatternSource = raw;
+    cachedPattern = compileOriginPattern(raw);
+  }
+  return cachedPattern;
+};
+
 /** Ruxsat etilgan originlar ro'yxati — /health uchun ham kerak */
 const getAllowedOrigins = (isProd) => {
   const devDefaults = ['http://localhost:5173', 'http://127.0.0.1:5173'];
@@ -69,10 +135,11 @@ const getCorsOptions = (isProd) => {
         return;
       }
       const requestOrigin = normalizeOrigin(origin);
-      const allowed = allowedOrigins.some(
+      const inList = allowedOrigins.some(
         (entry) => normalizeOrigin(entry) === requestOrigin
       );
-      if (allowed) {
+      const pattern = getOriginPattern();
+      if (inList || (pattern && pattern.test(requestOrigin))) {
         callback(null, true);
         return;
       }
@@ -114,10 +181,21 @@ const corsRejectionHandler = (isProd) => (req, res, next) => {
   });
 };
 
+/** Origin ruxsat etilganmi — ro'yxat yoki shablon bo'yicha */
+const isOriginAllowed = (origin, isProd) => {
+  if (!origin) return true; // server-server, curl
+  const normalized = normalizeOrigin(origin);
+  if (getAllowedOrigins(isProd).some((e) => normalizeOrigin(e) === normalized)) return true;
+  const pattern = getOriginPattern();
+  return Boolean(pattern && pattern.test(normalized));
+};
+
 module.exports = {
   getCorsOptions,
   getAllowedOrigins,
   corsRejectionHandler,
+  isOriginAllowed,
+  compileOriginPattern,
   parseOrigins,
   normalizeOrigin,
   isValidOrigin,
