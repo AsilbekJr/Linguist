@@ -68,6 +68,33 @@ const baseQueryWithReauth = async (args, api, extraOptions) => {
       );
       result = await rawBaseQuery(args, api, extraOptions);
     } else if (refresh.error?.status === 401) {
+      /**
+       * Sessiyani uzaytirib bo'lmadi.
+       *
+       * `NO_REFRESH_COOKIE` — refresh cookie brauzerga umuman yetib
+       * bormagan. Frontend (vercel.app) va backend (onrender.com) turli
+       * domenlarda bo'lgani uchun bu cookie UCHINCHI TOMON hisoblanadi va
+       * brauzer uni bloklashi mumkin. Natijada foydalanuvchi har 15
+       * daqiqada jimgina chiqarib yuboriladi va sababi hech qayerda
+       * ko'rinmaydi.
+       *
+       * Doimiy yechim — ikkalasini bitta domen ostiga olib kelish
+       * (masalan app.domen.uz va api.domen.uz). Hozircha kamida sababni
+       * ko'rsatamiz.
+       */
+      if (refresh.error?.data?.code === 'NO_REFRESH_COOKIE') {
+        console.error(
+          '[Linguist] Refresh cookie yetib kelmadi. Frontend va backend turli ' +
+            'domenlarda bo\'lgani uchun brauzer uni uchinchi tomon cookie sifatida ' +
+            'bloklagan bo\'lishi mumkin. Brauzer sozlamalarida shu sayt uchun ' +
+            'cookie\'larga ruxsat bering yoki ikkala xizmatni bitta domen ostiga oling.'
+        );
+        try {
+          sessionStorage.setItem('linguist_auth_hint', 'third_party_cookie');
+        } catch {
+          // shaxsiy rejim — muhim emas
+        }
+      }
       api.dispatch(logout());
     }
   }

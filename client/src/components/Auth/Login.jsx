@@ -9,10 +9,25 @@ import { Loader2, Mail } from "lucide-react";
 import PasswordInput from './PasswordInput';
 import { getApiErrorMessage } from '../../utils/apiErrors';
 
+/**
+ * Sessiya uchinchi tomon cookie bloklangani uchun uzilgan bo'lsa, foydalanuvchi
+ * "nega yana chiqib ketdim?" degan savol bilan qoladi. Sababni ko'rsatamiz.
+ */
+const readAuthHint = () => {
+  try {
+    const hint = sessionStorage.getItem('linguist_auth_hint');
+    if (hint) sessionStorage.removeItem('linguist_auth_hint');
+    return hint;
+  } catch {
+    return null;
+  }
+};
+
 const Login = ({ onSwitchToRegister, initialEmail = '', onAuthSuccess }) => {
   const [email, setEmail] = useState(initialEmail);
   const [password, setPassword] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
+  const [hint] = useState(readAuthHint);
 
   const dispatch = useDispatch();
   const [login, { isLoading }] = useLoginMutation();
@@ -47,6 +62,14 @@ const Login = ({ onSwitchToRegister, initialEmail = '', onAuthSuccess }) => {
             <h2 className="text-2xl sm:text-3xl font-black bg-gradient-to-r from-primary via-purple-500 to-pink-500 bg-clip-text text-transparent mb-2">Xush kelibsiz</h2>
             <p className="text-sm sm:text-base text-muted-foreground">Linguist AI hisobingizga kiring</p>
        </div>
+
+       {hint === 'third_party_cookie' && !errorMsg && (
+            <div className="bg-amber-500/10 text-amber-700 dark:text-amber-400 text-sm p-3 rounded-xl mb-6 border border-amber-500/20">
+                Sessiya uzildi: brauzer sayt cookie&apos;sini bloklagan bo&apos;lishi mumkin.
+                Qayta kiring — muammo takrorlansa, brauzer sozlamalarida shu sayt uchun
+                cookie&apos;larga ruxsat bering.
+            </div>
+       )}
 
        {errorMsg && (
             <div className="bg-destructive/10 text-destructive text-sm font-bold p-3 rounded-xl text-center mb-6 border border-destructive/20 animate-in fade-in slide-in-from-top-2">
