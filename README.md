@@ -28,8 +28,10 @@ Tekshiruv: `npm run check` (testlar + lint + build).
 ### Telefonda sinash
 
 `npm run dev` lokal tarmoq manzilini chiqaradi (`http://192.168.x.x:5173`) —
-bir xil Wi-Fi'dagi telefondan ochish uchun. Dev rejimida CORS xususiy IP
-diapazonlariga avtomatik ruxsat beradi; productionda bu **ishlamaydi**.
+bir xil Wi-Fi'dagi telefondan ochish uchun. Dev rejimida `/api` so'rovlari Vite
+proxy orqali lokal backendga ketadi (`client/vite.config.js`), shuning uchun
+`client/.env` da `VITE_API_URL` **yozmang** — aks holda telefon `127.0.0.1` ni
+o'zi deb tushunadi va hech bir so'rov ishlamaydi.
 
 **PWA va bildirishnomalarni sinash uchun bu yetarli emas:** service worker
 faqat HTTPS yoki `localhost`da ishlaydi, `http://192.168.x.x` da esa
@@ -88,12 +90,20 @@ Profil (ism), daraja/maqsad/reja, mavzu, eslatmalar, parol va hisobni o'chirish.
 | `DELETE /api/auth/account` | Parol bilan tasdiqlanadi; so'zlar, progress, sessiyalar va boshqa hamma narsa o'chadi. Faol pullik obuna bo'lsa 409 — aks holda Stripe pul yechishda davom etardi. `BillingEvent` moliyaviy hisobot uchun qoladi |
 
 ### Kunlik reja (2 qadam)
-1. **Kunlik sahna** — mavzu dialogi, so'zlar, mini-test
+1. **Kunlik sahna** — mavzu dialogi, so'zlar, mini-test, **shadowing** (dialog
+   qatorlarini eshitib takrorlash; o'tkazib yuborsa ham bo'ladi)
 2. **Takrorlash** — "Bugun" sahifasining o'zida: tanib olish → eslash → gap tuzish
 
 Ikkalasi bajarilgach streak oshadi — qaysi tartibda bajarilishidan qat'i nazar.
-Tinglash, Gapirish, Yoddan aytish va Gap tahlili — ixtiyoriy qo'shimchalar, ular
-rejani bloklamaydi.
+Sahna tugagach ixtiyoriy **"dialogni yoddan ayt"** qadami ochiladi: rol tanlanadi,
+suhbatdosh qatorlari eshittiriladi, o'z qatorlari faqat o'zbekcha ko'rinadi.
+Gapirish solishtiruvi brauzerda (`client/src/utils/speechMatch.js`) — AI limiti
+yemaydi, audio serverga yuborilmaydi. Tinglash va Gap tahlili — ixtiyoriy
+qo'shimchalar, ular rejani bloklamaydi.
+
+Kunlik yangi so'zlar sonini **reja** belgilaydi: Yengil 5, Barqaror 7, Jadal 10
+(`getDailyWordTarget`). Asosiy ko'rsatkich XP emas, **bilgan so'zlar** soni va
+kursdagi CEFR yo'li (`course`: "B1 · 12/36 sahna", `utils/topicsData.js`).
 
 Qadamlarni **faqat server** belgilaydi (`completeDailyStep`,
 `utils/gamification.js`), mijoz emas:
@@ -195,6 +205,28 @@ mumkin (0.6× / 0.95× / 1.15×).
 
 Bu mashq kunlik rejaga **kirmaydi** va streak'ni bloklamaydi — kunlik yukni
 oshirib, reja bajarilishini tushirmaslik uchun ataylab ixtiyoriy qoldirilgan.
+
+### Mavzular kutubxonasi
+
+Lug'at → **Mavzular** (`/vocabulary?view=topics`): daraja → mavzu → so'zlar.
+Uch daraja: Elementary (A1–A2, 60 mavzu), Upper-intermediate (B2, 92 mavzu),
+Advanced (C1, 98 mavzu) — jami 250 mavzu, 3813 so'z. Sahifa onboarding
+darajasiga mos kitobni birinchi ochadi. Validator butun kutubxona bo'yicha bir
+so'zning ikki mavzuda bo'lishiga yo'l qo'ymaydi (lug'atda so'z bitta yozuv).
+Mavzular "English Vocabulary in Use" (Cambridge) unit'lariga tayanadi —
+kitobdan faqat mavzu nomi va so'zlar olinadi (kitob indeksidan), tarjima va
+misollar Linguist uchun yozilgan. Kitob matni, ta'riflari va mashqlari
+ko'chirilmaydi. PDF manbalar `server/content/vocab-topics/` da, lekin
+`.gitignore` (`*.pdf`) tufayli repo'ga kirmaydi.
+
+- Kontent: `server/content/vocab-topics/<daraja>.js`, yozuv
+  `[word, partOfSpeech, translation, example, exampleUz]`. Tekshiruv:
+  `index.js` → `validateLevels` (testda ham ishlaydi): so'z turkumi, tarjima
+  so'zning o'zi emas, misolda so'z (shakllari bilan) ishlatilgan.
+- API: `GET /api/vocab-topics`, `GET /api/vocab-topics/:id`,
+  `POST /api/vocab-topics/:id/add` (`{ words? }` — bo'lmasa hammasi). Faqat
+  mavzudagi so'zlar qabul qilinadi; takroriy qo'shish dublikat yaratmaydi.
+- Qo'shilgan so'z o'sha kuni takrorlashga tushadi (tanib olish rejimida).
 
 ### So'z qo'shish
 
@@ -300,7 +332,6 @@ Xato topilsa build to'xtaydi va yaroqsiz kontent `data/topics.json` ga yetib bor
 ```bash
 cd server
 npm run content:build       # curriculum/*.js  →  data/topics.json (validatsiya bilan)
-npm run content:challenges  # topics.json      →  data/challenges.json
 npm run content:validate    # faqat tekshirish
 npm run dict:fetch          # lug'at snapshotini yangilash (tarmoq kerak)
 ```
@@ -576,10 +607,9 @@ Bu ro'yxat ataylab ochiq — mahsulot hali bularni qila olmaydi:
 
 - **To'lov.** Stripe O'zbekiston kartalarini qabul qilmaydi. Payme/Click
   integratsiyasi hali yo'q, ya'ni mahalliy bozordan daromad olish imkonsiz.
-- **Talaffuz bahosi.** `evaluateSpokenAccuracy` talaffuzni emas, brauzer
-  `SpeechRecognition` transkriptining matnga mosligini o'lchaydi. Natija
-  `method: 'transcript_match'` bilan belgilanadi va UI uni "talaffuz bahosi"
-  deb ko'rsatmasligi kerak. Haqiqiy baho uchun fonema darajasidagi xizmat kerak.
+- **Talaffuz bahosi.** Shadowing va "yoddan ayt" (`speechMatch.js`) talaffuzni
+  emas, brauzer `SpeechRecognition` transkriptining dialog qatoriga mosligini
+  o'lchaydi — UI buni ochiq aytadi. Haqiqiy baho uchun fonema darajasidagi xizmat kerak.
 - **Kontent hajmi.** 90 kun (A1–B2). 31–90-kunlar AI yordamida yozilgan va validatordan o'tgan, lekin o'zbekcha tarjimalar hali ona tili egasi tomonidan ko'rib chiqilishi kerak (`docs/ROADMAP.md`).
 - **iOS push** faqat o'rnatilgan PWA'da ishlaydi (Safari cheklovi). Foydalanuvchi
   avval "Bosh ekranga qo'shish" qilishi kerak.

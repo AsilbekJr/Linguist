@@ -1,7 +1,8 @@
 import React, { useMemo, useState } from 'react';
 import { AnimatePresence } from 'motion/react';
+import { useSearchParams } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
-import { BookOpen, Search, Plus, X, Clock, Flame, CheckCircle2, Layers, SearchX } from 'lucide-react';
+import { BookOpen, Search, Plus, X, Clock, Flame, CheckCircle2, Layers, SearchX, Library } from 'lucide-react';
 import {
   useGetWordsQuery,
   useAddWordMutation,
@@ -11,6 +12,7 @@ import {
 } from '../features/api/apiSlice';
 import WordForm from '../components/WordForm';
 import WordCard from '../components/WordCard';
+import TopicLibrary from '../components/TopicLibrary';
 import ConfirmDialog from '../components/ui/confirm-dialog';
 import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogHeader } from '../components/ui/dialog';
 import { Button } from '../components/ui/button';
@@ -18,6 +20,12 @@ import { EmptyState, PageHeader, Segmented, Skeleton } from '../components/ui/pr
 import { isDue, isLearned } from '../utils/wordStatus';
 
 const PAGE_SIZE = 24;
+
+/** Lug'at ikki ko'rinishda: o'z so'zlari va mavzular kutubxonasi */
+const VIEWS = [
+  { value: 'mine', label: "Mening so'zlarim", icon: BookOpen },
+  { value: 'topics', label: 'Mavzular', icon: Library },
+];
 
 const FILTERS = [
   { value: 'all', label: 'Hammasi', icon: Layers },
@@ -56,6 +64,10 @@ const Vocabulary = () => {
   const [relearnWordMutation] = useRelearnWordMutation();
   const [refreshWordMutation] = useRefreshWordMutation();
 
+  // Ko'rinish URL'da — havola orqali to'g'ridan-to'g'ri mavzularni ochish mumkin
+  const [searchParams, setSearchParams] = useSearchParams();
+  const view = searchParams.get('view') === 'topics' ? 'topics' : 'mine';
+  const setView = (v) => setSearchParams(v === 'topics' ? { view: 'topics' } : {}, { replace: true });
   const [filter, setFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [limit, setLimit] = useState(PAGE_SIZE);
@@ -172,100 +184,115 @@ const Vocabulary = () => {
         }
       />
 
-      {/* Qidiruv va filtrlar */}
-      <div className="glass sticky top-[calc(env(safe-area-inset-top,0px)+3.5rem)] z-30 -mx-4 mb-6 space-y-3 px-4 py-3 sm:-mx-6 sm:px-6 lg:static lg:mx-0 lg:bg-transparent lg:p-0 lg:backdrop-blur-none">
-        <div className="relative">
-          <Search className="pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-muted-foreground" />
-          <input
-            type="search"
-            value={searchQuery}
-            onChange={(e) => {
-              setSearchQuery(e.target.value);
-              setLimit(PAGE_SIZE);
-            }}
-            placeholder="So'z, tarjima yoki ma'no bo'yicha qidirish"
-            aria-label="Lug'atdan qidirish"
-            className="h-12 w-full rounded-2xl border border-input bg-card pl-12 pr-11 text-base shadow-xs outline-none transition-[border-color,box-shadow] placeholder:text-muted-foreground/80 focus:border-primary focus:ring-4 focus:ring-primary/15 [&::-webkit-search-cancel-button]:hidden"
-          />
-          {searchQuery && (
-            <button
-              type="button"
-              onClick={() => setSearchQuery('')}
-              className="absolute right-2.5 top-1/2 inline-flex size-8 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground hover:bg-accent hover:text-foreground"
-              aria-label="Qidiruvni tozalash"
-            >
-              <X className="size-4" />
-            </button>
-          )}
-        </div>
-        <Segmented
-          ariaLabel="So'zlarni saralash"
-          layoutId="vocab-filter"
-          value={filter}
-          onChange={(v) => {
-            setFilter(v);
-            setLimit(PAGE_SIZE);
-          }}
-          options={FILTERS.map((f) => ({ ...f, count: isLoading ? null : counts[f.value] }))}
-        />
-      </div>
+      <Segmented
+        ariaLabel="Lug'at ko'rinishi"
+        layoutId="vocab-view"
+        value={view}
+        onChange={setView}
+        options={VIEWS}
+        className="mb-5"
+      />
 
-      {/* Ro'yxat */}
-      {isLoading ? (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3" aria-busy="true" aria-label="Yuklanmoqda">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <Skeleton key={i} className="h-64 rounded-2xl" />
-          ))}
-        </div>
-      ) : words.length === 0 ? (
-        <EmptyState
-          icon={BookOpen}
-          title="Lug'atingiz hali bo'sh"
-          description="Birinchi so'zingizni qo'shing — tarjima, ta'rif va darajangizga mos misol avtomatik topiladi."
-        >
-          <Button size="lg" onClick={() => setIsAddModalOpen(true)}>
-            <Plus /> Birinchi so&apos;zni qo&apos;shish
-          </Button>
-        </EmptyState>
-      ) : visibleWords.length === 0 ? (
-        searchQuery ? (
-          <EmptyState
-            icon={SearchX}
-            tone="muted"
-            title="Hech narsa topilmadi"
-            description={`"${searchQuery}" bo'yicha so'z yo'q. Uni lug'atga qo'shishni xohlaysizmi?`}
-          >
-            <Button variant="outline" onClick={() => setSearchQuery('')}>Qidiruvni tozalash</Button>
-            <Button onClick={() => setIsAddModalOpen(true)}>
-              <Plus /> Qo&apos;shish
-            </Button>
-          </EmptyState>
-        ) : (
-          <EmptyState icon={CheckCircle2} tone="success" {...EMPTY_COPY[filter]} />
-        )
+      {view === 'topics' ? (
+        <TopicLibrary />
       ) : (
         <>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-            <AnimatePresence mode="popLayout" initial={false}>
-              {shown.map((word) => (
-                <WordCard
-                  key={word._id}
-                  word={word}
-                  onDelete={setPendingDelete}
-                  onRelearn={handleRelearn}
-                  onRefresh={handleRefresh}
-                  isRelearning={relearningId === word._id}
-                  isRefreshing={refreshingId === word._id}
-                />
-              ))}
-            </AnimatePresence>
-          </div>
-          {visibleWords.length > shown.length && (
-            <div className="mt-6 flex justify-center">
-              <Button variant="outline" size="lg" onClick={() => setLimit((l) => l + PAGE_SIZE)}>
-                Yana ko&apos;rsatish ({visibleWords.length - shown.length})
-              </Button>
+          {/* Qidiruv va filtrlar */}
+          <div className="glass sticky top-[calc(env(safe-area-inset-top,0px)+3.5rem)] z-30 -mx-4 mb-6 space-y-3 px-4 py-3 sm:-mx-6 sm:px-6 lg:static lg:mx-0 lg:bg-transparent lg:p-0 lg:backdrop-blur-none">
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-muted-foreground" />
+              <input
+                type="search"
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setLimit(PAGE_SIZE);
+                }}
+                placeholder="So'z, tarjima yoki ma'no bo'yicha qidirish"
+                aria-label="Lug'atdan qidirish"
+                className="h-12 w-full rounded-2xl border border-input bg-card pl-12 pr-11 text-base shadow-xs outline-none transition-[border-color,box-shadow] placeholder:text-muted-foreground/80 focus:border-primary focus:ring-4 focus:ring-primary/15 [&::-webkit-search-cancel-button]:hidden"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-2.5 top-1/2 inline-flex size-8 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground hover:bg-accent hover:text-foreground"
+                  aria-label="Qidiruvni tozalash"
+                >
+                  <X className="size-4" />
+                </button>
+              )}
             </div>
+            <Segmented
+              ariaLabel="So'zlarni saralash"
+              layoutId="vocab-filter"
+              value={filter}
+              onChange={(v) => {
+                setFilter(v);
+                setLimit(PAGE_SIZE);
+              }}
+              options={FILTERS.map((f) => ({ ...f, count: isLoading ? null : counts[f.value] }))}
+            />
+          </div>
+
+          {/* Ro'yxat */}
+          {isLoading ? (
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3" aria-busy="true" aria-label="Yuklanmoqda">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <Skeleton key={i} className="h-64 rounded-2xl" />
+              ))}
+            </div>
+          ) : words.length === 0 ? (
+            <EmptyState
+              icon={BookOpen}
+              title="Lug'atingiz hali bo'sh"
+              description="Birinchi so'zingizni qo'shing — tarjima, ta'rif va darajangizga mos misol avtomatik topiladi."
+            >
+              <Button size="lg" onClick={() => setIsAddModalOpen(true)}>
+                <Plus /> Birinchi so&apos;zni qo&apos;shish
+              </Button>
+            </EmptyState>
+          ) : visibleWords.length === 0 ? (
+            searchQuery ? (
+              <EmptyState
+                icon={SearchX}
+                tone="muted"
+                title="Hech narsa topilmadi"
+                description={`"${searchQuery}" bo'yicha so'z yo'q. Uni lug'atga qo'shishni xohlaysizmi?`}
+              >
+                <Button variant="outline" onClick={() => setSearchQuery('')}>Qidiruvni tozalash</Button>
+                <Button onClick={() => setIsAddModalOpen(true)}>
+                  <Plus /> Qo&apos;shish
+                </Button>
+              </EmptyState>
+            ) : (
+              <EmptyState icon={CheckCircle2} tone="success" {...EMPTY_COPY[filter]} />
+            )
+          ) : (
+            <>
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+                <AnimatePresence mode="popLayout" initial={false}>
+                  {shown.map((word) => (
+                    <WordCard
+                      key={word._id}
+                      word={word}
+                      onDelete={setPendingDelete}
+                      onRelearn={handleRelearn}
+                      onRefresh={handleRefresh}
+                      isRelearning={relearningId === word._id}
+                      isRefreshing={refreshingId === word._id}
+                    />
+                  ))}
+                </AnimatePresence>
+              </div>
+              {visibleWords.length > shown.length && (
+                <div className="mt-6 flex justify-center">
+                  <Button variant="outline" size="lg" onClick={() => setLimit((l) => l + PAGE_SIZE)}>
+                    Yana ko&apos;rsatish ({visibleWords.length - shown.length})
+                  </Button>
+                </div>
+              )}
+            </>
           )}
         </>
       )}

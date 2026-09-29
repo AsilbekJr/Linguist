@@ -122,6 +122,8 @@ export const EVENTS = {
   TOPIC_DAY_STARTED: 'topic_day_started',
   TOPIC_QUIZ_PASSED: 'topic_quiz_passed',
   TOPIC_DAY_FINISHED: 'topic_day_finished',
+  DIALOGUE_SHADOWED: 'dialogue_shadowed',
+  DIALOGUE_RECALLED: 'dialogue_recalled',
   REVIEW_SESSION_FINISHED: 'review_session_finished',
   LISTENING_FINISHED: 'listening_finished',
   PRACTICE_FINISHED: 'practice_finished',

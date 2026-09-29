@@ -1,4 +1,24 @@
-const API_URL = import.meta.env.VITE_API_URL || '';
+import { API_URL } from '../lib/apiUrl';
+
+const IS_DEV = !import.meta.env.PROD;
+const LOCAL_BACKEND_HINT =
+  "Lokal backend ishlamayapti — ildiz papkada `npm run dev` (yoki alohida terminalda `npm --prefix server run dev`) ni ishga tushiring.";
+
+/** Tarmoq xatosining eng ehtimoliy sababi — muhitga qarab */
+const networkHint = () => {
+  if (IS_DEV) return LOCAL_BACKEND_HINT;
+  if (!API_URL) {
+    return (
+      "Build'da VITE_API_URL yo'q. Vercel → Settings → Environment Variables ga " +
+      "backend manzilini qo'shing va qayta deploy qiling."
+    );
+  }
+  return (
+    'Sabablari: server uxlab qolgan (Render bepul tarifi — 30-50 soniya kuting), ' +
+    "yoki serverdagi ALLOWED_ORIGIN ro'yxatida shu sayt manzili yo'q. " +
+    "Brauzer konsolida CORS xatosi bor-yo'qligini tekshiring."
+  );
+};
 
 export const getApiErrorMessage = (err, fallback = "So'rovda xatolik yuz berdi.") => {
   const status = err?.status;
@@ -12,12 +32,13 @@ export const getApiErrorMessage = (err, fallback = "So'rovda xatolik yuz berdi."
    * dasturchi ham nima bo'lganini bilmaydi.
    */
   if (status === 'FETCH_ERROR' || err?.name === 'TypeError') {
-    return (
-      `Serverga ulanib bo'lmadi (${API_URL || 'API manzili sozlanmagan'}). ` +
-      'Sabablari: server uxlab qolgan (Render bepul tarifi — 30-50 soniya kuting), ' +
-      "yoki serverdagi ALLOWED_ORIGIN ro'yxatida shu sayt manzili yo'q. " +
-      "Brauzer konsolida CORS xatosi bor-yo'qligini tekshiring."
-    );
+    const where = API_URL || (IS_DEV ? 'lokal backend' : 'API manzili sozlanmagan');
+    return `Serverga ulanib bo'lmadi (${where}). ${networkHint()}`;
+  }
+  // Dev'da so'rovlar Vite proxy orqali ketadi: backend o'chiq bo'lsa proxy
+  // tarmoq xatosi emas, bo'sh 5xx (yoki JSON bo'lmagan) javob qaytaradi
+  if (IS_DEV && !API_URL && (status === 'PARSING_ERROR' || (status >= 500 && !msg))) {
+    return `Serverga ulanib bo'lmadi (lokal backend). ${LOCAL_BACKEND_HINT}`;
   }
   if (status === 'PARSING_ERROR') {
     return "Serverdan kutilmagan javob keldi. VITE_API_URL to'g'ri backendga ishora qilyaptimi?";

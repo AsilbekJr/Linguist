@@ -3,7 +3,8 @@ const router = express.Router();
 const Word = require('../models/Word');
 const { checkSentence } = require('../services/geminiService');
 const { protect } = require('../middleware/authMiddleware');
-const { validate, reviewCheckSchema } = require('../middleware/validate');
+const { validate, reviewCheckSchema, reviewTranslationSchema } = require('../middleware/validate');
+const { lookupTranslation } = require('../utils/localTranslations');
 const { trackAiUsageSoft } = require('../middleware/usageQuota');
 const { applySchedule, restartLearning, stageInterval, readStage, MAX_STAGE } = require('../utils/srs');
 const { userDayKey } = require('../utils/dayKey');
@@ -19,7 +20,7 @@ const { invalidateUserWords } = require('../utils/userWordsCache');
 const { buildDistractorPool } = require('../utils/topicHelpers');
 const {
   MODES,
-  modeForStage,
+  modeForWord,
   checkRecall,
   checkRecognize,
   buildOptions,
@@ -148,6 +149,43 @@ const getCoursePool = () => {
   return coursePoolCache;
 };
 
+/** So'zlarni rejimiga mos ko'rinishga keltiradi (tanib olishda — variantlar bilan) */
+const presentWords = async (userId, words) => {
+  const needsOptions = words.some((w) => modeForWord(w, readStage(w)) === MODES.RECOGNIZE);
+  const ownPool = needsOptions
+    ? (await Word.find({ user: userId }).select('translation').limit(300).lean())
+        .map((w) => w.translation)
+        .filter(Boolean)
+    : [];
+  return words.map((w) => {
+    const mode = modeForWord(w, readStage(w));
+    const options =
+      mode === MODES.RECOGNIZE ? buildOptions(w.translation, { ownPool, coursePool: getCoursePool() }) : undefined;
+    return presentDueWord(w, mode, options);
+  });
+};
+
+// @desc    Tarjimasiz so'zga o'zbekcha tarjima yozish ("translate" topshirig'i)
+// @route   POST /api/review/:id/translation
+//
+// Baholanmaydi va jadvalga tegmaydi — bu so'z bilan birinchi tanishuv.
+// Javobda shu so'zning endi odatiy topshirig'i qaytadi (odatda tanib olish),
+// mijoz uni navbatdagi joyiga qo'yadi.
+router.post('/:id/translation', protect, validate(reviewTranslationSchema), async (req, res) => {
+  try {
+    const wordDoc = await Word.findOne({ _id: req.validated.params.id, user: req.user._id });
+    if (!wordDoc) return res.status(404).json({ message: 'Word not found' });
+    wordDoc.translation = req.validated.body.translation;
+    await wordDoc.save();
+    invalidateUserWords(req.user._id);
+    const [item] = await presentWords(req.user._id, [wordDoc.toObject()]);
+    res.json({ item });
+  } catch (error) {
+    console.error('Review translation error:', error);
+    res.status(500).json({ message: 'Server Error' });
+  }
+});
+
 // @desc    Bugun takrorlanishi kerak bo'lgan so'zlar — har biri o'z rejimida
 // @route   GET /api/review/due
 //
@@ -161,23 +199,22 @@ router.get('/due', protect, async (req, res) => {
       .limit(DUE_LIMIT)
       .lean();
 
-    const needsOptions = dueWords.some((w) => modeForStage(readStage(w)) === MODES.RECOGNIZE);
-    const ownPool = needsOptions
-      ? (await Word.find({ user: req.user._id }).select('translation').limit(300).lean())
-          .map((w) => w.translation)
-          .filter(Boolean)
-      : [];
+    // Tarjimasiz so'zlar: avval o'z kontentimizdan topishga urinamiz va saqlaymiz
+    const fills = [];
+    for (const w of dueWords) {
+      if (String(w.translation || '').trim()) continue;
+      const found = lookupTranslation(w.word);
+      if (found) {
+        w.translation = found;
+        fills.push({ updateOne: { filter: { _id: w._id }, update: { $set: { translation: found } } } });
+      }
+    }
+    if (fills.length) {
+      await Word.bulkWrite(fills);
+      invalidateUserWords(req.user._id);
+    }
 
-    res.json(
-      dueWords.map((w) => {
-        const mode = modeForStage(readStage(w));
-        const options =
-          mode === MODES.RECOGNIZE
-            ? buildOptions(w.translation, { ownPool, coursePool: getCoursePool() })
-            : undefined;
-        return presentDueWord(w, mode, options);
-      })
-    );
+    res.json(await presentWords(req.user._id, dueWords));
   } catch (error) {
     console.error('Fetch Due Words Error:', error);
     res.status(500).json({ message: 'Server Error' });
@@ -274,7 +311,7 @@ router.post('/:id/check', protect, validate(reviewCheckSchema), aiQuotaForSenten
 
     const now = new Date();
     const due = isDue(wordDoc, now);
-    const expectedMode = modeForStage(readStage(wordDoc));
+    const expectedMode = modeForWord(wordDoc, readStage(wordDoc));
     if (due && mode !== expectedMode) {
       await req.aiCall.refund();
       return res.status(409).json({
@@ -357,7 +394,7 @@ router.post('/:id/check', protect, validate(reviewCheckSchema), aiQuotaForSenten
       nextReviewDate: next.nextReviewDate,
       learned: next.learned,
       // Keyingi safar qaysi topshiriq bo'lishi — UI "keyingi safar gap tuzasiz" deya oladi
-      nextMode: next.learned ? null : modeForStage(next.stage),
+      nextMode: next.learned ? null : modeForWord(wordDoc, next.stage),
     });
   } catch (error) {
     console.error('Review Check Error:', error);

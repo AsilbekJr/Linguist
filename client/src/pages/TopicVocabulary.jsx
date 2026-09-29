@@ -31,11 +31,14 @@ import {
   RotateCcw,
   PartyPopper,
   AlertTriangle,
+  Mic,
+  Brain,
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { playTTSAudio } from '../utils/audio';
 import { fireConfetti } from '../utils/celebration';
 import { track, EVENTS } from '../lib/analytics';
+import DialoguePractice from '../components/DialoguePractice';
 
 const EASE = [0.16, 1, 0.3, 1];
 
@@ -182,11 +185,12 @@ const TopicQuiz = ({ quiz, onPass, onBack, submitQuiz, isSubmitting }) => {
   );
 };
 
-/** O'rganish → mini-test → yakunlash */
-const Stepper = ({ current, quizPassed }) => {
+/** O'rganish → mini-test → gapirish (shadowing) → yakunlash */
+const Stepper = ({ current, quizPassed, hasDialogue, shadowDone }) => {
   const steps = [
     { key: 'learn', label: "O'rganish", done: quizPassed || current !== 'learn' },
     { key: 'quiz', label: 'Mini-test', done: quizPassed },
+    ...(hasDialogue ? [{ key: 'shadow', label: 'Gapirish', done: shadowDone }] : []),
     { key: 'finish', label: 'Yakunlash', done: false },
   ];
   return (
@@ -229,6 +233,10 @@ const TopicVocabulary = () => {
   // Yakunlashda lug'atga avtomatik qo'shilgan so'zlar soni (server javobi)
   const [wordsAdded, setWordsAdded] = useState(null);
   const [quiz, setQuiz] = useState(null);
+  const [shadowDone, setShadowDone] = useState(false);
+  // Ixtiyoriy yakuniy qadam: dialogni yoddan aytish
+  const [recallOpen, setRecallOpen] = useState(false);
+  const [recallResult, setRecallResult] = useState(null);
   const healRef = useRef(false);
 
   // Test o'tilgani SERVERDAN keladi. Ilgari bu sessionStorage'da edi.
@@ -241,6 +249,7 @@ const TopicVocabulary = () => {
 
   // Dialogda birinchi gapiruvchi chapda, qolganlari o'ngda — chat kabi
   const firstSpeaker = topicData?.dialogue?.[0]?.speaker;
+  const hasDialogue = (topicData?.dialogue?.length || 0) > 0;
 
   const applyUserUpdate = useCallback(
     (profile) => {
@@ -333,9 +342,36 @@ const TopicVocabulary = () => {
     );
   }
 
+  if (recallOpen && hasDialogue) {
+    return (
+      <motion.section
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35, ease: EASE }}
+        className="surface mx-auto max-w-2xl p-5 sm:p-8"
+      >
+        <Button variant="ghost" size="sm" className="-ml-2 mb-3" onClick={() => setRecallOpen(false)}>
+          <ChevronLeft /> Orqaga
+        </Button>
+        <DialoguePractice
+          dialogue={topicData.dialogue}
+          mode="recall"
+          doneLabel="Tugatish"
+          onDone={(res) => {
+            setRecallResult(res);
+            setRecallOpen(false);
+            track(EVENTS.DIALOGUE_RECALLED, { day: topicData?.day, average: res.average });
+            if (res.average != null && res.average >= 80) fireConfetti(1200);
+          }}
+        />
+      </motion.section>
+    );
+  }
+
   if (step === 'done' || topicData.topicQuestCompleted) {
     const reviewDone = user?.dailyQuests?.reviewCompleted;
     return (
+      <div className="mx-auto max-w-xl space-y-4">
       <motion.div
         initial={{ opacity: 0, scale: 0.97 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -367,10 +403,34 @@ const TopicVocabulary = () => {
           <ArrowRight />
         </Button>
       </motion.div>
+
+      {/* Ixtiyoriy: dialogni yoddan aytish — kunlik rejaga kirmaydi */}
+      {hasDialogue && (
+        <motion.button
+          type="button"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.25, duration: 0.4, ease: EASE }}
+          onClick={() => setRecallOpen(true)}
+          className="surface-interactive flex w-full items-center gap-4 p-5 text-left"
+        >
+          <IconTile icon={Brain} tone="streak" />
+          <span className="min-w-0 flex-1">
+            <span className="block font-bold">Qo&apos;shimcha: dialogni yoddan ayting</span>
+            <span className="block text-sm text-muted-foreground">
+              {recallResult?.average != null
+                ? `Oxirgi natija: ${recallResult.average}% · yana urinib ko'ring`
+                : "Rol tanlang va o'z qatorlaringizni inglizcha yoddan ayting"}
+            </span>
+          </span>
+          <ArrowRight className="size-5 shrink-0 text-muted-foreground" />
+        </motion.button>
+      )}
+      </div>
     );
   }
 
-  const progressStep = step === 'quiz' ? 'quiz' : quizPassed ? 'finish' : 'learn';
+  const progressStep = step === 'quiz' ? 'quiz' : step === 'shadow' ? 'shadow' : quizPassed ? 'finish' : 'learn';
 
   return (
     <div className="mx-auto max-w-3xl">
@@ -389,7 +449,7 @@ const TopicVocabulary = () => {
             </h1>
           </div>
         </div>
-        <Stepper current={progressStep} quizPassed={quizPassed} />
+        <Stepper current={progressStep} quizPassed={quizPassed} hasDialogue={hasDialogue} shadowDone={shadowDone} />
       </div>
 
       <AnimatePresence mode="wait">
@@ -403,10 +463,11 @@ const TopicVocabulary = () => {
             className="surface p-6 sm:p-8"
           >
             <p className="text-[17px] leading-relaxed">{topicData.story}</p>
-            <div className="mt-6 grid gap-2 sm:grid-cols-3">
+            <div className="mt-6 grid gap-2 sm:grid-cols-2">
               {[
                 { icon: MessagesSquare, text: 'Dialogni o\'qing va tinglang' },
                 { icon: Sparkles, text: 'Mini-testdan o\'ting' },
+                ...(hasDialogue ? [{ icon: Mic, text: 'Dialogni eshitib takrorlang' }] : []),
                 { icon: BookCheck, text: "So'zlar lug'atga o'zi qo'shiladi" },
               ].map((s, i) => (
                 <div key={s.text} className="flex items-center gap-3 rounded-2xl bg-muted/60 p-3 text-sm font-medium">
@@ -601,7 +662,17 @@ const TopicVocabulary = () => {
                     {isStartingQuiz ? <Loader2 className="animate-spin" /> : <>Mini-test <Sparkles /></>}
                   </Button>
                 )}
-                {quizPassed && (
+                {quizPassed && hasDialogue && !shadowDone && (
+                  <Button size="lg" variant="ghost" onClick={handleFinishDay} disabled={isFinishing}>
+                    Yakunlash
+                  </Button>
+                )}
+                {quizPassed && hasDialogue && !shadowDone && (
+                  <Button size="lg" variant="brand" onClick={() => setStep('shadow')}>
+                    Gapirish <Mic />
+                  </Button>
+                )}
+                {quizPassed && (!hasDialogue || shadowDone) && (
                   <Button size="lg" variant="success" onClick={handleFinishDay} disabled={isFinishing || !canFinish}>
                     {isFinishing ? <Loader2 className="animate-spin" /> : <>Yakunlash <CheckCircle2 /></>}
                   </Button>
@@ -626,9 +697,40 @@ const TopicVocabulary = () => {
               isSubmitting={isSubmittingQuiz}
               onPass={(res) => {
                 track(EVENTS.TOPIC_QUIZ_PASSED, { day: topicData?.day, score: res?.score });
-                setStep('learn');
+                setStep(hasDialogue ? 'shadow' : 'learn');
               }}
               onBack={() => setStep('learn')}
+            />
+          </motion.section>
+        )}
+
+        {step === 'shadow' && hasDialogue && (
+          <motion.section
+            key="shadow"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -12 }}
+            transition={{ duration: 0.35, ease: EASE }}
+            className="surface mx-auto max-w-2xl p-5 sm:p-8"
+          >
+            <div className="mb-4 flex items-center justify-between gap-2">
+              <Button variant="ghost" size="sm" className="-ml-2" onClick={() => setStep('learn')}>
+                <ChevronLeft /> So&apos;zlar
+              </Button>
+              {/* Gapirish majburiy emas: shovqinli joy, mikrofon yo'q va h.k. */}
+              <Button variant="ghost" size="sm" onClick={handleFinishDay} disabled={isFinishing}>
+                O&apos;tkazib yuborib yakunlash
+              </Button>
+            </div>
+            <DialoguePractice
+              dialogue={topicData.dialogue}
+              mode="shadow"
+              doneLabel="Yakunlash"
+              onDone={(res) => {
+                setShadowDone(true);
+                track(EVENTS.DIALOGUE_SHADOWED, { day: topicData?.day, average: res.average });
+                handleFinishDay();
+              }}
             />
           </motion.section>
         )}

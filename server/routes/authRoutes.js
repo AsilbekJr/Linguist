@@ -40,12 +40,9 @@ const fs = require('fs');
 const path = require('path');
 const Word = require('../models/Word');
 const { isValidTimeZone } = require('../utils/dayKey');
-const { enrichUserProfile } = require('../utils/gamification');
+const { buildUserProfile } = require('../utils/userProfile');
 
-const formatUser = async (user) => {
-  const totalWords = await Word.countDocuments({ user: user._id });
-  return enrichUserProfile(user, { totalWords });
-};
+const formatUser = buildUserProfile;
 
 const sendAuthResponse = async (user, res, status = 200) => {
   const token = generateAccessToken(user._id);
@@ -184,9 +181,9 @@ router.patch('/profile', protect, validate(profileUpdateSchema), async (req, res
     const { name, level, goal, planType } = req.validated.body;
     if (name !== undefined) req.user.name = name;
 
-    // Daraja o'zgarsa kurs qaytadan BOSHLANMAYDI — faqat kunlik so'z maqsadi
-    // va AI izohlari murakkabligi o'zgaradi. Kursni qayta boshlash o'tilgan
-    // kunlarni yo'qotish bo'lardi.
+    // Daraja o'zgarsa kurs qaytadan BOSHLANMAYDI — faqat AI izohlari
+    // murakkabligi o'zgaradi. Kursni qayta boshlash o'tilgan
+    // kunlarni yo'qotish bo'lardi. Kunlik so'zlar sonini endi reja (planType) belgilaydi.
     if (level !== undefined) req.user.onboarding.level = level;
     if (goal !== undefined) req.user.onboarding.goal = goal;
     if (planType !== undefined) req.user.onboarding.planType = planType;

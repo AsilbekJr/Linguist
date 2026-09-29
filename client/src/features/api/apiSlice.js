@@ -1,19 +1,11 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import { setCredentials, logout } from '../auth/authSlice';
 
-/**
- * Backend manzili.
- *
- * Zaxira qiymat FAQAT ishlab chiqish uchun. Deploy qilingan build'da
- * `VITE_API_URL` yozilmagan bo'lsa, ilova foydalanuvchining O'Z
- * kompyuteridagi 127.0.0.1:5000 ga murojaat qilishga urinadi — bu esa
- * https sahifadan http manzilga so'rov bo'lgani uchun brauzer tomonidan
- * bloklanadi ("mixed content") va sabab hech qayerda ko'rinmaydi.
- * Shuning uchun bu holatni baland ovozda aytamiz.
- */
-const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '' : 'http://127.0.0.1:5000');
+import { API_URL, API_URL_MISSING } from '../../lib/apiUrl';
 
-if (import.meta.env.PROD && !import.meta.env.VITE_API_URL) {
+// Deploy qilingan build'da manzil yo'q bo'lsa sabab hech qayerda ko'rinmaydi —
+// shuning uchun buni baland ovozda aytamiz
+if (API_URL_MISSING) {
   console.error(
     '[Linguist] VITE_API_URL sozlanmagan. Vercel → Settings → Environment Variables ' +
       "ga uni qo'shing va deploymentni qayta ishga tushiring. Aks holda hech qanday " +
@@ -109,7 +101,7 @@ export const apiSlice = createApi({
   refetchOnFocus: false,
   refetchOnReconnect: true,
   baseQuery: baseQueryWithReauth,
-  tagTypes: ['Word', 'Challenge', 'Topic', 'User', 'Billing', 'Listening', 'Notifications', 'Push', 'Telegram'],
+  tagTypes: ['Word', 'Topic', 'User', 'Billing', 'Listening', 'Notifications', 'Push', 'Telegram', 'VocabTopic'],
   endpoints: (builder) => ({
     getWords: builder.query({
       query: () => '/api/words',
@@ -155,6 +147,18 @@ export const apiSlice = createApi({
       }),
       invalidatesTags: ['Word', 'User'],
     }),
+    /**
+     * Tarjimasiz so'zga o'zbekcha tarjima. Javobda shu so'zning yangi topshirig'i
+     * (`item`) keladi. Teg yangilanmaydi: "Bugun" sessiyasi o'z nusxasi bilan
+     * davom etadi, lug'at esa keyingi tekshiruvdan keyin yangilanadi.
+     */
+    saveReviewTranslation: builder.mutation({
+      query: ({ id, translation }) => ({
+        url: `/api/review/${id}/translation`,
+        method: 'POST',
+        body: { translation },
+      }),
+    }),
     /** Yodlangan so'zni qayta yodlashga qaytarish (4-bosqichdan) */
     relearnWord: builder.mutation({
       query: (id) => ({
@@ -177,13 +181,6 @@ export const apiSlice = createApi({
       providesTags: ['Word'],
       keepUnusedDataFor: 60,
     }),
-    translateSpeaking: builder.mutation({
-      query: (text) => ({
-        url: '/api/speaking/translate',
-        method: 'POST',
-        body: { text },
-      }),
-    }),
     getListeningSession: builder.query({
       query: () => '/api/listening/session',
       providesTags: ['Listening'],
@@ -202,33 +199,6 @@ export const apiSlice = createApi({
         method: 'POST',
       }),
       invalidatesTags: ['Listening', 'User'],
-    }),
-    // `translateText` (/api/speaking/translate-text) olib tashlandi:
-    // u umumiy tarjimon edi — o'rganish funksiyasi emas, lekin AI limitini yerdi.
-    evaluateSpeaking: builder.mutation({
-      query: ({ targetSentence, spokenText }) => ({
-        url: '/api/speaking/evaluate',
-        method: 'POST',
-        body: { targetSentence, spokenText },
-      }),
-    }),
-    getCurrentChallenge: builder.query({
-      query: () => '/api/challenge/current',
-      providesTags: ['Challenge'],
-      keepUnusedDataFor: 120,
-    }),
-    getChallengeHistory: builder.query({
-      query: () => '/api/challenge/history',
-      providesTags: ['Challenge'],
-      keepUnusedDataFor: 300,
-    }),
-    completeChallenge: builder.mutation({
-      query: (data) => ({
-        url: '/api/challenge/complete',
-        method: 'POST',
-        body: data,
-      }),
-      invalidatesTags: ['Challenge'],
     }),
     getCurrentTopic: builder.query({
       query: () => '/api/topics/current',
@@ -303,6 +273,23 @@ export const apiSlice = createApi({
     sendTestPush: builder.mutation({
       query: () => ({ url: '/api/push/test', method: 'POST' }),
     }),
+    getVocabTopics: builder.query({
+      query: () => '/api/vocab-topics',
+      providesTags: ['VocabTopic'],
+    }),
+    getVocabTopic: builder.query({
+      query: (id) => `/api/vocab-topics/${id}`,
+      providesTags: (result, error, id) => [{ type: 'VocabTopic', id }],
+    }),
+    // words berilmasa — mavzudagi hamma so'z qo'shiladi
+    addVocabTopicWords: builder.mutation({
+      query: ({ id, words }) => ({
+        url: `/api/vocab-topics/${id}/add`,
+        method: 'POST',
+        body: words ? { words } : {},
+      }),
+      invalidatesTags: (result, error, { id }) => ['VocabTopic', { type: 'VocabTopic', id }, 'Word'],
+    }),
     getTelegramStatus: builder.query({
       query: () => '/api/telegram/status',
       providesTags: ['Telegram'],
@@ -370,7 +357,8 @@ export const apiSlice = createApi({
     /** Ism, daraja, maqsad, reja — faqat yuborilgan maydonlar o'zgaradi */
     updateProfile: builder.mutation({
       query: (body) => ({ url: '/api/auth/profile', method: 'PATCH', body }),
-      invalidatesTags: ['User'],
+      // Reja kunlik so'zlar sonini, daraja esa sahnani o'zgartiradi
+      invalidatesTags: ['User', 'Topic'],
     }),
     /** Boshqa qurilmalardagi sessiyalar yopiladi; javobda joriy qurilma uchun yangi token */
     changePassword: builder.mutation({
@@ -438,17 +426,13 @@ export const {
   useDeleteWordMutation,
   useRefreshWordMutation,
   useCheckReviewMutation,
+  useSaveReviewTranslationMutation,
   useRelearnWordMutation,
   useAnalyzeSentenceMutation,
   useGetReviewStatsQuery,
-  useTranslateSpeakingMutation,
-  useEvaluateSpeakingMutation,
   useGetListeningSessionQuery,
   useCheckDictationMutation,
   useCompleteListeningMutation,
-  useGetCurrentChallengeQuery,
-  useGetChallengeHistoryQuery,
-  useCompleteChallengeMutation,
   useLoginMutation,
   useRegisterMutation,
   useForgotPasswordMutation,
@@ -458,6 +442,9 @@ export const {
   useSubscribePushMutation,
   useUnsubscribePushMutation,
   useSendTestPushMutation,
+  useGetVocabTopicsQuery,
+  useGetVocabTopicQuery,
+  useAddVocabTopicWordsMutation,
   useGetTelegramStatusQuery,
   useCreateTelegramLinkMutation,
   useUnlinkTelegramMutation,

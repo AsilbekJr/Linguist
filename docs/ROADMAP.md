@@ -81,19 +81,28 @@ Shuning uchun ustuvorlik: **kontent va asosiy kunlik tsikl**, yangi bo'limlar em
 - [ ] @BotFather'da bot yaratish, env'ga yozish, `npm run telegram:webhook -- https://<backend>` (foydalanuvchi)
 - [ ] Keyin: Telegram Mini App (ilova Telegram ichida)
 
-### 4. Mavzular kutubxonasi (Vocabulary in Use asosida)
+### 4. Mavzular kutubxonasi (Vocabulary in Use asosida) — bajarildi (A1–C1)
 - Manba: 4 ta kitob (Elementary → A1–A2, Pre-int/Intermediate → B1, Upper-int → B2, Advanced → C1). PDF'lar `server/content/vocab-topics/` da, lekin `.gitignore` (`*.pdf`) tufayli repo'ga kirmaydi
 - **Mualliflik huquqi:** kitobdan faqat mavzu nomlari va so'zlar olinadi. Ta'rif, misol, matn va mashqlar ko'chirilmaydi — tarjima, ta'rif va misollarni o'zimiz yozamiz (validator bilan)
-- [ ] `server/content/vocab-topics/` — daraja → mavzu → so'zlar
-- [ ] Lug'at sahifasida "Mavzular" bo'limi (yangi tab emas): "+ Lug'atga" va "Hammasini qo'shish"; qo'shilgan so'z odatdagi takrorlashga tushadi
-- [ ] Avval Elementary'dan 10–15 mavzu, UI sinovdan keyin qolganlari partiyalab
+- [x] `server/content/vocab-topics/` — daraja → mavzu → so'zlar; validator (`index.js`) va testlar
+- [x] Lug'at sahifasida "Mavzular" bo'limi (yangi tab emas): "+ Lug'atga" va "Hammasini qo'shish"; qo'shilgan so'z odatdagi takrorlashga tushadi
+- [x] Elementary 1–15-unit'lar: 15 mavzu, 236 so'z (so'zlar kitob indeksidan tanlangan, tarjima va misollar o'zimizniki)
+- [x] Elementary 16–60-unit'lar (`elementary-2/3/4.js`): **Elementary to'liq — 60 mavzu, 844 so'z**, mavzular orasida takroriy so'z yo'q
+- [ ] Pre-intermediate/Intermediate — PDF shikastlangan (`pdftotext`: xref xatosi), matn chiqmadi; boshqa nusxa kerak
+- [x] Upper-intermediate (B2) — `upper-intermediate-1…6.js`: **92 mavzu, 1413 so'z** (5–101-unit'lar). Kiritilmagan: 1–4 (o'rganish ko'nikmalari), 80 (talaffuz), 82 (omofonlar), 83/85 (grammatik izohlar), 98 (maqollar — o'zbekcha muqobili bilan alohida qilish kerak)
+- [x] Validator butun kutubxona bo'yicha: bir so'z faqat bitta mavzuda (darajalar orasida ham)
+- [x] UI: daraja almashtirgich (onboarding darajasiga qarab default)
+- [x] Advanced (C1) — `advanced-1…5.js`: **98 mavzu, 1556 so'z** (1–100-unit'lar; 85 va 91 kiritilmagan — qisqartmalar B2 da bor, ko'p ma'nolilik indeksi takrorlanadi)
+- **Jami kutubxona: 250 mavzu, 3813 so'z**, butun kutubxonada takroriy so'z yo'q
+- [ ] Barcha tarjimalarni ona tili egasi ko'rib chiqishi (ayniqsa B2/C1 iboralari va so'zlashuv so'zlari)
+- [ ] Yangi mavzular o'zbekcha tarjimalarini ona tili egasi ko'rib chiqishi
 
 ### 5. Soddalashtirish
-- [ ] "Gapirish" (Speaking Lab) → kunlik sahnadagi **shadowing** qadami (dialog qatorini eshitib takrorlash)
-- [ ] "100 kun" → sahnaning ixtiyoriy yakuniy qadami "dialogni yoddan ayt"; audio bazaga yozilmaydi
-- [ ] XP/"Lv" o'rniga asosiy ko'rsatkich: **bilgan so'zlar soni** va CEFR progressi ("B1 ga 42%")
-- [ ] `planType` — yo kunlik so'z sonini belgilasin, yo olib tashlansin
-- [ ] Tariflar: 3 → 2 (Bepul, Pro)
+- [x] "Gapirish" (Speaking Lab) → kunlik sahnadagi **shadowing** qadami (dialog qatorini eshitib takrorlash). Solishtirish brauzerda (`speechMatch.js`), AI limiti yemaydi; `/api/speaking` olib tashlandi
+- [x] "100 kun" → sahnaning ixtiyoriy yakuniy qadami "dialogni yoddan ayt" (rol tanlanadi); audio hech qayerga yuborilmaydi; `/api/challenge` va `challenges.json` olib tashlandi (`Challenge` modeli faqat eski ma'lumotni hisob bilan o'chirish uchun qoldi)
+- [x] XP/"Lv" o'rniga asosiy ko'rsatkich: **bilgan so'zlar soni** (`knownWords`) va kursdagi CEFR yo'li (`course`: "B1 · 12/36 sahna"). XP ichkarida qoladi, UI'da ko'rsatilmaydi
+- [x] `planType` kunlik yangi so'zlar sonini belgilaydi: Yengil 5 · Barqaror 7 · Jadal 10 (eski `standard` — darajaga qarab)
+- [x] Tariflar: 3 → 2 (Bepul, Pro). Premium sotilmaydi; eski Premium obunachilar limiti saqlanadi
 
 ### 6. Xatolar daftari
 - [ ] AI qaytargan `errorType` va tuzatishlarni saqlash
@@ -114,6 +123,7 @@ Shuning uchun ustuvorlik: **kontent va asosiy kunlik tsikl**, yangi bo'limlar em
 
 - **0-faza — mantiq:** streak tartibga bog'liq emas; kunlik qadamlarni faqat server belgilaydi (`sync-quest` olib tashlandi); mashq rejimi; SRS sanalari foydalanuvchi zonasida
 - **1-faza — takrorlash UX:** ovoz → avval maydonga; tarmoq xatosi alohida; Enter; keyingi sana; AI limiti takrorlashni to'xtatmaydi
+- **Roadmap 4 (1-partiya) — Mavzular kutubxonasi:** `content/vocab-topics/elementary.js`, `routes/vocabTopicRoutes.js` (`/api/vocab-topics`), `components/TopicLibrary.jsx`, Lug'at → "Mavzular" (`/vocabulary?view=topics`)
 - **Roadmap 3 — Telegram:** `services/telegramService.js`, `services/telegramBot.js`, `routes/telegramRoutes.js`, `scripts/telegram-webhook.js`, lokal polling (`TELEGRAM_POLLING=true`), Sozlamalardagi ulash bloki
 - **Roadmap 2 — bosqichli takrorlash:** `server/utils/reviewModes.js`, `ReviewRunner` uch rejimda (1–4 tugmalari, niqoblangan misol, harf maslahati); sahna so'zlari yakunlashda avtomatik qo'shiladi (`wordsAdded`)
 - **2–3-faza — dizayn:** binafsha OKLCH tokenlar, Motion, telefon tab-bari, barcha sahifalar, yangi logotip va PWA ikonkalari, Sozlamalar sahifasi, landing sahifa

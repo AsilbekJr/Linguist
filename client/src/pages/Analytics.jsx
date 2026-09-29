@@ -1,11 +1,10 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { useGetMeQuery, useGetWordsQuery, useGetChallengeHistoryQuery } from '../features/api/apiSlice';
+import { useGetMeQuery, useGetWordsQuery } from '../features/api/apiSlice';
 import {
   Flame, Star, BookOpen, Trophy, Award, BarChart3, CheckCircle2, Target, Lock, PenLine, Library, CalendarCheck, ChevronRight, Settings as SettingsIcon,
 } from 'lucide-react';
-import { computeLevelFromXp, xpProgressInLevel } from '../utils/learningUtils';
 import { isLearned } from '../utils/wordStatus';
 import {
   AnimatedNumber, IconTile, PageHeader, PageSkeleton, ProgressRing, Stagger, StaggerItem, StatTile,
@@ -24,19 +23,16 @@ const BADGES = [
 
 const LEVEL_LABELS = { beginner: "Boshlang'ich", intermediate: "O'rta", advanced: 'Yuqori' };
 const GOAL_LABELS = { speaking: "So'zlashuv", vocabulary: "So'z boyligi", general: 'Umumiy' };
-const PLAN_LABELS = { sprint: 'Sprint (1 hafta)', foundation: 'Poydevor (1 oy)', fluency: 'Erkinlik (100 kun)', standard: 'Standart' };
+const PLAN_LABELS = { sprint: "Yengil (5 so'z/kun)", foundation: "Barqaror (7 so'z/kun)", fluency: "Jadal (10 so'z/kun)", standard: 'Standart' };
 
 const Analytics = () => {
   const { data: user, isLoading: loadingUser } = useGetMeQuery();
   const { data: words = [], isLoading: loadingWords } = useGetWordsQuery();
-  const { data: challenges = [], isLoading: loadingChallenges } = useGetChallengeHistoryQuery();
 
-  if (loadingUser || loadingWords || loadingChallenges) return <PageSkeleton cards={6} />;
+  if (loadingUser || loadingWords) return <PageSkeleton cards={6} />;
 
   const learned = words.filter(isLearned).length;
-  const completedChallenges = challenges.filter((c) => c.status === 'completed').length;
-  const level = user?.level ?? computeLevelFromXp(user?.xp);
-  const xpProgress = user?.xpProgress ?? xpProgressInLevel(user?.xp);
+  const course = user?.course;
   const earned = new Set(user?.badges || []);
   const learnedPct = words.length ? Math.round((learned / words.length) * 100) : 0;
   const cefr = user?.onboarding?.placedCefr;
@@ -59,18 +55,27 @@ const Analytics = () => {
       >
         <div className="pointer-events-none absolute -right-10 -top-10 size-48 rounded-full bg-white/10 blur-2xl" />
         <div className="relative flex flex-col items-center gap-6 sm:flex-row sm:items-center">
-          <ProgressRing value={xpProgress.current} max={xpProgress.needed} size={132} stroke={11} gradientId="level-ring">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-white/70">Daraja</span>
-            <span className="text-4xl font-extrabold leading-none tabular">{level}</span>
+          <ProgressRing value={course?.done || 0} max={course?.total || 1} size={132} stroke={11} gradientId="level-ring">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-white/70">Kurs</span>
+            <span className="text-4xl font-extrabold leading-none">{course?.cefr || '—'}</span>
           </ProgressRing>
           <div className="text-center sm:text-left">
-            <p className="text-sm font-medium text-white/75">Jami tajriba</p>
+            <p className="text-sm font-medium text-white/75">Bilgan so&apos;zlaringiz</p>
             <p className="text-4xl font-extrabold tabular">
-              <AnimatedNumber value={user?.xp || 0} /> <span className="text-xl text-white/70">XP</span>
+              <AnimatedNumber value={user?.knownWords ?? learned} />
             </p>
-            <p className="mt-2 text-sm text-white/80">
-              Keyingi darajagacha <span className="font-bold text-white">{xpProgress.xpToNext ?? xpProgress.needed - xpProgress.current} XP</span>
-            </p>
+            {course && (
+              <p className="mt-2 text-sm text-white/80">
+                {course.finished ? (
+                  <>Kurs tugatildi — {course.totalDays} ta sahnaning hammasi o&apos;tildi</>
+                ) : (
+                  <>
+                    {course.cefr} darajasi: <span className="font-bold text-white tabular">{course.done}/{course.total}</span> sahna
+                    {course.nextCefr && <> · keyingisi {course.nextCefr}</>}
+                  </>
+                )}
+              </p>
+            )}
           </div>
         </div>
       </motion.section>
@@ -81,7 +86,7 @@ const Analytics = () => {
         <StaggerItem><StatTile icon={Trophy} tone="xp" value={user?.longestStreak || 0} label="eng uzun streak" /></StaggerItem>
         <StaggerItem><StatTile icon={BookOpen} tone="primary" value={words.length} label="lug'atdagi so'zlar" /></StaggerItem>
         <StaggerItem><StatTile icon={CheckCircle2} tone="success" value={learned} label={`yodlangan · ${learnedPct}%`} /></StaggerItem>
-        <StaggerItem><StatTile icon={Target} tone="pink" value={completedChallenges} label="yoddan aytilgan matnlar" /></StaggerItem>
+        <StaggerItem><StatTile icon={Target} tone="pink" value={course?.daysCompleted ?? 0} label="o'tilgan sahnalar" /></StaggerItem>
         <StaggerItem><StatTile icon={Star} tone="info" value={cefr || '—'} label="aniqlangan daraja (CEFR)" /></StaggerItem>
       </Stagger>
 

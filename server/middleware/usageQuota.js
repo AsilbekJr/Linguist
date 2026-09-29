@@ -12,8 +12,8 @@ const { userDayKey } = require('../utils/dayKey');
  * foydalanuvchi limitini yo'qotardi. Endi xatoda `refund()` qaytaradi.
  */
 
-// premium "cheksiz", lekin xarajat portlab ketmasligi uchun aqlli shift:
-// 2000/kun = har 43 soniyada bitta chaqiruv, 24 soat davomida.
+// Sotuvda ikki tarif: free va pro. `premium` — eski obunachilar uchun
+// (endi sotilmaydi), ularning limiti kamaytirilmaydi.
 const PLAN_LIMITS = {
   free: 15,
   pro: 200,

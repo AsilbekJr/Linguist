@@ -1,13 +1,13 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion, useAnimationControls } from 'motion/react';
 import {
   Mic, MicOff, Send, Loader2, CheckCircle2, XCircle, ArrowRight, ScanText, Sparkles,
-  AlertTriangle, WifiOff, CalendarClock, Volume2, RotateCcw, Eye, Brain, PenLine,
+  AlertTriangle, WifiOff, CalendarClock, Volume2, RotateCcw, Eye, Brain, PenLine, Languages,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Kbd, ProgressBar } from '@/components/ui/primitives';
 import { cn } from '@/lib/utils';
-import { useCheckReviewMutation, useAnalyzeSentenceMutation } from '../../features/api/apiSlice';
+import { useCheckReviewMutation, useAnalyzeSentenceMutation, useSaveReviewTranslationMutation } from '../../features/api/apiSlice';
 import { useSpeechInput } from '../../hooks/useSpeechInput';
 import { playTTSAudio } from '../../utils/audio';
 import { burstAt } from '../../utils/celebration';
@@ -20,8 +20,11 @@ const EASE = [0.16, 1, 0.3, 1];
 /**
  * Rejimlar — server so'z bosqichiga qarab tanlaydi (server/utils/reviewModes.js):
  *   recognize (0-1) → recall (2-3) → sentence (4+)
+ * Tarjimasi yo'q so'z (AI javob bermagan) — avval `translate`: foydalanuvchi
+ * o'zbekchasini yozadi, keyin so'z odatiy tartibda davom etadi.
  */
 const MODE_META = {
+  translate: { label: 'Tanishish', hint: "Bu so'zning o'zbekcha tarjimasini yozing", icon: Languages },
   recognize: { label: 'Tanib olish', hint: "To'g'ri tarjimani tanlang", icon: Eye },
   recall: { label: 'Eslash', hint: "Inglizcha so'zni yozing", icon: Brain },
   sentence: { label: 'Gap tuzish', hint: "Shu so'z bilan inglizcha gap tuzing", icon: PenLine },
@@ -144,21 +147,23 @@ const WordCard = ({ item, reveal }) => {
 
 /** Tanib olish: 4 ta variant, 1-4 tugmalari bilan ham tanlanadi */
 const RecognizeTask = ({ item, disabled, result, chosen, onChoose }) => {
+  // Bo'sh variant hech qachon ko'rsatilmaydi — uni tanlash so'rovni buzardi
+  const options = useMemo(() => (item.options || []).filter((o) => String(o || '').trim()), [item.options]);
   useEffect(() => {
     if (result || disabled) return undefined;
     const onKey = (e) => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
       const n = Number(e.key);
-      if (n >= 1 && n <= item.options.length) onChoose(item.options[n - 1]);
+      if (n >= 1 && n <= options.length) onChoose(options[n - 1]);
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [item.options, result, disabled, onChoose]);
+  }, [options, result, disabled, onChoose]);
 
   const correct = result?.correctAnswer;
   return (
     <div className="grid gap-2 sm:grid-cols-2" role="group" aria-label="Variantlar">
-      {item.options.map((opt, i) => {
+      {options.map((opt, i) => {
         const isCorrect = result && opt === correct;
         const isWrongPick = result && opt === chosen && !result.isCorrect;
         return (
@@ -218,6 +223,9 @@ const ReviewRunner = ({ words, onChecked, onFinished }) => {
   const [analysisError, setAnalysisError] = useState(null);
 
   const [checkReview, { isLoading: isChecking }] = useCheckReviewMutation();
+  const [saveTranslation, { isLoading: isSavingTranslation }] = useSaveReviewTranslationMutation();
+  // Tarjima yozilgan so'zlar yangi topshiriq bilan almashtiriladi (id → item)
+  const [replaced, setReplaced] = useState({});
   const [analyzeSentence, { isLoading: isAnalyzing }] = useAnalyzeSentenceMutation();
 
   const inputRef = useRef(null);
@@ -225,7 +233,7 @@ const ReviewRunner = ({ words, onChecked, onFinished }) => {
   const resultIconRef = useRef(null);
   const shake = useAnimationControls();
 
-  const item = words[index];
+  const item = words[index] && (replaced[words[index]._id] || words[index]);
   const mode = item?.mode || 'sentence';
   const meta = MODE_META[mode] || MODE_META.sentence;
   const isLast = index >= words.length - 1;
@@ -260,6 +268,19 @@ const ReviewRunner = ({ words, onChecked, onFinished }) => {
   const submitRecall = () => {
     const value = typed.trim();
     if (value) send({ mode: 'recall', answer: value });
+  };
+
+  const submitTranslation = async () => {
+    const value = typed.trim();
+    if (!value || isSavingTranslation) return;
+    setSendError(null);
+    try {
+      const res = await saveTranslation({ id: item._id, translation: value }).unwrap();
+      setTyped('');
+      setReplaced((r) => ({ ...r, [item._id]: res.item }));
+    } catch (err) {
+      setSendError(err?.data?.message || "Tarjimani saqlab bo'lmadi. Internetni tekshirib qayta urining.");
+    }
   };
 
   const choose = (opt) => {
@@ -376,6 +397,43 @@ const ReviewRunner = ({ words, onChecked, onFinished }) => {
       )}
 
       <AnimatePresence mode="wait" initial={false}>
+        {!result && mode === 'translate' && (
+          <motion.form
+            key="translate"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            onSubmit={(e) => {
+              e.preventDefault();
+              submitTranslation();
+            }}
+            className="space-y-2"
+          >
+            <label htmlFor="review-translate" className="text-sm font-bold">{meta.hint}</label>
+            <p className="text-xs text-muted-foreground">
+              Bu so&apos;zning tarjimasi topilmadi. Tinglang, ta&apos;rif va misolga qarang — o&apos;zingiz tushungan ma&apos;noni yozing.
+              Keyin so&apos;z odatdagidek variantlardan tanlash bilan davom etadi.
+            </p>
+            <div className="flex items-center gap-1.5 rounded-2xl border border-input bg-card p-1.5 shadow-xs transition-[border-color,box-shadow] focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/15">
+              <input
+                id="review-translate"
+                ref={inputRef}
+                value={typed}
+                onChange={(e) => setTyped(e.target.value)}
+                placeholder="o'zbekcha tarjima"
+                disabled={isSavingTranslation}
+                autoComplete="off"
+                maxLength={120}
+                enterKeyHint="send"
+                className="h-11 min-w-0 flex-1 bg-transparent px-3 text-lg outline-none placeholder:text-muted-foreground/70"
+              />
+              <Button type="submit" size="icon" className="shrink-0 rounded-xl" disabled={isSavingTranslation || !typed.trim()} aria-label="Saqlash">
+                {isSavingTranslation ? <Loader2 className="animate-spin" /> : <Send />}
+              </Button>
+            </div>
+          </motion.form>
+        )}
+
         {!result && mode === 'recall' && (
           <motion.form
             key="recall"

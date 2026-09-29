@@ -3,18 +3,17 @@ import { useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
 import { motion } from 'motion/react';
 import {
-  Flame, Snowflake, Star, BookOpen, BookHeart, Repeat2, Check, ArrowRight, Quote, Sparkles,
+  Flame, Snowflake, GraduationCap, BookOpen, BookHeart, Repeat2, Check, ArrowRight, Quote, Sparkles,
 } from 'lucide-react';
 import { useGetWordsQuery, useGetReviewDueQuery, useGetMeQuery } from '../features/api/apiSlice';
 import quotesData from '../data/quotes.json';
 import TodayHub from '../components/TodayHub/TodayHub';
 import { PRACTICE_NAV } from '../components/Layout/nav';
 import {
-  AnimatedNumber, IconTile, ProgressBar, ProgressRing, Skeleton, Stagger, StaggerItem, StatTile,
+  IconTile, ProgressBar, ProgressRing, Skeleton, Stagger, StaggerItem, StatTile,
 } from '@/components/ui/primitives';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { xpProgressInLevel } from '../utils/learningUtils';
 
 const WEEKDAYS = ['yakshanba', 'dushanba', 'seshanba', 'chorshanba', 'payshanba', 'juma', 'shanba'];
 const MONTHS = ['yanvar', 'fevral', 'mart', 'aprel', 'may', 'iyun', 'iyul', 'avgust', 'sentabr', 'oktabr', 'noyabr', 'dekabr'];
@@ -33,7 +32,8 @@ const greeting = (h = new Date().getHours()) => {
 };
 
 /** Foydalanuvchi maqsadiga ko'ra tavsiya qilinadigan mashq */
-const RECOMMENDED_BY_GOAL = { speaking: '/speaking', vocabulary: '/listening', general: '/analysis' };
+// Gapirish endi kunlik sahnaning o'zida — qo'shimcha mashqlardan eng yaqini tinglash
+const RECOMMENDED_BY_GOAL = { speaking: '/listening', vocabulary: '/listening', general: '/analysis' };
 
 const PlanStep = ({ done, icon, title, hint, to, onClick }) => {
   const Comp = to ? Link : 'button';
@@ -103,8 +103,8 @@ const Dashboard = () => {
   const doneCount = Number(topicDone) + Number(reviewDone);
   const allDone = doneCount === 2;
   const streak = user?.currentStreak || 0;
-  const xp = user?.xpProgress ?? xpProgressInLevel(user?.xp || 0);
-  const learnedCount = words.filter((w) => w.learned ?? w.mastered).length;
+  const learnedCount = user?.knownWords ?? words.filter((w) => w.learned ?? w.mastered).length;
+  const course = user?.course;
   const recommended = RECOMMENDED_BY_GOAL[user?.onboarding?.goal];
 
   const scrollToReview = () =>
@@ -195,21 +195,29 @@ const Dashboard = () => {
         </StaggerItem>
         <StaggerItem>
           <div className="surface flex items-center gap-3 p-4">
-            <IconTile icon={Star} tone="xp" />
+            <IconTile icon={GraduationCap} tone="xp" />
             <div className="min-w-0 flex-1">
               <div className="flex items-baseline justify-between gap-2">
-                <span className="text-xl font-extrabold leading-none tabular">
-                  <AnimatedNumber value={user?.xp || 0} />
-                </span>
-                <span className="text-xs font-bold text-muted-foreground">Lv.{user?.level || 1}</span>
+                <span className="text-xl font-extrabold leading-none">{course?.cefr || '—'}</span>
+                {course && (
+                  <span className="text-xs font-bold tabular text-muted-foreground">
+                    {course.done}/{course.total}
+                  </span>
+                )}
               </div>
-              <ProgressBar value={xp.current} max={xp.needed} tone="xp" className="mt-2 h-1.5" label="Daraja jarayoni" />
+              <ProgressBar
+                value={course?.done || 0}
+                max={course?.total || 1}
+                tone="xp"
+                className="mt-2 h-1.5"
+                label={`${course?.cefr || ''} darajasidagi sahnalar`}
+              />
             </div>
           </div>
         </StaggerItem>
         <StaggerItem>
           <Link to="/vocabulary" className="block rounded-[calc(var(--radius)+4px)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-            <StatTile icon={BookOpen} tone="primary" value={words.length} label={`so'z · ${learnedCount} yodlangan`} className="surface-interactive" />
+            <StatTile icon={BookOpen} tone="primary" value={learnedCount} label={`bilgan so'z · ${words.length} lug'atda`} className="surface-interactive" />
           </Link>
         </StaggerItem>
       </Stagger>

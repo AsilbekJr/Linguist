@@ -36,9 +36,9 @@ const GOALS = [
   { id: 'general', title: 'Umumiy', icon: Compass },
 ];
 const PLANS = [
-  { id: 'sprint', title: 'Sprint', tag: '~15 daq', icon: Timer },
-  { id: 'foundation', title: 'Poydevor', tag: '~20 daq', icon: CalendarDays },
-  { id: 'fluency', title: 'Erkinlik', tag: '~30 daq', icon: Trophy },
+  { id: 'sprint', title: 'Yengil', tag: "5 so'z", icon: Timer },
+  { id: 'foundation', title: 'Barqaror', tag: "7 so'z", icon: CalendarDays },
+  { id: 'fluency', title: 'Jadal', tag: "10 so'z", icon: Trophy },
 ];
 const THEMES = [
   { id: 'light', title: "Yorug'", icon: Sun },
@@ -159,7 +159,7 @@ const LearningSection = ({ user }) => {
       <div className="space-y-5">
         <OptionGroup label="Daraja" options={LEVELS} value={ob.level} disabled={isLoading} onChange={(v) => save({ level: v }, 'Daraja')} />
         <OptionGroup label="Maqsad" options={GOALS} value={ob.goal} disabled={isLoading} onChange={(v) => save({ goal: v }, 'Maqsad')} />
-        <OptionGroup label="Kunlik vaqt" options={PLANS} value={ob.planType} disabled={isLoading} onChange={(v) => save({ planType: v }, 'Reja')} />
+        <OptionGroup label="Kunlik yangi so'zlar" options={PLANS} value={ob.planType} disabled={isLoading} onChange={(v) => save({ planType: v }, 'Reja')} />
       </div>
     </Section>
   );

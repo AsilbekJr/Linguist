@@ -11,7 +11,8 @@ const { validate, topicQuizSubmitSchema, topicFinishSchema } = require('../middl
 const { topicsCache } = require('../utils/cache');
 const { getSavedWordList, invalidateUserWords } = require('../utils/userWordsCache');
 const { userDayKey } = require('../utils/dayKey');
-const { enrichUserProfile, completeDailyStep, dailyStepMessage } = require('../utils/gamification');
+const { completeDailyStep, dailyStepMessage } = require('../utils/gamification');
+const { buildUserProfile } = require('../utils/userProfile');
 const { initialState } = require('../utils/srs');
 const {
   getDailyWordTarget,
@@ -64,7 +65,7 @@ const resolveDailyContext = async (user) => {
 
   const topicsList = loadTopicsData();
   const learnerLevel = user.onboarding?.level || 'beginner';
-  const wordTarget = getDailyWordTarget(learnerLevel);
+  const wordTarget = getDailyWordTarget(user.onboarding);
   const todayKey = userDayKey(user);
 
   const latest = progress.history.length ? progress.history[progress.history.length - 1] : null;
@@ -366,9 +367,7 @@ router.post('/finish', protect, validate(topicFinishSchema), async (req, res) =>
     await req.user.save();
     invalidateUserWords(req.user._id);
 
-    const profile = enrichUserProfile(req.user, {
-      totalWords: await Word.countDocuments({ user: req.user._id }),
-    });
+    const profile = await buildUserProfile(req.user);
 
     res.json({
       message: dailyStepMessage(step) || 'Kunlik sahna bajarildi!',

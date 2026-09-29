@@ -1,5 +1,5 @@
 import {
-  Home, BookOpen, BookHeart, Headphones, ScanText, AudioLines, Flame, BarChart3, CreditCard, Settings,
+  Home, BookOpen, BookHeart, Headphones, ScanText, BarChart3, CreditCard, Settings,
 } from 'lucide-react';
 
 /**
@@ -15,8 +15,6 @@ export const PRIMARY_NAV = [
 export const PRACTICE_NAV = [
   { to: '/listening', label: 'Tinglash', hint: 'Dialogni eshitib yozish', icon: Headphones, tone: 'teal' },
   { to: '/analysis', label: 'Gap tahlili', hint: "Ega, kesim, so'z turkumlari", icon: ScanText, tone: 'info' },
-  { to: '/speaking', label: 'Gapirish', hint: "O'zbekchadan inglizchaga", icon: AudioLines, tone: 'pink' },
-  { to: '/challenge', label: 'Yoddan aytish', hint: 'Har kuni bitta matn', icon: Flame, tone: 'streak' },
 ];
 
 export const ACCOUNT_NAV = [

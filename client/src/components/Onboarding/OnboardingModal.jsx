@@ -26,9 +26,9 @@ const GOALS = [
 ];
 
 const PLANS = [
-  { id: 'sprint', title: 'Sprint', tag: '1 hafta', icon: Timer, tone: 'streak', text: '~15 daqiqa kuniga — odat shakllantirish.' },
-  { id: 'foundation', title: 'Poydevor', tag: '1 oy', icon: CalendarDays, tone: 'info', text: "~20 daqiqa kuniga — barqaror o'sish." },
-  { id: 'fluency', title: 'Erkinlik', tag: '100 kun', icon: Trophy, tone: 'xp', text: '~30 daqiqa kuniga — kuchli natija.' },
+  { id: 'sprint', title: 'Yengil', tag: "5 so'z", icon: Timer, tone: 'streak', text: "Kuniga 5 ta yangi so'z, ~10 daqiqa — odat shakllantirish." },
+  { id: 'foundation', title: 'Barqaror', tag: "7 so'z", icon: CalendarDays, tone: 'info', text: "Kuniga 7 ta yangi so'z, ~15 daqiqa — barqaror o'sish." },
+  { id: 'fluency', title: 'Jadal', tag: "10 so'z", icon: Trophy, tone: 'xp', text: "Kuniga 10 ta yangi so'z, ~25 daqiqa — kuchli natija." },
 ];
 
 const STEP_TITLES = ['Daraja', 'Maqsad', 'Reja'];

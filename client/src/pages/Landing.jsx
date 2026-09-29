@@ -112,7 +112,7 @@ const PhoneMock = () => (
       className="glass absolute -left-24 bottom-14 hidden rounded-2xl border border-border p-3 shadow-xl sm:block"
     >
       <div className="flex items-center gap-2 text-sm font-bold">
-        <Star className="size-4 fill-current text-xp" /> +15 XP
+        <Star className="size-4 fill-current text-xp" /> +5 so&apos;z
       </div>
       <p className="mt-0.5 text-[11px] text-muted-foreground">Kunlik sahna bajarildi</p>
     </motion.div>
@@ -130,7 +130,7 @@ const FEATURES = [
   { icon: Sparkles, tone: 'pink', title: 'AI izohlar', text: "Gapingizdagi xatoni o'zbek tilida tushuntiradi va to'g'ri variantni ko'rsatadi." },
   { icon: Headphones, tone: 'teal', title: 'Tinglab yozish', text: "Dialogni eshitib yozasiz — qaysi so'z tushib qolgani rangli ko'rsatiladi." },
   { icon: ScanText, tone: 'info', title: 'Gap tahlili', text: "Har so'zning turkumi va gapdagi vazifasi: ega, kesim, to'ldiruvchi…" },
-  { icon: Mic, tone: 'streak', title: 'Gapirish mashqi', text: "O'zbekcha fikrni ayting — ikki xil inglizcha variant va aytib ko'rish." },
+  { icon: Mic, tone: 'streak', title: 'Gapirish mashqi', text: "Kun dialogini eshitib takrorlang, keyin rol tanlab yoddan ayting — ovozingiz hech qayerga yuborilmaydi." },
   { icon: Snowflake, tone: 'info', title: 'Streak muzlatish', text: "Bir kun o'tkazib yuborsangiz, streak saqlanadi. Har oy 2 ta beriladi." },
 ];
 
