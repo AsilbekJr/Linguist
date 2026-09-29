@@ -109,7 +109,7 @@ export const apiSlice = createApi({
   refetchOnFocus: false,
   refetchOnReconnect: true,
   baseQuery: baseQueryWithReauth,
-  tagTypes: ['Word', 'Challenge', 'Topic', 'User', 'Billing', 'Listening', 'Notifications', 'Push'],
+  tagTypes: ['Word', 'Challenge', 'Topic', 'User', 'Billing', 'Listening', 'Notifications', 'Push', 'Telegram'],
   endpoints: (builder) => ({
     getWords: builder.query({
       query: () => '/api/words',
@@ -146,10 +146,12 @@ export const apiSlice = createApi({
     }),
     /** Gap tekshiruvi — yozma yoki mikrofon transkripti */
     checkReview: builder.mutation({
-      query: ({ id, sentence, source }) => ({
+      // mode: 'recognize' | 'recall' | 'sentence' — qaysi biri kerakligini server
+      // `/review/due` javobida aytadi; boshqasi yuborilsa 409 MODE_MISMATCH
+      query: ({ id, mode = 'sentence', answer, sentence, source }) => ({
         url: `/api/review/${id}/check`,
         method: 'POST',
-        body: { sentence, source },
+        body: mode === 'sentence' ? { mode, sentence, source } : { mode, answer },
       }),
       invalidatesTags: ['Word', 'User'],
     }),
@@ -301,6 +303,17 @@ export const apiSlice = createApi({
     sendTestPush: builder.mutation({
       query: () => ({ url: '/api/push/test', method: 'POST' }),
     }),
+    getTelegramStatus: builder.query({
+      query: () => '/api/telegram/status',
+      providesTags: ['Telegram'],
+    }),
+    createTelegramLink: builder.mutation({
+      query: () => ({ url: '/api/telegram/link', method: 'POST' }),
+    }),
+    unlinkTelegram: builder.mutation({
+      query: () => ({ url: '/api/telegram/link', method: 'DELETE' }),
+      invalidatesTags: ['Telegram'],
+    }),
     getNotificationPrefs: builder.query({
       query: () => '/api/notifications/preferences',
       providesTags: ['Notifications'],
@@ -353,6 +366,18 @@ export const apiSlice = createApi({
         body: data,
       }),
       invalidatesTags: ['User'],
+    }),
+    /** Ism, daraja, maqsad, reja — faqat yuborilgan maydonlar o'zgaradi */
+    updateProfile: builder.mutation({
+      query: (body) => ({ url: '/api/auth/profile', method: 'PATCH', body }),
+      invalidatesTags: ['User'],
+    }),
+    /** Boshqa qurilmalardagi sessiyalar yopiladi; javobda joriy qurilma uchun yangi token */
+    changePassword: builder.mutation({
+      query: (body) => ({ url: '/api/auth/change-password', method: 'POST', body }),
+    }),
+    deleteAccount: builder.mutation({
+      query: (password) => ({ url: '/api/auth/account', method: 'DELETE', body: { password } }),
     }),
     /**
      * Navbat bo'sh kunda "takrorlash" qadamini yopish. Server navbatni o'zi
@@ -433,6 +458,9 @@ export const {
   useSubscribePushMutation,
   useUnsubscribePushMutation,
   useSendTestPushMutation,
+  useGetTelegramStatusQuery,
+  useCreateTelegramLinkMutation,
+  useUnlinkTelegramMutation,
   useGetNotificationPrefsQuery,
   useUpdateNotificationPrefsMutation,
   useUnsubscribeMutation,
@@ -448,6 +476,9 @@ export const {
   useFinishTopicDayMutation,
   useOnboardUserMutation,
   useCompleteReviewDayMutation,
+  useUpdateProfileMutation,
+  useChangePasswordMutation,
+  useDeleteAccountMutation,
   useSetTimezoneMutation,
   useRefreshTokenMutation,
   useLogoutSessionMutation,

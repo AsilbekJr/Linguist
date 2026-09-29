@@ -7,6 +7,9 @@ const {
   authRegisterSchema,
   authLoginSchema,
   onboardSchema,
+  profileUpdateSchema,
+  changePasswordSchema,
+  deleteAccountSchema,
   timezoneSchema,
   forgotPasswordSchema,
   resetPasswordSchema,
@@ -23,6 +26,12 @@ const {
   findValidSession,
   revokeAllSessionsForUser,
 } = require('../services/authSessionService');
+const { clearRefreshCookie } = require('../utils/tokens');
+const PushSubscription = require('../models/PushSubscription');
+const QuizSession = require('../models/QuizSession');
+const PlacementSession = require('../models/PlacementSession');
+const Challenge = require('../models/Challenge');
+const Session = require('../models/Session');
 const PasswordResetToken = require('../models/PasswordResetToken');
 const TopicProgress = require('../models/TopicProgress');
 const { sendMail, passwordResetEmail } = require('../services/mailer');
@@ -158,6 +167,100 @@ router.post('/onboard', protect, validate(onboardSchema), async (req, res) => {
   } catch (error) {
     console.error('Onboarding error:', error);
     res.status(500).json({ message: 'Server error during onboarding' });
+  }
+});
+
+// ─── Profil va hisob ───────────────────────────────────────────────────────
+//
+// Ilgari onboarding "ma'lumotlarni keyinroq o'zgartirishingiz mumkin" deb
+// va'da qilardi, lekin bunday imkon umuman yo'q edi: ism, daraja va maqsadni
+// o'zgartirib bo'lmasdi, parolni faqat "unutdim" orqali almashtirish mumkin
+// edi, hisobni o'chirish esa yo'q edi.
+
+// @desc    Profilni tahrirlash (ism, daraja, maqsad, reja)
+// @route   PATCH /api/auth/profile
+router.patch('/profile', protect, validate(profileUpdateSchema), async (req, res) => {
+  try {
+    const { name, level, goal, planType } = req.validated.body;
+    if (name !== undefined) req.user.name = name;
+
+    // Daraja o'zgarsa kurs qaytadan BOSHLANMAYDI — faqat kunlik so'z maqsadi
+    // va AI izohlari murakkabligi o'zgaradi. Kursni qayta boshlash o'tilgan
+    // kunlarni yo'qotish bo'lardi.
+    if (level !== undefined) req.user.onboarding.level = level;
+    if (goal !== undefined) req.user.onboarding.goal = goal;
+    if (planType !== undefined) req.user.onboarding.planType = planType;
+
+    await req.user.save();
+    res.json(await formatUser(req.user));
+  } catch (error) {
+    console.error('Profile update error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @desc    Parolni o'zgartirish (joriy parol bilan)
+// @route   POST /api/auth/change-password
+router.post('/change-password', protect, validate(changePasswordSchema), async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.validated.body;
+    const user = await User.findById(req.user._id);
+    if (!user || !(await user.matchPassword(currentPassword))) {
+      return res.status(400).json({ message: "Joriy parol noto'g'ri.", code: 'WRONG_PASSWORD' });
+    }
+    if (currentPassword === newPassword) {
+      return res.status(400).json({ message: 'Yangi parol eskisidan farq qilishi kerak.', code: 'SAME_PASSWORD' });
+    }
+
+    user.password = newPassword;
+    await user.save();
+
+    // Boshqa qurilmalardagi sessiyalar yopiladi (hisobni kimdir egallagan
+    // bo'lsa, u chiqarib yuboriladi), joriy qurilma esa yangi sessiya oladi.
+    await revokeAllSessionsForUser(user._id);
+    await createSession(user._id, res);
+
+    res.json({ message: "Parol o'zgartirildi. Boshqa qurilmalardan chiqildi.", token: generateAccessToken(user._id) });
+  } catch (error) {
+    console.error('Change password error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @desc    Hisobni va unga tegishli barcha ma'lumotni o'chirish
+// @route   DELETE /api/auth/account
+router.delete('/account', protect, validate(deleteAccountSchema), async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    if (!user || !(await user.matchPassword(req.validated.body.password))) {
+      return res.status(400).json({ message: "Parol noto'g'ri.", code: 'WRONG_PASSWORD' });
+    }
+
+    // Faol pullik obuna bo'lsa, avval uni bekor qilish kerak — aks holda
+    // hisob yo'qoladi, Stripe esa har oy pul yechishda davom etadi.
+    const plan = user.getEffectivePlan?.() || 'free';
+    if (plan !== 'free' && user.subscription?.status === 'active') {
+      return res.status(409).json({
+        message: "Avval pullik obunani bekor qiling (Tariflar → Obunani boshqarish), keyin hisobni o'chiring.",
+        code: 'ACTIVE_SUBSCRIPTION',
+      });
+    }
+
+    const userId = user._id;
+    // To'lov hodisalari (BillingEvent) ataylab qoldiriladi: ular moliyaviy
+    // hisobot uchun kerak va shaxsiy ma'lumot saqlamaydi.
+    await Promise.all(
+      [Word, TopicProgress, Session, PasswordResetToken, PushSubscription, QuizSession, PlacementSession, Challenge].map(
+        (Model) => Model.deleteMany({ user: userId })
+      )
+    );
+    await User.deleteOne({ _id: userId });
+    clearRefreshCookie(res);
+
+    res.json({ message: "Hisob o'chirildi." });
+  } catch (error) {
+    console.error('Delete account error:', error);
+    res.status(500).json({ message: 'Server error' });
   }
 });
 

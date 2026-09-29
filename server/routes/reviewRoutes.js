@@ -16,6 +16,16 @@ const {
 } = require('../utils/gamification');
 const { checkSentenceLocally } = require('../utils/sentenceCheck');
 const { invalidateUserWords } = require('../utils/userWordsCache');
+const { buildDistractorPool } = require('../utils/topicHelpers');
+const {
+  MODES,
+  modeForStage,
+  checkRecall,
+  checkRecognize,
+  buildOptions,
+  presentDueWord,
+  revealWord,
+} = require('../utils/reviewModes');
 
 const DUE_LIMIT = 20;
 
@@ -124,8 +134,25 @@ const recordReview = async (userDoc, now) => {
   return dailyStepPayload(user, step);
 };
 
-// @desc    Bugun takrorlanishi kerak bo'lgan so'zlar
+/** Tanib olish variantlari uchun kurs so'zlari tarjimalari (bir marta, keshda) */
+let coursePoolCache = null;
+const getCoursePool = () => {
+  if (!coursePoolCache) {
+    try {
+      const topics = require('../data/topics.json');
+      coursePoolCache = buildDistractorPool(Array.isArray(topics) ? topics : topics.topics || []);
+    } catch {
+      coursePoolCache = [];
+    }
+  }
+  return coursePoolCache;
+};
+
+// @desc    Bugun takrorlanishi kerak bo'lgan so'zlar — har biri o'z rejimida
 // @route   GET /api/review/due
+//
+// Javobni oshkor qiladigan maydonlar rejimga qarab olib tashlanadi: tanib
+// olishda tarjima, eslashda so'zning o'zi ko'rinmaydi (utils/reviewModes.js).
 router.get('/due', protect, async (req, res) => {
   try {
     const dueWords = await Word.find(dueFilter(req.user._id, new Date()))
@@ -134,7 +161,23 @@ router.get('/due', protect, async (req, res) => {
       .limit(DUE_LIMIT)
       .lean();
 
-    res.json(dueWords);
+    const needsOptions = dueWords.some((w) => modeForStage(readStage(w)) === MODES.RECOGNIZE);
+    const ownPool = needsOptions
+      ? (await Word.find({ user: req.user._id }).select('translation').limit(300).lean())
+          .map((w) => w.translation)
+          .filter(Boolean)
+      : [];
+
+    res.json(
+      dueWords.map((w) => {
+        const mode = modeForStage(readStage(w));
+        const options =
+          mode === MODES.RECOGNIZE
+            ? buildOptions(w.translation, { ownPool, coursePool: getCoursePool() })
+            : undefined;
+        return presentDueWord(w, mode, options);
+      })
+    );
   } catch (error) {
     console.error('Fetch Due Words Error:', error);
     res.status(500).json({ message: 'Server Error' });
@@ -170,19 +213,56 @@ router.get('/stats', protect, async (req, res) => {
 });
 
 /**
- * @desc  So'z ishtirokidagi gapni tekshirish va bosqichni yangilash
- * @route POST /api/review/:id/check
- * @body  { sentence, source?: 'text' | 'voice' }
- *
- * Gap klaviaturadan yozilgan yoki mikrofon orqali aytilgan bo'lishi mumkin —
- * ikkalasi ham bu yerga MATN bo'lib keladi (nutqni brauzerning
- * `SpeechRecognition`i transkripsiya qiladi), shuning uchun tekshiruv bir xil.
- *
- * Diqqat: bu talaffuzni baholamaydi. Ovozli javobda ham faqat transkript
- * matni tekshiriladi.
+ * AI kvotasi faqat gap tuzish rejimida band qilinadi — tanib olish va eslash
+ * AI'siz tekshiriladi va limitga umuman tegmasligi kerak.
  */
-router.post('/:id/check', protect, validate(reviewCheckSchema), trackAiUsageSoft, async (req, res) => {
-  const { sentence, source } = req.validated.body;
+const NO_AI_CALL = { quotaExceeded: false, refund: async () => {}, commit: () => {} };
+const aiQuotaForSentenceOnly = (req, res, next) => {
+  if ((req.validated.body.mode || MODES.SENTENCE) !== MODES.SENTENCE) {
+    req.aiCall = NO_AI_CALL;
+    return next();
+  }
+  return trackAiUsageSoft(req, res, next);
+};
+
+/** Tanib olish va eslash — AI'siz, aniq javob bilan tekshiriladi */
+const gradeExact = (wordDoc, mode, answer) => {
+  if (mode === MODES.RECOGNIZE) {
+    const isCorrect = checkRecognize(wordDoc.translation, answer);
+    return {
+      isCorrect,
+      feedback: isCorrect ? "To'g'ri!" : `To'g'ri javob: "${wordDoc.translation}"`,
+      correctAnswer: wordDoc.translation,
+    };
+  }
+  const { isCorrect, nearMiss } = checkRecall(wordDoc.word, answer);
+  return {
+    isCorrect,
+    nearMiss,
+    feedback: nearMiss
+      ? `Deyarli to'g'ri — bitta harf xato. To'g'ri yozilishi: ${wordDoc.word}`
+      : isCorrect
+        ? "To'g'ri!"
+        : `To'g'ri javob: ${wordDoc.word}`,
+    correctAnswer: wordDoc.word,
+  };
+};
+
+/**
+ * @desc  Takrorlash javobini tekshirish va bosqichni yangilash
+ * @route POST /api/review/:id/check
+ * @body  { mode?: 'recognize'|'recall'|'sentence', answer?, sentence?, source? }
+ *
+ * Rejimni server so'z bosqichidan aniqlaydi. Mijoz boshqasini yuborsa (masalan
+ * gap tuzish o'rniga osonroq tanib olishni) — 409. Mashq rejimida (muddati
+ * kelmagan so'z) istalgan rejim qabul qilinadi, jadval baribir o'zgarmaydi.
+ *
+ * Gap rejimida matn klaviaturadan yoki mikrofon orqali kelishi mumkin — ikkalasi
+ * ham MATN. Bu talaffuzni baholamaydi.
+ */
+router.post('/:id/check', protect, validate(reviewCheckSchema), aiQuotaForSentenceOnly, async (req, res) => {
+  const { sentence, source, answer } = req.validated.body;
+  const mode = req.validated.body.mode || MODES.SENTENCE;
   const wordId = req.validated.params.id;
 
   try {
@@ -192,83 +272,92 @@ router.post('/:id/check', protect, validate(reviewCheckSchema), trackAiUsageSoft
       return res.status(404).json({ message: 'Word not found' });
     }
 
-    const learnerLevel = req.user.onboarding?.level || 'beginner';
-    // Kvota tugagan bo'lsa AI chaqirilmaydi — takrorlash to'xtamasligi kerak
-    const aiResult = req.aiCall.quotaExceeded
-      ? { status: 'unavailable', reason: 'QUOTA' }
-      : await checkSentence(wordDoc.word, sentence, learnerLevel);
-
-    // ── AI javob bermadi → mahalliy tekshiruvga tushamiz ──────────────────
-    //
-    // Ilgari bu yerda 503 qaytarilib, hech narsa o'zgarmasdi. Takrorlash
-    // ixtiyoriy qadam bo'lganda bu to'g'ri edi; endi esa u yagona yo'l, ya'ni
-    // Gemini uzilishi butun ilovani to'xtatib qo'yardi.
-    const usingFallback = aiResult.status === 'unavailable';
-    const result = usingFallback
-      ? checkSentenceLocally(wordDoc.word, sentence)
-      : aiResult;
-
-    if (usingFallback) {
+    const now = new Date();
+    const due = isDue(wordDoc, now);
+    const expectedMode = modeForStage(readStage(wordDoc));
+    if (due && mode !== expectedMode) {
       await req.aiCall.refund();
-    } else {
-      req.aiCall.commit();
+      return res.status(409).json({
+        message: 'Bu so\'z uchun boshqa topshiriq kutilmoqda. Sahifani yangilang.',
+        code: 'MODE_MISMATCH',
+        expectedMode,
+      });
     }
 
-    // So'z ishlatilmagan bo'lsa — gap grammatik to'g'ri bo'lsa ham mashq bajarilmadi
-    const isCorrect = Boolean(result.isCorrect && result.usedTargetWord);
+    // ── Baholash ─────────────────────────────────────────────────────────
+    let graded;
+    let method;
+    let aiReason;
+    if (mode === MODES.SENTENCE) {
+      const learnerLevel = req.user.onboarding?.level || 'beginner';
+      // Kvota tugagan bo'lsa AI chaqirilmaydi — takrorlash to'xtamasligi kerak
+      const aiResult = req.aiCall.quotaExceeded
+        ? { status: 'unavailable', reason: 'QUOTA' }
+        : await checkSentence(wordDoc.word, sentence, learnerLevel);
 
-    // Muddati kelmagan so'z — MASHQ: gap tekshiriladi, lekin jadval o'zgarmaydi.
-    //
-    // Ilgari bu tekshiruv yo'q edi. Xato javobdan keyin "Qayta urinish"
-    // bosilsa, so'z 1-bosqichga tushib, o'sha zahoti 2-bosqichga ko'tarilardi;
-    // bir so'zni 7 marta ketma-ket yuborib uni "yodlangan" qilish mumkin edi.
-    const now = new Date();
-    if (!isDue(wordDoc, now)) {
-      const stage = readStage(wordDoc);
-      return res.json({
-        status: 'ok',
-        practice: true,
-        isCorrect,
+      // AI javob bermadi → mahalliy tekshiruv. Takrorlash yagona yo'l bo'lgani
+      // uchun Gemini uzilishi butun ilovani to'xtatib qo'ymasligi kerak.
+      const usingFallback = aiResult.status === 'unavailable';
+      const result = usingFallback ? checkSentenceLocally(wordDoc.word, sentence) : aiResult;
+      if (usingFallback) await req.aiCall.refund();
+      else req.aiCall.commit();
+
+      method = usingFallback ? 'local' : 'ai';
+      aiReason = usingFallback ? aiResult.reason : undefined;
+      // So'z ishlatilmagan bo'lsa — gap grammatik to'g'ri bo'lsa ham mashq bajarilmadi
+      graded = {
+        isCorrect: Boolean(result.isCorrect && result.usedTargetWord),
         usedTargetWord: Boolean(result.usedTargetWord),
         feedback: result.feedback,
         corrected: result.corrected,
         errorType: result.errorType,
-        method: usingFallback ? 'local' : 'ai',
-        aiReason: usingFallback ? aiResult.reason : undefined,
-        source: source || 'text',
-        wordId: wordDoc._id,
-        stage,
-        maxStage: MAX_STAGE,
+      };
+    } else {
+      method = 'exact';
+      graded = gradeExact(wordDoc, mode, answer);
+    }
+
+    const common = {
+      status: 'ok',
+      mode,
+      method,
+      aiReason,
+      source: source || 'text',
+      wordId: wordDoc._id,
+      maxStage: MAX_STAGE,
+      reveal: revealWord(wordDoc),
+      ...graded,
+    };
+
+    // Muddati kelmagan so'z — MASHQ: tekshiriladi, lekin jadval o'zgarmaydi.
+    // Busiz xatodan keyingi "Qayta urinish" so'zni o'sha zahoti yuqori
+    // bosqichga ko'tarardi.
+    if (!due) {
+      return res.json({
+        ...common,
+        practice: true,
+        stage: readStage(wordDoc),
         nextReviewDate: wordDoc.nextReviewDate,
         learned: Boolean(wordDoc.learned),
       });
     }
 
-    const next = applySchedule(wordDoc, isCorrect, now, req.user.timezone);
+    const next = applySchedule(wordDoc, graded.isCorrect, now, req.user.timezone);
     await wordDoc.save();
     if (next.learned) invalidateUserWords(req.user._id);
 
     const dailyStep = await recordReview(req.user, now);
 
     res.json({
-      status: 'ok',
+      ...common,
       practice: false,
       dailyStep,
-      isCorrect,
-      usedTargetWord: Boolean(result.usedTargetWord),
-      feedback: result.feedback,
-      corrected: result.corrected,
-      errorType: result.errorType,
-      // UI grammatika tekshirilmaganini aytishi kerak
-      method: usingFallback ? 'local' : 'ai',
-      aiReason: usingFallback ? aiResult.reason : undefined,
-      source: source || 'text',
-      wordId: wordDoc._id,
       stage: next.stage,
-      maxStage: MAX_STAGE,
       intervalDays: next.intervalDays,
       nextReviewDate: next.nextReviewDate,
       learned: next.learned,
+      // Keyingi safar qaysi topshiriq bo'lishi — UI "keyingi safar gap tuzasiz" deya oladi
+      nextMode: next.learned ? null : modeForStage(next.stage),
     });
   } catch (error) {
     console.error('Review Check Error:', error);

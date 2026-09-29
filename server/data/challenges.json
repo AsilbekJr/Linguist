@@ -740,5 +740,1550 @@
       "replace"
     ],
     "instructionUz": "\"Shikoyat va yechim\" dialogini ovoz chiqarib o'qing. E'tibor bering: complain, refund, deliver, damaged, replace."
+  },
+  {
+    "dayNumber": 31,
+    "cefr": "B1",
+    "topic": "Renting a Flat",
+    "topicUz": "Kvartira ijarasi",
+    "text": "Hello! Have you seen the flat before? No, I only saw the photos online yesterday. Is it still available? Yes. I am the landlord, and the last tenant left in May. It is very spacious. Is it furnished? Yes, and we have just repaired the heating. Great. How much is the rent? Four hundred dollars a month, plus a deposit of one month. Can I stand on the balcony for a minute? The view is lovely. Of course. If you like it, we can sign the contract today.",
+    "lines": [
+      "Hello! Have you seen the flat before?",
+      "No, I only saw the photos online yesterday. Is it still available?",
+      "Yes. I am the landlord, and the last tenant left in May.",
+      "It is very spacious. Is it furnished?",
+      "Yes, and we have just repaired the heating.",
+      "Great. How much is the rent?",
+      "Four hundred dollars a month, plus a deposit of one month.",
+      "Can I stand on the balcony for a minute? The view is lovely.",
+      "Of course. If you like it, we can sign the contract today."
+    ],
+    "focusWords": [
+      "rent",
+      "landlord",
+      "tenant",
+      "deposit",
+      "contract"
+    ],
+    "instructionUz": "\"Kvartira ijarasi\" dialogini ovoz chiqarib o'qing. E'tibor bering: rent, landlord, tenant, deposit, contract."
+  },
+  {
+    "dayNumber": 32,
+    "cefr": "B1",
+    "topic": "A Family Recipe",
+    "topicUz": "Oilaviy retsept",
+    "text": "Grandma, can you teach me your plov recipe? Of course. First, we need the right ingredients: meat, rice, onions and carrots. What do we do first? First, heat the oil in a big pot. Then fry the onions until they are golden. And after that? After that, add the meat and the carrots and cook them slowly. When do we add the rice? Finally, put the rice on top and pour boiling water over it. Can I taste it now? Not yet! Good plov needs patience.",
+    "lines": [
+      "Grandma, can you teach me your plov recipe?",
+      "Of course. First, we need the right ingredients: meat, rice, onions and carrots.",
+      "What do we do first?",
+      "First, heat the oil in a big pot. Then fry the onions until they are golden.",
+      "And after that?",
+      "After that, add the meat and the carrots and cook them slowly.",
+      "When do we add the rice?",
+      "Finally, put the rice on top and pour boiling water over it.",
+      "Can I taste it now?",
+      "Not yet! Good plov needs patience."
+    ],
+    "focusWords": [
+      "recipe",
+      "ingredient",
+      "onion",
+      "carrot",
+      "rice"
+    ],
+    "instructionUz": "\"Oilaviy retsept\" dialogini ovoz chiqarib o'qing. E'tibor bering: recipe, ingredient, onion, carrot, rice."
+  },
+  {
+    "dayNumber": 33,
+    "cefr": "B1",
+    "topic": "Weddings and Celebrations",
+    "topicUz": "To'y va bayramlar",
+    "text": "How was your cousin's wedding on Saturday? Amazing! When we arrived, the musicians were playing and everyone was dancing. Was it crowded? Very. There were almost five hundred guests. What were the bride and groom wearing? The bride was wearing a white dress, and the groom was wearing a traditional coat. Did you give them a gift? Yes, and I congratulated them during the ceremony. People here really know how to celebrate!",
+    "lines": [
+      "How was your cousin's wedding on Saturday?",
+      "Amazing! When we arrived, the musicians were playing and everyone was dancing.",
+      "Was it crowded?",
+      "Very. There were almost five hundred guests.",
+      "What were the bride and groom wearing?",
+      "The bride was wearing a white dress, and the groom was wearing a traditional coat.",
+      "Did you give them a gift?",
+      "Yes, and I congratulated them during the ceremony.",
+      "People here really know how to celebrate!"
+    ],
+    "focusWords": [
+      "wedding",
+      "bride",
+      "groom",
+      "guest",
+      "celebrate"
+    ],
+    "instructionUz": "\"To'y va bayramlar\" dialogini ovoz chiqarib o'qing. E'tibor bering: wedding, bride, groom, guest, celebrate."
+  },
+  {
+    "dayNumber": 34,
+    "cefr": "B1",
+    "topic": "At the Airport",
+    "topicUz": "Aeroportda",
+    "text": "What happened? You look tired. While I was waiting at the gate, they had to cancel my flight. Oh no! Did they make an announcement? Yes. When I heard the announcement, I was drinking coffee near the departure board. So what did the other passengers do? Everyone went back through security to get a new boarding pass. And your suitcase? It was already on the plane! It landed in Istanbul without me.",
+    "lines": [
+      "What happened? You look tired.",
+      "While I was waiting at the gate, they had to cancel my flight.",
+      "Oh no! Did they make an announcement?",
+      "Yes. When I heard the announcement, I was drinking coffee near the departure board.",
+      "So what did the other passengers do?",
+      "Everyone went back through security to get a new boarding pass.",
+      "And your suitcase?",
+      "It was already on the plane! It landed in Istanbul without me."
+    ],
+    "focusWords": [
+      "flight",
+      "gate",
+      "boarding",
+      "departure",
+      "security"
+    ],
+    "instructionUz": "\"Aeroportda\" dialogini ovoz chiqarib o'qing. E'tibor bering: flight, gate, boarding, departure, security."
+  },
+  {
+    "dayNumber": 35,
+    "cefr": "B1",
+    "topic": "A Road Trip",
+    "topicUz": "Avtomobilda sayohat",
+    "text": "If we leave at seven, we will reach the mountains before lunch. Which route are we taking? The highway to Chimgan. The scenery is beautiful after the city. Do we have enough fuel? Not yet. If we stop at the next station, I will fill the tank. Please don't drive at high speed. The road is narrow there. Don't worry. And if we get stuck, we have a spare tyre. What will we do when we reach our destination? We will have a picnic by the river.",
+    "lines": [
+      "If we leave at seven, we will reach the mountains before lunch.",
+      "Which route are we taking?",
+      "The highway to Chimgan. The scenery is beautiful after the city.",
+      "Do we have enough fuel?",
+      "Not yet. If we stop at the next station, I will fill the tank.",
+      "Please don't drive at high speed. The road is narrow there.",
+      "Don't worry. And if we get stuck, we have a spare tyre.",
+      "What will we do when we reach our destination?",
+      "We will have a picnic by the river."
+    ],
+    "focusWords": [
+      "route",
+      "fuel",
+      "highway",
+      "mountain",
+      "scenery"
+    ],
+    "instructionUz": "\"Avtomobilda sayohat\" dialogini ovoz chiqarib o'qing. E'tibor bering: route, fuel, highway, mountain, scenery."
+  },
+  {
+    "dayNumber": 36,
+    "cefr": "B1",
+    "topic": "Online Shopping",
+    "topicUz": "Onlayn xarid",
+    "text": "Has your parcel arrived yet? Not yet. I have just checked the tracking page. When did you order it? On Monday. They have already confirmed the delivery for today. Did you get a discount? Yes, twenty percent. I read the reviews before I paid. What if the item is the wrong size? Then I can return it within fourteen days. I just need to keep the receipt. Look — I think the courier has just arrived!",
+    "lines": [
+      "Has your parcel arrived yet?",
+      "Not yet. I have just checked the tracking page.",
+      "When did you order it?",
+      "On Monday. They have already confirmed the delivery for today.",
+      "Did you get a discount?",
+      "Yes, twenty percent. I read the reviews before I paid.",
+      "What if the item is the wrong size?",
+      "Then I can return it within fourteen days. I just need to keep the receipt.",
+      "Look — I think the courier has just arrived!"
+    ],
+    "focusWords": [
+      "parcel",
+      "courier",
+      "delivery",
+      "discount",
+      "receipt"
+    ],
+    "instructionUz": "\"Onlayn xarid\" dialogini ovoz chiqarib o'qing. E'tibor bering: parcel, courier, delivery, discount, receipt."
+  },
+  {
+    "dayNumber": 37,
+    "cefr": "B1",
+    "topic": "Neighbours and Community",
+    "topicUz": "Qo'shnilar va mahalla",
+    "text": "Who is the man who lives next door? That's Rustam aka. He is the neighbour who helps everyone. He seems very generous. He is. He always lends me the tools that I need to repair things. Can I borrow something from him too? Sure. Our community is small, so people trust each other. Is the street noisy at night? No. Most people here are elderly and go to bed early. And the garden which is behind the building — whose is it? It belongs to all of us. We grow tomatoes there in summer.",
+    "lines": [
+      "Who is the man who lives next door?",
+      "That's Rustam aka. He is the neighbour who helps everyone.",
+      "He seems very generous.",
+      "He is. He always lends me the tools that I need to repair things.",
+      "Can I borrow something from him too?",
+      "Sure. Our community is small, so people trust each other.",
+      "Is the street noisy at night?",
+      "No. Most people here are elderly and go to bed early.",
+      "And the garden which is behind the building — whose is it?",
+      "It belongs to all of us. We grow tomatoes there in summer."
+    ],
+    "focusWords": [
+      "neighbour",
+      "community",
+      "lend",
+      "borrow",
+      "noisy"
+    ],
+    "instructionUz": "\"Qo'shnilar va mahalla\" dialogini ovoz chiqarib o'qing. E'tibor bering: neighbour, community, lend, borrow, noisy."
+  },
+  {
+    "dayNumber": 38,
+    "cefr": "B1",
+    "topic": "At the Pharmacy",
+    "topicUz": "Dorixonada",
+    "text": "Good afternoon. I have a bad cough and a sore throat. How long have you had these symptoms? About three days. Do I have to get a prescription? No, you don't have to. This syrup is sold without one. Are you allergic to anything? Not that I know. How should I take it? The dose is one spoon three times a day. You must not take more. And these tablets for my throat? Don't swallow them. You have to keep them in your mouth until they melt. Thank you. The pharmacist in this pharmacy is always so helpful.",
+    "lines": [
+      "Good afternoon. I have a bad cough and a sore throat.",
+      "How long have you had these symptoms?",
+      "About three days. Do I have to get a prescription?",
+      "No, you don't have to. This syrup is sold without one. Are you allergic to anything?",
+      "Not that I know. How should I take it?",
+      "The dose is one spoon three times a day. You must not take more.",
+      "And these tablets for my throat?",
+      "Don't swallow them. You have to keep them in your mouth until they melt.",
+      "Thank you. The pharmacist in this pharmacy is always so helpful."
+    ],
+    "focusWords": [
+      "pharmacy",
+      "pharmacist",
+      "prescription",
+      "tablet",
+      "cough"
+    ],
+    "instructionUz": "\"Dorixonada\" dialogini ovoz chiqarib o'qing. E'tibor bering: pharmacy, pharmacist, prescription, tablet, cough."
+  },
+  {
+    "dayNumber": 39,
+    "cefr": "B1",
+    "topic": "Volunteering",
+    "topicUz": "Ko'ngillilik",
+    "text": "What do you usually do on Sundays? I volunteer at an animal shelter. I enjoy helping there. That sounds rewarding. How did you start? A charity asked for help, so I decided to join them. What kind of work do you do? We collect food and organise events to find homes for the animals. Can people donate money? Yes, but we also need people who want to support old people who feel lonely. I'd love to try it next Sunday.",
+    "lines": [
+      "What do you usually do on Sundays?",
+      "I volunteer at an animal shelter. I enjoy helping there.",
+      "That sounds rewarding. How did you start?",
+      "A charity asked for help, so I decided to join them.",
+      "What kind of work do you do?",
+      "We collect food and organise events to find homes for the animals.",
+      "Can people donate money?",
+      "Yes, but we also need people who want to support old people who feel lonely.",
+      "I'd love to try it next Sunday."
+    ],
+    "focusWords": [
+      "volunteer",
+      "charity",
+      "donate",
+      "organise",
+      "collect"
+    ],
+    "instructionUz": "\"Ko'ngillilik\" dialogini ovoz chiqarib o'qing. E'tibor bering: volunteer, charity, donate, organise, collect."
+  },
+  {
+    "dayNumber": 40,
+    "cefr": "B1",
+    "topic": "Films and Series",
+    "topicUz": "Film va seriallar",
+    "text": "Have you watched the new Turkish series? Only the first episode. Honestly, I prefer films to series. Why? The plot is really exciting. I'd rather watch one good film than forty episodes. Fair enough. What genre do you like? Comedies. And I always watch with English subtitles. Can you recommend a good one? Yes! The director is young, but the actors are brilliant. Does it have a happy ending? I won't tell you. But the last scene made me cry.",
+    "lines": [
+      "Have you watched the new Turkish series?",
+      "Only the first episode. Honestly, I prefer films to series.",
+      "Why? The plot is really exciting.",
+      "I'd rather watch one good film than forty episodes.",
+      "Fair enough. What genre do you like?",
+      "Comedies. And I always watch with English subtitles.",
+      "Can you recommend a good one?",
+      "Yes! The director is young, but the actors are brilliant.",
+      "Does it have a happy ending?",
+      "I won't tell you. But the last scene made me cry."
+    ],
+    "focusWords": [
+      "series",
+      "episode",
+      "actor",
+      "director",
+      "plot"
+    ],
+    "instructionUz": "\"Film va seriallar\" dialogini ovoz chiqarib o'qing. E'tibor bering: series, episode, actor, director, plot."
+  },
+  {
+    "dayNumber": 41,
+    "cefr": "B1",
+    "topic": "Saving Money",
+    "topicUz": "Pul tejash",
+    "text": "You look worried. What's wrong? My wallet is almost empty, and it's only the tenth of the month. Do you have a budget? Not really. My income is enough, but I spend too much on eating out. Write down every expense for a month. You will be surprised. Good idea. I also want a laptop, but I can't afford it yet. Then put a little into savings every week. Should I withdraw cash or pay by card? Cash helps. When you see the money leave your hand, you spend less. And always look for a bargain!",
+    "lines": [
+      "You look worried. What's wrong?",
+      "My wallet is almost empty, and it's only the tenth of the month.",
+      "Do you have a budget?",
+      "Not really. My income is enough, but I spend too much on eating out.",
+      "Write down every expense for a month. You will be surprised.",
+      "Good idea. I also want a laptop, but I can't afford it yet.",
+      "Then put a little into savings every week.",
+      "Should I withdraw cash or pay by card?",
+      "Cash helps. When you see the money leave your hand, you spend less. And always look for a bargain!"
+    ],
+    "focusWords": [
+      "budget",
+      "spend",
+      "afford",
+      "savings",
+      "bargain"
+    ],
+    "instructionUz": "\"Pul tejash\" dialogini ovoz chiqarib o'qing. E'tibor bering: budget, spend, afford, savings, bargain."
+  },
+  {
+    "dayNumber": 42,
+    "cefr": "B1",
+    "topic": "Starting a Small Business",
+    "topicUz": "Kichik biznes ochish",
+    "text": "I heard you plan to open a bakery! Yes! I hope to launch it next spring. It will be my own business. That's a big risk. Are you ready? I think so. I have found a good supplier of flour and sugar. What will your main product be? Cakes and fresh bread. I intend to advertise on Instagram first. When do you expect to make a profit? Maybe after a year. The owner of the shop next door says loyal customers are the key. I'm sure you'll succeed.",
+    "lines": [
+      "I heard you plan to open a bakery!",
+      "Yes! I hope to launch it next spring. It will be my own business.",
+      "That's a big risk. Are you ready?",
+      "I think so. I have found a good supplier of flour and sugar.",
+      "What will your main product be?",
+      "Cakes and fresh bread. I intend to advertise on Instagram first.",
+      "When do you expect to make a profit?",
+      "Maybe after a year. The owner of the shop next door says loyal customers are the key.",
+      "I'm sure you'll succeed."
+    ],
+    "focusWords": [
+      "business",
+      "profit",
+      "product",
+      "launch",
+      "advertise"
+    ],
+    "instructionUz": "\"Kichik biznes ochish\" dialogini ovoz chiqarib o'qing. E'tibor bering: business, profit, product, launch, advertise."
+  },
+  {
+    "dayNumber": 43,
+    "cefr": "B1",
+    "topic": "Public Transport Problems",
+    "topicUz": "Jamoat transporti muammolari",
+    "text": "Why were you late for work today? When I got to the platform, the train had already left. Didn't you check the timetable? I had checked it, but they had changed it the day before because of a breakdown. That's annoying. How long is your commute? Usually forty minutes on the underground, with one transfer. And during the rush hour? Much longer. Today there was a long queue even to buy a ticket. Has the fare gone up too? Yes. The whole journey costs more and takes longer!",
+    "lines": [
+      "Why were you late for work today?",
+      "When I got to the platform, the train had already left.",
+      "Didn't you check the timetable?",
+      "I had checked it, but they had changed it the day before because of a breakdown.",
+      "That's annoying. How long is your commute?",
+      "Usually forty minutes on the underground, with one transfer.",
+      "And during the rush hour?",
+      "Much longer. Today there was a long queue even to buy a ticket.",
+      "Has the fare gone up too?",
+      "Yes. The whole journey costs more and takes longer!"
+    ],
+    "focusWords": [
+      "platform",
+      "journey",
+      "fare",
+      "transfer",
+      "rush"
+    ],
+    "instructionUz": "\"Jamoat transporti muammolari\" dialogini ovoz chiqarib o'qing. E'tibor bering: platform, journey, fare, transfer, rush."
+  },
+  {
+    "dayNumber": 44,
+    "cefr": "B1",
+    "topic": "Sport Competitions",
+    "topicUz": "Sport musobaqalari",
+    "text": "Did you watch the final? It was the most exciting match of the year! Yes! Our team beat the strongest opponent in Asia. The score was two–one. The fans went crazy. Our goalkeeper was the best player on the field. But the referee made the worst decision of the game in the first half. True. The coach was really angry. Now we are champions! It's the biggest trophy in our history. And our striker broke a record — six goals in the competition.",
+    "lines": [
+      "Did you watch the final? It was the most exciting match of the year!",
+      "Yes! Our team beat the strongest opponent in Asia.",
+      "The score was two–one. The fans went crazy.",
+      "Our goalkeeper was the best player on the field.",
+      "But the referee made the worst decision of the game in the first half.",
+      "True. The coach was really angry.",
+      "Now we are champions! It's the biggest trophy in our history.",
+      "And our striker broke a record — six goals in the competition."
+    ],
+    "focusWords": [
+      "competition",
+      "champion",
+      "trophy",
+      "fan",
+      "referee"
+    ],
+    "instructionUz": "\"Sport musobaqalari\" dialogini ovoz chiqarib o'qing. E'tibor bering: competition, champion, trophy, fan, referee."
+  },
+  {
+    "dayNumber": 45,
+    "cefr": "B1",
+    "topic": "The History of Samarkand",
+    "topicUz": "Samarqand tarixi",
+    "text": "This square is incredible. When was it built? The Registan was created between the fifteenth and the seventeenth centuries. Who was it built for? The first madrasa was ordered by Ulugbek, a ruler and a great scientist. Samarkand was the capital of an empire, wasn't it? Yes, the empire of Amir Temur. It is one of the most ancient cities in the world. The blue dome over there is amazing. Were the tiles made by hand? Yes. Many monuments were damaged by earthquakes, but they were restored in the last century. Do we know the names of the architects? Some of them. Today the city is protected as world heritage.",
+    "lines": [
+      "This square is incredible. When was it built?",
+      "The Registan was created between the fifteenth and the seventeenth centuries.",
+      "Who was it built for?",
+      "The first madrasa was ordered by Ulugbek, a ruler and a great scientist.",
+      "Samarkand was the capital of an empire, wasn't it?",
+      "Yes, the empire of Amir Temur. It is one of the most ancient cities in the world.",
+      "The blue dome over there is amazing. Were the tiles made by hand?",
+      "Yes. Many monuments were damaged by earthquakes, but they were restored in the last century.",
+      "Do we know the names of the architects?",
+      "Some of them. Today the city is protected as world heritage."
+    ],
+    "focusWords": [
+      "ancient",
+      "empire",
+      "century",
+      "monument",
+      "ruler"
+    ],
+    "instructionUz": "\"Samarqand tarixi\" dialogini ovoz chiqarib o'qing. E'tibor bering: ancient, empire, century, monument, ruler."
+  },
+  {
+    "dayNumber": 46,
+    "cefr": "B1",
+    "topic": "Learning a Language",
+    "topicUz": "Til o'rganish",
+    "text": "Your English is really good! How long have you been learning it? I have been studying it for two years, but I'm not fluent yet. What has been the hardest part? Grammar was easy. But I still can't pronounce some words, like 'thought'. Your accent is fine. Every learner makes mistakes. I have been practising with a native speaker online every week. That's the best way. Do you translate everything in your head? Less and less. My vocabulary has been growing, so I think in English more often. That's real progress!",
+    "lines": [
+      "Your English is really good! How long have you been learning it?",
+      "I have been studying it for two years, but I'm not fluent yet.",
+      "What has been the hardest part?",
+      "Grammar was easy. But I still can't pronounce some words, like 'thought'.",
+      "Your accent is fine. Every learner makes mistakes.",
+      "I have been practising with a native speaker online every week.",
+      "That's the best way. Do you translate everything in your head?",
+      "Less and less. My vocabulary has been growing, so I think in English more often.",
+      "That's real progress!"
+    ],
+    "focusWords": [
+      "fluent",
+      "accent",
+      "grammar",
+      "vocabulary",
+      "pronounce"
+    ],
+    "instructionUz": "\"Til o'rganish\" dialogini ovoz chiqarib o'qing. E'tibor bering: fluent, accent, grammar, vocabulary, pronounce."
+  },
+  {
+    "dayNumber": 47,
+    "cefr": "B1",
+    "topic": "Friendship",
+    "topicUz": "Do'stlik",
+    "text": "You and Dilnoza aren't talking. Did you argue? Yes. She said that I had told her secret to everyone. Had you? No! I only mentioned it to my sister. And I promised her I wouldn't tell anyone else. So it was a misunderstanding. Maybe. But someone told her that I was jealous of her new job. That's just gossip. Your friendship is ten years old. Talk to her. You're right. I can always rely on her, and I hope she can forgive me.",
+    "lines": [
+      "You and Dilnoza aren't talking. Did you argue?",
+      "Yes. She said that I had told her secret to everyone.",
+      "Had you?",
+      "No! I only mentioned it to my sister. And I promised her I wouldn't tell anyone else.",
+      "So it was a misunderstanding.",
+      "Maybe. But someone told her that I was jealous of her new job. That's just gossip.",
+      "Your friendship is ten years old. Talk to her.",
+      "You're right. I can always rely on her, and I hope she can forgive me."
+    ],
+    "focusWords": [
+      "friendship",
+      "argue",
+      "misunderstanding",
+      "secret",
+      "promise"
+    ],
+    "instructionUz": "\"Do'stlik\" dialogini ovoz chiqarib o'qing. E'tibor bering: friendship, argue, misunderstanding, secret, promise."
+  },
+  {
+    "dayNumber": 48,
+    "cefr": "B1",
+    "topic": "Phones and Privacy",
+    "topicUz": "Telefon va maxfiylik",
+    "text": "My battery dies so fast now. I have to charge it three times a day. It might be an app that runs all the time. Check your settings. This game asks for permission to use my camera and my location. Why? It may collect your personal data and sell it. Seriously? Could someone hack my phone like that? It could happen. I'd delete that game. Done. And I'll turn off these notifications too.",
+    "lines": [
+      "My battery dies so fast now. I have to charge it three times a day.",
+      "It might be an app that runs all the time. Check your settings.",
+      "This game asks for permission to use my camera and my location. Why?",
+      "It may collect your personal data and sell it.",
+      "Seriously? Could someone hack my phone like that?",
+      "It could happen. I'd delete that game.",
+      "Done. And I'll turn off these notifications too."
+    ],
+    "focusWords": [
+      "battery",
+      "charge",
+      "permission",
+      "camera",
+      "location"
+    ],
+    "instructionUz": "\"Telefon va maxfiylik\" dialogini ovoz chiqarib o'qing. E'tibor bering: battery, charge, permission, camera, location."
+  },
+  {
+    "dayNumber": 49,
+    "cefr": "B1",
+    "topic": "Emergencies",
+    "topicUz": "Favqulodda holatlar",
+    "text": "In an emergency, the first rule is simple: if you panic, you make mistakes. So we must stay calm. Exactly. If someone is injured, you call an ambulance first. The number is 103. What if a person is bleeding a lot? If a wound bleeds, you press on it with a clean cloth. That's basic first aid. And if you burn your hand? You put it under cold water for ten minutes. What happens if the smoke alarm goes off at home? You leave the building and wait for the rescue team outside.",
+    "lines": [
+      "In an emergency, the first rule is simple: if you panic, you make mistakes.",
+      "So we must stay calm.",
+      "Exactly. If someone is injured, you call an ambulance first. The number is 103.",
+      "What if a person is bleeding a lot?",
+      "If a wound bleeds, you press on it with a clean cloth. That's basic first aid.",
+      "And if you burn your hand?",
+      "You put it under cold water for ten minutes.",
+      "What happens if the smoke alarm goes off at home?",
+      "You leave the building and wait for the rescue team outside."
+    ],
+    "focusWords": [
+      "emergency",
+      "ambulance",
+      "injured",
+      "bleed",
+      "smoke"
+    ],
+    "instructionUz": "\"Favqulodda holatlar\" dialogini ovoz chiqarib o'qing. E'tibor bering: emergency, ambulance, injured, bleed, smoke."
+  },
+  {
+    "dayNumber": 50,
+    "cefr": "B1",
+    "topic": "Climate Change",
+    "topicUz": "Iqlim o'zgarishi",
+    "text": "Did you see the forecast? It's going to be forty-five degrees next week. Scientists predict that summers are likely to get even hotter. Why is the temperature rising so fast? Mostly because of carbon from cars and factories. The whole planet is warming. Will the Aral Sea come back one day? Probably not. Much of it has become desert, and droughts are likely to increase. Meanwhile, in other countries ice sheets melt and cities flood. That's why renewable energy is so important. Solar panels will help a lot here.",
+    "lines": [
+      "Did you see the forecast? It's going to be forty-five degrees next week.",
+      "Scientists predict that summers are likely to get even hotter.",
+      "Why is the temperature rising so fast?",
+      "Mostly because of carbon from cars and factories. The whole planet is warming.",
+      "Will the Aral Sea come back one day?",
+      "Probably not. Much of it has become desert, and droughts are likely to increase.",
+      "Meanwhile, in other countries ice sheets melt and cities flood.",
+      "That's why renewable energy is so important. Solar panels will help a lot here."
+    ],
+    "focusWords": [
+      "temperature",
+      "drought",
+      "flood",
+      "melt",
+      "forecast"
+    ],
+    "instructionUz": "\"Iqlim o'zgarishi\" dialogini ovoz chiqarib o'qing. E'tibor bering: temperature, drought, flood, melt, forecast."
+  },
+  {
+    "dayNumber": 51,
+    "cefr": "B1",
+    "topic": "Looking for a Job",
+    "topicUz": "Ish qidirish",
+    "text": "Good morning. I saw your vacancy for a sales manager online. Yes, the position is still open. Could you tell me what the main requirements are? We need a candidate with a degree and at least two years of experience. Do you know if English is one of the qualifications? Yes. Many of the responsibilities include talking to foreign partners. I'd like to know whether the working hours are flexible. Partly. As an employer, we offer two days from home. Could you tell me when the deadline is? Friday. Please send your CV and one reference from your last job.",
+    "lines": [
+      "Good morning. I saw your vacancy for a sales manager online.",
+      "Yes, the position is still open.",
+      "Could you tell me what the main requirements are?",
+      "We need a candidate with a degree and at least two years of experience.",
+      "Do you know if English is one of the qualifications?",
+      "Yes. Many of the responsibilities include talking to foreign partners.",
+      "I'd like to know whether the working hours are flexible.",
+      "Partly. As an employer, we offer two days from home.",
+      "Could you tell me when the deadline is?",
+      "Friday. Please send your CV and one reference from your last job."
+    ],
+    "focusWords": [
+      "vacancy",
+      "position",
+      "requirement",
+      "candidate",
+      "qualification"
+    ],
+    "instructionUz": "\"Ish qidirish\" dialogini ovoz chiqarib o'qing. E'tibor bering: vacancy, position, requirement, candidate, qualification."
+  },
+  {
+    "dayNumber": 52,
+    "cefr": "B1",
+    "topic": "Meetings at Work",
+    "topicUz": "Ishdagi yig'ilishlar",
+    "text": "Let's start. The first point on the agenda is the new proposal. Before we discuss it, can I make a suggestion? Of course. Why don't we postpone it until Friday? Two colleagues couldn't attend today. Good point. How about a brief update instead? Sure. Our team is behind schedule, but only by two days. Let's send everyone a short summary after the meeting. I'll write it and add the new schedule.",
+    "lines": [
+      "Let's start. The first point on the agenda is the new proposal.",
+      "Before we discuss it, can I make a suggestion?",
+      "Of course.",
+      "Why don't we postpone it until Friday? Two colleagues couldn't attend today.",
+      "Good point. How about a brief update instead?",
+      "Sure. Our team is behind schedule, but only by two days.",
+      "Let's send everyone a short summary after the meeting.",
+      "I'll write it and add the new schedule."
+    ],
+    "focusWords": [
+      "agenda",
+      "proposal",
+      "discuss",
+      "suggestion",
+      "postpone"
+    ],
+    "instructionUz": "\"Ishdagi yig'ilishlar\" dialogini ovoz chiqarib o'qing. E'tibor bering: agenda, proposal, discuss, suggestion, postpone."
+  },
+  {
+    "dayNumber": 53,
+    "cefr": "B1",
+    "topic": "Calling Customer Service",
+    "topicUz": "Qo'llab-quvvatlash xizmatiga qo'ng'iroq",
+    "text": "Thank you for calling. Could you hold for a moment, please? Sure. Thank you for being patient. I'm connecting you to extension 204. Hello, I'm a customer service representative. How can I help? The kettle I got last week is faulty. Would it be possible to get a replacement? I'm sorry for the inconvenience. Is it still under warranty? Yes, I have the invoice here. Could you send us a photo of it? We'll resolve this within three days.",
+    "lines": [
+      "Thank you for calling. Could you hold for a moment, please?",
+      "Sure.",
+      "Thank you for being patient. I'm connecting you to extension 204.",
+      "Hello, I'm a customer service representative. How can I help?",
+      "The kettle I got last week is faulty. Would it be possible to get a replacement?",
+      "I'm sorry for the inconvenience. Is it still under warranty?",
+      "Yes, I have the invoice here.",
+      "Could you send us a photo of it? We'll resolve this within three days."
+    ],
+    "focusWords": [
+      "hold",
+      "patient",
+      "extension",
+      "representative",
+      "faulty"
+    ],
+    "instructionUz": "\"Qo'llab-quvvatlash xizmatiga qo'ng'iroq\" dialogini ovoz chiqarib o'qing. E'tibor bering: hold, patient, extension, representative, faulty."
+  },
+  {
+    "dayNumber": 54,
+    "cefr": "B1",
+    "topic": "Music and Concerts",
+    "topicUz": "Musiqa va konsertlar",
+    "text": "How was the concert last night? It was so good! The band played for three hours. Was the audience big? There were such a lot of people that I couldn't see the stage. Did they perform songs from the new album? Yes, and everyone knew the lyrics. It was such an amazing feeling. I love their rhythm. The drummer is so talented. The singer also plays three instruments, including the dutar!",
+    "lines": [
+      "How was the concert last night?",
+      "It was so good! The band played for three hours.",
+      "Was the audience big?",
+      "There were such a lot of people that I couldn't see the stage.",
+      "Did they perform songs from the new album?",
+      "Yes, and everyone knew the lyrics. It was such an amazing feeling.",
+      "I love their rhythm. The drummer is so talented.",
+      "The singer also plays three instruments, including the dutar!"
+    ],
+    "focusWords": [
+      "concert",
+      "band",
+      "audience",
+      "stage",
+      "perform"
+    ],
+    "instructionUz": "\"Musiqa va konsertlar\" dialogini ovoz chiqarib o'qing. E'tibor bering: concert, band, audience, stage, perform."
+  },
+  {
+    "dayNumber": 55,
+    "cefr": "B1",
+    "topic": "Healthy Sleep",
+    "topicUz": "Sog'lom uyqu",
+    "text": "You look sleepy. Didn't you sleep well? I was awake until three. My new flatmate snores very loudly. Poor you! You're not used to sharing a room. Exactly. At home I am used to sleeping in total silence. Do you drink coffee in the evening? Caffeine keeps you awake. Sometimes. And I often take a nap after lunch. Try a regular bedtime routine: no screens, a warm blanket, and a book to help you relax. Maybe I also need a better pillow. And earplugs! Sweet dreams.",
+    "lines": [
+      "You look sleepy. Didn't you sleep well?",
+      "I was awake until three. My new flatmate snores very loudly.",
+      "Poor you! You're not used to sharing a room.",
+      "Exactly. At home I am used to sleeping in total silence.",
+      "Do you drink coffee in the evening? Caffeine keeps you awake.",
+      "Sometimes. And I often take a nap after lunch.",
+      "Try a regular bedtime routine: no screens, a warm blanket, and a book to help you relax.",
+      "Maybe I also need a better pillow.",
+      "And earplugs! Sweet dreams."
+    ],
+    "focusWords": [
+      "awake",
+      "snore",
+      "caffeine",
+      "nap",
+      "bedtime"
+    ],
+    "instructionUz": "\"Sog'lom uyqu\" dialogini ovoz chiqarib o'qing. E'tibor bering: awake, snore, caffeine, nap, bedtime."
+  },
+  {
+    "dayNumber": 56,
+    "cefr": "B1",
+    "topic": "Traffic and Driving",
+    "topicUz": "Yo'l harakati",
+    "text": "You've just got your licence, so let's check the rules. OK. I must always wear my seatbelt. Right. And you mustn't overtake on a bridge or near a crossing. What happens if a pedestrian is crossing the road? You must brake and let them pass. Do I have to drive in the left lane on the highway? No, you don't have to. Use it only to overtake. And can I park here? Not here! You'll get a fine. In heavy traffic, most accidents happen because people are in a hurry.",
+    "lines": [
+      "You've just got your licence, so let's check the rules.",
+      "OK. I must always wear my seatbelt.",
+      "Right. And you mustn't overtake on a bridge or near a crossing.",
+      "What happens if a pedestrian is crossing the road?",
+      "You must brake and let them pass.",
+      "Do I have to drive in the left lane on the highway?",
+      "No, you don't have to. Use it only to overtake.",
+      "And can I park here?",
+      "Not here! You'll get a fine. In heavy traffic, most accidents happen because people are in a hurry."
+    ],
+    "focusWords": [
+      "licence",
+      "seatbelt",
+      "overtake",
+      "pedestrian",
+      "brake"
+    ],
+    "instructionUz": "\"Yo'l harakati\" dialogini ovoz chiqarib o'qing. E'tibor bering: licence, seatbelt, overtake, pedestrian, brake."
+  },
+  {
+    "dayNumber": 57,
+    "cefr": "B1",
+    "topic": "Parents and Children",
+    "topicUz": "Ota-ona va farzand",
+    "text": "If you were a parent, how would you raise your children? I wouldn't be too strict. I'd allow them to make their own decisions. But if children had no rules, they wouldn't behave well. True. I'd give them chores so they would become responsible. My parents praised me for every small thing. That's nice, but if you praise children too much, you might spoil them. What's most important to you? If my kids grew up independent and kind, I'd be happy.",
+    "lines": [
+      "If you were a parent, how would you raise your children?",
+      "I wouldn't be too strict. I'd allow them to make their own decisions.",
+      "But if children had no rules, they wouldn't behave well.",
+      "True. I'd give them chores so they would become responsible.",
+      "My parents praised me for every small thing.",
+      "That's nice, but if you praise children too much, you might spoil them.",
+      "What's most important to you?",
+      "If my kids grew up independent and kind, I'd be happy."
+    ],
+    "focusWords": [
+      "parent",
+      "raise",
+      "strict",
+      "allow",
+      "behave"
+    ],
+    "instructionUz": "\"Ota-ona va farzand\" dialogini ovoz chiqarib o'qing. E'tibor bering: parent, raise, strict, allow, behave."
+  },
+  {
+    "dayNumber": 58,
+    "cefr": "B1",
+    "topic": "News and Media",
+    "topicUz": "Yangiliklar va OAV",
+    "text": "A journalist called me yesterday for an article about young teachers. Really? What did she ask? She asked me why I had chosen teaching, and whether I was happy with my salary. When will they publish it? The editor said it would be online next week. It might even be on a TV channel. Great! But be careful with news these days. Many headlines are fake. I know. I always check if the source is reliable. Me too. I only trust news that official channels broadcast.",
+    "lines": [
+      "A journalist called me yesterday for an article about young teachers.",
+      "Really? What did she ask?",
+      "She asked me why I had chosen teaching, and whether I was happy with my salary.",
+      "When will they publish it?",
+      "The editor said it would be online next week. It might even be on a TV channel.",
+      "Great! But be careful with news these days. Many headlines are fake.",
+      "I know. I always check if the source is reliable.",
+      "Me too. I only trust news that official channels broadcast."
+    ],
+    "focusWords": [
+      "journalist",
+      "article",
+      "publish",
+      "editor",
+      "channel"
+    ],
+    "instructionUz": "\"Yangiliklar va OAV\" dialogini ovoz chiqarib o'qing. E'tibor bering: journalist, article, publish, editor, channel."
+  },
+  {
+    "dayNumber": 59,
+    "cefr": "B1",
+    "topic": "Navruz",
+    "topicUz": "Navro'z",
+    "text": "What is Navruz? Everyone is talking about it. It's the spring festival. It is celebrated on the twenty-first of March. Is it a public holiday? Yes. It's a very old tradition — a symbol of new life. How is it celebrated? Special dishes are prepared, and streets are decorated with flowers. I've heard about sumalak. It is cooked overnight, and women take turns to stir it. That's an important custom.",
+    "lines": [
+      "What is Navruz? Everyone is talking about it.",
+      "It's the spring festival. It is celebrated on the twenty-first of March.",
+      "Is it a public holiday?",
+      "Yes. It's a very old tradition — a symbol of new life.",
+      "How is it celebrated?",
+      "Special dishes are prepared, and streets are decorated with flowers.",
+      "I've heard about sumalak.",
+      "It is cooked overnight, and women take turns to stir it. That's an important custom."
+    ],
+    "focusWords": [
+      "spring",
+      "festival",
+      "holiday",
+      "tradition",
+      "symbol"
+    ],
+    "instructionUz": "\"Navro'z\" dialogini ovoz chiqarib o'qing. E'tibor bering: spring, festival, holiday, tradition, symbol."
+  },
+  {
+    "dayNumber": 60,
+    "cefr": "B1",
+    "topic": "Halfway Review",
+    "topicUz": "Yarim yo'l sarhisobi",
+    "text": "Congratulations! You have reached day sixty. That's a real milestone. Thank you. Two months ago I couldn't order coffee in English. Let's reflect a little. What is your biggest achievement so far? My confidence. I'm not afraid of speaking any more. And what is your main strength? I have been consistent — I have studied every day, even when my motivation was low. That effort pays off. Learning a language needs patience. My aim now is to reach B2 by the end of the course. If you keep going like this, you will.",
+    "lines": [
+      "Congratulations! You have reached day sixty. That's a real milestone.",
+      "Thank you. Two months ago I couldn't order coffee in English.",
+      "Let's reflect a little. What is your biggest achievement so far?",
+      "My confidence. I'm not afraid of speaking any more.",
+      "And what is your main strength?",
+      "I have been consistent — I have studied every day, even when my motivation was low.",
+      "That effort pays off. Learning a language needs patience.",
+      "My aim now is to reach B2 by the end of the course.",
+      "If you keep going like this, you will."
+    ],
+    "focusWords": [
+      "milestone",
+      "reflect",
+      "achievement",
+      "confidence",
+      "strength"
+    ],
+    "instructionUz": "\"Yarim yo'l sarhisobi\" dialogini ovoz chiqarib o'qing. E'tibor bering: milestone, reflect, achievement, confidence, strength."
+  },
+  {
+    "dayNumber": 61,
+    "cefr": "B2",
+    "topic": "Work–Life Balance",
+    "topicUz": "Ish va hayot muvozanati",
+    "text": "You've been working overtime every day this month. I know. Although I love my job, the workload is huge. Despite the extra hours, are you more productive? Honestly, no. I'm exhausted, and I have no leisure time at all. That's how burnout starts. You need to find a better balance. In spite of the pressure, I don't want to disappoint my boss. Then set boundaries. Prioritise the important tasks and say no to the rest. You're right. No job is worth sacrificing my health.",
+    "lines": [
+      "You've been working overtime every day this month.",
+      "I know. Although I love my job, the workload is huge.",
+      "Despite the extra hours, are you more productive?",
+      "Honestly, no. I'm exhausted, and I have no leisure time at all.",
+      "That's how burnout starts. You need to find a better balance.",
+      "In spite of the pressure, I don't want to disappoint my boss.",
+      "Then set boundaries. Prioritise the important tasks and say no to the rest.",
+      "You're right. No job is worth sacrificing my health."
+    ],
+    "focusWords": [
+      "overtime",
+      "workload",
+      "productive",
+      "exhausted",
+      "leisure"
+    ],
+    "instructionUz": "\"Ish va hayot muvozanati\" dialogini ovoz chiqarib o'qing. E'tibor bering: overtime, workload, productive, exhausted, leisure."
+  },
+  {
+    "dayNumber": 62,
+    "cefr": "B2",
+    "topic": "Negotiating a Salary",
+    "topicUz": "Maosh bo'yicha kelishuv",
+    "text": "We'd like to offer you the job. The salary is eight million sums. Thank you. Could we negotiate? I believe I deserve a little more. Can you justify that? Yes. My performance at my last job was excellent, and I speak three languages. We can't change the base salary unless the director agrees. But we could add a bonus. That would be fine, as long as it's in the contract. Of course. You'll also get health insurance and other benefits. And an increase after six months, provided that I reach my targets? Agreed. I think that's a fair compromise.",
+    "lines": [
+      "We'd like to offer you the job. The salary is eight million sums.",
+      "Thank you. Could we negotiate? I believe I deserve a little more.",
+      "Can you justify that?",
+      "Yes. My performance at my last job was excellent, and I speak three languages.",
+      "We can't change the base salary unless the director agrees. But we could add a bonus.",
+      "That would be fine, as long as it's in the contract.",
+      "Of course. You'll also get health insurance and other benefits.",
+      "And an increase after six months, provided that I reach my targets?",
+      "Agreed. I think that's a fair compromise."
+    ],
+    "focusWords": [
+      "offer",
+      "negotiate",
+      "deserve",
+      "justify",
+      "performance"
+    ],
+    "instructionUz": "\"Maosh bo'yicha kelishuv\" dialogini ovoz chiqarib o'qing. E'tibor bering: offer, negotiate, deserve, justify, performance."
+  },
+  {
+    "dayNumber": 63,
+    "cefr": "B2",
+    "topic": "A Missed Opportunity",
+    "topicUz": "Qo'ldan boy berilgan imkoniyat",
+    "text": "Is it true you were offered a scholarship in Korea? Yes, three years ago. But I hesitated, and I sent my application too late. What happened? They rejected it. If I had applied on time, they would have accepted me. That's a pity. Would you have studied medicine there? Probably. But if I had gone, I wouldn't have met my wife! So every choice has a consequence. Exactly. I realised that too late, but now I'm determined not to miss the next chance. Are you going to pursue a master's degree? Yes, and this time I won't wait.",
+    "lines": [
+      "Is it true you were offered a scholarship in Korea?",
+      "Yes, three years ago. But I hesitated, and I sent my application too late.",
+      "What happened?",
+      "They rejected it. If I had applied on time, they would have accepted me.",
+      "That's a pity. Would you have studied medicine there?",
+      "Probably. But if I had gone, I wouldn't have met my wife!",
+      "So every choice has a consequence.",
+      "Exactly. I realised that too late, but now I'm determined not to miss the next chance.",
+      "Are you going to pursue a master's degree?",
+      "Yes, and this time I won't wait."
+    ],
+    "focusWords": [
+      "scholarship",
+      "hesitate",
+      "application",
+      "reject",
+      "accept"
+    ],
+    "instructionUz": "\"Qo'ldan boy berilgan imkoniyat\" dialogini ovoz chiqarib o'qing. E'tibor bering: scholarship, hesitate, application, reject, accept."
+  },
+  {
+    "dayNumber": 64,
+    "cefr": "B2",
+    "topic": "Regrets and Wishes",
+    "topicUz": "Afsus va orzular",
+    "text": "Do you have any regrets? One. I wish I had learned English in my youth, when it was easier. I wish I were a student again. Life was so carefree then. If only I had more free time now! My job is so stressful. Can you imagine living without any work at all? That would be a luxury, but I'd get bored. I still have one big ambition. What is it? To open my own school. I hope I fulfil it one day. You will. And we should appreciate what we have now.",
+    "lines": [
+      "Do you have any regrets?",
+      "One. I wish I had learned English in my youth, when it was easier.",
+      "I wish I were a student again. Life was so carefree then.",
+      "If only I had more free time now! My job is so stressful.",
+      "Can you imagine living without any work at all?",
+      "That would be a luxury, but I'd get bored. I still have one big ambition.",
+      "What is it?",
+      "To open my own school. I hope I fulfil it one day.",
+      "You will. And we should appreciate what we have now."
+    ],
+    "focusWords": [
+      "regret",
+      "wish",
+      "youth",
+      "carefree",
+      "stressful"
+    ],
+    "instructionUz": "\"Afsus va orzular\" dialogini ovoz chiqarib o'qing. E'tibor bering: regret, wish, youth, carefree, stressful."
+  },
+  {
+    "dayNumber": 65,
+    "cefr": "B2",
+    "topic": "Working Remotely",
+    "topicUz": "Masofaviy ish",
+    "text": "This time next month, I'll be working from home. Lucky you! Is it a remote job or freelance? Remote. I'll be collaborating with a team in Berlin. What about the time zone? It's four hours behind, so by the time they start, I'll have finished half my work. Don't you think you'll feel isolated? Maybe. And home is full of distractions. I'll need discipline. Many studies say productivity goes up at home. I hope so. The company is sending me all the equipment, so I can be efficient from day one.",
+    "lines": [
+      "This time next month, I'll be working from home.",
+      "Lucky you! Is it a remote job or freelance?",
+      "Remote. I'll be collaborating with a team in Berlin.",
+      "What about the time zone?",
+      "It's four hours behind, so by the time they start, I'll have finished half my work.",
+      "Don't you think you'll feel isolated?",
+      "Maybe. And home is full of distractions. I'll need discipline.",
+      "Many studies say productivity goes up at home.",
+      "I hope so. The company is sending me all the equipment, so I can be efficient from day one."
+    ],
+    "focusWords": [
+      "remote",
+      "freelance",
+      "collaborate",
+      "zone",
+      "isolated"
+    ],
+    "instructionUz": "\"Masofaviy ish\" dialogini ovoz chiqarib o'qing. E'tibor bering: remote, freelance, collaborate, zone, isolated."
+  },
+  {
+    "dayNumber": 66,
+    "cefr": "B2",
+    "topic": "Investing and Loans",
+    "topicUz": "Investitsiya va kredit",
+    "text": "My uncle, who works at a bank, says I should invest my savings. In what? Stocks? Maybe. But stocks, which can bring high profits, are also risky. What about gold? It's more secure when inflation is high. True. And I don't want to keep everything in one currency. Are you still paying the loan for your car? Yes, but I'll repay it by summer. After that I'll have no debt. Then you could get a mortgage, which would help you buy a flat. Good idea. I'll talk to a financial adviser first.",
+    "lines": [
+      "My uncle, who works at a bank, says I should invest my savings.",
+      "In what? Stocks?",
+      "Maybe. But stocks, which can bring high profits, are also risky.",
+      "What about gold? It's more secure when inflation is high.",
+      "True. And I don't want to keep everything in one currency.",
+      "Are you still paying the loan for your car?",
+      "Yes, but I'll repay it by summer. After that I'll have no debt.",
+      "Then you could get a mortgage, which would help you buy a flat.",
+      "Good idea. I'll talk to a financial adviser first."
+    ],
+    "focusWords": [
+      "invest",
+      "stock",
+      "secure",
+      "inflation",
+      "currency"
+    ],
+    "instructionUz": "\"Investitsiya va kredit\" dialogini ovoz chiqarib o'qing. E'tibor bering: invest, stock, secure, inflation, currency."
+  },
+  {
+    "dayNumber": 67,
+    "cefr": "B2",
+    "topic": "Artificial Intelligence",
+    "topicUz": "Sun'iy intellekt",
+    "text": "Do you think artificial intelligence will take our jobs? Some jobs will be automated, but not all. Many tasks can't be done by machines. But AI can already be used to translate texts and even write code. True, but its answers must be checked. They aren't always accurate. Why not? Every algorithm learns from data, and the data may contain bias. So should AI be regulated? I think so. There are serious ethical questions that must be answered. At least boring work could be eliminated.",
+    "lines": [
+      "Do you think artificial intelligence will take our jobs?",
+      "Some jobs will be automated, but not all. Many tasks can't be done by machines.",
+      "But AI can already be used to translate texts and even write code.",
+      "True, but its answers must be checked. They aren't always accurate.",
+      "Why not?",
+      "Every algorithm learns from data, and the data may contain bias.",
+      "So should AI be regulated?",
+      "I think so. There are serious ethical questions that must be answered.",
+      "At least boring work could be eliminated."
+    ],
+    "focusWords": [
+      "artificial",
+      "intelligence",
+      "automate",
+      "task",
+      "accurate"
+    ],
+    "instructionUz": "\"Sun'iy intellekt\" dialogini ovoz chiqarib o'qing. E'tibor bering: artificial, intelligence, automate, task, accurate."
+  },
+  {
+    "dayNumber": 68,
+    "cefr": "B2",
+    "topic": "A Mystery at the Museum",
+    "topicUz": "Muzeydagi sir",
+    "text": "Did you hear? Someone broke into the museum last night. Yes! The police are investigating. The thief must have known the building well. Why do you think so? The alarm didn't ring, so he must have turned it off. That's an important clue. Is there any evidence? They found a footprint near the window, and a witness saw a man at midnight. Do they have a suspect? The guard. But he can't have done it — he has an alibi. He was at a wedding. Then what was the motive? Why would anyone steal an old painting?",
+    "lines": [
+      "Did you hear? Someone broke into the museum last night.",
+      "Yes! The police are investigating. The thief must have known the building well.",
+      "Why do you think so?",
+      "The alarm didn't ring, so he must have turned it off. That's an important clue.",
+      "Is there any evidence?",
+      "They found a footprint near the window, and a witness saw a man at midnight.",
+      "Do they have a suspect?",
+      "The guard. But he can't have done it — he has an alibi. He was at a wedding.",
+      "Then what was the motive? Why would anyone steal an old painting?"
+    ],
+    "focusWords": [
+      "investigate",
+      "thief",
+      "clue",
+      "evidence",
+      "footprint"
+    ],
+    "instructionUz": "\"Muzeydagi sir\" dialogini ovoz chiqarib o'qing. E'tibor bering: investigate, thief, clue, evidence, footprint."
+  },
+  {
+    "dayNumber": 69,
+    "cefr": "B2",
+    "topic": "Getting Things Fixed",
+    "topicUz": "Ta'mirlatish",
+    "text": "Your kitchen looks different! I had a new tap installed. The old one had a leak for weeks. Did you do it yourself? No way! I got a plumber to do it. He also checked the pipes. I need to have my lights repaired. Do you know a good electrician? Yes, but ask for an estimate first. Some are very expensive. And my car needs a service too. Make an appointment with my mechanic. Regular maintenance saves money.",
+    "lines": [
+      "Your kitchen looks different!",
+      "I had a new tap installed. The old one had a leak for weeks.",
+      "Did you do it yourself?",
+      "No way! I got a plumber to do it. He also checked the pipes.",
+      "I need to have my lights repaired. Do you know a good electrician?",
+      "Yes, but ask for an estimate first. Some are very expensive.",
+      "And my car needs a service too.",
+      "Make an appointment with my mechanic. Regular maintenance saves money."
+    ],
+    "focusWords": [
+      "install",
+      "tap",
+      "leak",
+      "plumber",
+      "electrician"
+    ],
+    "instructionUz": "\"Ta'mirlatish\" dialogini ovoz chiqarib o'qing. E'tibor bering: install, tap, leak, plumber, electrician."
+  },
+  {
+    "dayNumber": 70,
+    "cefr": "B2",
+    "topic": "Giving a Presentation",
+    "topicUz": "Taqdimot",
+    "text": "Good morning, everyone. In this presentation, I'll outline our results for the year. Firstly, let's look at this slide. Sales grew by twenty percent. Moreover, we opened two new shops in Fergana and Namangan. Could you highlight the main problems too? Of course. However, online sales were lower than we expected. One statistic surprised us: most customers still pay in cash. Furthermore, delivery costs have gone up. In conclusion, it was a good year, but we must improve our website.",
+    "lines": [
+      "Good morning, everyone. In this presentation, I'll outline our results for the year.",
+      "Firstly, let's look at this slide. Sales grew by twenty percent.",
+      "Moreover, we opened two new shops in Fergana and Namangan.",
+      "Could you highlight the main problems too?",
+      "Of course. However, online sales were lower than we expected.",
+      "One statistic surprised us: most customers still pay in cash.",
+      "Furthermore, delivery costs have gone up.",
+      "In conclusion, it was a good year, but we must improve our website."
+    ],
+    "focusWords": [
+      "presentation",
+      "outline",
+      "firstly",
+      "slide",
+      "moreover"
+    ],
+    "instructionUz": "\"Taqdimot\" dialogini ovoz chiqarib o'qing. E'tibor bering: presentation, outline, firstly, slide, moreover."
+  },
+  {
+    "dayNumber": 71,
+    "cefr": "B2",
+    "topic": "Seeing a Doctor",
+    "topicUz": "Shifokor ko'rigi",
+    "text": "What did the doctor say at the clinic? She advised me to see a specialist about my back. Did she give you a diagnosis? Not yet. She suggested doing a blood test and an X-ray first. Is it chronic? She doesn't think so. She recommended exercises as the first treatment, not surgery. How long will it take to recover? About a month. She also reminded me to get my flu vaccine. Good. Prevention is always better than cure.",
+    "lines": [
+      "What did the doctor say at the clinic?",
+      "She advised me to see a specialist about my back.",
+      "Did she give you a diagnosis?",
+      "Not yet. She suggested doing a blood test and an X-ray first.",
+      "Is it chronic?",
+      "She doesn't think so. She recommended exercises as the first treatment, not surgery.",
+      "How long will it take to recover?",
+      "About a month. She also reminded me to get my flu vaccine.",
+      "Good. Prevention is always better than cure."
+    ],
+    "focusWords": [
+      "clinic",
+      "specialist",
+      "diagnosis",
+      "blood",
+      "chronic"
+    ],
+    "instructionUz": "\"Shifokor ko'rigi\" dialogini ovoz chiqarib o'qing. E'tibor bering: clinic, specialist, diagnosis, blood, chronic."
+  },
+  {
+    "dayNumber": 72,
+    "cefr": "B2",
+    "topic": "City Life or Village Life",
+    "topicUz": "Shahar yoki qishloq",
+    "text": "Would you rather live in the city or in the countryside? The older I get, the more I love the village. It's so peaceful. But urban life is more convenient. Everything is close. True, but the bigger the city, the more overcrowded it becomes. Rural areas don't have good facilities, like hospitals and universities. That's changing. And the pace of life is slower there — the slower, the healthier. My grandparents keep livestock and grow their own food. That's exactly the lifestyle I dream about.",
+    "lines": [
+      "Would you rather live in the city or in the countryside?",
+      "The older I get, the more I love the village. It's so peaceful.",
+      "But urban life is more convenient. Everything is close.",
+      "True, but the bigger the city, the more overcrowded it becomes.",
+      "Rural areas don't have good facilities, like hospitals and universities.",
+      "That's changing. And the pace of life is slower there — the slower, the healthier.",
+      "My grandparents keep livestock and grow their own food.",
+      "That's exactly the lifestyle I dream about."
+    ],
+    "focusWords": [
+      "countryside",
+      "peaceful",
+      "urban",
+      "convenient",
+      "overcrowded"
+    ],
+    "instructionUz": "\"Shahar yoki qishloq\" dialogini ovoz chiqarib o'qing. E'tibor bering: countryside, peaceful, urban, convenient, overcrowded."
+  },
+  {
+    "dayNumber": 73,
+    "cefr": "B2",
+    "topic": "Bukhara and Khiva",
+    "topicUz": "Buxoro va Xiva",
+    "text": "Standing on this wall, you can see the whole of Khiva. It's like a museum under the open sky. Is this a fortress? Yes. Built over two thousand years ago, it protected the city from enemies. And that tall tower? That's a minaret. Covered with blue and green tiles, it was never finished. Why was the city so rich? Because of trade. Having crossed the desert, every caravan stopped here. What did the merchants sell? Silk, spices and carpets. Today local families still preserve the old crafts. Then I must wander around the bazaar before I leave!",
+    "lines": [
+      "Standing on this wall, you can see the whole of Khiva.",
+      "It's like a museum under the open sky. Is this a fortress?",
+      "Yes. Built over two thousand years ago, it protected the city from enemies.",
+      "And that tall tower?",
+      "That's a minaret. Covered with blue and green tiles, it was never finished.",
+      "Why was the city so rich?",
+      "Because of trade. Having crossed the desert, every caravan stopped here.",
+      "What did the merchants sell?",
+      "Silk, spices and carpets. Today local families still preserve the old crafts.",
+      "Then I must wander around the bazaar before I leave!"
+    ],
+    "focusWords": [
+      "fortress",
+      "minaret",
+      "trade",
+      "caravan",
+      "merchant"
+    ],
+    "instructionUz": "\"Buxoro va Xiva\" dialogini ovoz chiqarib o'qing. E'tibor bering: fortress, minaret, trade, caravan, merchant."
+  },
+  {
+    "dayNumber": 74,
+    "cefr": "B2",
+    "topic": "The Influence of Social Media",
+    "topicUz": "Ijtimoiy tarmoqlar ta'siri",
+    "text": "How much time do you spend on social media? Too much. I scroll for hours, but I learn very little. It's addictive. The apps are designed to keep your attention. And I compare myself with influencers all the time. Remember, many photos use a filter. Few of them are authentic. True. One influencer has a million followers but posts the same trend as everyone else. I only follow a few accounts that teach something useful. Good idea. A little less screen time would help me too.",
+    "lines": [
+      "How much time do you spend on social media?",
+      "Too much. I scroll for hours, but I learn very little.",
+      "It's addictive. The apps are designed to keep your attention.",
+      "And I compare myself with influencers all the time.",
+      "Remember, many photos use a filter. Few of them are authentic.",
+      "True. One influencer has a million followers but posts the same trend as everyone else.",
+      "I only follow a few accounts that teach something useful.",
+      "Good idea. A little less screen time would help me too."
+    ],
+    "focusWords": [
+      "scroll",
+      "addictive",
+      "attention",
+      "compare",
+      "influencer"
+    ],
+    "instructionUz": "\"Ijtimoiy tarmoqlar ta'siri\" dialogini ovoz chiqarib o'qing. E'tibor bering: scroll, addictive, attention, compare, influencer."
+  },
+  {
+    "dayNumber": 75,
+    "cefr": "B2",
+    "topic": "Environmental Activism",
+    "topicUz": "Ekologik faollik",
+    "text": "I've stopped buying disposable cups. I carry my own now. Good for you! Why did you start? I met an activist at university. I remember signing her petition. What was the campaign about? A ban on plastic bags in our city. Most of them end up in landfill. Did it work? Partly. There was a big protest, and public awareness grew a lot. I should stop to think before I buy things with so much packaging. Exactly. A sustainable life starts with small choices. Remember to bring your own bag!",
+    "lines": [
+      "I've stopped buying disposable cups. I carry my own now.",
+      "Good for you! Why did you start?",
+      "I met an activist at university. I remember signing her petition.",
+      "What was the campaign about?",
+      "A ban on plastic bags in our city. Most of them end up in landfill.",
+      "Did it work?",
+      "Partly. There was a big protest, and public awareness grew a lot.",
+      "I should stop to think before I buy things with so much packaging.",
+      "Exactly. A sustainable life starts with small choices. Remember to bring your own bag!"
+    ],
+    "focusWords": [
+      "disposable",
+      "activist",
+      "petition",
+      "campaign",
+      "ban"
+    ],
+    "instructionUz": "\"Ekologik faollik\" dialogini ovoz chiqarib o'qing. E'tibor bering: disposable, activist, petition, campaign, ban."
+  },
+  {
+    "dayNumber": 76,
+    "cefr": "B2",
+    "topic": "A Senior Job Interview",
+    "topicUz": "Yuqori lavozimga suhbat",
+    "text": "What have you accomplished in your current role? I've implemented a new online system, and I've recruited four new people. And what have you been working on recently? I've been leading a project to improve our company's reputation online. How do you handle pressure? I stay calm and plan carefully. I've always worked well under pressure. Can you give an example of initiative? Last year I started English lessons for my colleagues. I'm very motivated to share what I know. How would your expertise contribute to our team?",
+    "lines": [
+      "What have you accomplished in your current role?",
+      "I've implemented a new online system, and I've recruited four new people.",
+      "And what have you been working on recently?",
+      "I've been leading a project to improve our company's reputation online.",
+      "How do you handle pressure?",
+      "I stay calm and plan carefully. I've always worked well under pressure.",
+      "Can you give an example of initiative?",
+      "Last year I started English lessons for my colleagues. I'm very motivated to share what I know.",
+      "How would your expertise contribute to our team?"
+    ],
+    "focusWords": [
+      "accomplish",
+      "implement",
+      "recruit",
+      "reputation",
+      "handle"
+    ],
+    "instructionUz": "\"Yuqori lavozimga suhbat\" dialogini ovoz chiqarib o'qing. E'tibor bering: accomplish, implement, recruit, reputation, handle."
+  },
+  {
+    "dayNumber": 77,
+    "cefr": "B2",
+    "topic": "Moving Abroad",
+    "topicUz": "Chet elga ko'chish",
+    "text": "How's life in Germany? Have you got used to it? Slowly. At first everything was unfamiliar — the language, the culture, even the food. Do you miss Uzbek cuisine? Terribly! I'm still not used to eating dinner at six. And I often feel homesick. Was it hard to get a visa? The bureaucracy was terrible. My residence permit took four months. Are there many immigrants in your city? Yes, and most of them integrate well. You just need time to adapt.",
+    "lines": [
+      "How's life in Germany? Have you got used to it?",
+      "Slowly. At first everything was unfamiliar — the language, the culture, even the food.",
+      "Do you miss Uzbek cuisine?",
+      "Terribly! I'm still not used to eating dinner at six. And I often feel homesick.",
+      "Was it hard to get a visa?",
+      "The bureaucracy was terrible. My residence permit took four months.",
+      "Are there many immigrants in your city?",
+      "Yes, and most of them integrate well. You just need time to adapt."
+    ],
+    "focusWords": [
+      "unfamiliar",
+      "culture",
+      "cuisine",
+      "homesick",
+      "visa"
+    ],
+    "instructionUz": "\"Chet elga ko'chish\" dialogini ovoz chiqarib o'qing. E'tibor bering: unfamiliar, culture, cuisine, homesick, visa."
+  },
+  {
+    "dayNumber": 78,
+    "cefr": "B2",
+    "topic": "A Debate on Education",
+    "topicUz": "Ta'lim bo'yicha bahs",
+    "text": "Today's debate: should schools focus less on exams? From my perspective, yes. Students memorise facts and forget them the next day. I'd argue that exams are still necessary. We need some form of assessment. Of course, but the curriculum should develop critical thinking and creativity. It seems to me that teachers can't evaluate creativity fairly. What about university? Should tuition be free? In my view, school is compulsory, so university should at least be affordable. I partly agree, but free tuition must be paid for by taxes.",
+    "lines": [
+      "Today's debate: should schools focus less on exams?",
+      "From my perspective, yes. Students memorise facts and forget them the next day.",
+      "I'd argue that exams are still necessary. We need some form of assessment.",
+      "Of course, but the curriculum should develop critical thinking and creativity.",
+      "It seems to me that teachers can't evaluate creativity fairly.",
+      "What about university? Should tuition be free?",
+      "In my view, school is compulsory, so university should at least be affordable.",
+      "I partly agree, but free tuition must be paid for by taxes."
+    ],
+    "focusWords": [
+      "debate",
+      "perspective",
+      "memorise",
+      "assessment",
+      "curriculum"
+    ],
+    "instructionUz": "\"Ta'lim bo'yicha bahs\" dialogini ovoz chiqarib o'qing. E'tibor bering: debate, perspective, memorise, assessment, curriculum."
+  },
+  {
+    "dayNumber": 79,
+    "cefr": "B2",
+    "topic": "Sustainable Fashion",
+    "topicUz": "Barqaror moda",
+    "text": "What I love about your style is that it's unique. Where do you shop? Mostly vintage shops. What I don't want is another cheap T-shirt from a big brand. Why not? Fast fashion is so cheap. It was a documentary that changed my mind. It showed the impact of cheap clothes on nature. And the workers? Many of them earn a terrible wage. So now I always read the label. What do you look for? Natural fabric and durable quality. What matters is how long a garment lasts. My wardrobe is full of things I never wear!",
+    "lines": [
+      "What I love about your style is that it's unique. Where do you shop?",
+      "Mostly vintage shops. What I don't want is another cheap T-shirt from a big brand.",
+      "Why not? Fast fashion is so cheap.",
+      "It was a documentary that changed my mind. It showed the impact of cheap clothes on nature.",
+      "And the workers?",
+      "Many of them earn a terrible wage. So now I always read the label.",
+      "What do you look for?",
+      "Natural fabric and durable quality. What matters is how long a garment lasts.",
+      "My wardrobe is full of things I never wear!"
+    ],
+    "focusWords": [
+      "vintage",
+      "brand",
+      "fashion",
+      "impact",
+      "wage"
+    ],
+    "instructionUz": "\"Barqaror moda\" dialogini ovoz chiqarib o'qing. E'tibor bering: vintage, brand, fashion, impact, wage."
+  },
+  {
+    "dayNumber": 80,
+    "cefr": "B2",
+    "topic": "Scientific Discoveries",
+    "topicUz": "Ilmiy kashfiyotlar",
+    "text": "Do you know how penicillin was discovered? Wasn't it an accident? Partly. Alexander Fleming had been studying bacteria in his laboratory for years. What happened? He had been working on an experiment before his holiday, and he accidentally left some dishes open. And when he came back? He observed that a mould had killed the bacteria. He checked it under a microscope. So a mistake became a breakthrough! Yes. But the discovery only mattered because of his research. Other scientists had been testing his theory for ten years before the medicine was ready.",
+    "lines": [
+      "Do you know how penicillin was discovered?",
+      "Wasn't it an accident?",
+      "Partly. Alexander Fleming had been studying bacteria in his laboratory for years.",
+      "What happened?",
+      "He had been working on an experiment before his holiday, and he accidentally left some dishes open.",
+      "And when he came back?",
+      "He observed that a mould had killed the bacteria. He checked it under a microscope.",
+      "So a mistake became a breakthrough!",
+      "Yes. But the discovery only mattered because of his research. Other scientists had been testing his theory for ten years before the medicine was ready."
+    ],
+    "focusWords": [
+      "bacteria",
+      "laboratory",
+      "experiment",
+      "accidentally",
+      "observe"
+    ],
+    "instructionUz": "\"Ilmiy kashfiyotlar\" dialogini ovoz chiqarib o'qing. E'tibor bering: bacteria, laboratory, experiment, accidentally, observe."
+  },
+  {
+    "dayNumber": 81,
+    "cefr": "B2",
+    "topic": "Conflict at Work",
+    "topicUz": "Ishdagi nizo",
+    "text": "There's a lot of tension in the office. What's going on? Rustam and Dilnoza have fallen out. They can't get along any more. Why? What started the conflict? In the meeting, Rustam kept interrupting her, and then he criticised her report in front of everyone. That's not respectful. Did she complain? She's frustrated, but she doesn't want to bring it up with the boss. Someone should point out that feedback must be constructive, not personal. Exactly. And his tone was aggressive. He blames others for everything. Let's help them sort it out before it gets worse.",
+    "lines": [
+      "There's a lot of tension in the office. What's going on?",
+      "Rustam and Dilnoza have fallen out. They can't get along any more.",
+      "Why? What started the conflict?",
+      "In the meeting, Rustam kept interrupting her, and then he criticised her report in front of everyone.",
+      "That's not respectful. Did she complain?",
+      "She's frustrated, but she doesn't want to bring it up with the boss.",
+      "Someone should point out that feedback must be constructive, not personal.",
+      "Exactly. And his tone was aggressive. He blames others for everything.",
+      "Let's help them sort it out before it gets worse."
+    ],
+    "focusWords": [
+      "tension",
+      "conflict",
+      "interrupt",
+      "criticise",
+      "respectful"
+    ],
+    "instructionUz": "\"Ishdagi nizo\" dialogini ovoz chiqarib o'qing. E'tibor bering: tension, conflict, interrupt, criticise, respectful."
+  },
+  {
+    "dayNumber": 82,
+    "cefr": "B2",
+    "topic": "Consumer Rights",
+    "topicUz": "Iste'molchi huquqlari",
+    "text": "The shop overcharged me for this washing machine. And now it doesn't work. You should have checked the price on the receipt. I know. I shouldn't have trusted the salesman. The advert was designed to mislead customers. As a consumer, you're entitled to a refund or a repair. Really? The shop says it's against their policy. Their policy can't be above the law. You have legal rights. So what should I do? Write a formal complaint and keep proof of your purchase. You can also claim compensation for the extra money. I should have done that from the start.",
+    "lines": [
+      "The shop overcharged me for this washing machine. And now it doesn't work.",
+      "You should have checked the price on the receipt.",
+      "I know. I shouldn't have trusted the salesman. The advert was designed to mislead customers.",
+      "As a consumer, you're entitled to a refund or a repair.",
+      "Really? The shop says it's against their policy.",
+      "Their policy can't be above the law. You have legal rights.",
+      "So what should I do?",
+      "Write a formal complaint and keep proof of your purchase. You can also claim compensation for the extra money.",
+      "I should have done that from the start."
+    ],
+    "focusWords": [
+      "overcharge",
+      "mislead",
+      "consumer",
+      "entitled",
+      "policy"
+    ],
+    "instructionUz": "\"Iste'molchi huquqlari\" dialogini ovoz chiqarib o'qing. E'tibor bering: overcharge, mislead, consumer, entitled, policy."
+  },
+  {
+    "dayNumber": 83,
+    "cefr": "B2",
+    "topic": "Health Myths",
+    "topicUz": "Sog'liq haqidagi afsonalar",
+    "text": "It is believed that you shouldn't drink cold water after plov. Is that true? It's a popular belief, but there's no scientific evidence for it. My grandmother says it makes food harder to digest. It is said to be bad, but nobody has managed to prove it. It's a myth. What about vitamin supplements? Are they really good for the immune system? Only if your nutrition is poor. A normal diet usually gives you enough. And coffee? Some people say it's harmful. In moderate amounts, it's fine. Just drink enough water and stay hydrated.",
+    "lines": [
+      "It is believed that you shouldn't drink cold water after plov. Is that true?",
+      "It's a popular belief, but there's no scientific evidence for it.",
+      "My grandmother says it makes food harder to digest.",
+      "It is said to be bad, but nobody has managed to prove it. It's a myth.",
+      "What about vitamin supplements? Are they really good for the immune system?",
+      "Only if your nutrition is poor. A normal diet usually gives you enough.",
+      "And coffee? Some people say it's harmful.",
+      "In moderate amounts, it's fine. Just drink enough water and stay hydrated."
+    ],
+    "focusWords": [
+      "belief",
+      "scientific",
+      "digest",
+      "prove",
+      "myth"
+    ],
+    "instructionUz": "\"Sog'liq haqidagi afsonalar\" dialogini ovoz chiqarib o'qing. E'tibor bering: belief, scientific, digest, prove, myth."
+  },
+  {
+    "dayNumber": 84,
+    "cefr": "B2",
+    "topic": "Leadership",
+    "topicUz": "Yetakchilik",
+    "text": "Who is the best leader you have ever worked with? My first boss, whose vision changed our small company. What made him special? He was decisive but humble. He never used his authority to scare people. Did he manage everything himself? No. He knew how to delegate, and he trusted the people to whom he gave tasks. It sounds like he really inspired you. He did. He was my mentor — the person from whom I learned empathy.",
+    "lines": [
+      "Who is the best leader you have ever worked with?",
+      "My first boss, whose vision changed our small company.",
+      "What made him special?",
+      "He was decisive but humble. He never used his authority to scare people.",
+      "Did he manage everything himself?",
+      "No. He knew how to delegate, and he trusted the people to whom he gave tasks.",
+      "It sounds like he really inspired you.",
+      "He did. He was my mentor — the person from whom I learned empathy."
+    ],
+    "focusWords": [
+      "leader",
+      "vision",
+      "decisive",
+      "humble",
+      "authority"
+    ],
+    "instructionUz": "\"Yetakchilik\" dialogini ovoz chiqarib o'qing. E'tibor bering: leader, vision, decisive, humble, authority."
+  },
+  {
+    "dayNumber": 85,
+    "cefr": "B2",
+    "topic": "Travel Mishaps",
+    "topicUz": "Sayohatdagi ko'ngilsizliklar",
+    "text": "How was your trip to Istanbul? A real adventure! On the first day, while I was buying souvenirs, a pickpocket took my wallet. Oh no! Was your passport in it? No, luckily I had left it in my backpack. But I still had to go to the embassy for a document. And the hotel? When I arrived, the girl at reception said the hotel was overbooked! So where did you stay? In a cheap hostel. Then my flight home was delayed, and I was stranded at the airport for a night. Your itinerary didn't go as planned at all!",
+    "lines": [
+      "How was your trip to Istanbul?",
+      "A real adventure! On the first day, while I was buying souvenirs, a pickpocket took my wallet.",
+      "Oh no! Was your passport in it?",
+      "No, luckily I had left it in my backpack. But I still had to go to the embassy for a document.",
+      "And the hotel?",
+      "When I arrived, the girl at reception said the hotel was overbooked!",
+      "So where did you stay?",
+      "In a cheap hostel. Then my flight home was delayed, and I was stranded at the airport for a night.",
+      "Your itinerary didn't go as planned at all!"
+    ],
+    "focusWords": [
+      "adventure",
+      "souvenir",
+      "pickpocket",
+      "backpack",
+      "embassy"
+    ],
+    "instructionUz": "\"Sayohatdagi ko'ngilsizliklar\" dialogini ovoz chiqarib o'qing. E'tibor bering: adventure, souvenir, pickpocket, backpack, embassy."
+  },
+  {
+    "dayNumber": 86,
+    "cefr": "B2",
+    "topic": "Staying Safe Online",
+    "topicUz": "Raqamli xavfsizlik",
+    "text": "I got a message from 'my bank' asking me to click a link and verify my card. Don't click it! It's a scam. Banks aren't supposed to ask for your details by SMS. It looked real, though. That's how fraud works. They wanted to steal your identity. What am I supposed to do now? Call the bank and report it. And never open an attachment from a suspicious email. Should I install antivirus software? Yes, and use an app that can encrypt your messages. Also make a backup of your photos every month.",
+    "lines": [
+      "I got a message from 'my bank' asking me to click a link and verify my card.",
+      "Don't click it! It's a scam. Banks aren't supposed to ask for your details by SMS.",
+      "It looked real, though.",
+      "That's how fraud works. They wanted to steal your identity.",
+      "What am I supposed to do now?",
+      "Call the bank and report it. And never open an attachment from a suspicious email.",
+      "Should I install antivirus software?",
+      "Yes, and use an app that can encrypt your messages. Also make a backup of your photos every month."
+    ],
+    "focusWords": [
+      "link",
+      "verify",
+      "scam",
+      "fraud",
+      "identity"
+    ],
+    "instructionUz": "\"Raqamli xavfsizlik\" dialogini ovoz chiqarib o'qing. E'tibor bering: link, verify, scam, fraud, identity."
+  },
+  {
+    "dayNumber": 87,
+    "cefr": "B2",
+    "topic": "A Film Review",
+    "topicUz": "Film taqrizi",
+    "text": "Did you read what the critic wrote about the new Uzbek film? Yes, but I disagree. He says it's overrated. I found the story a bit predictable. Really? The twist at the end was gripping! I was amazed. The middle part was confusing, though. I was bored for twenty minutes. Maybe. But the cast was brilliant, especially the old man. I agree. And the soundtrack was beautiful. So it wasn't disappointing after all? Not at all. I'd give it four stars out of five.",
+    "lines": [
+      "Did you read what the critic wrote about the new Uzbek film?",
+      "Yes, but I disagree. He says it's overrated.",
+      "I found the story a bit predictable.",
+      "Really? The twist at the end was gripping! I was amazed.",
+      "The middle part was confusing, though. I was bored for twenty minutes.",
+      "Maybe. But the cast was brilliant, especially the old man.",
+      "I agree. And the soundtrack was beautiful.",
+      "So it wasn't disappointing after all?",
+      "Not at all. I'd give it four stars out of five."
+    ],
+    "focusWords": [
+      "critic",
+      "overrated",
+      "predictable",
+      "twist",
+      "gripping"
+    ],
+    "instructionUz": "\"Film taqrizi\" dialogini ovoz chiqarib o'qing. E'tibor bering: critic, overrated, predictable, twist, gripping."
+  },
+  {
+    "dayNumber": 88,
+    "cefr": "B2",
+    "topic": "Public Speaking",
+    "topicUz": "Nutq so'zlash",
+    "text": "I have to give a speech at my sister's wedding, and I'm really nervous. That's normal. Not only beginners but also famous speakers feel anxiety. How can I feel more confident? Rehearse it at least five times. Not only will you remember it better, but you'll also relax. What about my hands? I never know what to do with them. Use natural gestures. And don't be afraid to pause — silence can be powerful. I want to impress everyone. Don't try to impress — try to engage people. Tell a short story. That's how you persuade and touch hearts.",
+    "lines": [
+      "I have to give a speech at my sister's wedding, and I'm really nervous.",
+      "That's normal. Not only beginners but also famous speakers feel anxiety.",
+      "How can I feel more confident?",
+      "Rehearse it at least five times. Not only will you remember it better, but you'll also relax.",
+      "What about my hands? I never know what to do with them.",
+      "Use natural gestures. And don't be afraid to pause — silence can be powerful.",
+      "I want to impress everyone.",
+      "Don't try to impress — try to engage people. Tell a short story. That's how you persuade and touch hearts."
+    ],
+    "focusWords": [
+      "speech",
+      "nervous",
+      "anxiety",
+      "confident",
+      "rehearse"
+    ],
+    "instructionUz": "\"Nutq so'zlash\" dialogini ovoz chiqarib o'qing. E'tibor bering: speech, nervous, anxiety, confident, rehearse."
+  },
+  {
+    "dayNumber": 89,
+    "cefr": "B2",
+    "topic": "Cities of the Future",
+    "topicUz": "Kelajak shaharlari",
+    "text": "What will Tashkent look like in thirty years? It's bound to be much bigger. The population is likely to reach five million. Will there be more skyscrapers? Probably. Higher density means less land is needed as the city expands. And traffic? Congestion is already terrible. Most vehicles are likely to be electric, and public transport is set to grow. What do you mean by a smart city? Traffic lights, water and energy will be controlled by data. And many roofs will have solar panels. That will need a lot of new infrastructure.",
+    "lines": [
+      "What will Tashkent look like in thirty years?",
+      "It's bound to be much bigger. The population is likely to reach five million.",
+      "Will there be more skyscrapers?",
+      "Probably. Higher density means less land is needed as the city expands.",
+      "And traffic? Congestion is already terrible.",
+      "Most vehicles are likely to be electric, and public transport is set to grow.",
+      "What do you mean by a smart city?",
+      "Traffic lights, water and energy will be controlled by data. And many roofs will have solar panels.",
+      "That will need a lot of new infrastructure."
+    ],
+    "focusWords": [
+      "population",
+      "skyscraper",
+      "density",
+      "expand",
+      "congestion"
+    ],
+    "instructionUz": "\"Kelajak shaharlari\" dialogini ovoz chiqarib o'qing. E'tibor bering: population, skyscraper, density, expand, congestion."
+  },
+  {
+    "dayNumber": 90,
+    "cefr": "B2",
+    "topic": "Your Learning Journey",
+    "topicUz": "O'quv yo'lingiz",
+    "text": "Ninety days! You've completed the whole course. How do you feel? Proud and full of gratitude. Three months ago I had never spoken English with anyone. You have persevered even on difficult days. That's the real secret. Will I get a certificate? Yes, but fluency is more important than any paper. What will you do next? I'm going to continue every day. I'll watch films and read the news to get more exposure. Great. If you can, immerse yourself — travel, make friends and use every resource you find. So learning a language is a lifelong process. Exactly. This is not the end — it's your first step beyond B2.",
+    "lines": [
+      "Ninety days! You've completed the whole course. How do you feel?",
+      "Proud and full of gratitude. Three months ago I had never spoken English with anyone.",
+      "You have persevered even on difficult days. That's the real secret.",
+      "Will I get a certificate?",
+      "Yes, but fluency is more important than any paper. What will you do next?",
+      "I'm going to continue every day. I'll watch films and read the news to get more exposure.",
+      "Great. If you can, immerse yourself — travel, make friends and use every resource you find.",
+      "So learning a language is a lifelong process.",
+      "Exactly. This is not the end — it's your first step beyond B2."
+    ],
+    "focusWords": [
+      "gratitude",
+      "persevere",
+      "certificate",
+      "fluency",
+      "continue"
+    ],
+    "instructionUz": "\"O'quv yo'lingiz\" dialogini ovoz chiqarib o'qing. E'tibor bering: gratitude, persevere, certificate, fluency, continue."
   }
 ]

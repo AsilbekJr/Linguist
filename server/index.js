@@ -5,6 +5,7 @@ const connectDB = require('./config/db');
 const { validateEnv } = require('./utils/validateEnv');
 const { createApp } = require('./app');
 const { startInternalCron } = require('./services/reminderRunner');
+const { startPolling: startTelegramPolling } = require('./services/telegramBot');
 
 validateEnv();
 
@@ -20,6 +21,8 @@ const startServer = async () => {
     // Render bepul tarifida servis bo'sh turishda o'chadi, shuning uchun
     // ishonchli variant — tashqi cron POST /api/notifications/run ni chaqirishi.
     startInternalCron();
+    // Faqat lokal: webhook uchun tashqi https manzil yo'q bo'lganda
+    if (!isProd) startTelegramPolling().catch((err) => console.error('Telegram polling:', err.message));
   });
 };
 

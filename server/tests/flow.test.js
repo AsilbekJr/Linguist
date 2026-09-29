@@ -1,7 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { start, stop, makeClient } = require('./helpers/testServer');
-const { finishTopicDay, reviewAllDue, sentenceFor } = require('./helpers/dailyFlow');
+const { finishTopicDay, reviewAllDue, setStage } = require('./helpers/dailyFlow');
 
 /**
  * To'liq kunlik oqim: kunlik sahna → mini-test → so'z saqlash → yakunlash → takrorlash.
@@ -64,7 +64,7 @@ test('kunlik sahna mijoz kutayotgan barcha maydonlarni qaytaradi', async () => {
   assert.equal(d.quizPassed, false, 'boshida test o\'tilmagan bo\'lishi kerak');
 });
 
-test('to\'liq kunlik oqim: test → so\'z saqlash → yakunlash', async () => {
+test('to\'liq kunlik oqim: test → yakunlash → so\'zlar avtomatik lug\'atda', async () => {
   const api = makeClient();
   await api.register();
 
@@ -72,41 +72,97 @@ test('to\'liq kunlik oqim: test → so\'z saqlash → yakunlash', async () => {
   const words = topic.data.words;
   assert.ok(words.length > 0);
 
-  // 1) Testni o'tish
+  // 1) Testsiz yakunlab bo'lmaydi
+  const tooEarly = await api.post('/api/topics/finish', {});
+  assert.equal(tooEarly.status, 400);
+  assert.equal(tooEarly.data.code, 'QUIZ_REQUIRED');
+
+  // 2) Testni o'tish
   const { result } = await passQuizAndFinish(api);
   assert.equal(result.data.passed, true, `test o'tmadi: ${result.data.score}%`);
-
-  // Server endi quizPassed=true deyishi kerak
   const afterQuiz = await api.get('/api/topics/current');
   assert.equal(afterQuiz.data.quizPassed, true);
 
-  // 2) Test o'tildi, lekin so'zlar saqlanmagan — yakunlash rad etilishi kerak
-  const tooEarly = await api.post('/api/topics/finish', {});
-  assert.equal(tooEarly.status, 400);
-  assert.equal(tooEarly.data.code, 'WORDS_REQUIRED');
-
-  // 3) So'zlarni saqlash
-  for (const w of words) {
-    const added = await api.post('/api/words', {
-      word: w.word,
-      skipAI: true,
-      fromTopic: true,
-      manualTranslation: w.translation,
-      manualDefinition: w.definition,
-    });
-    assert.ok([201, 400].includes(added.status), `so'z qo'shilmadi: ${JSON.stringify(added.data)}`);
-  }
-
-  // 4) Endi yakunlanishi kerak
+  // 3) So'zlarni qo'lda saqlamasdan yakunlash — ilgari WORDS_REQUIRED bilan rad etilardi
   const finish = await api.post('/api/topics/finish', {});
   assert.equal(finish.status, 200, JSON.stringify(finish.data));
   assert.equal(finish.data.topicCompleted, true);
+  assert.equal(finish.data.wordsAdded, words.length, "kun so'zlari avtomatik qo'shilmadi");
   assert.ok(finish.data.user.xp > 0, 'XP berilmadi');
-  assert.equal(finish.data.user.dailyQuests.topicCompleted, true);
 
-  // 5) Saqlangan so'zlar darhol takrorlash navbatida bo'lishi kerak
+  // 4) So'zlar lug'atda, to'liq ma'lumot bilan
+  const dict = await api.get('/api/words');
+  for (const w of words) {
+    const saved = dict.data.find((d) => d.word.toLowerCase() === w.word.toLowerCase());
+    assert.ok(saved, `"${w.word}" lug'atga qo'shilmadi`);
+    assert.equal(saved.translation, w.translation);
+    assert.ok(saved.definition && saved.examples?.length, `"${w.word}" ma'lumoti to'liq emas`);
+  }
+
+  // 5) Va darhol takrorlash navbatida — birinchi bosqich: tanib olish
   const due = await api.get('/api/review/due');
   assert.ok(due.data.length >= words.length, `takrorlash navbati bo'sh: ${due.data.length}`);
+  assert.ok(due.data.every((d) => d.mode === 'recognize'), "yangi so'zlar tanib olishdan boshlanishi kerak");
+});
+
+test("takrorlash rejimlari: javob oshkor qilinmaydi, mijoz rejimni tanlay olmaydi", async () => {
+  const api = makeClient();
+  await api.register();
+  const added = await api.post('/api/words', {
+    word: 'journey',
+    skipAI: true,
+    manualTranslation: 'sayohat',
+    manualDefinition: 'a trip from one place to another',
+    manualExamples: ['Our journey took two days.'],
+  });
+  const id = added.data._id;
+
+  // Tanib olish: tarjima ko'rinmaydi, lekin variantlar orasida bor
+  let due = (await api.get('/api/review/due')).data.find((w) => w._id === id);
+  assert.equal(due.mode, 'recognize');
+  assert.equal(due.translation, undefined, 'tanib olishda tarjima oshkor qilinmasligi kerak');
+  assert.equal(due.options.length, 4);
+  assert.ok(due.options.includes('sayohat'));
+  assert.equal(new Set(due.options).size, 4, 'variantlar takrorlanmasligi kerak');
+
+  // Osonroq/boshqa rejimni tanlab bo'lmaydi
+  const cheat = await api.post(`/api/review/${id}/check`, { mode: 'sentence', sentence: 'My journey was long.' });
+  assert.equal(cheat.status, 409);
+  assert.equal(cheat.data.code, 'MODE_MISMATCH');
+
+  const wrong = await api.post(`/api/review/${id}/check`, { mode: 'recognize', answer: 'uy' });
+  assert.equal(wrong.data.isCorrect, false);
+  assert.equal(wrong.data.correctAnswer, 'sayohat');
+  assert.equal(wrong.data.reveal.word.toLowerCase(), 'journey', 'javobdan keyin kartochka ochilishi kerak');
+
+  // Eslash: so'zning o'zi ko'rinmaydi, misolda yashirilgan
+  await setStage(id, 2);
+  due = (await api.get('/api/review/due')).data.find((w) => w._id === id);
+  assert.equal(due.mode, 'recall');
+  assert.equal(due.word, undefined, "eslashda so'zning o'zi oshkor qilinmasligi kerak");
+  assert.equal(due.translation, 'sayohat');
+  assert.ok(!/journey/i.test(due.exampleMasked), 'misolda so\'z yashirilishi kerak');
+  assert.equal(due.hint.firstLetter, 'j');
+
+  // Bitta harf xatosi uzun so'zda kechiriladi
+  const near = await api.post(`/api/review/${id}/check`, { mode: 'recall', answer: 'journy' });
+  assert.equal(near.data.isCorrect, true);
+  assert.equal(near.data.nearMiss, true);
+  assert.equal(near.data.stage, 3);
+  assert.equal(near.data.nextMode, 'recall');
+});
+
+test("tanib olish va eslash AI limitini yemaydi", async () => {
+  const api = makeClient();
+  await api.register();
+  const added = await api.post('/api/words', { word: 'bridge', skipAI: true, manualTranslation: "ko'prik" });
+
+  const before = (await api.get('/api/billing/subscription')).data.usage?.aiCallsToday || 0;
+  const res = await api.post(`/api/review/${added.data._id}/check`, { mode: 'recognize', answer: "ko'prik" });
+  assert.equal(res.data.isCorrect, true);
+  assert.equal(res.data.method, 'exact');
+  const after = (await api.get('/api/billing/subscription')).data.usage?.aiCallsToday || 0;
+  assert.equal(after, before, 'AI kerak bo\'lmagan rejim limitdan hisoblanmasligi kerak');
 });
 
 test('sahna → takrorlash: navbat bo\'shaganda streak boshlanadi', async () => {
@@ -179,12 +235,12 @@ test('muddati kelmagan so\'z mashq rejimida — bosqich o\'zgarmaydi', async () 
   const added = await api.post('/api/words', { word: 'bridge', skipAI: true, manualTranslation: 'ko\'prik' });
   const id = added.data._id;
 
-  const miss = await api.post(`/api/review/${id}/check`, { sentence: 'I like the river.' });
+  const miss = await api.post(`/api/review/${id}/check`, { mode: 'recognize', answer: 'daryo' });
   assert.equal(miss.data.practice, false);
   assert.equal(miss.data.stage, 1);
 
   // "Qayta urinish": ilgari bu so'zni o'sha zahoti 2-bosqichga ko'tarardi
-  const retry = await api.post(`/api/review/${id}/check`, { sentence: sentenceFor('bridge') });
+  const retry = await api.post(`/api/review/${id}/check`, { mode: 'recognize', answer: "ko'prik" });
   assert.equal(retry.status, 200);
   assert.equal(retry.data.practice, true);
   assert.equal(retry.data.isCorrect, true, 'mashqda ham fikr-mulohaza beriladi');
@@ -192,7 +248,7 @@ test('muddati kelmagan so\'z mashq rejimida — bosqich o\'zgarmaydi', async () 
 
   // 7 marta ketma-ket yuborib "yodlangan" qilib bo'lmaydi
   for (let i = 0; i < 7; i++) {
-    await api.post(`/api/review/${id}/check`, { sentence: sentenceFor('bridge') });
+    await api.post(`/api/review/${id}/check`, { mode: 'recognize', answer: "ko'prik" });
   }
   const words = await api.get('/api/words');
   const w = words.data.find((x) => x._id === id);

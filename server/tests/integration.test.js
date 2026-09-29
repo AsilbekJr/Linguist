@@ -1,7 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { start, stop, makeClient } = require('./helpers/testServer');
-const { makeDue } = require('./helpers/dailyFlow');
+const { makeDue, setStage } = require('./helpers/dailyFlow');
 const User = require('../models/User');
 const { getAiLimit } = require('../middleware/usageQuota');
 
@@ -37,6 +37,8 @@ test('AI ishlamaganda takrorlash foydalanuvchini JAZOLAMAYDI', async () => {
   assert.equal(added.status, 201, JSON.stringify(added.data));
 
   const wordId = added.data._id;
+  // Gap tuzish rejimi 4-bosqichdan boshlanadi (utils/reviewModes.js)
+  await setStage(wordId, 4);
   const before = await api.get('/api/words');
   const stateBefore = before.data.find((w) => w._id === wordId);
 
@@ -65,11 +67,14 @@ test('AI ishlamaganda kunlik limit YEYILMAYDI', async () => {
     manualTranslation: 'non',
   });
   const wordId = added.data._id;
+  await setStage(wordId, 4);
 
   const usageBefore = await api.get('/api/billing/subscription');
   const before = usageBefore.data.usage?.aiCallsToday || 0;
 
-  await api.post(`/api/review/${wordId}/check`, { sentence: 'I eat bread.' });
+  const check = await api.post(`/api/review/${wordId}/check`, { sentence: 'I eat bread.' });
+  assert.equal(check.status, 200, JSON.stringify(check.data));
+  assert.equal(check.data.method, 'local');
 
   const usageAfter = await api.get('/api/billing/subscription');
   const after = usageAfter.data.usage?.aiCallsToday || 0;
@@ -85,19 +90,20 @@ test('AI yo\'q bo\'lsa ham takrorlash ishlaydi va bosqich oshadi', async () => {
 
   const added = await api.post('/api/words', { word: 'house', skipAI: true, manualTranslation: 'uy' });
   const wordId = added.data._id;
+  await setStage(wordId, 4);
 
   const first = await api.post(`/api/review/${wordId}/check`, { sentence: 'I live in a house.' });
   assert.equal(first.status, 200);
   assert.equal(first.data.method, 'local', 'AI yo\'q → mahalliy tekshiruv');
   assert.equal(first.data.isCorrect, true);
-  assert.equal(first.data.stage, 1, '1-bosqich');
-  assert.equal(first.data.intervalDays, 1, '1-bosqich → 1 kun');
+  assert.equal(first.data.stage, 5, '5-bosqich');
+  // 14 kun ±5% (uzun intervallarga ataylab tasodifiy og'ish qo'shiladi — srs.js)
+  assert.ok(first.data.intervalDays >= 13 && first.data.intervalDays <= 15, `interval: ${first.data.intervalDays}`);
 
   // Kunlar o'tdi — so'z yana navbatda
   await makeDue(wordId);
   const second = await api.post(`/api/review/${wordId}/check`, { sentence: 'The house is big.' });
-  assert.equal(second.data.stage, 2);
-  assert.equal(second.data.intervalDays, 2, '2-bosqich → 2 kun');
+  assert.equal(second.data.stage, 6);
 });
 
 test('so\'z ishlatilmagan gap bosqichni 1 ga qaytaradi', async () => {
@@ -106,11 +112,10 @@ test('so\'z ishlatilmagan gap bosqichni 1 ga qaytaradi', async () => {
 
   const added = await api.post('/api/words', { word: 'garden', skipAI: true, manualTranslation: 'bog\'' });
   const wordId = added.data._id;
+  await setStage(wordId, 4);
 
-  await api.post(`/api/review/${wordId}/check`, { sentence: 'The garden is green.' });
-  await makeDue(wordId);
   const up = await api.post(`/api/review/${wordId}/check`, { sentence: 'I like my garden.' });
-  assert.equal(up.data.stage, 2);
+  assert.equal(up.data.stage, 5);
 
   await makeDue(wordId);
   const miss = await api.post(`/api/review/${wordId}/check`, { sentence: 'I like flowers.' });
@@ -127,12 +132,21 @@ test('7 bosqichdan o\'tgan so\'z yodlangan bo\'ladi va qaytarish mumkin', async 
   const added = await api.post('/api/words', { word: 'window', skipAI: true, manualTranslation: 'deraza' });
   const wordId = added.data._id;
 
+  // Har bosqichda server kutgan rejimda javob: 2 × tanib olish, 2 × eslash, 3 × gap
+  const expected = ['recognize', 'recognize', 'recall', 'recall', 'sentence', 'sentence', 'sentence'];
   let last;
   for (let i = 0; i < 7; i++) {
     await makeDue(wordId);
-    last = await api.post(`/api/review/${wordId}/check`, {
-      sentence: `I open the window number ${i}.`,
-    });
+    const due = await api.get('/api/review/due');
+    const item = due.data.find((w) => w._id === wordId);
+    assert.equal(item.mode, expected[i], `${i + 1}-takrorlash rejimi`);
+    const body =
+      item.mode === 'recognize'
+        ? { mode: 'recognize', answer: 'deraza' }
+        : item.mode === 'recall'
+          ? { mode: 'recall', answer: 'window' }
+          : { mode: 'sentence', sentence: `I open the window number ${i}.` };
+    last = await api.post(`/api/review/${wordId}/check`, body);
     assert.equal(last.status, 200, `${i + 1}-takrorlash`);
   }
 
@@ -258,6 +272,7 @@ test('kunlik AI limiti parallel so\'rovlarda ham buzilmaydi', async () => {
 
   const added = await api.post('/api/words', { word: 'river', skipAI: true, manualTranslation: 'daryo' });
   const wordId = added.data._id;
+  await setStage(wordId, 4);
 
   // 20 ta bir vaqtda. Eski kodda read→+1→save poygasi tufayli hisob
   // 20 dan ancha kam bo'lib qolardi.
@@ -284,6 +299,7 @@ test('AI limiti tugaganda takrorlash to\'xtamaydi — mahalliy tekshiruvga tusha
   await api.register();
 
   const added = await api.post('/api/words', { word: 'lamp', skipAI: true, manualTranslation: 'chiroq' });
+  await setStage(added.data._id, 4);
   const me = await api.get('/api/auth/me');
   const limit = getAiLimit({ getEffectivePlan: () => 'free' });
   await User.updateOne(
@@ -298,7 +314,7 @@ test('AI limiti tugaganda takrorlash to\'xtamaydi — mahalliy tekshiruvga tusha
   assert.equal(check.data.method, 'local');
   assert.equal(check.data.aiReason, 'QUOTA', 'UI sababni ayta olishi kerak');
   assert.equal(check.data.isCorrect, true);
-  assert.equal(check.data.stage, 1, 'bosqich oshishi kerak');
+  assert.equal(check.data.stage, 5, 'bosqich oshishi kerak');
 
   const sub = await api.get('/api/billing/subscription');
   assert.equal(sub.data.usage.aiCallsToday, limit, 'limitdan oshib ketmasligi kerak');
@@ -428,8 +444,8 @@ test('refresh takrorlash holatiga tegmaydi', async () => {
   });
   const id = added.data._id;
 
-  // Bosqichni oshiramiz
-  await api.post(`/api/review/${id}/check`, { sentence: 'This is zzzunknownword here.' });
+  // Bosqichni oshiramiz (yangi so'z — tanib olish rejimi)
+  await api.post(`/api/review/${id}/check`, { mode: 'recognize', answer: 'sinov' });
   const before = (await api.get('/api/words')).data.find((w) => w._id === id);
   assert.equal(before.stage, 1);
 

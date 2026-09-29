@@ -15,3 +15,14 @@ export const performLogout = async (dispatch) => {
   resetIdentity();
   await persistor.purge();
 };
+
+/**
+ * Serverda sessiya allaqachon yo'q bo'lganda (masalan hisob o'chirilgach)
+ * faqat qurilmadagi holatni tozalash — logout so'rovi yuborilmaydi.
+ */
+export const clearLocalSession = async (dispatch) => {
+  dispatch(logout());
+  dispatch(apiSlice.util.resetApiState());
+  resetIdentity();
+  await persistor.purge();
+};

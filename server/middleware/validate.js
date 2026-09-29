@@ -50,11 +50,23 @@ const objectId = z.string().regex(/^[a-f\d]{24}$/i, 'Invalid id');
 
 const reviewCheckSchema = z.object({
   params: z.object({ id: objectId }),
-  body: z.object({
-    sentence: z.string().min(1).max(1000),
-    /** Gap klaviaturadan yozildimi yoki mikrofonga aytildimi — analitika uchun */
-    source: z.enum(['text', 'voice']).optional(),
-  }),
+  body: z
+    .object({
+      /**
+       * Topshiriq turi. Yuborilmasa — 'sentence' (eski mijozlar bilan moslik).
+       * Qaysi rejim kutilayotganini server so'z bosqichidan o'zi aniqlaydi va
+       * boshqasi yuborilsa rad etadi (utils/reviewModes.js).
+       */
+      mode: z.enum(['recognize', 'recall', 'sentence']).optional(),
+      /** recognize: tanlangan variant; recall: yozilgan so'z */
+      answer: z.string().trim().min(1).max(200).optional(),
+      sentence: z.string().min(1).max(1000).optional(),
+      /** Gap klaviaturadan yozildimi yoki mikrofonga aytildimi — analitika uchun */
+      source: z.enum(['text', 'voice']).optional(),
+    })
+    .refine((b) => ((b.mode || 'sentence') === 'sentence' ? Boolean(b.sentence) : Boolean(b.answer)), {
+      message: 'sentence rejimida "sentence", boshqalarida "answer" kerak',
+    }),
 });
 
 /** Gap tahlili: ega, kesim va so'z turkumlarini tushuntirish */
@@ -177,6 +189,32 @@ const onboardSchema = z.object({
   }),
 });
 
+/** Profilni tahrirlash — faqat yuborilgan maydonlar o'zgaradi */
+const profileUpdateSchema = z.object({
+  body: z
+    .object({
+      name: z.string().trim().min(2).max(80).optional(),
+      level: z.enum(['beginner', 'intermediate', 'advanced']).optional(),
+      goal: z.enum(['speaking', 'vocabulary', 'general']).optional(),
+      planType: z.enum(['sprint', 'foundation', 'fluency', 'standard']).optional(),
+    })
+    .strict()
+    .refine((b) => Object.keys(b).length > 0, { message: 'Hech narsa yuborilmadi' }),
+});
+
+const changePasswordSchema = z.object({
+  body: z.object({
+    currentPassword: z.string().min(1).max(128),
+    newPassword: z.string().min(8).max(128),
+  }),
+});
+
+const deleteAccountSchema = z.object({
+  body: z.object({
+    password: z.string().min(1).max(128),
+  }),
+});
+
 const speakingTranslateSchema = z.object({
   body: z.object({
     text: z.string().min(1).max(2000),
@@ -211,6 +249,9 @@ module.exports = {
   forgotPasswordSchema,
   resetPasswordSchema,
   onboardSchema,
+  profileUpdateSchema,
+  changePasswordSchema,
+  deleteAccountSchema,
   speakingTranslateSchema,
   checkoutSchema,
 };

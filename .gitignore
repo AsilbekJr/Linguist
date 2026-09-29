@@ -8,3 +8,6 @@ build
 server/server_error.log
 server/models.json
 server/node_modules/.cache/
+
+# Vocabulary in Use PDF manbalari — mualliflik huquqi bilan himoyalangan, repo'ga kirmaydi
+*.pdf

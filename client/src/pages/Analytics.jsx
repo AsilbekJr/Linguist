@@ -1,12 +1,12 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { useGetMeQuery, useGetWordsQuery, useGetChallengeHistoryQuery } from '../features/api/apiSlice';
 import {
-  Flame, Star, BookOpen, Trophy, Award, BarChart3, CheckCircle2, Target, Lock, PenLine, Library, CalendarCheck,
+  Flame, Star, BookOpen, Trophy, Award, BarChart3, CheckCircle2, Target, Lock, PenLine, Library, CalendarCheck, ChevronRight, Settings as SettingsIcon,
 } from 'lucide-react';
 import { computeLevelFromXp, xpProgressInLevel } from '../utils/learningUtils';
 import { isLearned } from '../utils/wordStatus';
-import NotificationSettings from '../components/NotificationSettings';
 import {
   AnimatedNumber, IconTile, PageHeader, PageSkeleton, ProgressRing, Stagger, StaggerItem, StatTile,
 } from '@/components/ui/primitives';
@@ -47,7 +47,7 @@ const Analytics = () => {
         eyebrow="Natijalar"
         title="Sizning yo'lingiz"
         icon={BarChart3}
-        description="O'rganish statistikangiz, nishonlar va eslatma sozlamalari."
+        description="O'rganish statistikangiz va nishonlaringiz."
       />
 
       {/* Daraja */}
@@ -81,7 +81,7 @@ const Analytics = () => {
         <StaggerItem><StatTile icon={Trophy} tone="xp" value={user?.longestStreak || 0} label="eng uzun streak" /></StaggerItem>
         <StaggerItem><StatTile icon={BookOpen} tone="primary" value={words.length} label="lug'atdagi so'zlar" /></StaggerItem>
         <StaggerItem><StatTile icon={CheckCircle2} tone="success" value={learned} label={`yodlangan · ${learnedPct}%`} /></StaggerItem>
-        <StaggerItem><StatTile icon={Target} tone="pink" value={completedChallenges} label="100 kun: bajarilgan" /></StaggerItem>
+        <StaggerItem><StatTile icon={Target} tone="pink" value={completedChallenges} label="yoddan aytilgan matnlar" /></StaggerItem>
         <StaggerItem><StatTile icon={Star} tone="info" value={cefr || '—'} label="aniqlangan daraja (CEFR)" /></StaggerItem>
       </Stagger>
 
@@ -123,26 +123,17 @@ const Analytics = () => {
         </Stagger>
       </section>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <NotificationSettings />
-
-        <section className="surface p-5 sm:p-6" aria-labelledby="profile-title">
-          <h2 id="profile-title" className="mb-4 font-bold">O&apos;quv profili</h2>
-          <dl className="space-y-3 text-sm">
-            {[
-              ['Daraja', LEVEL_LABELS[user?.onboarding?.level] || '—'],
-              ['Maqsad', GOAL_LABELS[user?.onboarding?.goal] || '—'],
-              ['Reja', PLAN_LABELS[user?.onboarding?.planType] || '—'],
-              ['Vaqt zonasi', user?.timezone || '—'],
-            ].map(([k, v]) => (
-              <div key={k} className="flex items-center justify-between gap-3 border-b border-border pb-3 last:border-0 last:pb-0">
-                <dt className="text-muted-foreground">{k}</dt>
-                <dd className="font-semibold">{v}</dd>
-              </div>
-            ))}
-          </dl>
-        </section>
-      </div>
+      <Link to="/settings" className="surface-interactive group flex items-center gap-4 p-5">
+        <IconTile icon={SettingsIcon} tone="muted" />
+        <span className="min-w-0 flex-1">
+          <span className="block font-bold">Sozlamalar</span>
+          <span className="block text-sm text-muted-foreground">
+            {LEVEL_LABELS[user?.onboarding?.level] || '—'} · {GOAL_LABELS[user?.onboarding?.goal] || '—'} ·{' '}
+            {PLAN_LABELS[user?.onboarding?.planType] || '—'} — daraja, eslatmalar va parolni o&apos;zgartirish
+          </span>
+        </span>
+        <ChevronRight className="size-5 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+      </Link>
     </div>
   );
 };

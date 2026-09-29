@@ -3,7 +3,7 @@
     "source": "https://api.dictionaryapi.dev",
     "license": "CC BY-SA 3.0 (Wiktionary)",
     "generatedBy": "npm run dict:fetch",
-    "generatedAt": "2026-08-08",
+    "generatedAt": "2026-09-29",
     "count": 300
   },
   "entries": {

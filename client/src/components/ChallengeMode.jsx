@@ -14,7 +14,9 @@ import { Mic, Square, Send, Loader2, CheckCircle2, Plus, X, Volume2, Flame, Trop
 import { playTTSAudio } from '../utils/audio';
 import { fireConfetti } from '../utils/celebration';
 
-const TOTAL_DAYS = 100;
+// Kunlar soni serverdagi kontentdan keladi (hozir 30). Ilgari bu yerda 100
+// qotirilgan edi va sahifa mavjud bo'lmagan 70 kunni va'da qilardi.
+const FALLBACK_DAYS = 30;
 
 /** Natija rangi — Tailwind klasslari statik bo'lishi shart. Ilgari
  *  `border-${color}-200` yozilgan edi va bunday klass hech qachon generatsiya
@@ -25,10 +27,10 @@ const SCORE_STYLES = {
   red: 'border-destructive/30 bg-destructive/8',
 };
 
-/** 100 kunlik yo'l — har kun bitta katak */
-const DaysGrid = ({ completed }) => (
-  <div className="grid grid-cols-10 gap-1 sm:grid-cols-20 sm:gap-1.5" aria-label={`${completed} / ${TOTAL_DAYS} kun bajarildi`}>
-    {Array.from({ length: TOTAL_DAYS }).map((_, i) => {
+/** Challenge yo'li — har kun bitta katak */
+const DaysGrid = ({ completed, total }) => (
+  <div className="grid grid-cols-10 gap-1 sm:grid-cols-15 sm:gap-1.5" aria-label={`${completed} / ${total} kun bajarildi`}>
+    {Array.from({ length: total }).map((_, i) => {
       const done = i < completed;
       const today = i === completed;
       return (
@@ -197,30 +199,31 @@ const ChallengeMode = () => {
 
   const completedCount = history ? history.filter((h) => h.status === 'completed').length : 0;
   const last = currentChallenge?.lastChallenge;
+  const totalDays = currentChallenge?.totalDays || FALLBACK_DAYS;
 
   return (
     <div className="mx-auto max-w-3xl">
       <PageHeader
-        eyebrow="100 kunlik challenge"
+        eyebrow={`${totalDays} kunlik challenge`}
         title="Har kuni — bitta matn yoddan"
         tone="streak"
         icon={Flame}
         description="Matnni o'qing, tinglang, yodlang va yoddan aytib yozib qoldiring. Izchillik — muvaffaqiyat kaliti."
       />
 
-      {/* 100 kunlik yo'l */}
+      {/* Challenge yo'li */}
       <section className="surface mb-6 p-5 sm:p-6">
         <div className="mb-4 flex items-end justify-between gap-3">
           <div>
             <p className="text-3xl font-extrabold tabular">
               {isHistoryLoading ? '—' : completedCount}
-              <span className="text-lg text-muted-foreground">/{TOTAL_DAYS}</span>
+              <span className="text-lg text-muted-foreground">/{totalDays}</span>
             </p>
             <p className="text-sm text-muted-foreground">kun bajarildi</p>
           </div>
-          <p className="text-sm font-semibold text-muted-foreground">{TOTAL_DAYS - completedCount} kun qoldi</p>
+          <p className="text-sm font-semibold text-muted-foreground">{Math.max(0, totalDays - completedCount)} kun qoldi</p>
         </div>
-        <DaysGrid completed={completedCount} />
+        <DaysGrid completed={completedCount} total={totalDays} />
       </section>
 
       {!currentChallenge ? (
@@ -228,7 +231,7 @@ const ChallengeMode = () => {
           <Button onClick={() => window.location.reload()}>Yangilash</Button>
         </EmptyState>
       ) : currentChallenge.isFinished ? (
-        <EmptyState icon={Trophy} tone="xp" title="Tabriklaymiz!" description="Siz 100 kunlik challenge'ni muvaffaqiyatli yakunladingiz!" />
+        <EmptyState icon={Trophy} tone="xp" title="Tabriklaymiz!" description={`Siz ${totalDays} kunlik challenge'ni muvaffaqiyatli yakunladingiz!`} />
       ) : currentChallenge.isCompleteForToday ? (
         <section className="surface p-6 text-center sm:p-8">
           <motion.div

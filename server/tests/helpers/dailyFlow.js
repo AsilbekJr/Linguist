@@ -8,11 +8,11 @@ const Word = require('../../models/Word');
  * mustahkamlardi. Endi qadamlar faqat ish bajarilganda yopiladi.
  */
 
-/** Mini-testdan o'tish, so'zlarni saqlash va kunlik sahnani yakunlash */
+/**
+ * Mini-testdan o'tish va kunlik sahnani yakunlash.
+ * So'zlar qo'lda saqlanmaydi — sahna yakunlanganda server ularni o'zi qo'shadi.
+ */
 const finishTopicDay = async (api) => {
-  const topic = await api.get('/api/topics/current');
-  const words = topic.data.words;
-
   const quiz = await api.post('/api/topics/quiz/start');
   const n = quiz.data.questions.length;
   const probe = await api.post('/api/topics/quiz/submit', {
@@ -24,21 +24,27 @@ const finishTopicDay = async (api) => {
   );
   await api.post('/api/topics/quiz/submit', { quizId: quiz.data.quizId, answers });
 
-  for (const w of words) {
-    await api.post('/api/words', {
-      word: w.word,
-      skipAI: true,
-      fromTopic: true,
-      manualTranslation: w.translation,
-      manualDefinition: w.definition,
-    });
-  }
-
   return api.post('/api/topics/finish', {});
 };
 
 /** Mahalliy tekshiruvdan o'tadigan gap */
 const sentenceFor = (word) => `I think the word ${word} is very useful today.`;
+
+/** So'zning to'liq ma'lumoti (navbatdagi ko'rinishda javob yashiriladi) */
+const fullWord = async (wordId) => Word.findById(wordId).lean();
+
+/** Rejimga mos TO'G'RI javob tanasi */
+const correctBody = (mode, word) => {
+  if (mode === 'recognize') return { mode, answer: word.translation };
+  if (mode === 'recall') return { mode, answer: word.word };
+  return { mode: 'sentence', sentence: sentenceFor(word.word) };
+};
+
+/** Navbatdagi bitta so'zga uning rejimida to'g'ri javob berish */
+const answerDue = async (api, dueItem) => {
+  const word = await fullWord(dueItem._id);
+  return api.post(`/api/review/${dueItem._id}/check`, correctBody(dueItem.mode, word));
+};
 
 /** Navbatdagi barcha so'zlarni to'g'ri takrorlash; oxirgi javobni qaytaradi */
 const reviewAllDue = async (api) => {
@@ -46,8 +52,8 @@ const reviewAllDue = async (api) => {
   for (let guard = 0; guard < 10; guard++) {
     const due = await api.get('/api/review/due');
     if (!due.data.length) break;
-    for (const w of due.data) {
-      last = await api.post(`/api/review/${w._id}/check`, { sentence: sentenceFor(w.word) });
+    for (const item of due.data) {
+      last = await answerDue(api, item);
     }
   }
   return last;
@@ -57,4 +63,8 @@ const reviewAllDue = async (api) => {
 const makeDue = (wordId) =>
   Word.updateOne({ _id: wordId }, { $set: { nextReviewDate: new Date(Date.now() - 1000) } });
 
-module.exports = { finishTopicDay, reviewAllDue, sentenceFor, makeDue };
+/** So'zni kerakli bosqichga qo'yish (masalan gap tuzish rejimini sinash uchun — 4+) */
+const setStage = (wordId, stage) =>
+  Word.updateOne({ _id: wordId }, { $set: { stage, nextReviewDate: new Date(Date.now() - 1000) } });
+
+module.exports = { finishTopicDay, reviewAllDue, answerDue, correctBody, sentenceFor, makeDue, setStage, fullWord };

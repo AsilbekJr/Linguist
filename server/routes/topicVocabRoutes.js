@@ -12,6 +12,7 @@ const { topicsCache } = require('../utils/cache');
 const { getSavedWordList, invalidateUserWords } = require('../utils/userWordsCache');
 const { userDayKey } = require('../utils/dayKey');
 const { enrichUserProfile, completeDailyStep, dailyStepMessage } = require('../utils/gamification');
+const { initialState } = require('../utils/srs');
 const {
   getDailyWordTarget,
   resolveTopicDay,
@@ -282,11 +283,7 @@ router.post('/finish', protect, validate(topicFinishSchema), async (req, res) =>
     }
 
     const savedLower = await loadSavedWords(req.user._id);
-    const { dailyWords, savedCount, requiredCount } = pickDailySessionWords(
-      ctx.baseTopic.words || [],
-      savedLower,
-      ctx.wordTarget
-    );
+    const { dailyWords } = pickDailySessionWords(ctx.baseTopic.words || [], savedLower, ctx.wordTarget);
 
     if (dailyWords.length > 0) {
       // Test natijasi SERVERDAN o'qiladi. Ilgari mijoz `quizPassed: true` yuborsa
@@ -304,13 +301,38 @@ router.post('/finish', protect, validate(topicFinishSchema), async (req, res) =>
           code: 'QUIZ_REQUIRED',
         });
       }
-      if (savedCount < requiredCount) {
-        return res.status(400).json({
-          error: `Kamida ${requiredCount} ta so'z saqlang (hozir: ${savedCount}).`,
-          code: 'WORDS_REQUIRED',
-          required: requiredCount,
-          current: savedCount,
-        });
+    }
+
+    // Kun so'zlari lug'atga AVTOMATIK qo'shiladi. Ilgari foydalanuvchi har
+    // birini qo'lda saqlashi shart edi ("kamida N ta so'z saqlang") — bu
+    // o'rganish emas, ortiqcha bosish edi va sahnani yakunlashni to'sardi.
+    const toAdd = dailyWords.filter((w) => !savedLower.includes(w.word.trim().toLowerCase()));
+    if (toAdd.length) {
+      try {
+        await Word.insertMany(
+          toAdd.map((w) => ({
+            user: req.user._id,
+            word: w.word,
+            phonetic: w.phonetic,
+            definition: w.definition,
+            translation: w.translation,
+            partOfSpeech: w.partOfSpeech,
+            examples: w.example ? [w.example] : [],
+            exampleUz: w.exampleUz,
+            collocations: w.collocations || [],
+            ...initialState(),
+            mastered: false,
+            reviewStage: 0,
+            nextReviewDate: getTopicReviewDate(),
+          })),
+          { ordered: false }
+        );
+      } catch (err) {
+        // Parallel so'rov shu so'zni allaqachon qo'shgan bo'lsa (unikal indeks) — muammo emas
+        const writeErrors = err.writeErrors || [];
+        const onlyDuplicates =
+          err.code === 11000 || (writeErrors.length > 0 && writeErrors.every((e) => (e.code ?? e.err?.code) === 11000));
+        if (!onlyDuplicates) throw err;
       }
     }
 
@@ -356,6 +378,7 @@ router.post('/finish', protect, validate(topicFinishSchema), async (req, res) =>
       streakUpdated: step.streakUpdated,
       streakFrozen: step.streakFrozen,
       planCompleted: step.planCompleted,
+      wordsAdded: toAdd.length,
     });
   } catch (error) {
     console.error('Topic finish error:', error);

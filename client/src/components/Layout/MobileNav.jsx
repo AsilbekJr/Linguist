@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { Flame, LayoutGrid, BarChart3, ChevronRight, CreditCard } from 'lucide-react';
+import { Flame, LayoutGrid, BarChart3, ChevronRight, CreditCard, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { IconTile } from '@/components/ui/primitives';
@@ -144,13 +144,22 @@ export const MobileTabBar = () => {
                 <ChevronRight className="size-4 text-muted-foreground" />
               </Link>
             ))}
-            <Link
-              to="/pricing"
-              onClick={() => setPracticeOpen(false)}
-              className="flex items-center gap-3 rounded-2xl p-3 text-sm font-semibold text-muted-foreground hover:bg-accent"
-            >
-              <CreditCard className="size-4" /> Tariflar
-            </Link>
+            <div className="mt-1 grid grid-cols-2 gap-2">
+              <Link
+                to="/settings"
+                onClick={() => setPracticeOpen(false)}
+                className="flex items-center justify-center gap-2 rounded-2xl bg-muted/60 p-3 text-sm font-semibold hover:bg-accent"
+              >
+                <Settings className="size-4" /> Sozlamalar
+              </Link>
+              <Link
+                to="/pricing"
+                onClick={() => setPracticeOpen(false)}
+                className="flex items-center justify-center gap-2 rounded-2xl bg-muted/60 p-3 text-sm font-semibold hover:bg-accent"
+              >
+                <CreditCard className="size-4" /> Tariflar
+              </Link>
+            </div>
           </div>
         </SheetContent>
       </Sheet>

@@ -58,7 +58,7 @@ const Unsubscribe = () => {
               {email ? `${email} manziliga ` : ''}endi kunlik eslatma yubormaymiz.
             </p>
             <p className="mt-1 text-sm text-muted-foreground">
-              Fikringiz o&apos;zgarsa, ilovadagi &quot;Natijalar&quot; bo&apos;limidan qayta yoqishingiz mumkin.
+              Fikringiz o&apos;zgarsa, ilovadagi &quot;Sozlamalar&quot; bo&apos;limidan qayta yoqishingiz mumkin.
             </p>
             <Button asChild size="lg" className="mt-8 w-full">
               <Link to="/">Ilovaga qaytish</Link>
@@ -71,7 +71,7 @@ const Unsubscribe = () => {
             <IconTile icon={AlertTriangle} tone="warning" size="lg" className="mx-auto mb-5" />
             <h1 className="text-2xl font-extrabold">Havola ishlamadi</h1>
             <p className="mt-2 text-muted-foreground">
-              Havolani pochtangizdan to&apos;liq nusxalab ko&apos;ring yoki ilovadagi &quot;Natijalar&quot;
+              Havolani pochtangizdan to&apos;liq nusxalab ko&apos;ring yoki ilovadagi &quot;Sozlamalar&quot;
               bo&apos;limidan eslatmalarni o&apos;chiring.
             </p>
             <Button asChild size="lg" variant="outline" className="mt-8 w-full">

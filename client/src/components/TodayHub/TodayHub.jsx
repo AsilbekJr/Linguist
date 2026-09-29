@@ -160,7 +160,7 @@ const TodayHub = ({ user, totalWords = 0 }) => {
         <IconTile icon={Repeat2} tone="primary" />
         <div className="min-w-0 flex-1">
           <h2 id="review-title" className="text-xl font-extrabold sm:text-2xl">Takrorlash</h2>
-          <p className="text-sm text-muted-foreground">So&apos;z ishtirokida gap tuzing — yozib yoki aytib</p>
+          <p className="text-sm text-muted-foreground">Tanib oling, eslang, gap tuzing — so&apos;z o&apos;rganilgan sari topshiriq qiyinlashadi</p>
         </div>
         {reviewDoneToday ? (
           <Badge variant="success" className="hidden sm:inline-flex">

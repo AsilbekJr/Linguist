@@ -57,6 +57,18 @@ const userSchema = new mongoose.Schema({
     /** Xatdagi obunani bekor qilish havolasi uchun — login talab qilmaydi */
     unsubscribeToken: { type: String, index: true, sparse: true },
   },
+  /**
+   * Telegram — eslatmaning asosiy kanali (O'zbekistonda email deyarli
+   * o'qilmaydi, push esa iOS'da faqat o'rnatilgan PWA'da ishlaydi).
+   * Bog'lash bir martalik kod orqali: kod faqat hash ko'rinishida saqlanadi.
+   */
+  telegram: {
+    chatId: { type: String, index: true, sparse: true },
+    username: { type: String, default: '' },
+    linkedAt: { type: Date, default: null },
+    linkCodeHash: { type: String, index: true, sparse: true },
+    linkCodeExpires: { type: Date, default: null },
+  },
   /** Streak muzlatish: kun o'tkazib yuborilsa streak saqlanadi */
   streakFreeze: {
     available: { type: Number, default: 2 },
