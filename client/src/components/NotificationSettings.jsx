@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Bell, BellOff, Loader2, Smartphone } from 'lucide-react';
+import { motion } from 'motion/react';
+import { Bell, BellOff, Loader2, Smartphone, Send } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import {
   useGetNotificationPrefsQuery,
@@ -16,8 +17,33 @@ import {
   subscribeToPush,
   unsubscribeFromPush,
 } from '../lib/push';
+import { Button } from '@/components/ui/button';
+import { IconTile, Skeleton } from '@/components/ui/primitives';
+import { cn } from '@/lib/utils';
 
 const HOURS = [7, 9, 12, 15, 18, 19, 20, 21, 22];
+
+/** Yoqish/o'chirish tugmasi */
+const Switch = ({ checked, onChange, disabled, label }) => (
+  <button
+    type="button"
+    role="switch"
+    aria-checked={checked}
+    aria-label={label}
+    disabled={disabled}
+    onClick={onChange}
+    className={cn(
+      'relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-60',
+      checked ? 'bg-primary' : 'bg-muted-foreground/25'
+    )}
+  >
+    <motion.span
+      layout
+      transition={{ type: 'spring', stiffness: 600, damping: 32 }}
+      className={cn('absolute size-5 rounded-full bg-white shadow-md', checked ? 'right-1' : 'left-1')}
+    />
+  </button>
+);
 
 /**
  * Push bildirishnoma.
@@ -52,7 +78,7 @@ const PushToggle = () => {
       if (result === 'subscribed') {
         toast.success('Bildirishnomalar yoqildi');
       } else if (result === 'denied') {
-        toast.error('Brauzer ruxsat bermadi. Sozlamalardan qo\'lda yoqishingiz kerak.');
+        toast.error("Brauzer ruxsat bermadi. Sozlamalardan qo'lda yoqishingiz kerak.");
       } else {
         toast.error("Ulanmadi. Qayta urinib ko'ring.");
       }
@@ -68,7 +94,7 @@ const PushToggle = () => {
       if (endpoint) await unsubscribePush(endpoint).unwrap();
       toast.success("Bildirishnomalar o'chirildi");
     } catch {
-      toast.error('Xatolik');
+      toast.error("O'chirib bo'lmadi. Qayta urining.");
     } finally {
       setBusy(false);
     }
@@ -77,55 +103,43 @@ const PushToggle = () => {
   const handleTest = async () => {
     try {
       await sendTest().unwrap();
+      toast.success('Sinov bildirishnomasi yuborildi');
     } catch (err) {
       toast.error(err?.data?.message || 'Yuborilmadi');
     }
   };
 
   return (
-    <div className="pt-4 mt-4 border-t border-border">
-      <div className="flex items-start justify-between gap-4">
-        <div className="min-w-0">
-          <p className="text-sm font-bold flex items-center gap-2">
-            <Smartphone className="w-4 h-4 text-primary" />
-            Telefon bildirishnomasi
-          </p>
-          <p className="text-xs text-muted-foreground mt-1">
+    <div className="border-t border-border pt-5">
+      <div className="flex items-start gap-3">
+        <IconTile icon={Smartphone} tone="info" size="sm" />
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-bold">Telefon bildirishnomasi</p>
+          <p className="mt-0.5 text-xs text-muted-foreground">
             {devices > 0
               ? `${devices} ta qurilma ulangan. Eslatma email o'rniga shu yerga keladi.`
-              : 'Email o\'rniga telefoningizga darhol bildirishnoma keladi.'}
+              : "Email o'rniga telefoningizga darhol bildirishnoma keladi."}
           </p>
           {permission === 'denied' && (
-            <p className="text-xs text-amber-600 mt-2">
+            <p className="mt-2 text-xs font-medium text-warning">
               Brauzer bildirishnomalarni bloklagan. Sayt sozlamalaridan ruxsat bering.
             </p>
           )}
+          {devices > 0 && (
+            <Button variant="link" size="sm" className="mt-1 h-auto px-0" onClick={handleTest} disabled={isTesting}>
+              <Send /> {isTesting ? 'Yuborilmoqda…' : 'Sinov bildirishnomasi'}
+            </Button>
+          )}
         </div>
-
-        <button
-          type="button"
+        <Button
+          size="sm"
+          variant={devices > 0 ? 'outline' : 'default'}
           disabled={busy || permission === 'denied'}
           onClick={devices > 0 ? disable : enable}
-          className={`px-4 py-2 rounded-full text-sm font-bold shrink-0 transition-colors ${
-            devices > 0
-              ? 'border border-border hover:bg-secondary'
-              : 'bg-primary text-primary-foreground hover:opacity-90'
-          } disabled:opacity-50`}
         >
-          {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : devices > 0 ? "O'chirish" : 'Yoqish'}
-        </button>
+          {busy ? <Loader2 className="animate-spin" /> : devices > 0 ? "O'chirish" : 'Yoqish'}
+        </Button>
       </div>
-
-      {devices > 0 && (
-        <button
-          type="button"
-          onClick={handleTest}
-          disabled={isTesting}
-          className="text-xs text-primary font-bold mt-3 hover:underline disabled:opacity-50"
-        >
-          {isTesting ? 'Yuborilmoqda...' : 'Sinov bildirishnomasi yuborish'}
-        </button>
-      )}
     </div>
   );
 };
@@ -150,57 +164,28 @@ const NotificationSettings = () => {
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="bg-card border border-border rounded-2xl p-6 flex justify-center">
-        <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
+  if (isLoading) return <Skeleton className="h-44 rounded-2xl" />;
 
   const enabled = prefs?.enabled !== false;
 
   return (
-    <div className="bg-card border border-border rounded-2xl p-6">
-      <div className="flex items-start justify-between gap-4 mb-4">
-        <div className="flex items-start gap-3 min-w-0">
-          {enabled ? (
-            <Bell className="w-5 h-5 text-primary shrink-0 mt-0.5" />
-          ) : (
-            <BellOff className="w-5 h-5 text-muted-foreground shrink-0 mt-0.5" />
-          )}
-          <div className="min-w-0">
-            <h2 className="font-bold">Kunlik eslatma</h2>
-            <p className="text-sm text-muted-foreground">
-              Kunlik reja bajarilmagan bo&apos;lsa, emailga eslatma yuboramiz.
-              Reja tugagan kunlarda xat kelmaydi.
-            </p>
-          </div>
+    <section className="surface space-y-5 p-5 sm:p-6" aria-labelledby="reminder-title">
+      <div className="flex items-start gap-3">
+        <IconTile icon={enabled ? Bell : BellOff} tone={enabled ? 'primary' : 'muted'} />
+        <div className="min-w-0 flex-1">
+          <h2 id="reminder-title" className="font-bold">Kunlik eslatma</h2>
+          <p className="mt-0.5 text-sm text-muted-foreground">
+            Reja bajarilmagan kunlari eslatamiz. Reja tugagan kunlarda xabar kelmaydi.
+          </p>
         </div>
-
-        <button
-          type="button"
-          role="switch"
-          aria-checked={enabled}
-          disabled={isSaving}
-          onClick={() => save({ enabled: !enabled })}
-          className={`relative w-12 h-7 rounded-full transition-colors shrink-0 ${
-            enabled ? 'bg-primary' : 'bg-secondary border border-border'
-          } disabled:opacity-60`}
-        >
-          <span
-            className={`absolute top-1 w-5 h-5 rounded-full bg-white shadow transition-transform ${
-              enabled ? 'translate-x-6' : 'translate-x-1'
-            }`}
-          />
-        </button>
+        <Switch checked={enabled} disabled={isSaving} onChange={() => save({ enabled: !enabled })} label="Kunlik eslatma" />
       </div>
 
       {enabled && <PushToggle />}
 
       {enabled && (
-        <div className="pt-4 border-t border-border">
-          <p className="text-sm font-bold mb-3">Qaysi soatda?</p>
+        <div className="border-t border-border pt-5">
+          <p className="mb-3 text-sm font-bold">Qaysi soatda?</p>
           <div className="flex flex-wrap gap-2">
             {HOURS.map((h) => (
               <button
@@ -208,23 +193,24 @@ const NotificationSettings = () => {
                 type="button"
                 disabled={isSaving}
                 onClick={() => save({ hour: h })}
-                className={`px-3 py-2 rounded-xl border text-sm font-bold transition-colors ${
+                aria-pressed={prefs?.hour === h}
+                className={cn(
+                  'h-10 rounded-xl border px-3.5 text-sm font-bold tabular transition-colors disabled:opacity-60',
                   prefs?.hour === h
-                    ? 'border-primary bg-primary/10 text-primary'
-                    : 'border-border hover:border-primary/50'
-                } disabled:opacity-60`}
+                    ? 'border-primary bg-primary text-primary-foreground'
+                    : 'border-border bg-card hover:border-primary/50'
+                )}
               >
                 {String(h).padStart(2, '0')}:00
               </button>
             ))}
           </div>
-          <p className="text-xs text-muted-foreground mt-3">
-            Sizning mahalliy vaqtingiz bo&apos;yicha
-            {prefs?.timezone ? ` (${prefs.timezone})` : ''}.
+          <p className="mt-3 text-xs text-muted-foreground">
+            Mahalliy vaqtingiz bo&apos;yicha{prefs?.timezone ? ` (${prefs.timezone})` : ''}.
           </p>
         </div>
       )}
-    </div>
+    </section>
   );
 };
 

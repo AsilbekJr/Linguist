@@ -109,7 +109,7 @@ export const apiSlice = createApi({
   refetchOnFocus: false,
   refetchOnReconnect: true,
   baseQuery: baseQueryWithReauth,
-  tagTypes: ['Word', 'Challenge', 'Topic', 'User', 'Billing', 'Practice', 'Listening', 'Notifications', 'Push'],
+  tagTypes: ['Word', 'Challenge', 'Topic', 'User', 'Billing', 'Listening', 'Notifications', 'Push'],
   endpoints: (builder) => ({
     getWords: builder.query({
       query: () => '/api/words',
@@ -131,35 +131,44 @@ export const apiSlice = createApi({
       }),
       invalidatesTags: ['Word'],
     }),
+    /** Ta'rifsiz qolgan so'zni tuzatish — tarmoq uzilganda qo'shilganlar uchun */
+    refreshWord: builder.mutation({
+      query: (id) => ({
+        url: `/api/words/${id}/refresh`,
+        method: 'POST',
+      }),
+      invalidatesTags: ['Word'],
+    }),
     getReviewDue: builder.query({
       query: () => '/api/review/due',
       providesTags: ['Word'],
       keepUnusedDataFor: 60,
     }),
+    /** Gap tekshiruvi — yozma yoki mikrofon transkripti */
     checkReview: builder.mutation({
-      query: ({ id, sentence }) => ({
+      query: ({ id, sentence, source }) => ({
         url: `/api/review/${id}/check`,
+        method: 'POST',
+        body: { sentence, source },
+      }),
+      invalidatesTags: ['Word', 'User'],
+    }),
+    /** Yodlangan so'zni qayta yodlashga qaytarish (4-bosqichdan) */
+    relearnWord: builder.mutation({
+      query: (id) => ({
+        url: `/api/review/${id}/relearn`,
+        method: 'POST',
+      }),
+      invalidatesTags: ['Word'],
+    }),
+    /** Gapni ega/kesim va so'z turkumlariga ajratib tushuntirish */
+    analyzeSentence: builder.mutation({
+      query: (sentence) => ({
+        url: '/api/analysis/sentence',
         method: 'POST',
         body: { sentence },
       }),
-      invalidatesTags: ['Word', 'User'],
-    }),
-    /** 4 darajali baholash: 0=Again, 1=Hard, 2=Good, 3=Easy */
-    gradeReview: builder.mutation({
-      query: ({ id, grade }) => ({
-        url: `/api/review/${id}/grade`,
-        method: 'POST',
-        body: { grade },
-      }),
-      invalidatesTags: ['Word', 'User'],
-    }),
-    quickReview: builder.mutation({
-      query: ({ id, known }) => ({
-        url: `/api/review/${id}/quick`,
-        method: 'POST',
-        body: { known },
-      }),
-      invalidatesTags: ['Word', 'User'],
+      invalidatesTags: ['User'],
     }),
     getReviewStats: builder.query({
       query: () => '/api/review/stats',
@@ -200,21 +209,6 @@ export const apiSlice = createApi({
         method: 'POST',
         body: { targetSentence, spokenText },
       }),
-    }),
-    chatRoleplay: builder.mutation({
-      query: (data) => ({
-        url: '/api/roleplay/chat',
-        method: 'POST',
-        body: data,
-      }),
-    }),
-    askTeacher: builder.mutation({
-      query: (data) => ({
-        url: '/api/teacher/ask',
-        method: 'POST',
-        body: data,
-      }),
-      invalidatesTags: ['User'],
     }),
     getCurrentChallenge: builder.query({
       query: () => '/api/challenge/current',
@@ -352,24 +346,6 @@ export const apiSlice = createApi({
       providesTags: ['User'],
       keepUnusedDataFor: 300,
     }),
-    getPracticeSession: builder.query({
-      query: () => '/api/practice/session',
-      providesTags: ['Practice'],
-    }),
-    getPracticePrompt: builder.mutation({
-      query: (body) => ({
-        url: '/api/practice/prompt',
-        method: 'POST',
-        body,
-      }),
-    }),
-    checkPracticeSentence: builder.mutation({
-      query: (body) => ({
-        url: '/api/practice/check',
-        method: 'POST',
-        body,
-      }),
-    }),
     onboardUser: builder.mutation({
       query: (data) => ({
         url: '/api/auth/onboard',
@@ -378,11 +354,15 @@ export const apiSlice = createApi({
       }),
       invalidatesTags: ['User'],
     }),
-    syncDailyQuest: builder.mutation({
-      query: (data) => ({
-        url: '/api/auth/sync-quest',
+    /**
+     * Navbat bo'sh kunda "takrorlash" qadamini yopish. Server navbatni o'zi
+     * tekshiradi — so'z qolgan bo'lsa 409 qaytaradi. (Eski `sync-quest`
+     * mijozga ishonardi va olib tashlandi.)
+     */
+    completeReviewDay: builder.mutation({
+      query: () => ({
+        url: '/api/review/complete-day',
         method: 'POST',
-        body: data,
       }),
       invalidatesTags: ['User'],
     }),
@@ -431,17 +411,16 @@ export const {
   useGetWordsQuery,
   useAddWordMutation,
   useDeleteWordMutation,
+  useRefreshWordMutation,
   useCheckReviewMutation,
-  useGradeReviewMutation,
-  useQuickReviewMutation,
+  useRelearnWordMutation,
+  useAnalyzeSentenceMutation,
   useGetReviewStatsQuery,
   useTranslateSpeakingMutation,
   useEvaluateSpeakingMutation,
   useGetListeningSessionQuery,
   useCheckDictationMutation,
   useCompleteListeningMutation,
-  useChatRoleplayMutation,
-  useAskTeacherMutation,
   useGetCurrentChallengeQuery,
   useGetChallengeHistoryQuery,
   useCompleteChallengeMutation,
@@ -461,9 +440,6 @@ export const {
   useAnswerPlacementMutation,
   useGetPlacementResultQuery,
   useGetMeQuery,
-  useGetPracticeSessionQuery,
-  useGetPracticePromptMutation,
-  useCheckPracticeSentenceMutation,
   useGetReviewDueQuery,
   useGetCurrentTopicQuery,
   useGetTopicBacklogQuery,
@@ -471,7 +447,7 @@ export const {
   useSubmitTopicQuizMutation,
   useFinishTopicDayMutation,
   useOnboardUserMutation,
-  useSyncDailyQuestMutation,
+  useCompleteReviewDayMutation,
   useSetTimezoneMutation,
   useRefreshTokenMutation,
   useLogoutSessionMutation,

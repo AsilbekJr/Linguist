@@ -7,7 +7,6 @@ const {
   authRegisterSchema,
   authLoginSchema,
   onboardSchema,
-  syncQuestSchema,
   timezoneSchema,
   forgotPasswordSchema,
   resetPasswordSchema,
@@ -31,14 +30,8 @@ const { getStartDayForLevel } = require('../utils/topicHelpers');
 const fs = require('fs');
 const path = require('path');
 const Word = require('../models/Word');
-const { userDayKey, isValidTimeZone } = require('../utils/dayKey');
-const {
-  enrichUserProfile,
-  advanceStreak,
-  rollDailyQuests,
-  QUEST_STEP_XP,
-  DAILY_BONUS_XP,
-} = require('../utils/gamification');
+const { isValidTimeZone } = require('../utils/dayKey');
+const { enrichUserProfile } = require('../utils/gamification');
 
 const formatUser = async (user) => {
   const totalWords = await Word.countDocuments({ user: user._id });
@@ -168,66 +161,9 @@ router.post('/onboard', protect, validate(onboardSchema), async (req, res) => {
   }
 });
 
-router.post('/sync-quest', protect, validate(syncQuestSchema), async (req, res) => {
-  try {
-    const { type } = req.validated.body;
-    // Foydalanuvchi zonasidagi kun. Ilgari UTC ishlatilardi va O'zbekistonda
-    // "kun" mahalliy soat 05:00 da almashib, kechqurungi mashq ertangi kunga yozilardi.
-    const today = userDayKey(req.user);
-
-    rollDailyQuests(req.user, today);
-
-    const questKeyMap = {
-      review: 'reviewCompleted',
-      topic: 'topicCompleted',
-      immersion: 'immersionCompleted',
-    };
-    const questKey = questKeyMap[type];
-    const wasAlreadyDone = req.user.dailyQuests[questKey];
-    let xpAwarded = 0;
-
-    if (!wasAlreadyDone) {
-      req.user.xp += QUEST_STEP_XP;
-      xpAwarded += QUEST_STEP_XP;
-    }
-    req.user.dailyQuests[questKey] = true;
-
-    const { reviewCompleted, topicCompleted, immersionCompleted } = req.user.dailyQuests;
-    const allCompletedNow = reviewCompleted && topicCompleted && immersionCompleted;
-
-    let streakResult = { changed: false, streakFrozen: false };
-    if (allCompletedNow) {
-      streakResult = advanceStreak(req.user, today);
-      if (streakResult.changed) {
-        req.user.xp += DAILY_BONUS_XP;
-        xpAwarded += DAILY_BONUS_XP;
-      }
-    }
-
-    const updatedUser = await req.user.save();
-    const profile = await formatUser(updatedUser);
-
-    let message = 'Quest synced.';
-    if (streakResult.changed && streakResult.streakFrozen) {
-      message = `Kunlik reja tugadi! +${xpAwarded} XP · Streak muzlatish ishlatildi, ketma-ketlik saqlandi 🧊`;
-    } else if (streakResult.changed) {
-      message = `Kunlik reja tugadi! +${xpAwarded} XP va streak yangilandi`;
-    } else if (xpAwarded > 0) {
-      message = `Qadam bajarildi! +${xpAwarded} XP`;
-    }
-
-    res.status(200).json({
-      user: profile,
-      streakUpdated: streakResult.changed,
-      streakFrozen: streakResult.streakFrozen,
-      xpAwarded,
-      message,
-    });
-  } catch (error) {
-    console.error('Sync quest error:', error);
-    res.status(500).json({ message: 'Server error during quest sync' });
-  }
-});
+// /sync-quest olib tashlandi: u mijozga ishonardi — ikki so'rov bilan XP va
+// streak olish mumkin edi. Kunlik reja qadamlarini endi server o'zi belgilaydi
+// (`completeDailyStep`, utils/gamification.js).
 
 // @desc    Parolni tiklash havolasini yuborish
 // @route   POST /api/auth/forgot-password

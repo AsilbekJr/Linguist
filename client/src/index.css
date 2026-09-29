@@ -1,89 +1,187 @@
 @import "tailwindcss";
+/* Radix Dialog/Sheet'dagi `animate-in`, `fade-in-0`, `slide-in-from-*` klasslari.
+   Ilgari `tailwindcss-animate` (v3 plagini) o'rnatilgan, lekin ulanmagan edi —
+   shuning uchun ilovada birorta ham ochilish/yopilish animatsiyasi ishlamasdi. */
+@import "tw-animate-css";
 
-/* Allow next-themes 'dark' class to trigger tailwind dark variants in v4 */
 @custom-variant dark (&:is(.dark *));
 
-@layer base {
-  :root {
-    --background: 0 0% 100%;
-    --foreground: 240 10% 3.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 240 10% 3.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 3.9%;
-    --primary: 142.1 76.2% 36.3%;
-    --primary-foreground: 355.7 100% 97.3%;
-    --secondary: 240 4.8% 95.9%;
-    --secondary-foreground: 240 5.9% 10%;
-    --muted: 240 4.8% 95.9%;
-    --muted-foreground: 240 3.8% 46.1%;
-    --accent: 240 4.8% 95.9%;
-    --accent-foreground: 240 5.9% 10%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 240 5.9% 90%;
-    --input: 240 5.9% 90%;
-    --ring: 142.1 76.2% 36.3%;
-    --radius: 0.75rem;
-  }
+/*
+ * ─── Dizayn tokenlari ──────────────────────────────────────────────────────
+ *
+ * Brend rangi — binafsha (ikonka, PWA theme-color va logotip bilan bir xil).
+ * Ilgari primary YASHIL edi, gradientlar esa binafsha→pushti — ilova uchta
+ * turli brend rangida gapirardi.
+ *
+ * OKLCH: bir xil "L" qiymatidagi ranglar ko'zga bir xil yorug' ko'rinadi, shuning
+ * uchun semantik ranglar (success/warning/info) bir-biridan "baland" chiqmaydi.
+ */
+:root {
+  --radius: 1rem;
 
-  .dark {
-    --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 240 10% 3.9%;
-    --card-foreground: 0 0% 98%;
-    --popover: 240 10% 3.9%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 142.1 70.6% 45.3%;
-    --primary-foreground: 0 0% 98%;
-    --secondary: 240 3.7% 15.9%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
-    --accent: 240 3.7% 15.9%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
-    --ring: 142.1 76.2% 36.3%;
-  }
+  --background: oklch(0.985 0.004 286);
+  --foreground: oklch(0.2 0.03 285);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.2 0.03 285);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.2 0.03 285);
+
+  --primary: oklch(0.53 0.235 289);
+  --primary-foreground: oklch(0.99 0 0);
+  --secondary: oklch(0.955 0.016 290);
+  --secondary-foreground: oklch(0.32 0.08 290);
+  --muted: oklch(0.962 0.008 286);
+  --muted-foreground: oklch(0.5 0.022 286);
+  --accent: oklch(0.95 0.025 290);
+  --accent-foreground: oklch(0.3 0.1 290);
+
+  --destructive: oklch(0.577 0.215 27);
+  --destructive-foreground: oklch(0.99 0 0);
+  --success: oklch(0.6 0.16 152);
+  --success-foreground: oklch(0.99 0 0);
+  --warning: oklch(0.72 0.16 65);
+  --warning-foreground: oklch(0.25 0.06 65);
+  --info: oklch(0.6 0.15 245);
+  --streak: oklch(0.68 0.19 45);
+  --xp: oklch(0.78 0.16 85);
+
+  --border: oklch(0.915 0.01 286);
+  --input: oklch(0.9 0.012 286);
+  --ring: oklch(0.53 0.235 289);
+
+  --shadow-color: 286 40% 30%;
+  --app-glow: oklch(0.53 0.235 289 / 0.07);
+
+  --sidebar: oklch(0.99 0.003 286);
+}
+
+.dark {
+  /* Qorong'i rejimda kartalar fondan YORUG'ROQ — elevatsiya soya bilan emas,
+     yorug'lik bilan beriladi. Ilgari --card === --background edi va kartalar
+     faqat chegaradan ajralardi. */
+  --background: oklch(0.155 0.018 286);
+  --foreground: oklch(0.965 0.006 286);
+  --card: oklch(0.2 0.022 286);
+  --card-foreground: oklch(0.965 0.006 286);
+  --popover: oklch(0.225 0.024 286);
+  --popover-foreground: oklch(0.965 0.006 286);
+
+  --primary: oklch(0.66 0.2 290);
+  --primary-foreground: oklch(0.99 0 0);
+  --secondary: oklch(0.26 0.03 288);
+  --secondary-foreground: oklch(0.92 0.02 290);
+  --muted: oklch(0.245 0.02 286);
+  --muted-foreground: oklch(0.72 0.02 286);
+  --accent: oklch(0.28 0.045 290);
+  --accent-foreground: oklch(0.95 0.02 290);
+
+  /* Ilgari 30% yorqinlik — qora fonda xato matni deyarli o'qilmasdi */
+  --destructive: oklch(0.68 0.19 24);
+  --destructive-foreground: oklch(0.99 0 0);
+  --success: oklch(0.72 0.16 152);
+  --success-foreground: oklch(0.18 0.03 152);
+  --warning: oklch(0.8 0.15 70);
+  --warning-foreground: oklch(0.22 0.05 70);
+  --info: oklch(0.72 0.13 245);
+  --streak: oklch(0.75 0.17 50);
+  --xp: oklch(0.84 0.15 88);
+
+  --border: oklch(1 0 0 / 0.085);
+  --input: oklch(1 0 0 / 0.12);
+  --ring: oklch(0.66 0.2 290);
+
+  --shadow-color: 286 60% 3%;
+  --app-glow: oklch(0.66 0.2 290 / 0.12);
+
+  --sidebar: oklch(0.175 0.02 286);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-info: var(--info);
+  --color-streak: var(--streak);
+  --color-xp: var(--xp);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-sidebar: var(--sidebar);
+
+  --radius-sm: calc(var(--radius) - 8px);
+  --radius-md: calc(var(--radius) - 4px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 16px);
 }
 
 @theme {
-  --color-background: hsl(var(--background));
-  --color-foreground: hsl(var(--foreground));
-  --color-card: hsl(var(--card));
-  --color-card-foreground: hsl(var(--card-foreground));
-  --color-popover: hsl(var(--popover));
-  --color-popover-foreground: hsl(var(--popover-foreground));
-  --color-primary: hsl(var(--primary));
-  --color-primary-foreground: hsl(var(--primary-foreground));
-  --color-secondary: hsl(var(--secondary));
-  --color-secondary-foreground: hsl(var(--secondary-foreground));
-  --color-muted: hsl(var(--muted));
-  --color-muted-foreground: hsl(var(--muted-foreground));
-  --color-accent: hsl(var(--accent));
-  --color-accent-foreground: hsl(var(--accent-foreground));
-  --color-destructive: hsl(var(--destructive));
-  --color-destructive-foreground: hsl(var(--destructive-foreground));
-  --color-border: hsl(var(--border));
-  --color-input: hsl(var(--input));
-  --color-ring: hsl(var(--ring));
-  --radius-lg: var(--radius);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-sm: calc(var(--radius) - 4px);
-  
-  --animate-accordion-down: accordion-down 0.2s ease-out;
-  --animate-accordion-up: accordion-up 0.2s ease-out;
+  /* Plus Jakarta Sans: geometrik, lekin iliq — o'quv ilovasiga mos. Lotin
+     o'zbek harflari (oʻ, gʻ) to'liq qo'llab-quvvatlanadi. IPA belgilari
+     shriftda yo'q, ular tizim shriftiga tushadi — shuning uchun alohida
+     `font-ipa` bor. */
+  --font-sans: "Plus Jakarta Sans Variable", ui-sans-serif, system-ui, -apple-system,
+    "Segoe UI", Roboto, sans-serif;
+  --font-display: "Plus Jakarta Sans Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-ipa: "Segoe UI", "Noto Sans", "Lucida Sans Unicode", "DejaVu Sans", ui-sans-serif,
+    sans-serif;
 
-  @keyframes accordion-down {
-    from { height: 0 }
-    to { height: var(--radix-accordion-content-height) }
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+
+  --animate-fade-in: fade-in 0.35s var(--ease-out-expo) both;
+  --animate-fade-in-up: fade-in-up 0.5s var(--ease-out-expo) both;
+  --animate-scale-in: scale-in 0.35s var(--ease-out-expo) both;
+  --animate-shimmer: shimmer 1.6s linear infinite;
+  --animate-float: float 6s ease-in-out infinite;
+  --animate-flame: flame 1.8s ease-in-out infinite;
+  --animate-pop: pop 0.45s var(--ease-spring) both;
+
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
   }
-  @keyframes accordion-up {
-    from { height: var(--radix-accordion-content-height) }
-    to { height: 0 }
+  @keyframes fade-in-up {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes scale-in {
+    from { opacity: 0; transform: scale(0.96); }
+    to { opacity: 1; transform: scale(1); }
+  }
+  @keyframes shimmer {
+    from { background-position: -200% 0; }
+    to { background-position: 200% 0; }
+  }
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+  }
+  @keyframes flame {
+    0%, 100% { transform: scale(1) rotate(-2deg); }
+    50% { transform: scale(1.08) rotate(2deg); }
+  }
+  @keyframes pop {
+    0% { transform: scale(0.6); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
   }
 }
 
@@ -91,7 +189,163 @@
   * {
     @apply border-border;
   }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+    scroll-behavior: smooth;
+  }
+
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans antialiased;
+    font-feature-settings: "ss01", "cv11";
+    text-rendering: optimizeLegibility;
+    /* Telefonda sahifa "sakrab" tortilmasin */
+    overscroll-behavior-y: none;
+  }
+
+  h1, h2, h3, h4 {
+    @apply font-display tracking-tight;
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  ::selection {
+    background: color-mix(in oklch, var(--primary) 28%, transparent);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+
+  button, [role="button"], a {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Ingichka, mavzuga mos scrollbar */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in oklch, var(--muted-foreground) 35%, transparent) transparent;
+  }
+}
+
+/* ─── Komponent darajasidagi utilitilar ─────────────────────────────────── */
+
+/* Ilova foni: juda yengil brend nurlanishi — bo'sh joy "o'lik" ko'rinmasin */
+@utility app-backdrop {
+  background-image:
+    radial-gradient(60rem 40rem at 100% -10%, var(--app-glow), transparent 60%),
+    radial-gradient(40rem 30rem at -10% 110%, var(--app-glow), transparent 60%);
+  background-attachment: fixed;
+}
+
+/* Asosiy sirt — barcha kartalar shu yerdan */
+@utility surface {
+  background-color: var(--card);
+  color: var(--card-foreground);
+  border: 1px solid var(--border);
+  border-radius: calc(var(--radius) + 4px);
+  box-shadow:
+    0 1px 2px hsl(var(--shadow-color) / 0.06),
+    0 4px 16px -6px hsl(var(--shadow-color) / 0.1);
+}
+
+@utility surface-interactive {
+  background-color: var(--card);
+  color: var(--card-foreground);
+  border: 1px solid var(--border);
+  border-radius: calc(var(--radius) + 4px);
+  box-shadow:
+    0 1px 2px hsl(var(--shadow-color) / 0.06),
+    0 4px 16px -6px hsl(var(--shadow-color) / 0.1);
+  transition-property: transform, box-shadow, border-color;
+  transition-duration: 300ms;
+  transition-timing-function: var(--ease-out-expo);
+  &:hover {
+    transform: translateY(-2px);
+    border-color: color-mix(in oklch, var(--primary) 35%, var(--border));
+    box-shadow:
+      0 2px 4px hsl(var(--shadow-color) / 0.06),
+      0 16px 32px -12px hsl(var(--shadow-color) / 0.22);
+  }
+  &:active {
+    transform: translateY(0) scale(0.99);
+  }
+}
+
+@utility glass {
+  background: color-mix(in oklch, var(--background) 72%, transparent);
+  backdrop-filter: saturate(180%) blur(18px);
+  -webkit-backdrop-filter: saturate(180%) blur(18px);
+}
+
+/* Brend gradienti — asosiy CTA va urg'u uchun, tejamkor ishlating */
+@utility brand-gradient {
+  background-image: linear-gradient(135deg, oklch(0.56 0.24 285) 0%, oklch(0.58 0.24 318) 100%);
+}
+
+@utility text-brand-gradient {
+  background-image: linear-gradient(120deg, var(--primary) 0%, oklch(0.62 0.23 320) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Rangli nurlanuvchi fon (hero kartalari uchun) */
+@utility hero-mesh {
+  background-image:
+    radial-gradient(28rem 18rem at 0% 0%, oklch(0.7 0.2 300 / 0.55), transparent 70%),
+    radial-gradient(24rem 18rem at 100% 100%, oklch(0.62 0.22 265 / 0.55), transparent 70%),
+    linear-gradient(135deg, oklch(0.5 0.24 285), oklch(0.44 0.22 300));
+}
+
+@utility skeleton {
+  border-radius: calc(var(--radius) - 4px);
+  background-color: var(--muted);
+  background-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    color-mix(in oklch, var(--foreground) 6%, transparent) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: var(--animate-shimmer);
+}
+
+@utility noise {
+  position: relative;
+  isolation: isolate;
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    opacity: 0.08;
+    mix-blend-mode: overlay;
+    pointer-events: none;
+    border-radius: inherit;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+}
+
+@utility pb-safe { padding-bottom: env(safe-area-inset-bottom, 0px); }
+@utility pt-safe { padding-top: env(safe-area-inset-top, 0px); }
+@utility tabular { font-variant-numeric: tabular-nums; }
+@utility no-scrollbar {
+  scrollbar-width: none;
+  &::-webkit-scrollbar { display: none; }
+}
+
+/* Harakatdan bezovta bo'ladigan foydalanuvchilar uchun */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

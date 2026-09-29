@@ -1,11 +1,12 @@
 # Linguist AI-Flow
 
 O'zbek tilida so'zlashuvchilar uchun ingliz tili ilovasi: CEFR bo'yicha tartiblangan
-kunlik kurs, SM-2 oraliqli takrorlash, tinglab yozish, AI o'qituvchi va gapirish mashqlari.
+kunlik kurs, 7 bosqichli oraliqli takrorlash, tinglab yozish, gap tahlili va
+gapirish mashqlari.
 
 ## Stack
 
-- **Client:** React 18, Vite, Redux Toolkit Query, Tailwind 4, redux-persist
+- **Client:** React 18, Vite, Redux Toolkit Query, Tailwind 4, redux-persist, Motion (animatsiya), Radix UI
 - **Server:** Express 5, MongoDB (Mongoose 9), JWT + refresh cookie sessiyalari, Gemini, Stripe
 - **Testlar:** `node:test` + `mongodb-memory-server` (brauzer talab qilmaydi), Playwright (e2e)
 
@@ -40,16 +41,114 @@ telefon manzilni `localhost` deb ko'radi va PWA to'liq ishlaydi:
 3. **Port forwarding** → `5173` → `localhost:5173` → Enable
 4. Telefon Chrome'da: `http://localhost:5173`
 
-`GEMINI_API_KEY` bo'lmasa ilova ishlaydi — AI'ga bog'liq bo'lmagan barcha
-funksiyalar (kunlik sahna, mini-test, flashcard, SRS) to'liq ishlaydi, AI
-funksiyalari esa 503 qaytaradi va **foydalanuvchi progressiga tegmaydi**.
+`GEMINI_API_KEY` bo'lmasa ilova ishlaydi. Kunlik sahna, mini-test va lug'at
+to'liq ishlaydi; **takrorlash ham to'xtamaydi** — u mahalliy tekshiruvga tushadi
+va buni foydalanuvchiga ochiq aytadi ("AI ishlamaganda" bo'limiga qarang).
+Faqat gap tahlili va yangi so'zga avtomatik tarjima/misol ishlamaydi.
+
+## Dizayn tizimi
+
+Barcha ranglar `client/src/index.css` dagi tokenlardan keladi (OKLCH). Brend
+rangi — **binafsha**: ikonka, PWA `theme_color` va logotip bilan bir xil.
+Ilgari primary yashil, gradientlar binafsha→pushti edi — ilova uch xil brend
+rangida gapirardi.
+
+- **Semantik ranglar:** `success`, `warning`, `info`, `streak`, `xp` — sahifalarda
+  `text-green-500` kabi xom ranglar o'rniga shular ishlatiladi.
+- **Qorong'i rejim:** kartalar fondan yorug'roq (elevatsiya yorug'lik bilan).
+  `destructive` yetarli kontrastda — ilgari xato matni qora fonda o'qilmasdi.
+- **Umumiy bloklar:** `components/ui/primitives.jsx` — `PageHeader`,
+  `EmptyState`, `Skeleton`, `StatTile`, `ProgressRing`, `Segmented`, `FadeIn`/`Stagger`.
+  Yangi sahifa sarlavhasi va bo'sh holatni noldan chizmang.
+- **Navigatsiya:** `components/Layout/nav.js` — sidebar (lg+), telefondagi pastki
+  tab-bar va "Mashqlar" varag'i shu bitta ro'yxatdan quriladi.
+- **Dialog'lar** telefonda pastdan chiqadigan varaq, desktopda markazdagi oyna.
+- **Shrift:** Plus Jakarta Sans (paket ichida, oflayn ishlaydi). IPA uchun `font-ipa`.
+- **Animatsiya:** `motion`; tizimda "harakatni kamaytirish" yoqilgan bo'lsa o'chadi
+  (`MotionConfig reducedMotion="user"` + CSS media so'rovi).
+- **Logotip** — `components/brand/Logo.jsx` (SVG). PWA ikonkalari shu shakldan
+  `npm run icons` bilan chiziladi.
 
 ## Funksiyalar
 
-### Kunlik reja (3 qadam)
+### Kunlik reja (2 qadam)
 1. **Kunlik sahna** — mavzu dialogi, so'zlar, mini-test
-2. **Takrorlash** — SM-2 jadvali bo'yicha, 4 darajali baholash
-3. **Amaliyot** — o'rganilgan so'zlardan gap tuzish, AI tekshiradi
+2. **Takrorlash** — "Bugun" sahifasining o'zida, so'z ishtirokida gap tuzish
+
+Ikkalasi bajarilgach streak oshadi — qaysi tartibda bajarilishidan qat'i nazar.
+Tinglash, Speaking Lab, 100 kun va Gap tahlili — ixtiyoriy qo'shimchalar, ular
+rejani bloklamaydi.
+
+Qadamlarni **faqat server** belgilaydi (`completeDailyStep`,
+`utils/gamification.js`), mijoz emas:
+
+- **Sahna** — `/topics/finish` da, mini-test va so'zlar serverda tekshirilgach;
+- **Takrorlash** — `/review/:id/check` da, navbat bo'shaganda yoki bugun 20 ta
+  so'z takrorlanganda. Navbati umuman bo'sh foydalanuvchi uchun
+  `POST /review/complete-day` — u navbatni o'zi tekshiradi (so'z bo'lsa 409).
+
+Ilgari `/auth/sync-quest` bor edi: mijoz `{type}` yuborsa qadam yopilardi,
+ya'ni ikki so'rov bilan XP va streak olish mumkin edi. U olib tashlandi.
+
+**Mashq rejimi.** Muddati kelmagan so'z (masalan xato javobdan keyin "Qayta
+urinish") tekshiriladi, lekin jadval o'zgarmaydi — javobda `practice: true`.
+Busiz xatodan keyingi qayta urinish so'zni o'sha zahoti 2-bosqichga
+ko'tarardi.
+
+### Takrorlash: "Bugun" sahifasi
+
+"Bugun" — takrorlashning o'zi. Ochilishi bilan bugun takrorlanishi kerak
+bo'lgan so'zlar birin-ketin chiqadi; har biri uchun foydalanuvchi shu so'z
+ishtirokida inglizcha gap tuzadi — **yozib yoki mikrofonga aytib**. Navbat
+bo'sh bo'lsa "Lug'atga o'tish" tugmasi ko'rsatiladi.
+
+Nega o'z-o'zini baholash olib tashlandi: eski oqimda foydalanuvchi
+"Esladim / Qiyin / Eslay olmadim" tugmalarini bosardi. Bu o'lchov emas edi —
+bilmagan so'zga ham "Esladim" bosish mumkin. Gap tuzish esa bilimni ko'rsatadi.
+
+Mikrofonli javob **talaffuzni baholamaydi**: brauzerning `SpeechRecognition`i
+nutqni matnga aylantiradi va o'sha matn tekshiriladi. UI buni ochiq aytadi.
+
+Tanilgan matn **darhol yuborilmaydi** — u maydonga tushadi, foydalanuvchi uni
+tekshirib, kerak bo'lsa tuzatib yuboradi. Ilgari u avtomatik yuborilardi va
+tanish xatosi ("I sea the see") so'zni foydalanuvchining aybisiz 1-bosqichga
+tushirardi. Tuzatilgan matn `source: 'text'` bo'lib ketadi.
+
+Tarmoq xatosi **noto'g'ri javob emas**: forma va yozilgan gap joyida qoladi,
+qayta yuborish yoki so'zni keyinroqqa qoldirish taklif qilinadi. Natijadan
+keyin fokus "Keyingi so'z" tugmasida — Enter bilan davom etiladi. Har javobdan
+keyin so'z qachon qaytishi ko'rsatiladi ("3 kundan keyin yana chiqadi").
+
+**AI limiti takrorlashni to'xtatmaydi.** Bepul tarifda kuniga 15 ta AI
+chaqiruvi bor, kunlik maqsad esa 20 ta so'z. Limit tugasa `/review/:id/check`
+402 o'rniga mahalliy tekshiruvga tushadi (`aiReason: 'QUOTA'`) va UI buni
+aytadi (`trackAiUsageSoft`, `middleware/usageQuota.js`).
+
+Javob yuborilgach "Gapimni tushuntir" tugmasi chiqadi — foydalanuvchi aynan
+o'zi tuzgan gapning grammatik tahlilini ko'radi (quyiga qarang).
+
+**Sessiya muzlatiladi.** Javob yuborilgach `checkReview` `Word` tegini bekor
+qiladi va navbat qayta yuklanadi — so'z endi navbatda yo'q. Sessiya ro'yxati
+holatda saqlanmasa, natija ekranga chiqishga ulgurmasdan oqim yopilib qolardi.
+
+### Gap tahlili
+
+`/analysis` — inglizcha gapni har bir so'zi bo'yicha tahlil qiladi: so'z
+turkumi (ot, fe'l, sifat, ravish…) va gap bo'lagi (ega, kesim, to'ldiruvchi,
+aniqlovchi, hol). Foydalanuvchining lug'atidagi so'zlarning misol gaplari
+tayyor boshlang'ich nuqta sifatida taklif qilinadi.
+
+Bu "Ustoz AI" ning o'rniga keldi. Eski Ustoz AI erkin savol-javob chati edi:
+foydalanuvchi nima so'rashini bilmasdi, javob sifati savolga bog'liq edi va u
+foydalanuvchining o'z lug'atiga hech qanday tarzda bog'lanmagan edi.
+
+`partOfSpeech` va `role` model sxemasida **enum** bilan cheklangan — aks holda
+model har safar boshqa atama qaytarardi ("fe'l", "verb", "harakat so'zi") va
+UI ularni ajrata olmasdi.
+
+Tahlil uchun mahalliy zaxira YO'Q va bo'lishi ham mumkin emas: gap bo'laklarini
+qoidalar bilan aniqlash uchun to'liq sintaktik tahlilchi kerak. Yolg'on tahlil
+ko'rsatgandan ko'ra hech narsa ko'rsatmagan yaxshi.
 
 ### Tinglash (diktant)
 Kunlik dialog qatorlarini eshitib yozish — ilovadagi yagona **input** mashqi.
@@ -61,8 +160,86 @@ Ovoz brauzerning `speechSynthesis`i orqali chiqariladi — tashqi TTS xizmati
 talab qilinmaydi, lekin ovoz sifati qurilmaga bog'liq. Tezlikni sekinlashtirish
 mumkin (0.6× / 0.95× / 1.15×).
 
-Bu mashq kunlik 3 qadamga **kirmaydi** va streak'ni bloklamaydi — kunlik yukni
+Bu mashq kunlik rejaga **kirmaydi** va streak'ni bloklamaydi — kunlik yukni
 oshirib, reja bajarilishini tushirmaslik uchun ataylab ixtiyoriy qoldirilgan.
+
+### So'z qo'shish
+
+Yangi so'zga **tarjima** va **darajaga mos misol gap** (o'zbekcha tarjimasi
+bilan) yoziladi. Ta'rif manbai zanjiri: qo'lda yozilgan `dictionary.json` →
+`dictionary-snapshot.json` → jonli API. Tarjima yoki misol yetishmasa AI
+`generateWordContext` bilan to'ldiradi va **darajaga moslangan misol birinchi
+o'ringa** qo'yiladi.
+
+Nega snapshotdagi misol yetmaydi: u Wiktionary'dan keladi va A1 o'quvchisi
+uchun ko'pincha og'ir ("He is a student of life"). Tarjima esa u yerda umuman
+yo'q.
+
+**Ma'no bitta manbadan olinadi.** AI javob bersa, ta'rif ham, misol ham undan
+olinadi va snapshotdagilar tashlanadi. Sabab: snapshot Wiktionary'ning
+BIRINCHI ma'nosini oladi, u esa eng keng tarqalgani bo'lmasligi mumkin —
+"kids" uchun u *"A young goat"* beradi. Aralashtirsak kartochka o'z-o'ziga zid
+bo'lardi: tarjima "bolalar", ta'rif esa echki bolasi.
+
+**Ma'lumot topilmasa so'z SAQLANMAYDI.** Ilgari tarmoq uzilsa yozuv shunday
+saqlanardi:
+
+```
+definition: "Definition unavailable (API failed). You can edit this later."
+examples:   ["Example unavailable."]
+```
+
+Uch jihatdan yomon edi: inglizcha xizmat matni foydalanuvchiga ta'rif bo'lib
+ko'rinardi, "edit later" yolg'on edi (tahrirlash oynasi yo'q), va buzuq
+kartochka SRS navbatiga tushib har kuni qaytaverardi. Endi 503 va
+`type: 'ENRICHMENT_FAILED'` qaytadi, foydalanuvchiga sabab aytiladi va qo'lda
+ta'rif kiritish taklif qilinadi.
+
+Jonli lug'at so'rovi **bir marta qayta uriniladi** (timeout/5xx uchun; 404
+qayta urinilmaydi — bu javobning o'zi).
+
+Bazada qolgan eski buzuq yozuvlar uchun lug'at kartochkasida
+**"Ma'lumotni yuklash"** tugmasi bor (`POST /api/words/:id/refresh`). U faqat
+kontent maydonlarini yangilaydi — bosqich, interval va lapses tegilmaydi.
+
+### So'z takliflari (avtomatik to'ldirish)
+
+Lug'atga so'z qo'shish maydonida bir-ikki harf yozilishi bilan shu harflar
+bilan boshlanadigan so'zlar ro'yxati chiqadi (`components/WordForm.jsx`).
+
+**Nega dictionaryapi.dev emas:** u prefiks bo'yicha qidira olmaydi, faqat aniq
+so'zni topadi — `/entries/en/hel` → 404. Shuning uchun alohida ro'yxat kerak.
+
+`src/data/wordlist.js` — 9822 ta so'z, **chastota bo'yicha tartiblangan**
+(`first20hours/google-10000-english`, MIT, haqoratsiz variant). Tartib
+xususiyatning butun sifatini belgilaydi: alifbo tartibida "ab" so'rovi
+"abaca, abaci" berardi, chastota tartibida esa "about, above, able".
+Faylni saralamang.
+
+```bash
+npm --prefix client run wordlist:fetch   # ro'yxatni yangilash
+```
+
+Ro'yxat **dinamik import** qilinadi: 75 KB (gzip 34 KB) alohida chunk bo'lib
+ajraladi va faqat foydalanuvchi maydonga fokus qo'yganda yuklanadi —
+boshlang'ich bundle'ga kirmaydi. Kontent-xesh bilan nomlangani uchun service
+worker'ning `assets/` qoidasi (stale-while-revalidate) unga o'z-o'zidan
+tegishli bo'ladi.
+
+Xulq-atvori:
+
+- foydalanuvchida allaqachon bor so'zlar taklif qilinmaydi (aks holda
+  bosilganda serverdan `DUPLICATE` xatosi kelardi);
+- aynan yozilgan so'zning o'zi ko'rsatilmaydi — uni bosish hech narsani
+  o'zgartirmaydi, lekin 8 o'rinning birini egallardi;
+- taklif bosilganda so'z **maydonga qo'yiladi**, avtomatik qo'shilmaydi:
+  tasodifiy bosish keraksiz so'zni SRS navbatiga tushirmasligi kerak;
+- klaviatura: ↑ ↓ Enter Escape. Escape `stopPropagation` qiladi — aks holda
+  Radix Dialog butun modalni yopib yuborardi.
+
+Ma'lum cheklov: ro'yxatda atoqli otlar ham bor ("helen", "helena"). Ular
+korpusda chastotali va faqat katta harf bilan farqlanadi, lowercase ro'yxatda
+esa buni aniqlab bo'lmaydi.
 
 ### Daraja aniqlash (placement)
 Onboarding'ning birinchi qadami: adaptiv test, ~12 savol, 2 daqiqa.
@@ -92,10 +269,77 @@ cd server
 npm run content:build       # curriculum/*.js  →  data/topics.json (validatsiya bilan)
 npm run content:challenges  # topics.json      →  data/challenges.json
 npm run content:validate    # faqat tekshirish
+npm run dict:fetch          # lug'at snapshotini yangilash (tarmoq kerak)
 ```
 
-Yangi mavzu qo'shish: `server/content/curriculum/` ichida kortej formatida yozing
-va `npm run content:build` ni ishga tushiring.
+Yangi mavzu qo'shish: `server/content/curriculum/` ichida kortej formatida yozing,
+`npm run content:build`, so'ng `npm run dict:fetch` (yangi so'zlar snapshotga tushadi).
+
+### Lug'at snapshoti
+
+`data/dictionary-snapshot.json` — kurrikulumdagi 300 so'z uchun
+[dictionaryapi.dev](https://api.dictionaryapi.dev) dan **build vaqtida** olingan
+ma'lumot: IPA variantlari, inson ovozidagi talaffuz havolalari (285 so'zda),
+ma'nolar, sinonim va antonimlar. Fayl repoga kommit qilinadi.
+
+Nega runtime'da emas: ilgari foydalanuvchi so'z qo'shganda har safar tashqi
+so'rov ketardi. Kurrikulum so'zlari hamma foydalanuvchida bir xil, ya'ni bu
+bepul, SLA'siz va rate limit'li API'ga bir xil savolni minglab marta berish
+degani edi. Endi qidiruv zanjiri: qo'lda yozilgan `dictionary.json` →
+snapshot → (faqat begona so'z uchun) jonli API.
+
+Skript inkremental: uzilib qolsa qayta ishga tushiring, faqat qolgani olinadi.
+Hammasini yangilash uchun `npm run dict:fetch -- --force`.
+
+**Litsenziya:** ma'lumot Wiktionary'dan keladi, **CC BY-SA 3.0**. Ta'riflarni
+foydalanuvchiga ko'rsatganda atribusiya kerak — har yozuvdagi `sourceUrls`
+shuning uchun saqlanadi.
+
+### IPA va partOfSpeech tekshiruvi
+
+`content/dictionaryCheck.js` kurrikulumning qo'lda yozilgan transkripsiyalarini
+snapshot bilan solishtiradi. Bunga alohida ehtiyoj bor edi: bitta xato IPA
+(`/wɜːk/` o'rniga `/wɔːk/`) hech qayerda ko'rinmaydi — dastur ishlaydi, testlar
+o'tadi, faqat foydalanuvchi noto'g'ri o'rganadi.
+
+Qiyinligi shundaki, farqlarning aksariyati **xato emas**. Solishtirish uch
+bosqichda notatsiyani tenglashtiradi:
+
+1. **Fold** — `ɹ`↔`r`, `ɛ`↔`e`, `ɑ`↔`a`, `ɫ`↔`l`, bog'lovchi yoy `t͡ʃ`↔`tʃ`,
+   bo'g'in belgisi, urg'u va bo'g'in nuqtasi.
+2. **Ixtiyoriy segmentlar** — `/ˈmʌðə(ɹ)/` rotik va norotik variantga yoyiladi.
+3. **Og'irlikli tahrir masofasi** — kuchsiz unlilar (`ə ɪ ʊ ɐ`) orasidagi
+   almashinuv va schwa'ning tushishi **bepul**, boshqa har qanday unli
+   almashinuvi esa to'liq narxda. Aynan shu `/ˈkɪtʃɪn/`↔`/ˈkɪtʃən/` (to'g'ri)
+   ni `/wɔːk/`↔`/wɜːk/` (xato) dan ajratadi — oddiy Levenshteinda ikkalasi
+   ham 1 ga teng bo'lardi.
+
+Shundan keyin ham 26 ta farq qoladi: kurrikulum izchil britancha RP yozadi,
+Wiktionary esa ko'pincha amerikacha yoki tor transkripsiya beradi
+(`/kəʊld/` va `/koʊld/`). Ular `content/phonetic-exceptions.json` da
+**sabab bilan** ro'yxatga olingan — lint baseline'i kabi:
+
+```bash
+npm run content:validate -- --update-baseline   # yangi farqlarni ro'yxatga qo'shadi
+```
+
+Maqsad — ogohlantirishlar sonini **nolda** ushlab turish. 26 ta doimiy
+ogohlantirish bo'lsa, 27-chisi — haqiqiy xato — ko'zga tashlanmasdi. Buni test
+ham himoya qiladi (`tests/dictionary.test.js`). Flagni farqlarni o'qimasdan
+ishlatish tekshiruvni ma'nosiz qilib qo'yadi; fayl kod ko'rigidan o'tishi kerak.
+
+Qat'iylik darajalari:
+
+| Holat | Natija |
+|---|---|
+| So'z ingliz lug'atida yo'q (`notFound`) | **Xato** — build to'xtaydi (imlo xatosi) |
+| IPA yoki POS farqi, ro'yxatda yo'q | Ogohlantirish |
+| Snapshotda yo'q so'z | Ogohlantirish (`dict:fetch` kerak) |
+| Keraksiz qolgan istisno | Ogohlantirish |
+| Snapshot fayli umuman yo'q | Tekshiruv o'tkazib yuboriladi |
+
+Oxirgi qator muhim: yangi klon, offline build va tarmoqsiz CI ishlashda davom
+etadi.
 
 ### Kunlik eslatmalar
 Kunlik reja bajarilmagan bo'lsa, foydalanuvchining **mahalliy** soatida
@@ -154,10 +398,47 @@ native paket o'rniga zlib + CRC32 bilan yozilgan kichik PNG enkoder
 iOS Safari `beforeinstallprompt` ni qo'llab-quvvatlamaydi, shuning uchun u
 yerda "Share → Bosh ekranga qo'shish" ko'rsatmasi ko'rsatiladi.
 
-### Oraliqli takrorlash (SM-2)
-`server/utils/srs.js` — har so'z uchun individual ease factor, 4 darajali baholash
-(Eslay olmadim / Qiyin / Esladim / Juda oson), lapse mantiqi. So'z hech qachon
-takrorlashdan butunlay chiqib ketmaydi.
+### Oraliqli takrorlash (7 bosqich)
+
+`server/utils/srs.js`. Bosqich → keyingi takrorlashgacha kun:
+
+| Bosqich | 1 | 2 | 3 | 4 | 5 | 6 | 7 |
+|---|---|---|---|---|---|---|---|
+| Kun | 1 | 2 | 4 | 7 | 14 | 30 | — |
+
+**7 ta muvaffaqiyatli takrorlash** so'zni yodlangan qiladi: `learned = true`,
+`nextReviewDate = null` va u navbatdan chiqadi. 7-bosqichning 60 kuni hech
+qachon kutilmaydi — jadvalda faqat ko'rsatish uchun turadi.
+
+**Xato → 1-bosqich**, bir pog'ona pastga emas. 6-bosqichdan 5-ga tushgan so'z
+baribir 14 kundan keyin qaytardi va ikkinchi marta ham unutilardi.
+
+**Qayta yodlash** (lug'atdagi tugma) so'zni **4-bosqichdan** (7 kun) boshlaydi.
+Bir marta yodlangan so'zni yangi so'z kabi 1 kundan boshlash keraksiz
+takrorlash bo'lardi.
+
+Takrorlash sanasi **foydalanuvchi zonasidagi** yarim tunga qo'yiladi. Ilgari
+server zonasi (Render'da UTC) ishlatilardi va Toshkentda so'z yarim tunda emas,
+ertalab 05:00 da navbatga tushardi.
+
+Uzun intervallarga ±5% tasodifiy og'ish qo'shiladi — busiz bir kunda
+qo'shilgan 20 ta so'z 30 kundan keyin ham aynan bir kunda qaytardi.
+
+Nega SM-2 emas: ilgari ease factor foydalanuvchining 4 darajali o'z-o'zini
+baholashiga tayanardi. Endi takrorlash gap tuzish orqali o'tadi va natija
+ikkilik — ease factor uchun kirish signali qolmadi. Eski maydonlar
+(`easeFactor`, `repetitions`, `reviewStage`, `mastered`) sxemada qoldirilgan
+va mavjud hujjatlar `readStage` orqali avtomatik ko'chiriladi.
+
+### AI ishlamaganda
+
+Takrorlash yagona yo'l bo'lgani uchun uni Gemini'ga qattiq bog'lab bo'lmaydi:
+kvota tugagan kuni foydalanuvchi umuman ilgarilay olmasdi va streak uzilardi.
+Shuning uchun `utils/sentenceCheck.js` mahalliy zaxira ishlaydi — so'z
+ishlatilganmi (so'z shakllari bilan) va bu gapga o'xshaydimi. Javobda
+`method: 'local'` qaytadi va UI "grammatika tekshirilmadi" deb ochiq aytadi.
+
+Gap tahlili bunday zaxiraga ega emas (yuqoriga qarang).
 
 ### Xavfsizlik
 - 15 daqiqalik access token + hash'langan refresh sessiyalar
@@ -168,12 +449,13 @@ takrorlashdan butunlay chiqib ketmaydi.
 ## Testlar
 
 ```bash
-cd server && npm test     # 143 ta test; pretest kontentni validatsiya qiladi
+cd server && npm test     # 199 ta test; pretest kontentni validatsiya qiladi
+cd client && npm test     # 13 ta test (so'z takliflari); brauzer talab qilmaydi
 cd client && npm run lint
 cd client && npm run build
 
-# Brauzer testlari (ixtiyoriy)
-npm i -D @playwright/test && npx playwright install chromium
+# Brauzer testlari (ixtiyoriy) — @playwright/test client devDependency'da
+cd client && npx playwright install chromium
 npx playwright test
 ```
 

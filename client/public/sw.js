@@ -1,4 +1,4 @@
-/* eslint-env serviceworker */
+// Service worker: `self` va `caches` — eslint.config.js dagi brauzer global o'zgaruvchilari
 /**
  * Service worker.
  *

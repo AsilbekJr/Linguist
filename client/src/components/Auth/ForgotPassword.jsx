@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Loader2, MailCheck, ArrowLeft } from 'lucide-react';
+import { Loader2, MailCheck, ArrowLeft, Mail } from 'lucide-react';
 import { useForgotPasswordMutation } from '../../features/api/apiSlice';
+import { Button } from '@/components/ui/button';
+import { FadeIn, IconTile } from '@/components/ui/primitives';
+import { AuthHeading, Field } from './Field';
 
 /**
  * Parolni tiklash so'rovi.
@@ -27,59 +30,53 @@ const ForgotPassword = () => {
     setSent(true);
   };
 
+  const backLink = (
+    <Link
+      to="/login"
+      className="inline-flex items-center gap-2 text-sm font-semibold text-muted-foreground hover:text-foreground"
+    >
+      <ArrowLeft className="size-4" /> Kirish sahifasiga
+    </Link>
+  );
+
   if (sent) {
     return (
-      <div className="w-full max-w-md bg-card border border-border rounded-3xl p-8 shadow-xl text-center">
-        <MailCheck className="w-12 h-12 text-green-500 mx-auto mb-4" />
-        <h2 className="text-2xl font-black mb-3">Havola yuborildi</h2>
-        <p className="text-muted-foreground mb-2">
-          Agar <span className="font-bold text-foreground">{email}</span> ro&apos;yxatdan
-          o&apos;tgan bo&apos;lsa, parolni tiklash havolasi yuborildi.
+      <FadeIn key="sent" className="text-center">
+        <IconTile icon={MailCheck} tone="success" size="lg" className="mx-auto mb-5 animate-pop" />
+        <AuthHeading
+          title="Pochtangizni tekshiring"
+          subtitle={`Agar ${email} ro'yxatdan o'tgan bo'lsa, parolni tiklash havolasi yuborildi.`}
+        />
+        <p className="-mt-3 mb-8 text-sm text-muted-foreground">
+          Havola 1 soat amal qiladi. Xat kelmasa, &quot;Spam&quot; papkasini ham ko&apos;ring.
         </p>
-        <p className="text-sm text-muted-foreground mb-8">
-          Havola 1 soat davomida amal qiladi. Spam papkasini ham tekshiring.
-        </p>
-        <Link to="/login" className="text-primary font-bold inline-flex items-center gap-2">
-          <ArrowLeft className="w-4 h-4" /> Kirish sahifasiga
-        </Link>
-      </div>
+        {backLink}
+      </FadeIn>
     );
   }
 
   return (
-    <div className="w-full max-w-md bg-card border border-border rounded-3xl p-8 shadow-xl">
-      <h2 className="text-2xl sm:text-3xl font-black bg-gradient-to-r from-primary via-purple-500 to-pink-500 bg-clip-text text-transparent mb-2">
-        Parolni unutdingizmi?
-      </h2>
-      <p className="text-muted-foreground text-sm mb-8">
-        Email manzilingizni kiriting — tiklash havolasini yuboramiz.
-      </p>
-
+    <FadeIn key="form">
+      <AuthHeading title="Parolni tiklash" subtitle="Email manzilingizni kiriting — tiklash havolasini yuboramiz." />
       <form onSubmit={handleSubmit} className="space-y-4">
-        <input
+        <Field
+          label="Email"
+          icon={Mail}
           type="email"
+          inputMode="email"
+          autoComplete="email"
           required
           autoFocus
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          placeholder="Email manzilingiz"
-          className="w-full bg-background border border-border rounded-xl px-4 py-3 outline-none focus:border-primary transition-colors"
+          placeholder="siz@misol.uz"
         />
-        <button
-          type="submit"
-          disabled={isLoading || !email.trim()}
-          className="w-full py-3 bg-primary text-primary-foreground font-bold rounded-xl disabled:opacity-50 hover:opacity-90 transition-opacity"
-        >
-          {isLoading ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : 'Havola yuborish'}
-        </button>
+        <Button type="submit" size="xl" variant="brand" disabled={isLoading || !email.trim()} className="w-full">
+          {isLoading ? <Loader2 className="animate-spin" /> : 'Havola yuborish'}
+        </Button>
       </form>
-
-      <div className="mt-6 text-center">
-        <Link to="/login" className="text-sm text-muted-foreground hover:text-foreground inline-flex items-center gap-2">
-          <ArrowLeft className="w-4 h-4" /> Kirishga qaytish
-        </Link>
-      </div>
-    </div>
+      <div className="mt-8 text-center">{backLink}</div>
+    </FadeIn>
   );
 };
 

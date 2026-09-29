@@ -1,15 +1,29 @@
 import React, { useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
+import { AnimatePresence, motion } from 'motion/react';
 import {
   useGetListeningSessionQuery,
   useCheckDictationMutation,
   useCompleteListeningMutation,
 } from '../features/api/apiSlice';
-import { Headphones, Volume2, Rabbit, Turtle, Loader2, CheckCircle2, Eye } from 'lucide-react';
+import { Headphones, Volume2, Rabbit, Turtle, Loader2, CheckCircle2, Eye, EyeOff, ArrowRight, BookHeart, Trophy } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/input';
+import { EmptyState, PageHeader, PageSkeleton, ProgressBar } from '@/components/ui/primitives';
+import { cn } from '@/lib/utils';
 import { playTTSAudio } from '../utils/audio';
 import { fireConfetti } from '../utils/celebration';
 import { track, EVENTS } from '../lib/analytics';
+
+const EASE = [0.16, 1, 0.3, 1];
+
+const TOKEN_STYLES = {
+  correct: 'bg-success/12 text-success',
+  missing: 'bg-warning/18 font-bold text-[color-mix(in_oklch,var(--warning)_60%,var(--foreground))] underline decoration-dotted underline-offset-4',
+  extra: 'bg-destructive/10 text-destructive line-through',
+};
+const TOKEN_TITLES = { missing: "Bu so'z yozilmagan", extra: "Ortiqcha so'z", correct: "To'g'ri" };
 
 /**
  * Tinglab yozish (diktant).
@@ -34,14 +48,18 @@ const ListeningMode = () => {
   const [revealed, setRevealed] = useState(false);
   const [scores, setScores] = useState([]);
   const [finished, setFinished] = useState(false);
+  const [playing, setPlaying] = useState(null);
   const inputRef = useRef(null);
 
   const lines = session?.lines || [];
   const line = lines[index];
 
-  const speak = (rate) => {
+  const speak = (rate, key) => {
     if (!line) return;
+    setPlaying(key);
     playTTSAudio(line.en, 'en-GB', rate);
+    // speechSynthesis tugaganini ishonchli bildirmaydi — taxminiy davomiylik
+    setTimeout(() => setPlaying(null), Math.max(1500, line.en.length * 70 / rate));
   };
 
   const handleCheck = async () => {
@@ -62,7 +80,7 @@ const ListeningMode = () => {
 
     if (index < lines.length - 1) {
       setIndex((i) => i + 1);
-      setTimeout(() => inputRef.current?.focus(), 50);
+      setTimeout(() => inputRef.current?.focus(), 300);
       return;
     }
 
@@ -81,198 +99,217 @@ const ListeningMode = () => {
     setFinished(true);
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex justify-center py-20">
-        <Loader2 className="w-10 h-10 animate-spin text-primary" />
-      </div>
-    );
-  }
+  if (isLoading) return <PageSkeleton cards={1} />;
 
   if (!lines.length) {
     return (
-      <div className="text-center py-20 bg-card border border-dashed border-border rounded-3xl max-w-2xl mx-auto px-6">
-        <div className="text-5xl mb-4">🎧</div>
-        <h2 className="text-2xl font-bold mb-4">Tinglash mashqi tayyor emas</h2>
-        <p className="text-muted-foreground mb-6">
-          Avval kunlik sahnani oching — mashq o&apos;sha kunning dialogidan tuziladi.
-        </p>
-        <Link to="/topic" className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground font-bold rounded-full">
-          Kunlik sahnaga →
-        </Link>
-      </div>
+      <EmptyState
+        icon={Headphones}
+        tone="teal"
+        title="Tinglash mashqi hali tayyor emas"
+        description="Avval kunlik sahnani oching — mashq o'sha kunning dialogidan tuziladi."
+      >
+        <Button asChild size="lg">
+          <Link to="/topic">
+            <BookHeart /> Kunlik sahnaga
+          </Link>
+        </Button>
+      </EmptyState>
     );
   }
 
   if (finished) {
     const avg = scores.length ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : 0;
     return (
-      <div className="max-w-lg mx-auto text-center py-16 bg-card border border-border rounded-3xl px-6">
-        <div className="text-5xl mb-4">🎧</div>
-        <h2 className="text-2xl font-black mb-2">Tinglash mashqi tugadi</h2>
-        <p className="text-muted-foreground mb-8">
-          O&apos;rtacha aniqlik: <span className="font-bold text-foreground">{avg}%</span>
-        </p>
-        <div className="flex flex-col gap-3">
-          <Link to="/topic" className="px-6 py-3 bg-primary text-primary-foreground font-bold rounded-full">
-            Kunlik sahnaga qaytish
-          </Link>
-          <Link to="/" className="text-primary font-bold text-sm">
-            Bosh sahifa →
-          </Link>
+      <motion.div
+        initial={{ opacity: 0, scale: 0.97 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="surface mx-auto max-w-lg p-8 text-center"
+      >
+        <div className="mx-auto mb-5 inline-flex size-20 items-center justify-center rounded-3xl bg-teal-500/12 text-teal-600 dark:text-teal-400">
+          <Trophy className="size-10" />
         </div>
-      </div>
+        <h1 className="text-2xl font-extrabold">Tinglash mashqi tugadi</h1>
+        <p className="mt-2 text-muted-foreground">O&apos;rtacha aniqlik</p>
+        <p className="mt-1 text-5xl font-extrabold text-teal-600 tabular dark:text-teal-400">{avg}%</p>
+        <div className="mt-8 flex flex-col gap-2 sm:flex-row sm:justify-center">
+          <Button asChild size="lg">
+            <Link to="/">Bosh sahifa</Link>
+          </Button>
+          <Button asChild size="lg" variant="outline">
+            <Link to="/topic">Kunlik sahna</Link>
+          </Button>
+        </div>
+      </motion.div>
     );
   }
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-6">
-      <div className="text-center mb-6">
-        <p className="text-xs font-bold uppercase text-teal-600 flex items-center justify-center gap-2">
-          <Headphones className="w-4 h-4" /> Tinglab yozish
-        </p>
-        <h1 className="text-2xl sm:text-3xl font-black mt-1">{session.topicUz}</h1>
-        <p className="text-sm text-muted-foreground mt-2">
-          {index + 1} / {lines.length} · Eshitganingizni yozing
-        </p>
+    <div className="mx-auto max-w-2xl">
+      <PageHeader
+        eyebrow="Tinglab yozish"
+        title={session.topicUz}
+        tone="teal"
+        icon={Headphones}
+        description="Gapni eshiting va eshitganingizni yozing. Kerak bo'lsa sekinlashtiring."
+      />
+
+      <div className="mb-5 flex items-center gap-3">
+        <span className="text-sm font-bold tabular">
+          {index + 1}<span className="text-muted-foreground">/{lines.length}</span>
+        </span>
+        <ProgressBar value={index + (result ? 1 : 0)} max={lines.length} tone="teal" className="flex-1" label="Mashq jarayoni" />
       </div>
 
-      <div className="h-2 bg-secondary rounded-full mb-8 overflow-hidden">
-        <div
-          className="h-full bg-teal-500 transition-all"
-          style={{ width: `${(index / lines.length) * 100}%` }}
-        />
-      </div>
-
-      <div className="bg-card border border-border rounded-3xl p-6 shadow-sm">
-        <div className="flex justify-center gap-3 mb-6">
-          <button
-            type="button"
-            onClick={() => speak(0.95)}
-            className="flex items-center gap-2 px-5 py-3 rounded-full bg-teal-500/10 text-teal-700 dark:text-teal-300 font-bold hover:bg-teal-500/20 transition-colors"
-          >
-            <Volume2 className="w-5 h-5" /> Tinglash
-          </button>
-          <button
-            type="button"
-            onClick={() => speak(0.6)}
-            className="flex items-center gap-2 px-4 py-3 rounded-full border border-border font-bold text-sm hover:bg-secondary transition-colors"
-            title="Sekinroq"
-          >
-            <Turtle className="w-5 h-5" /> Sekin
-          </button>
-          <button
-            type="button"
-            onClick={() => speak(1.15)}
-            className="flex items-center gap-2 px-4 py-3 rounded-full border border-border font-bold text-sm hover:bg-secondary transition-colors"
-            title="Tezroq"
-          >
-            <Rabbit className="w-5 h-5" /> Tez
-          </button>
-        </div>
-
-        {!result ? (
-          <>
-            <textarea
-              ref={inputRef}
-              rows={3}
-              value={typed}
-              onChange={(e) => setTyped(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  handleCheck();
-                }
-              }}
-              placeholder="Eshitganingizni shu yerga yozing..."
-              className="w-full bg-background border border-border rounded-xl p-4 text-lg outline-none resize-none focus:border-teal-500 transition-colors"
-            />
-
-            <div className="flex items-center justify-between mt-3 gap-3 flex-wrap">
-              <button
-                type="button"
-                onClick={() => setRevealed((v) => !v)}
-                className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1"
-              >
-                <Eye className="w-4 h-4" /> {revealed ? 'Yashirish' : "Matnni ko'rsatish"}
-              </button>
-              <span className="text-xs text-muted-foreground">{line.speaker}</span>
-            </div>
-
-            {revealed && (
-              <p className="mt-3 p-3 rounded-xl bg-secondary/60 text-sm">{line.en}</p>
-            )}
-
+      <AnimatePresence mode="wait">
+        <motion.section
+          key={index}
+          initial={{ opacity: 0, x: 24 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: -24 }}
+          transition={{ duration: 0.35, ease: EASE }}
+          className="surface p-5 sm:p-7"
+        >
+          {/* Pleyer */}
+          <div className="flex flex-col items-center">
             <button
               type="button"
-              onClick={handleCheck}
-              disabled={isChecking || !typed.trim()}
-              className="w-full mt-5 py-4 bg-teal-600 text-white rounded-xl font-bold disabled:opacity-50 hover:bg-teal-500 transition-colors"
+              onClick={() => speak(0.95, 'normal')}
+              className="group relative inline-flex size-24 items-center justify-center rounded-full bg-teal-500 text-white shadow-[0_16px_40px_-12px_rgb(20_184_166/0.7)] transition-transform hover:scale-105 active:scale-95"
+              aria-label="Gapni tinglash"
             >
-              {isChecking ? 'Tekshirilmoqda...' : 'Tekshirish'}
+              {playing && (
+                <>
+                  <span className="absolute inset-0 animate-ping rounded-full bg-teal-500/40" />
+                  <span className="absolute -inset-3 animate-pulse rounded-full border-2 border-teal-500/30" />
+                </>
+              )}
+              <Volume2 className="relative size-10" />
             </button>
-          </>
-        ) : (
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-2xl font-black">{result.score}%</span>
-              {result.isPerfect && <CheckCircle2 className="w-7 h-7 text-green-500" />}
+            <div className="mt-4 flex gap-2">
+              <Button variant="outline" size="sm" onClick={() => speak(0.6, 'slow')} className="rounded-full">
+                <Turtle /> Sekin
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => speak(1.15, 'fast')} className="rounded-full">
+                <Rabbit /> Tez
+              </Button>
             </div>
-
-            {/* So'z darajasidagi farq — foydalanuvchi aynan qayerda adashganini ko'radi */}
-            <div className="flex flex-wrap gap-1.5 mb-4 p-4 rounded-xl bg-background border border-border">
-              {result.tokens.map((t, i) => (
-                <span
-                  key={`${t.word}-${i}`}
-                  className={
-                    t.status === 'correct'
-                      ? 'px-2 py-1 rounded-md bg-green-500/15 text-green-700 dark:text-green-400 text-sm'
-                      : t.status === 'missing'
-                        ? 'px-2 py-1 rounded-md bg-amber-500/15 text-amber-700 dark:text-amber-400 text-sm font-bold'
-                        : 'px-2 py-1 rounded-md bg-destructive/10 text-destructive text-sm line-through'
-                  }
-                  title={
-                    t.status === 'missing'
-                      ? "Bu so'z yozilmagan"
-                      : t.status === 'extra'
-                        ? "Ortiqcha so'z"
-                        : "To'g'ri"
-                  }
-                >
-                  {t.word}
-                </span>
-              ))}
-            </div>
-
-            <p className="text-sm mb-4">{result.feedback}</p>
-
-            <div className="p-4 rounded-xl bg-secondary/60 mb-5">
-              <p className="text-xs uppercase text-muted-foreground mb-1">Asl matn</p>
-              <p className="font-medium">{result.expected}</p>
-              <p className="text-sm text-muted-foreground mt-1">{result.uz}</p>
-            </div>
-
-            <div className="flex gap-3">
-              <button
-                type="button"
-                onClick={() => speak(0.6)}
-                className="px-4 py-3 rounded-xl border border-border font-bold text-sm"
-              >
-                <Volume2 className="w-4 h-4" />
-              </button>
-              <button
-                type="button"
-                onClick={handleNext}
-                className="flex-1 py-3 bg-teal-600 text-white rounded-xl font-bold hover:bg-teal-500 transition-colors"
-              >
-                {index < lines.length - 1 ? 'Keyingi →' : 'Yakunlash'}
-              </button>
-            </div>
+            <p className="mt-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">{line.speaker}</p>
           </div>
-        )}
-      </div>
 
-      <p className="text-center text-xs text-muted-foreground mt-6">
+          {!result ? (
+            <div className="mt-6">
+              <label htmlFor="dictation" className="sr-only">Eshitganingizni yozing</label>
+              <Textarea
+                id="dictation"
+                ref={inputRef}
+                rows={3}
+                value={typed}
+                onChange={(e) => setTyped(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleCheck();
+                  }
+                }}
+                placeholder="Eshitganingizni shu yerga yozing…"
+                autoCapitalize="sentences"
+                spellCheck={false}
+                className="text-lg focus-visible:border-teal-500 focus-visible:ring-teal-500/15"
+              />
+
+              <div className="mt-3 flex items-center justify-between gap-3">
+                <button
+                  type="button"
+                  onClick={() => setRevealed((v) => !v)}
+                  className="inline-flex items-center gap-1.5 text-sm font-semibold text-muted-foreground hover:text-foreground"
+                >
+                  {revealed ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                  {revealed ? 'Yashirish' : "Matnni ko'rsatish"}
+                </button>
+                <span className="hidden text-xs text-muted-foreground sm:inline">Enter — tekshirish</span>
+              </div>
+
+              <AnimatePresence>
+                {revealed && (
+                  <motion.p
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="overflow-hidden"
+                  >
+                    <span className="mt-3 block rounded-2xl bg-muted/70 p-3 text-sm">{line.en}</span>
+                  </motion.p>
+                )}
+              </AnimatePresence>
+
+              <Button
+                size="lg"
+                onClick={handleCheck}
+                disabled={isChecking || !typed.trim()}
+                className="mt-5 w-full bg-teal-600 text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.18),0_6px_16px_-6px_rgb(20_184_166/0.7)] hover:bg-teal-600 hover:brightness-110"
+              >
+                {isChecking ? <Loader2 className="animate-spin" /> : 'Tekshirish'}
+              </Button>
+            </div>
+          ) : (
+            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="mt-6">
+              <div className="mb-4 flex items-center justify-between">
+                <span
+                  className={cn(
+                    'text-4xl font-extrabold tabular',
+                    result.score >= 90 ? 'text-success' : result.score >= 60 ? 'text-warning' : 'text-destructive'
+                  )}
+                >
+                  {result.score}%
+                </span>
+                {result.isPerfect && (
+                  <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', stiffness: 400, damping: 14 }}>
+                    <CheckCircle2 className="size-9 text-success" />
+                  </motion.span>
+                )}
+              </div>
+
+              {/* So'z darajasidagi farq — foydalanuvchi aynan qayerda adashganini ko'radi */}
+              <div className="mb-3 flex flex-wrap gap-1.5 rounded-2xl border border-border bg-background p-4">
+                {result.tokens.map((t, i) => (
+                  <span
+                    key={`${t.word}-${i}`}
+                    className={cn('rounded-lg px-2 py-1 text-sm', TOKEN_STYLES[t.status] || TOKEN_STYLES.correct)}
+                    title={TOKEN_TITLES[t.status]}
+                  >
+                    {t.word}
+                  </span>
+                ))}
+              </div>
+              <div className="mb-4 flex flex-wrap gap-3 text-[11px] font-semibold text-muted-foreground">
+                <span className="inline-flex items-center gap-1"><span className="size-2 rounded-full bg-success" /> to&apos;g&apos;ri</span>
+                <span className="inline-flex items-center gap-1"><span className="size-2 rounded-full bg-warning" /> tushib qolgan</span>
+                <span className="inline-flex items-center gap-1"><span className="size-2 rounded-full bg-destructive" /> ortiqcha</span>
+              </div>
+
+              <p className="mb-4 text-sm">{result.feedback}</p>
+
+              <div className="mb-5 rounded-2xl bg-muted/60 p-4">
+                <p className="mb-1 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Asl matn</p>
+                <p className="font-semibold">{result.expected}</p>
+                <p className="mt-1 text-sm text-muted-foreground">{result.uz}</p>
+              </div>
+
+              <div className="flex gap-2">
+                <Button variant="outline" size="lg" onClick={() => speak(0.6, 'slow')} aria-label="Sekin qayta eshitish">
+                  <Volume2 />
+                </Button>
+                <Button size="lg" onClick={handleNext} className="flex-1" autoFocus>
+                  {index < lines.length - 1 ? <>Keyingi gap <ArrowRight /></> : 'Yakunlash'}
+                </Button>
+              </div>
+            </motion.div>
+          )}
+        </motion.section>
+      </AnimatePresence>
+
+      <p className="mt-6 text-center text-xs text-muted-foreground">
         Ovoz brauzeringiz yordamida chiqariladi — sifati qurilmaga bog&apos;liq.
       </p>
     </div>

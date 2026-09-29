@@ -23,7 +23,6 @@ const prepareUser = async (email, over = {}) => {
     date: '2026-06-10',
     reviewCompleted: false,
     topicCompleted: false,
-    immersionCompleted: false,
   };
   user.lastStreakDay = '2026-06-09';
   Object.assign(user, over);
@@ -120,7 +119,6 @@ test('reja bajarilgan foydalanuvchiga yuborilmaydi', async () => {
       date: '2026-06-10',
       reviewCompleted: true,
       topicCompleted: true,
-      immersionCompleted: true,
     },
   });
 

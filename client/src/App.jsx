@@ -1,52 +1,54 @@
-import React, { useState, useEffect, Suspense, lazy } from 'react';
-import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
-import { useSelector, useDispatch } from 'react-redux';
-import { logout } from './features/auth/authSlice';
-import { apiSlice, useGetMeQuery, useSetTimezoneMutation } from './features/api/apiSlice';
-import { ThemeToggle } from './components/ThemeToggle';
-import Login from './components/Auth/Login';
-import Register from './components/Auth/Register';
-import DashboardLayout from './components/Layout/DashboardLayout';
-import Dashboard from './pages/Dashboard';
-import Vocabulary from './pages/Vocabulary';
-import Review from './pages/Review';
-import Practice from './pages/Practice';
-import TopicVocabulary from './pages/TopicVocabulary';
-import { Loader2 } from 'lucide-react';
-import { identify } from './lib/analytics';
+import React, { useState, useEffect, Suspense, lazy } from "react";
+import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
+import { useSelector, useDispatch } from "react-redux";
+import { logout } from "./features/auth/authSlice";
+import {
+  apiSlice,
+  useGetMeQuery,
+  useSetTimezoneMutation,
+} from "./features/api/apiSlice";
+import AuthLayout from "./components/Auth/AuthLayout";
+import Login from "./components/Auth/Login";
+import Register from "./components/Auth/Register";
+import DashboardLayout from "./components/Layout/DashboardLayout";
+import Dashboard from "./pages/Dashboard";
+import { PageSkeleton } from "./components/ui/primitives";
+import { identify } from "./lib/analytics";
 
-const Unsubscribe = lazy(() => import('./pages/Unsubscribe'));
-const ForgotPassword = lazy(() => import('./components/Auth/ForgotPassword'));
-const ResetPassword = lazy(() => import('./components/Auth/ResetPassword'));
-const Listening = lazy(() => import('./pages/Listening'));
-const SpeakingLab = lazy(() => import('./pages/SpeakingLab'));
-const Roleplay = lazy(() => import('./pages/Roleplay'));
-const Challenge = lazy(() => import('./pages/Challenge'));
-const Pricing = lazy(() => import('./pages/Pricing'));
-const Analytics = lazy(() => import('./pages/Analytics'));
-const TutorAI = lazy(() => import('./pages/TutorAI'));
+const Vocabulary = lazy(() => import("./pages/Vocabulary"));
+const TopicVocabulary = lazy(() => import("./pages/TopicVocabulary"));
+const Unsubscribe = lazy(() => import("./pages/Unsubscribe"));
+const ForgotPassword = lazy(() => import("./components/Auth/ForgotPassword"));
+const ResetPassword = lazy(() => import("./components/Auth/ResetPassword"));
+const Listening = lazy(() => import("./pages/Listening"));
+const SpeakingLab = lazy(() => import("./pages/SpeakingLab"));
+const Challenge = lazy(() => import("./pages/Challenge"));
+const Pricing = lazy(() => import("./pages/Pricing"));
+const Analytics = lazy(() => import("./pages/Analytics"));
+const SentenceAnalysis = lazy(() => import("./pages/SentenceAnalysis"));
 
-const PageLoader = () => (
-  <div className="flex flex-col items-center justify-center min-h-[40vh]">
-    <Loader2 className="w-10 h-10 animate-spin text-primary" />
-    <p className="text-muted-foreground mt-4 text-sm">Yuklanmoqda...</p>
-  </div>
-);
+// Lazy sahifa yuklanguncha — spinner o'rniga sahifa shaklidagi skelet:
+// kontent qayerda paydo bo'lishi oldindan ko'rinadi va sakrash bo'lmaydi
+const PageLoader = () => <PageSkeleton />;
 
 function App() {
   const isAuthenticated = useSelector((state) => state.auth.isAuthenticated);
   const token = useSelector((state) => state.auth.token);
   const lastAuthAt = useSelector((state) => state.auth.lastAuthAt);
-  const [loginPrefillEmail, setLoginPrefillEmail] = useState('');
+  const [loginPrefillEmail, setLoginPrefillEmail] = useState("");
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  const { data: me, isError: isMeError, error: meError } = useGetMeQuery(undefined, { skip: !token });
+  const {
+    data: me,
+    isError: isMeError,
+    error: meError,
+  } = useGetMeQuery(undefined, { skip: !token });
   const [setTimezone] = useSetTimezoneMutation();
 
   useEffect(() => {
     if (isAuthenticated) {
-      setLoginPrefillEmail('');
+      setLoginPrefillEmail("");
     }
   }, [isAuthenticated]);
 
@@ -72,15 +74,19 @@ function App() {
     if (!isAuthenticated || !me) return;
     const browserZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
     if (browserZone && browserZone !== me.timezone) {
-      setTimezone(browserZone).unwrap().catch(() => {
-        // muhim emas — server default zonaga qaytadi
-      });
+      setTimezone(browserZone)
+        .unwrap()
+        .catch(() => {
+          // muhim emas — server default zonaga qaytadi
+        });
     }
   }, [isAuthenticated, me, setTimezone]);
 
   useEffect(() => {
     if (!isAuthenticated) return;
-    dispatch(apiSlice.util.prefetch('getCurrentTopic', undefined, { force: false }));
+    dispatch(
+      apiSlice.util.prefetch("getCurrentTopic", undefined, { force: false }),
+    );
   }, [isAuthenticated, dispatch]);
 
   useEffect(() => {
@@ -95,7 +101,7 @@ function App() {
   // Obunani bekor qilish auth devoridan TASHQARIDA bo'lishi kerak: xatdagi
   // havolani bosgan odam login qilmagan bo'lishi mumkin va uni login sahifasiga
   // yuborish "spam" tugmasini bosishga olib keladi.
-  if (window.location.pathname === '/unsubscribe') {
+  if (window.location.pathname === "/unsubscribe") {
     return (
       <Suspense fallback={<PageLoader />}>
         <Unsubscribe />
@@ -108,20 +114,17 @@ function App() {
     // /login yoki /reset-password kabi URL'lar umuman mavjud emas edi —
     // pochtadagi tiklash havolasini ochib bo'lmasdi.
     return (
-      <div className="min-h-screen bg-background text-foreground selection:bg-primary/30 font-sans flex items-center justify-center p-4 sm:p-6">
-        <div className="absolute top-4 right-4 z-50 pointer-events-auto">
-          <ThemeToggle />
-        </div>
+      <AuthLayout>
         <Routes>
           <Route
             path="/register"
             element={
               <Register
-                onSwitchToLogin={() => navigate('/login')}
-                onAuthSuccess={() => navigate('/')}
+                onSwitchToLogin={() => navigate("/login")}
+                onAuthSuccess={() => navigate("/")}
                 onUserExists={(email) => {
                   setLoginPrefillEmail(email);
-                  navigate('/login');
+                  navigate("/login");
                 }}
               />
             }
@@ -146,18 +149,18 @@ function App() {
             path="*"
             element={
               <Login
-                key={loginPrefillEmail || 'login'}
+                key={loginPrefillEmail || "login"}
                 initialEmail={loginPrefillEmail}
-                onAuthSuccess={() => navigate('/')}
+                onAuthSuccess={() => navigate("/")}
                 onSwitchToRegister={() => {
-                  setLoginPrefillEmail('');
-                  navigate('/register');
+                  setLoginPrefillEmail("");
+                  navigate("/register");
                 }}
               />
             }
           />
         </Routes>
-      </div>
+      </AuthLayout>
     );
   }
 
@@ -165,22 +168,19 @@ function App() {
     <Routes>
       <Route path="/" element={<DashboardLayout />}>
         <Route index element={<Dashboard />} />
-        <Route path="vocabulary" element={<Vocabulary />} />
-        <Route path="review" element={<Review />} />
-        <Route path="practice" element={<Practice />} />
+        <Route
+          path="vocabulary"
+          element={
+            <Suspense fallback={<PageLoader />}>
+              <Vocabulary />
+            </Suspense>
+          }
+        />
         <Route
           path="speaking"
           element={
             <Suspense fallback={<PageLoader />}>
               <SpeakingLab />
-            </Suspense>
-          }
-        />
-        <Route
-          path="roleplay"
-          element={
-            <Suspense fallback={<PageLoader />}>
-              <Roleplay />
             </Suspense>
           }
         />
@@ -192,7 +192,14 @@ function App() {
             </Suspense>
           }
         />
-        <Route path="topic" element={<TopicVocabulary />} />
+        <Route
+          path="topic"
+          element={
+            <Suspense fallback={<PageLoader />}>
+              <TopicVocabulary />
+            </Suspense>
+          }
+        />
         <Route
           path="listening"
           element={
@@ -218,10 +225,10 @@ function App() {
           }
         />
         <Route
-          path="tutor"
+          path="analysis"
           element={
             <Suspense fallback={<PageLoader />}>
-              <TutorAI />
+              <SentenceAnalysis />
             </Suspense>
           }
         />

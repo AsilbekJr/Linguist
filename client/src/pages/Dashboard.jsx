@@ -1,11 +1,84 @@
 import React, { useMemo } from 'react';
 import { useSelector } from 'react-redux';
-import { useGetWordsQuery, useGetReviewDueQuery, useGetMeQuery } from '../features/api/apiSlice';
 import { Link } from 'react-router-dom';
-import { Flame, BookOpen, Mic, Star, Quote, ArrowRight, GraduationCap, Headphones, Snowflake } from 'lucide-react';
+import { motion } from 'motion/react';
+import {
+  Flame, Snowflake, Star, BookOpen, BookHeart, Repeat2, Check, ArrowRight, Quote, Sparkles,
+} from 'lucide-react';
+import { useGetWordsQuery, useGetReviewDueQuery, useGetMeQuery } from '../features/api/apiSlice';
 import quotesData from '../data/quotes.json';
 import TodayHub from '../components/TodayHub/TodayHub';
-import { getGoalRecommendation } from '../utils/learningUtils';
+import { PRACTICE_NAV } from '../components/Layout/nav';
+import {
+  AnimatedNumber, IconTile, ProgressBar, ProgressRing, Skeleton, Stagger, StaggerItem, StatTile,
+} from '@/components/ui/primitives';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
+import { xpProgressInLevel } from '../utils/learningUtils';
+
+const WEEKDAYS = ['yakshanba', 'dushanba', 'seshanba', 'chorshanba', 'payshanba', 'juma', 'shanba'];
+const MONTHS = ['yanvar', 'fevral', 'mart', 'aprel', 'may', 'iyun', 'iyul', 'avgust', 'sentabr', 'oktabr', 'noyabr', 'dekabr'];
+
+// Brauzerlarning o'zbekcha lokali to'liq emas — sanani o'zimiz yozamiz
+const formatToday = (d = new Date()) => {
+  const day = WEEKDAYS[d.getDay()];
+  return `${day[0].toUpperCase()}${day.slice(1)}, ${d.getDate()}-${MONTHS[d.getMonth()]}`;
+};
+
+const greeting = (h = new Date().getHours()) => {
+  if (h >= 5 && h < 11) return 'Xayrli tong';
+  if (h >= 11 && h < 17) return 'Xayrli kun';
+  if (h >= 17 && h < 23) return 'Xayrli kech';
+  return 'Xayrli tun';
+};
+
+/** Foydalanuvchi maqsadiga ko'ra tavsiya qilinadigan mashq */
+const RECOMMENDED_BY_GOAL = { speaking: '/speaking', vocabulary: '/listening', general: '/analysis' };
+
+const PlanStep = ({ done, icon, title, hint, to, onClick }) => {
+  const Comp = to ? Link : 'button';
+  return (
+    <Comp
+      to={to}
+      onClick={onClick}
+      type={to ? undefined : 'button'}
+      className={cn(
+        'group flex w-full items-center gap-3 rounded-2xl p-3 text-left transition-colors',
+        done ? 'bg-white/10' : 'bg-white/12 hover:bg-white/20'
+      )}
+    >
+      <span
+        className={cn(
+          'inline-flex size-10 shrink-0 items-center justify-center rounded-xl transition-colors',
+          done ? 'bg-white text-primary' : 'bg-white/15 text-white'
+        )}
+      >
+        {done ? (
+          <motion.span initial={{ scale: 0.4, rotate: -30 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: 'spring', stiffness: 400, damping: 18 }}>
+            <Check className="size-5" strokeWidth={3} />
+          </motion.span>
+        ) : (
+          React.createElement(icon, { className: 'size-5' })
+        )}
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className={cn('block font-bold text-white', done && 'opacity-80')}>{title}</span>
+        <span className="block truncate text-xs text-white/70">{hint}</span>
+      </span>
+      {!done && <ArrowRight className="size-4 shrink-0 text-white/70 transition-transform group-hover:translate-x-0.5" />}
+    </Comp>
+  );
+};
+
+const DashboardSkeleton = () => (
+  <div className="space-y-6" aria-busy="true" aria-label="Yuklanmoqda">
+    <Skeleton className="h-64 rounded-3xl sm:h-56" />
+    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      {[0, 1, 2, 3].map((i) => <Skeleton key={i} className="h-[76px] rounded-2xl" />)}
+    </div>
+    <Skeleton className="h-80 rounded-3xl" />
+  </div>
+);
 
 const Dashboard = () => {
   const authUser = useSelector((state) => state.auth.user);
@@ -13,171 +86,190 @@ const Dashboard = () => {
   const user = fetchedUser || authUser;
 
   const { data: words = [], isLoading: isLoadingWords } = useGetWordsQuery();
-  const { data: reviewDueList, isLoading: isLoadingReview } = useGetReviewDueQuery();
-
-  const isLoading = isLoadingUser || isLoadingWords || isLoadingReview;
-  const reviewDueCount = reviewDueList ? reviewDueList.length : 0;
-  const totalWords = words.length;
-
-  const goalRec = useMemo(
-    () => getGoalRecommendation(user?.onboarding?.goal),
-    [user?.onboarding?.goal]
-  );
+  const { data: dueWords = [], isLoading: isLoadingDue } = useGetReviewDueQuery();
 
   const dailyQuote = useMemo(() => {
-    const msPerDay = 1000 * 60 * 60 * 24;
-    const todayInt = Math.floor(Date.now() / msPerDay);
-    const index = todayInt % quotesData.length;
-    return quotesData[index];
+    const todayInt = Math.floor(Date.now() / 86400000);
+    return quotesData[todayInt % quotesData.length];
   }, []);
 
-  if (isLoading) {
-    return (
-      <div className="max-w-5xl mx-auto space-y-8 animate-pulse">
-        <section className="bg-card p-8 rounded-3xl border h-32" />
-        <section className="bg-card p-8 rounded-3xl border h-48" />
-        <section className="bg-card p-8 rounded-3xl border h-64" />
-      </div>
-    );
-  }
+  if (isLoadingUser || isLoadingWords || isLoadingDue) return <DashboardSkeleton />;
+
+  const firstName = String(user?.name || '').trim().split(/\s+/)[0];
+  const q = user?.dailyQuests || {};
+  const isToday = Boolean(user?.today) && q.date === user.today;
+  const topicDone = Boolean(isToday && q.topicCompleted);
+  const reviewDone = Boolean(isToday && q.reviewCompleted);
+  const doneCount = Number(topicDone) + Number(reviewDone);
+  const allDone = doneCount === 2;
+  const streak = user?.currentStreak || 0;
+  const xp = user?.xpProgress ?? xpProgressInLevel(user?.xp || 0);
+  const learnedCount = words.filter((w) => w.learned ?? w.mastered).length;
+  const recommended = RECOMMENDED_BY_GOAL[user?.onboarding?.goal];
+
+  const scrollToReview = () =>
+    document.getElementById('review')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
   return (
-    <div className="max-w-5xl mx-auto space-y-8 animate-fade-in-up">
-      <div className="bg-gradient-to-r from-primary/10 to-purple-500/10 border border-primary/20 rounded-3xl p-4 sm:p-6 relative overflow-hidden flex flex-col md:flex-row items-center gap-6 justify-between shadow-sm">
-        <Quote className="absolute -top-4 -left-4 w-24 h-24 text-primary/10 rotate-180 pointer-events-none" />
-        <div className="relative z-10 flex-grow">
-          <p className="text-lg md:text-xl font-medium italic text-foreground mb-2">&quot;{dailyQuote.text}&quot;</p>
-          <p className="text-sm text-muted-foreground font-medium">{dailyQuote.translation}</p>
+    <div className="space-y-6 sm:space-y-8">
+      {/* ── Hero: bugungi reja ─────────────────────────────────────────── */}
+      <motion.section
+        initial={{ opacity: 0, y: 16, scale: 0.99 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+        className="hero-mesh noise relative overflow-hidden rounded-[1.75rem] p-5 text-white shadow-[0_24px_60px_-24px_color-mix(in_oklch,var(--primary)_75%,transparent)] sm:p-8"
+        aria-labelledby="today-title"
+      >
+        {/* Dekor: suzuvchi doiralar */}
+        <div className="pointer-events-none absolute -right-16 -top-16 size-56 rounded-full bg-white/10 blur-2xl" />
+        <div className="pointer-events-none absolute -bottom-20 left-1/3 size-64 rounded-full bg-fuchsia-400/20 blur-3xl" />
+
+        <div className="relative grid gap-6 md:grid-cols-[1fr_auto] md:items-center">
+          <div className="min-w-0">
+            <p className="text-sm font-medium text-white/75">{formatToday()}</p>
+            <h1 id="today-title" className="mt-1 text-[1.85rem] font-extrabold leading-[1.1] sm:text-[2.4rem]">
+              {greeting()}, {firstName}
+              <motion.span
+                className="ml-2 inline-block origin-[70%_70%]"
+                animate={{ rotate: [0, 16, -8, 14, 0] }}
+                transition={{ duration: 1.4, delay: 0.6, ease: 'easeInOut' }}
+                aria-hidden="true"
+              >
+                👋
+              </motion.span>
+            </h1>
+            <p className="mt-2 max-w-md text-[15px] text-white/80">
+              {allDone
+                ? "Bugungi reja bajarildi — ajoyib! Qo'shimcha mashqlar bilan davom etishingiz mumkin."
+                : doneCount === 1
+                  ? 'Yana bitta qadam — va streak saqlanadi.'
+                  : 'Ikki qadam: yangi sahna va takrorlash. Taxminan 15 daqiqa.'}
+            </p>
+
+            <div className="mt-5 grid gap-2 sm:grid-cols-2">
+              <PlanStep
+                done={topicDone}
+                icon={BookHeart}
+                title="Kunlik sahna"
+                hint={topicDone ? 'Bajarildi' : 'Dialog, yangi so\'zlar, mini-test'}
+                to="/topic"
+              />
+              <PlanStep
+                done={reviewDone}
+                icon={Repeat2}
+                title="Takrorlash"
+                hint={
+                  reviewDone
+                    ? 'Bajarildi'
+                    : dueWords.length
+                      ? `${dueWords.length} ta so'z kutmoqda`
+                      : "Navbat bo'sh"
+                }
+                onClick={scrollToReview}
+              />
+            </div>
+          </div>
+
+          <div className="hidden flex-col items-center gap-2 md:flex">
+            <ProgressRing value={doneCount} max={2} size={148} stroke={12} gradientId="hero-ring">
+              <span className="text-4xl font-extrabold tabular">{doneCount}/2</span>
+              <span className="text-xs font-medium text-white/75">qadam</span>
+            </ProgressRing>
+          </div>
         </div>
-        <div className="relative z-10 shrink-0">
-          <span className="text-sm font-bold opacity-80">{dailyQuote.author}</span>
-        </div>
+      </motion.section>
+
+      {/* ── Statistika ─────────────────────────────────────────────────── */}
+      <Stagger className="grid grid-cols-2 gap-3 lg:grid-cols-4" delay={0.15}>
+        <StaggerItem>
+          <StatTile icon={Flame} tone="streak" value={streak} label="kunlik streak" />
+        </StaggerItem>
+        <StaggerItem>
+          <StatTile
+            icon={Snowflake}
+            tone="info"
+            value={user?.streakFreezesLeft ?? 0}
+            label="muzlatish qoldi"
+            hint="Bir kun o'tkazib yuborsangiz, streak avtomatik saqlanadi. Har oy 2 ta beriladi."
+          />
+        </StaggerItem>
+        <StaggerItem>
+          <div className="surface flex items-center gap-3 p-4">
+            <IconTile icon={Star} tone="xp" />
+            <div className="min-w-0 flex-1">
+              <div className="flex items-baseline justify-between gap-2">
+                <span className="text-xl font-extrabold leading-none tabular">
+                  <AnimatedNumber value={user?.xp || 0} />
+                </span>
+                <span className="text-xs font-bold text-muted-foreground">Lv.{user?.level || 1}</span>
+              </div>
+              <ProgressBar value={xp.current} max={xp.needed} tone="xp" className="mt-2 h-1.5" label="Daraja jarayoni" />
+            </div>
+          </div>
+        </StaggerItem>
+        <StaggerItem>
+          <Link to="/vocabulary" className="block rounded-[calc(var(--radius)+4px)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+            <StatTile icon={BookOpen} tone="primary" value={words.length} label={`so'z · ${learnedCount} yodlangan`} className="surface-interactive" />
+          </Link>
+        </StaggerItem>
+      </Stagger>
+
+      {/* ── Takrorlash ─────────────────────────────────────────────────── */}
+      <div id="review" className="scroll-mt-24">
+        <TodayHub user={user} totalWords={words.length} />
       </div>
 
-      <Link
-        to={goalRec.path}
-        className="block bg-card border border-primary/30 rounded-2xl p-4 hover:border-primary/60 transition-colors"
-      >
-        <p className="text-xs font-bold uppercase text-primary mb-1">Shaxsiy tavsiya</p>
-        <div className="flex items-center justify-between gap-4">
+      {/* ── Qo'shimcha mashqlar ────────────────────────────────────────── */}
+      <section aria-labelledby="practice-title">
+        <div className="mb-4 flex items-end justify-between">
           <div>
-            <h3 className="font-bold text-lg">{goalRec.label}</h3>
-            <p className="text-sm text-muted-foreground">{goalRec.hint}</p>
-          </div>
-          <ArrowRight className="w-5 h-5 text-primary shrink-0" />
-        </div>
-      </Link>
-
-      <section className="bg-gradient-to-br from-card to-card/50 p-4 sm:p-6 md:p-8 rounded-3xl border border-border shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-        <div>
-          <h1 className="text-2xl sm:text-3xl md:text-5xl font-black mb-3 break-words">
-            Xush kelibsiz,{' '}
-            <span className="bg-gradient-to-r from-primary to-purple-500 bg-clip-text text-transparent">
-              {user?.name}
-            </span>{' '}
-            👋
-          </h1>
-          <p className="text-muted-foreground text-base md:text-lg max-w-xl">
-            Quyidagi 3 qadamni ketma-ket bajaring — shunda kunlik reja tugaydi.
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-3 sm:gap-4 items-center shrink-0">
-          <div
-            className={`flex items-center gap-2 px-4 py-2 rounded-2xl border ${
-              user?.currentStreak > 0
-                ? 'bg-orange-500/10 border-orange-500/20 text-orange-500'
-                : 'bg-muted border-border text-muted-foreground'
-            }`}
-          >
-            <Flame className={`w-6 h-6 ${user?.currentStreak > 0 ? 'animate-pulse' : ''}`} />
-            <div>
-              <div className="text-xl font-black">{user?.currentStreak || 0}</div>
-              <div className="text-[10px] uppercase font-bold tracking-wider">Streak</div>
-            </div>
-          </div>
-
-          {/* Muzlatish: bir kun o'tkazib yuborilsa streak saqlanadi.
-              Foydalanuvchi buni OLDINDAN bilishi kerak — aks holda mexanizm
-              retention'ga ta'sir qilmaydi. */}
-          <div
-            className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-sky-500/10 border border-sky-500/20 text-sky-600 dark:text-sky-400"
-            title="Bir kun o'tkazib yuborsangiz, streak avtomatik saqlanadi. Har oy 2 ta beriladi."
-          >
-            <Snowflake className="w-6 h-6" />
-            <div>
-              <div className="text-xl font-black">{user?.streakFreezesLeft ?? 0}</div>
-              <div className="text-[10px] uppercase font-bold tracking-wider">Muzlatish</div>
-            </div>
-          </div>
-          <div className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-yellow-500/10 border border-yellow-500/20 text-yellow-600 dark:text-yellow-500">
-            <Star className="w-6 h-6 fill-current" />
-            <div>
-              <div className="text-xl font-black">{user?.xp || 0}</div>
-              <div className="text-[10px] uppercase font-bold tracking-wider">
-                XP · Lv.{user?.level || 1}
-              </div>
-            </div>
+            <h2 id="practice-title" className="text-xl font-extrabold">Qo&apos;shimcha mashqlar</h2>
+            <p className="text-sm text-muted-foreground">Kunlik rejaga kirmaydi — streak'ni to&apos;smaydi.</p>
           </div>
         </div>
+        <Stagger className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4" gap={0.05}>
+          {PRACTICE_NAV.map((item) => (
+            <StaggerItem key={item.to}>
+              <Link
+                to={item.to}
+                className="surface-interactive group flex h-full items-center gap-3 p-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring xl:flex-col xl:items-start"
+              >
+                <IconTile icon={item.icon} tone={item.tone} />
+                <span className="min-w-0 flex-1">
+                  <span className="flex items-center gap-2">
+                    <span className="font-bold">{item.label}</span>
+                    {recommended === item.to && (
+                      <Badge variant="soft">
+                        <Sparkles /> Siz uchun
+                      </Badge>
+                    )}
+                  </span>
+                  <span className="mt-0.5 block text-xs text-muted-foreground">{item.hint}</span>
+                </span>
+                <ArrowRight className="size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 xl:hidden" />
+              </Link>
+            </StaggerItem>
+          ))}
+        </Stagger>
       </section>
 
-      <TodayHub user={user} reviewDueCount={reviewDueCount} totalWords={totalWords} />
-
-      <div>
-        <h3 className="text-xl font-bold mb-4">Qo'shimcha mashqlar</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Link
-            to="/tutor"
-            className="bg-card border border-indigo-500/30 p-5 rounded-2xl hover:border-indigo-500/60 transition-colors flex items-center gap-4"
-          >
-            <GraduationCap className="w-5 h-5 text-indigo-500" />
-            <div>
-              <h4 className="font-bold">Ustoz AI</h4>
-              <p className="text-xs text-muted-foreground">Grammatika va iboralar</p>
-            </div>
-          </Link>
-          <Link
-            to="/listening"
-            className="bg-card border border-teal-500/30 p-5 rounded-2xl hover:border-teal-500/60 transition-colors flex items-center gap-4"
-          >
-            <Headphones className="w-5 h-5 text-teal-500" />
-            <div>
-              <h4 className="font-bold">Tinglash</h4>
-              <p className="text-xs text-muted-foreground">Eshitib yozish</p>
-            </div>
-          </Link>
-          <Link
-            to="/speaking"
-            className="bg-card border border-border p-5 rounded-2xl hover:border-primary/50 transition-colors flex items-center gap-4"
-          >
-            <Mic className="w-5 h-5 text-blue-500" />
-            <div>
-              <h4 className="font-bold">Speaking Lab</h4>
-              <p className="text-xs text-muted-foreground">Gapirish mashqi</p>
-            </div>
-          </Link>
-          <Link
-            to="/challenge"
-            className="bg-card border border-border p-5 rounded-2xl hover:border-primary/50 transition-colors flex items-center gap-4"
-          >
-            <Flame className="w-5 h-5 text-orange-500" />
-            <div>
-              <h4 className="font-bold">100 kun bonus</h4>
-              <p className="text-xs text-muted-foreground">Kunlik challenge</p>
-            </div>
-          </Link>
-          <Link
-            to="/vocabulary"
-            className="bg-card border border-border p-5 rounded-2xl hover:border-primary/50 transition-colors flex items-center gap-4"
-          >
-            <BookOpen className="w-5 h-5 text-purple-500" />
-            <div>
-              <h4 className="font-bold">Lug'at</h4>
-              <p className="text-xs text-muted-foreground">{totalWords} ta so'z</p>
-            </div>
-          </Link>
-        </div>
-      </div>
+      {/* ── Kun iqtibosi ───────────────────────────────────────────────── */}
+      {dailyQuote && (
+        <motion.figure
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true, margin: '-40px' }}
+          transition={{ duration: 0.6 }}
+          className="surface relative overflow-hidden p-6 sm:p-8"
+        >
+          <Quote className="absolute -right-3 -top-3 size-20 rotate-180 text-primary/10" aria-hidden="true" />
+          <blockquote className="relative text-lg font-semibold italic leading-relaxed sm:text-xl">
+            &ldquo;{dailyQuote.text}&rdquo;
+          </blockquote>
+          <p className="relative mt-2 text-sm text-muted-foreground">{dailyQuote.translation}</p>
+          <figcaption className="relative mt-4 text-sm font-bold text-primary">— {dailyQuote.author}</figcaption>
+        </motion.figure>
+      )}
     </div>
   );
 };

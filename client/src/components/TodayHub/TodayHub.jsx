@@ -1,214 +1,204 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Brain, BookOpen, Mic, CheckCircle2, Circle, Lock, ArrowRight, Clock, Star } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { getDailyWordTarget, xpProgressInLevel } from '../../utils/learningUtils';
+import { AnimatePresence, motion } from 'motion/react';
+import { BookOpen, BookHeart, PartyPopper, Plus, Repeat2, CheckCircle2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { IconTile, Skeleton } from '@/components/ui/primitives';
 import { fireConfetti } from '../../utils/celebration';
 import { track, EVENTS } from '../../lib/analytics';
+import { toast } from 'react-hot-toast';
+import { useGetReviewDueQuery, useCompleteReviewDayMutation } from '../../features/api/apiSlice';
+import ReviewRunner from './ReviewRunner';
 
-const STEPS = [
-  {
-    id: 'topic',
-    questKey: 'topicCompleted',
-    path: '/topic',
-    title: '1. Kunlik sahna',
-    description: 'Bugungi sahna va so\'zlarni o\'rganing, testdan o\'ting.',
-    duration: '5 daqiqa',
-    icon: BookOpen,
-    color: 'purple',
-  },
-  {
-    id: 'review',
-    questKey: 'reviewCompleted',
-    path: '/review',
-    title: '2. Takrorlash',
-    description: 'Kunlik sahnadan so\'zlarni jumlada takrorlang.',
-    duration: '3–5 daqiqa',
-    icon: Brain,
-    color: 'primary',
-  },
-  {
-    id: 'immersion',
-    questKey: 'immersionCompleted',
-    path: '/practice',
-    title: '3. Amaliyot',
-    description: 'Bugun, kecha va avvalgi kunlardagi so\'zlardan gap tuzing — AI tekshiradi.',
-    duration: '5–7 daqiqa',
-    icon: Mic,
-    color: 'teal',
-  },
-];
+/**
+ * "Bugun" — kunlik takrorlashning O'ZI.
+ *
+ * Ilgari bu sahifa uchta qadam kartochkasi bo'lib, har biri boshqa sahifaga
+ * olib borardi. Takrorlash uchun foydalanuvchi "Bugun" → "Takrorlash" →
+ * so'z, ya'ni ikki ortiqcha bosish qilardi va bir xil ish ikki joyda turardi.
+ * Endi navbat shu yerda ochiladi.
+ */
+const TodayHub = ({ user, totalWords = 0 }) => {
+  const { data: dueWords = [], isLoading, isFetching, refetch } = useGetReviewDueQuery();
+  const [completeReviewDay] = useCompleteReviewDayMutation();
 
-const TodayHub = ({ user, reviewDueCount = 0, totalWords = 0 }) => {
-  const today = new Date().toISOString().split('T')[0];
-  const quests = user?.dailyQuests || {};
-  const isToday = quests.date === today;
-  const wordTarget = user?.dailyWordTarget ?? getDailyWordTarget(user?.onboarding?.level);
-  const level = user?.level ?? 1;
-  const xpProgress = user?.xpProgress ?? xpProgressInLevel(user?.xp || 0);
+  const [finished, setFinished] = useState(false);
   const celebratedRef = useRef(false);
 
-  const completed = {
-    review: isToday && quests.reviewCompleted,
-    topic: isToday && quests.topicCompleted,
-    immersion: isToday && quests.immersionCompleted,
-  };
-
-  const completedCount = Object.values(completed).filter(Boolean).length;
-  const progressPercent = (completedCount / 3) * 100;
-
-  const nextStepIndex = STEPS.findIndex((s) => !completed[s.id]);
-  const allDone = nextStepIndex === -1;
+  /**
+   * Sessiya boshlanganda navbat MUZLATILADI.
+   *
+   * Busiz shunday bo'lardi: javob yuborilgach `checkReview` 'Word' tegini
+   * bekor qiladi → `getReviewDue` qayta yuklanadi → so'z endi navbatda yo'q
+   * (keyingi takrorlash ertaga) → ro'yxat bo'shaydi va ReviewRunner
+   * natijani ko'rsatishga ulgurmasdan yo'q bo'ladi. Foydalanuvchi javobi
+   * to'g'ri chiqdimi yoki yo'qmi — bilmay qolardi.
+   */
+  const [session, setSession] = useState(null);
+  // Shu ochilishda takrorlangan so'zlar. Sessiya tugagach navbat qayta
+  // yuklanadi va unda hali eski (keshdagi) so'zlar bo'lishi mumkin — ular
+  // yangi sessiyaga qayta tushmasligi kerak.
+  const reviewedIdsRef = useRef(new Set());
 
   useEffect(() => {
-    if (allDone && !celebratedRef.current) {
+    if (session || isFetching) return;
+    const fresh = dueWords.filter((w) => !reviewedIdsRef.current.has(w._id));
+    if (fresh.length > 0) {
+      setFinished(false);
+      setSession(fresh);
+    }
+  }, [dueWords, session, isFetching]);
+
+  // "Bugun" — foydalanuvchi zonasidagi kun, SERVER hisoblaydi. Ilgari bu yerda
+  // UTC sana olinardi va Toshkentda 00:00–05:00 oralig'ida belgi noto'g'ri edi.
+  const quests = user?.dailyQuests || {};
+  const reviewDoneToday = Boolean(user?.today) && quests.date === user.today && quests.reviewCompleted;
+
+  /** Server qaytargan kunlik reja natijasi — xabar va bayram */
+  const handleDailyStep = (step) => {
+    if (!step) return;
+    if (step.message) toast.success(step.message);
+    if (step.planCompleted && step.streakUpdated && !celebratedRef.current) {
       celebratedRef.current = true;
       fireConfetti(1500);
-      // Retention'ning asosiy ko'rsatkichi — kunlik reja to'liq bajarilgani
       track(EVENTS.DAILY_PLAN_COMPLETED, {
-        streak: user?.currentStreak,
+        streak: step.currentStreak,
         level: user?.level,
         totalWords,
       });
     }
-    if (!allDone) celebratedRef.current = false;
-  }, [allDone, user?.currentStreak, user?.level, totalWords]);
-
-  const coachMessage = () => {
-    if (allDone) return 'Ajoyib! Bugungi reja to\'liq bajarildi. Ertaga yana ko\'ramiz!';
-    if (nextStepIndex === 0) {
-      return `Birinchi qadam: bugungi mavzudan ${wordTarget} ta so'z o'rganing.`;
-    }
-    if (nextStepIndex === 1) {
-      if (totalWords === 0) return 'Avval yangi so\'z qo\'shing, keyin takrorlash mumkin bo\'ladi.';
-      if (reviewDueCount > 0) return `${reviewDueCount} ta so'z takrorlashni kutmoqda.`;
-      return 'Takrorlash uchun so\'zlar tayyor. Ikkinchi qadamdan boshlang.';
-    }
-    return "Oxirgi qadam: yodlangan so'zlardan jumlada amaliyot qiling.";
   };
 
-  return (
-    <section className="bg-card border border-border rounded-3xl shadow-sm p-4 sm:p-6 md:p-8 relative overflow-hidden">
-      <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl pointer-events-none" />
+  /**
+   * Navbat bo'sh kun: takrorlash qadamini yopamiz. Busiz takrorlaydigan so'zi
+   * yo'q foydalanuvchi kunlik rejani hech qachon tugata olmasdi va streak'i
+   * qotib qolardi. Server navbatni o'zi tekshiradi.
+   */
+  const closingDayRef = useRef(false);
+  useEffect(() => {
+    if (isLoading || isFetching || session || dueWords.length > 0) return;
+    if (!user?.today || reviewDoneToday || closingDayRef.current) return;
+    closingDayRef.current = true;
+    completeReviewDay()
+      .unwrap()
+      .then(handleDailyStep)
+      .catch(() => {
+        // 409 — navbatda so'z paydo bo'lgan; keyingi yuklanishda qayta uriniladi
+        closingDayRef.current = false;
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoading, isFetching, session, dueWords.length, user?.today, reviewDoneToday]);
 
-      <div className="relative z-10 mb-4">
-        <p className="text-xs font-bold uppercase tracking-wider text-primary mb-1">Bugungi reja</p>
-        <h2 className="text-2xl md:text-3xl font-black">Qadamba-qadam o'rganish</h2>
-        <p className="text-muted-foreground mt-2 text-sm md:text-base">{coachMessage()}</p>
-      </div>
+  const handleChecked = (wordId, result) => {
+    reviewedIdsRef.current.add(wordId);
+    handleDailyStep(result?.dailyStep);
+  };
 
-      <div className="relative z-10 mb-6 p-4 rounded-2xl bg-secondary/50 border border-border">
-        <div className="flex items-center justify-between text-sm font-bold mb-2">
-          <span className="flex items-center gap-1">
-            <Star className="w-4 h-4 text-yellow-500" /> Daraja {level}
-          </span>
-          <span className="text-muted-foreground">
-            {xpProgress.current}/{xpProgress.needed} XP
-          </span>
-        </div>
-        <div className="w-full bg-background rounded-full h-2">
-          <div
-            className="h-full bg-yellow-500 rounded-full transition-all duration-500"
-            style={{ width: `${xpProgress.percent}%` }}
-          />
-        </div>
-        <p className="text-xs text-muted-foreground mt-2">
-          Keyingi darajaga {xpProgress.xpToNext} XP qoldi
-        </p>
-      </div>
+  // Navbat tugadi — qadamni server /check ichida allaqachon belgilagan
+  const handleFinished = () => {
+    setFinished(true);
+    setSession(null);
+    // Xato qilingan yoki sahnadan qo'shilgan so'zlar navbatga tushgan bo'lishi mumkin
+    refetch();
+  };
 
-      <div className="w-full bg-secondary rounded-full h-2 mb-8 relative z-10">
-        <div
-          className="h-full bg-gradient-to-r from-primary to-purple-500 transition-all duration-700 rounded-full"
-          style={{ width: `${progressPercent}%` }}
+  const remaining = session?.length ?? dueWords.length;
+
+  /** Navbat bo'sh — bu yaxshi holat, uni muvaffaqiyat sifatida ko'rsatamiz */
+  const emptyState = (
+    <motion.div
+      key="empty"
+      initial={{ opacity: 0, scale: 0.98 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+      className="flex flex-col items-center py-6 text-center sm:py-10"
+    >
+      <div className="relative mb-5">
+        <div className="absolute inset-0 -z-10 scale-150 rounded-full bg-success/15 blur-2xl" />
+        <IconTile
+          icon={totalWords === 0 ? BookOpen : PartyPopper}
+          tone={totalWords === 0 ? 'primary' : 'success'}
+          size="lg"
+          className="animate-float"
         />
       </div>
+      <h3 className="text-xl font-extrabold">
+        {finished
+          ? 'Bugungi takrorlash tugadi!'
+          : totalWords === 0
+            ? "Lug'atingiz hali bo'sh"
+            : "Bugun takrorlanadigan so'z yo'q"}
+      </h3>
+      <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-muted-foreground">
+        {totalWords === 0
+          ? "Takrorlash so'zlardan boshlanadi. Kunlik sahnadan tayyor so'zlarni oling yoki lug'atga o'zingiz qo'shing."
+          : "Hamma so'z o'z jadvalida. Yangi qo'shilgan so'z shu zahoti navbatga tushadi."}
+      </p>
 
-      <div className="space-y-4 relative z-10">
-        {STEPS.map((step, index) => {
-          const done = completed[step.id];
-          const reviewBlocked = step.id === 'review' && totalWords === 0 && !done;
-          const locked = (nextStepIndex !== -1 && index > nextStepIndex) || reviewBlocked;
-          const isNext = index === nextStepIndex && !reviewBlocked;
-          const Icon = step.icon;
-
-          const content = (
-            <div
-              className={cn(
-                'p-5 rounded-2xl border-2 transition-all flex flex-col sm:flex-row sm:items-center gap-4',
-                done && 'border-green-500/50 bg-green-500/5',
-                isNext && !done && 'border-primary shadow-md shadow-primary/10 bg-primary/5',
-                locked && 'opacity-50 border-border bg-muted/30 cursor-not-allowed',
-                !done && !locked && !isNext && 'border-border bg-background'
-              )}
-            >
-              <div
-                className={cn(
-                  'w-12 h-12 rounded-xl flex items-center justify-center shrink-0',
-                  done ? 'bg-green-500/20 text-green-500' : isNext ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'
-                )}
-              >
-                {locked ? <Lock className="w-6 h-6" /> : <Icon className="w-6 h-6" />}
-              </div>
-
-              <div className="flex-grow min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <h3 className="text-lg font-bold">{step.title}</h3>
-                  <span className="text-xs text-muted-foreground flex items-center gap-1">
-                    <Clock className="w-3 h-3" /> {step.duration}
-                  </span>
-                </div>
-                <p className="text-sm text-muted-foreground mt-1">{step.description}</p>
-                {step.id === 'topic' && !done && (
-                  <span className="text-xs font-bold text-purple-500 mt-2 inline-block">
-                    Maqsad: {wordTarget} ta so'z
-                  </span>
-                )}
-                {step.id === 'review' && reviewDueCount > 0 && !done && !reviewBlocked && (
-                  <span className="text-xs font-bold text-destructive mt-2 inline-block">
-                    {reviewDueCount} ta so'z kutmoqda
-                  </span>
-                )}
-                {reviewBlocked && (
-                  <span className="text-xs font-bold text-muted-foreground mt-2 inline-block">
-                    Avval yangi so'z o'rganing
-                  </span>
-                )}
-              </div>
-
-              <div className="shrink-0 flex items-center gap-2">
-                {done ? (
-                  <CheckCircle2 className="w-7 h-7 text-green-500" />
-                ) : locked ? (
-                  <Circle className="w-7 h-7 text-muted-foreground/30" />
-                ) : isNext ? (
-                  <span className="inline-flex items-center gap-1 text-sm font-bold text-primary">
-                    Boshlash <ArrowRight className="w-4 h-4" />
-                  </span>
-                ) : (
-                  <Circle className="w-7 h-7 text-muted-foreground/30" />
-                )}
-              </div>
-            </div>
-          );
-
-          if (locked) {
-            return <div key={step.id}>{content}</div>;
-          }
-
-          return (
-            <Link key={step.id} to={step.path} className="block group">
-              {content}
-            </Link>
-          );
-        })}
+      <div className="mt-6 flex w-full flex-col justify-center gap-2 sm:w-auto sm:flex-row">
+        <Button asChild size="lg">
+          <Link to="/topic">
+            <BookHeart /> Kunlik sahna
+          </Link>
+        </Button>
+        <Button asChild variant="outline" size="lg">
+          <Link to="/vocabulary">
+            {totalWords === 0 ? <Plus /> : <BookOpen />} Lug&apos;atga o&apos;tish
+          </Link>
+        </Button>
       </div>
+    </motion.div>
+  );
 
-      {allDone && (
-        <p className="mt-6 text-center text-sm font-bold text-green-500 relative z-10">
-          Kunlik reja 100% bajarildi — streak va XP yangilandi!
-        </p>
-      )}
+  return (
+    <section className="surface relative overflow-hidden p-4 sm:p-6 md:p-8" aria-labelledby="review-title">
+      <div className="pointer-events-none absolute -right-24 -top-24 size-72 rounded-full bg-primary/6 blur-3xl" />
+
+      <header className="relative mb-5 flex items-center gap-3 sm:mb-6">
+        <IconTile icon={Repeat2} tone="primary" />
+        <div className="min-w-0 flex-1">
+          <h2 id="review-title" className="text-xl font-extrabold sm:text-2xl">Takrorlash</h2>
+          <p className="text-sm text-muted-foreground">So&apos;z ishtirokida gap tuzing — yozib yoki aytib</p>
+        </div>
+        {reviewDoneToday ? (
+          <Badge variant="success" className="hidden sm:inline-flex">
+            <CheckCircle2 /> Bugun bajarildi
+          </Badge>
+        ) : remaining > 0 ? (
+          <Badge variant="soft" className="tabular">{remaining} ta so&apos;z</Badge>
+        ) : null}
+      </header>
+
+      <div className="relative">
+        <AnimatePresence mode="wait" initial={false}>
+          {isLoading ? (
+            <motion.div key="loading" exit={{ opacity: 0 }} className="space-y-4" aria-busy="true">
+              <Skeleton className="h-2 w-full rounded-full" />
+              <Skeleton className="h-40 rounded-2xl" />
+              <Skeleton className="h-12 rounded-xl" />
+            </motion.div>
+          ) : session?.length ? (
+            <motion.div
+              key="session"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+            >
+              {reviewDoneToday && (
+                <p className="mb-3 rounded-xl bg-success/8 px-3 py-2 text-xs font-medium text-success">
+                  Bugungi reja bajarilgan — bular qo&apos;shimcha takrorlash.
+                </p>
+              )}
+              <ReviewRunner words={session} onChecked={handleChecked} onFinished={handleFinished} />
+            </motion.div>
+          ) : (
+            emptyState
+          )}
+        </AnimatePresence>
+      </div>
     </section>
   );
 };

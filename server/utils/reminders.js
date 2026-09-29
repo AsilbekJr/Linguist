@@ -82,7 +82,7 @@ const shouldSendReminder = (user, now = new Date()) => {
   const quests = user.dailyQuests || {};
   const isToday = quests.date === todayKey;
   const allDone =
-    isToday && quests.reviewCompleted && quests.topicCompleted && quests.immersionCompleted;
+    isToday && quests.reviewCompleted && quests.topicCompleted;
   if (allDone) {
     return { send: false, reason: SKIP.PLAN_DONE, todayKey };
   }
@@ -105,7 +105,6 @@ const buildReminderContent = (user, { dueCount = 0 } = {}) => {
   const remaining = [];
   if (!quests.topicCompleted) remaining.push('Kunlik sahna');
   if (!quests.reviewCompleted) remaining.push('Takrorlash');
-  if (!quests.immersionCompleted) remaining.push('Amaliyot');
 
   let subject;
   let headline;

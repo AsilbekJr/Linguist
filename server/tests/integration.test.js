@@ -1,6 +1,9 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { start, stop, makeClient } = require('./helpers/testServer');
+const { makeDue } = require('./helpers/dailyFlow');
+const User = require('../models/User');
+const { getAiLimit } = require('../middleware/usageQuota');
 
 /**
  * Bu testlar aynan hisobotda topilgan kritik xatolarni qamrab oladi.
@@ -17,7 +20,11 @@ test.after(async () => {
   await stop();
 });
 
-test('AI ishlamaganda takrorlash holati BUZILMAYDI', async () => {
+test('AI ishlamaganda takrorlash foydalanuvchini JAZOLAMAYDI', async () => {
+  // Ilgari bu yerda 503 qaytardi va hech narsa o'zgarmasdi. Takrorlash
+  // ixtiyoriy qadam bo'lganda bu to'g'ri edi; endi u yagona yo'l, ya'ni
+  // Gemini uzilishi butun ilovani to'xtatib qo'yardi. Endi mahalliy
+  // tekshiruvga tushadi — lekin to'g'ri gap XATO deb belgilanmaydi.
   const api = makeClient();
   await api.register();
 
@@ -33,25 +40,19 @@ test('AI ishlamaganda takrorlash holati BUZILMAYDI', async () => {
   const before = await api.get('/api/words');
   const stateBefore = before.data.find((w) => w._id === wordId);
 
-  // AI kaliti yo'q → 503 kutiladi, SRS tegilmaydi
   const check = await api.post(`/api/review/${wordId}/check`, {
     sentence: 'I drink water every morning.',
   });
 
-  assert.equal(check.status, 503, 'AI yo\'q bo\'lsa 503 qaytishi kerak');
-  assert.equal(check.data.srsUnchanged, true);
+  assert.equal(check.status, 200);
+  assert.equal(check.data.method, 'local', 'grammatika tekshirilmagani ochiq aytilishi kerak');
+  assert.equal(check.data.isCorrect, true, 'to\'g\'ri gap xato deb belgilanmasligi kerak');
 
   const after = await api.get('/api/words');
   const stateAfter = after.data.find((w) => w._id === wordId);
 
-  assert.equal(stateAfter.reviewStage, stateBefore.reviewStage, 'reviewStage o\'zgarmasligi kerak');
-  assert.equal(stateAfter.repetitions, stateBefore.repetitions, 'repetitions o\'zgarmasligi kerak');
+  assert.equal(stateAfter.stage, stateBefore.stage + 1, 'bosqich oshishi kerak');
   assert.equal(stateAfter.lapses, stateBefore.lapses, 'lapses oshmasligi kerak');
-  assert.equal(
-    stateAfter.easeFactor,
-    stateBefore.easeFactor,
-    'ease jazolanmasligi kerak — bu foydalanuvchining aybi emas'
-  );
 });
 
 test('AI ishlamaganda kunlik limit YEYILMAYDI', async () => {
@@ -76,24 +77,82 @@ test('AI ishlamaganda kunlik limit YEYILMAYDI', async () => {
   assert.equal(after, before, 'muvaffaqiyatsiz AI chaqiruvi limitni yemasligi kerak');
 });
 
-test('AI\'siz baholash SRS\'ni to\'g\'ri yuritadi (4 darajali)', async () => {
+test('AI yo\'q bo\'lsa ham takrorlash ishlaydi va bosqich oshadi', async () => {
+  // Bu testda GEMINI_API_KEY yo'q. Ilgari bunda /check 503 qaytarardi va
+  // foydalanuvchi umuman ilgarilay olmasdi. Endi mahalliy tekshiruvga tushadi.
   const api = makeClient();
   await api.register();
 
   const added = await api.post('/api/words', { word: 'house', skipAI: true, manualTranslation: 'uy' });
   const wordId = added.data._id;
 
-  const good = await api.post(`/api/review/${wordId}/grade`, { grade: 2 });
-  assert.equal(good.status, 200);
-  assert.equal(good.data.intervalDays, 1, 'birinchi GOOD → 1 kun');
+  const first = await api.post(`/api/review/${wordId}/check`, { sentence: 'I live in a house.' });
+  assert.equal(first.status, 200);
+  assert.equal(first.data.method, 'local', 'AI yo\'q → mahalliy tekshiruv');
+  assert.equal(first.data.isCorrect, true);
+  assert.equal(first.data.stage, 1, '1-bosqich');
+  assert.equal(first.data.intervalDays, 1, '1-bosqich → 1 kun');
 
-  const good2 = await api.post(`/api/review/${wordId}/grade`, { grade: 2 });
-  assert.equal(good2.data.intervalDays, 3, 'ikkinchi GOOD → 3 kun');
+  // Kunlar o'tdi — so'z yana navbatda
+  await makeDue(wordId);
+  const second = await api.post(`/api/review/${wordId}/check`, { sentence: 'The house is big.' });
+  assert.equal(second.data.stage, 2);
+  assert.equal(second.data.intervalDays, 2, '2-bosqich → 2 kun');
+});
 
-  const again = await api.post(`/api/review/${wordId}/grade`, { grade: 0 });
-  assert.equal(again.data.intervalDays, 0, 'AGAIN → shu sessiyada qaytadi');
-  assert.equal(again.data.lapses, 1, 'lapse hisoblanadi');
-  assert.ok(again.data.easeFactor < 2.5, 'ease pasayadi');
+test('so\'z ishlatilmagan gap bosqichni 1 ga qaytaradi', async () => {
+  const api = makeClient();
+  await api.register();
+
+  const added = await api.post('/api/words', { word: 'garden', skipAI: true, manualTranslation: 'bog\'' });
+  const wordId = added.data._id;
+
+  await api.post(`/api/review/${wordId}/check`, { sentence: 'The garden is green.' });
+  await makeDue(wordId);
+  const up = await api.post(`/api/review/${wordId}/check`, { sentence: 'I like my garden.' });
+  assert.equal(up.data.stage, 2);
+
+  await makeDue(wordId);
+  const miss = await api.post(`/api/review/${wordId}/check`, { sentence: 'I like flowers.' });
+  assert.equal(miss.data.usedTargetWord, false);
+  assert.equal(miss.data.isCorrect, false);
+  assert.equal(miss.data.stage, 1, 'xato → 1-bosqichga qaytadi');
+  assert.equal(miss.data.lapses, undefined, 'lapses javobda ochilmaydi');
+});
+
+test('7 bosqichdan o\'tgan so\'z yodlangan bo\'ladi va qaytarish mumkin', async () => {
+  const api = makeClient();
+  await api.register();
+
+  const added = await api.post('/api/words', { word: 'window', skipAI: true, manualTranslation: 'deraza' });
+  const wordId = added.data._id;
+
+  let last;
+  for (let i = 0; i < 7; i++) {
+    await makeDue(wordId);
+    last = await api.post(`/api/review/${wordId}/check`, {
+      sentence: `I open the window number ${i}.`,
+    });
+    assert.equal(last.status, 200, `${i + 1}-takrorlash`);
+  }
+
+  assert.equal(last.data.learned, true, '7 marta to\'g\'ri → yodlangan');
+  assert.equal(last.data.nextReviewDate, null, 'navbatdan chiqadi');
+
+  const due = await api.get('/api/review/due');
+  assert.equal(
+    due.data.some((w) => w._id === wordId),
+    false,
+    'yodlangan so\'z navbatda ko\'rinmasligi kerak'
+  );
+
+  const back = await api.post(`/api/review/${wordId}/relearn`);
+  assert.equal(back.status, 200);
+  assert.equal(back.data.stage, 4, 'qayta yodlash o\'rtadagi 4-bosqichdan boshlanadi');
+  assert.equal(back.data.intervalDays, 7);
+
+  // Ikkinchi marta qaytarib bo'lmaydi — so'z allaqachon yodlanmoqda
+  assert.equal((await api.post(`/api/review/${wordId}/relearn`)).status, 400);
 });
 
 test('mini-testni mijozdan aldab o\'tib bo\'lmaydi', async () => {
@@ -203,8 +262,8 @@ test('kunlik AI limiti parallel so\'rovlarda ham buzilmaydi', async () => {
   // 20 ta bir vaqtda. Eski kodda read→+1→save poygasi tufayli hisob
   // 20 dan ancha kam bo'lib qolardi.
   const results = await Promise.all(
-    Array.from({ length: 20 }, () =>
-      api.post('/api/practice/prompt', { wordIds: [wordId], bucketLabel: 'Test' })
+    Array.from({ length: 20 }, (_, i) =>
+      api.post(`/api/review/${wordId}/check`, { sentence: `The river is long ${i}.` })
     )
   );
   assert.equal(results.length, 20);
@@ -216,6 +275,33 @@ test('kunlik AI limiti parallel so\'rovlarda ham buzilmaydi', async () => {
     0,
     `fallback javoblar limit yemasligi kerak, hozir: ${sub.data.usage.aiCallsToday}`
   );
+});
+
+test('AI limiti tugaganda takrorlash to\'xtamaydi — mahalliy tekshiruvga tushadi', async () => {
+  // Bepul tarifda 15 ta AI chaqiruvi bor, kunlik takrorlash maqsadi esa 20 ta
+  // so'z. Ilgari 16-so'zda 402 qaytib, kunlik rejani yopib bo'lmasdi.
+  const api = makeClient();
+  await api.register();
+
+  const added = await api.post('/api/words', { word: 'lamp', skipAI: true, manualTranslation: 'chiroq' });
+  const me = await api.get('/api/auth/me');
+  const limit = getAiLimit({ getEffectivePlan: () => 'free' });
+  await User.updateOne(
+    { _id: me.data._id },
+    { $set: { 'usage.aiCallsDate': me.data.today, 'usage.aiCallsToday': limit } }
+  );
+
+  const check = await api.post(`/api/review/${added.data._id}/check`, {
+    sentence: 'I turn on the lamp at night.',
+  });
+  assert.equal(check.status, 200, JSON.stringify(check.data));
+  assert.equal(check.data.method, 'local');
+  assert.equal(check.data.aiReason, 'QUOTA', 'UI sababni ayta olishi kerak');
+  assert.equal(check.data.isCorrect, true);
+  assert.equal(check.data.stage, 1, 'bosqich oshishi kerak');
+
+  const sub = await api.get('/api/billing/subscription');
+  assert.equal(sub.data.usage.aiCallsToday, limit, 'limitdan oshib ketmasligi kerak');
 });
 
 test('bir xil so\'zni ikki marta qo\'shib bo\'lmaydi', async () => {
@@ -239,7 +325,7 @@ test('boshqa foydalanuvchining so\'ziga tegib bo\'lmaydi', async () => {
   const w = await a.post('/api/words', { word: 'secret', skipAI: true, manualTranslation: 'sir' });
   const id = w.data._id;
 
-  assert.equal((await b.post(`/api/review/${id}/grade`, { grade: 2 })).status, 404);
+  assert.equal((await b.post(`/api/review/${id}/check`, { sentence: 'It is a secret.' })).status, 404);
   assert.equal((await b.del(`/api/words/${id}`)).status, 404);
 });
 
@@ -294,4 +380,74 @@ test('challenge baholash usuli halol belgilanadi', async () => {
     'transcript_match',
     'baho talaffuz emas, transkript mosligi ekani yozilishi kerak'
   );
+});
+
+test('lug\'at xizmati ishlamasa so\'z SOXTA ta\'rif bilan saqlanmaydi', async () => {
+  // Ilgari bu holatda so'z shunday saqlanardi:
+  //   definition: "Definition unavailable (API failed). You can edit this later."
+  // Inglizcha xizmat matni foydalanuvchiga ta'rif bo'lib ko'rinardi, "edit later"
+  // esa yolg'on edi — tahrirlash oynasi yo'q. Buzuq kartochka SRS navbatiga
+  // tushib, har kuni qaytaverardi.
+  const api = makeClient();
+  await api.register();
+
+  // skipAI tashqi so'rovlarni to'sadi va qo'lda ma'lumot ham berilmaydi
+  const res = await api.post('/api/words', { word: 'zzzunknownword', skipAI: true });
+
+  assert.equal(res.status, 503);
+  assert.equal(res.data.type, 'ENRICHMENT_FAILED');
+
+  const words = await api.get('/api/words');
+  assert.equal(words.data.length, 0, 'yaroqsiz so\'z saqlanib qolmasligi kerak');
+});
+
+test('qo\'lda tarjima berilsa so\'z saqlanadi', async () => {
+  const api = makeClient();
+  await api.register();
+
+  const res = await api.post('/api/words', {
+    word: 'zzzunknownword',
+    skipAI: true,
+    manualTranslation: 'sinov',
+  });
+
+  assert.equal(res.status, 201);
+  assert.equal(res.data.translation, 'sinov');
+  assert.equal(res.data.definition, '', 'soxta ta\'rif yozilmasligi kerak');
+  assert.deepEqual(res.data.examples, [], 'soxta misol yozilmasligi kerak');
+});
+
+test('refresh takrorlash holatiga tegmaydi', async () => {
+  const api = makeClient();
+  await api.register();
+
+  const added = await api.post('/api/words', {
+    word: 'zzzunknownword',
+    skipAI: true,
+    manualTranslation: 'sinov',
+  });
+  const id = added.data._id;
+
+  // Bosqichni oshiramiz
+  await api.post(`/api/review/${id}/check`, { sentence: 'This is zzzunknownword here.' });
+  const before = (await api.get('/api/words')).data.find((w) => w._id === id);
+  assert.equal(before.stage, 1);
+
+  // AI ham, tarmoq ham yo'q → refresh muvaffaqiyatsiz, lekin holat buzilmaydi
+  const refreshed = await api.post(`/api/words/${id}/refresh`);
+  assert.ok([200, 503].includes(refreshed.status), `kutilmagan status: ${refreshed.status}`);
+
+  const after = (await api.get('/api/words')).data.find((w) => w._id === id);
+  assert.equal(after.stage, before.stage, 'bosqich o\'zgarmasligi kerak');
+  assert.equal(after.translation, 'sinov', 'mavjud tarjima o\'chib ketmasligi kerak');
+});
+
+test('boshqa foydalanuvchining so\'zini refresh qilib bo\'lmaydi', async () => {
+  const a = makeClient();
+  const b = makeClient();
+  await a.register();
+  await b.register();
+
+  const w = await a.post('/api/words', { word: 'zzzsecretword', skipAI: true, manualTranslation: 'sir' });
+  assert.equal((await b.post(`/api/words/${w.data._id}/refresh`)).status, 404);
 });

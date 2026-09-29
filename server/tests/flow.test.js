@@ -1,6 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { start, stop, makeClient } = require('./helpers/testServer');
+const { finishTopicDay, reviewAllDue, sentenceFor } = require('./helpers/dailyFlow');
 
 /**
  * To'liq kunlik oqim: kunlik sahna → mini-test → so'z saqlash → yakunlash → takrorlash.
@@ -108,26 +109,95 @@ test('to\'liq kunlik oqim: test → so\'z saqlash → yakunlash', async () => {
   assert.ok(due.data.length >= words.length, `takrorlash navbati bo'sh: ${due.data.length}`);
 });
 
-test('kunlik reja 3 qadami tugagach streak boshlanadi', async () => {
+test('sahna → takrorlash: navbat bo\'shaganda streak boshlanadi', async () => {
   const api = makeClient();
   await api.register();
 
   const before = await api.get('/api/auth/me');
   assert.equal(before.data.currentStreak, 0);
 
-  await api.post('/api/auth/sync-quest', { type: 'topic' });
-  await api.post('/api/auth/sync-quest', { type: 'review' });
-  const last = await api.post('/api/auth/sync-quest', { type: 'immersion' });
+  const finish = await finishTopicDay(api);
+  assert.equal(finish.status, 200, JSON.stringify(finish.data));
+  // Sahna so'zlari endi navbatda — takrorlash hali qilinmagan
+  assert.equal(finish.data.streakUpdated, false);
 
+  const last = await reviewAllDue(api);
   assert.equal(last.status, 200);
-  assert.equal(last.data.streakUpdated, true, 'streak yangilanmadi');
-  assert.equal(last.data.user.currentStreak, 1);
-  assert.ok(last.data.xpAwarded > 0);
+  assert.equal(last.data.dailyStep.reviewCompleted, true, 'navbat bo\'shadi, qadam yopilmadi');
+  assert.equal(last.data.dailyStep.streakUpdated, true, 'streak yangilanmadi');
+  assert.equal(last.data.dailyStep.currentStreak, 1);
 
-  // Ikkinchi marta chaqirilsa streak ikki marta oshmasligi kerak
-  const again = await api.post('/api/auth/sync-quest', { type: 'immersion' });
-  assert.equal(again.data.user.currentStreak, 1, 'streak takroriy oshdi');
+  const me = await api.get('/api/auth/me');
+  assert.equal(me.data.currentStreak, 1);
+
+  // Qayta chaqirilsa streak ikki marta oshmasligi kerak
+  const again = await api.post('/api/review/complete-day');
+  assert.equal(again.status, 200);
   assert.equal(again.data.streakUpdated, false);
+  assert.equal(again.data.currentStreak, 1, 'streak takroriy oshdi');
+});
+
+test('takrorlash → sahna tartibida ham streak oshadi', async () => {
+  // Ilgari streak faqat sync-quest'da oshardi, /topics/finish esa uni
+  // chaqirmasdi — bu tartibda streak o'sha kuni umuman oshmasdi.
+  const api = makeClient();
+  await api.register();
+
+  // Navbat bo'sh — takrorlash qadami server tekshiruvi bilan yopiladi
+  const review = await api.post('/api/review/complete-day');
+  assert.equal(review.status, 200, JSON.stringify(review.data));
+  assert.equal(review.data.reviewCompleted, true);
+  assert.equal(review.data.streakUpdated, false, 'sahnasiz streak oshmasligi kerak');
+
+  const finish = await finishTopicDay(api);
+  assert.equal(finish.status, 200, JSON.stringify(finish.data));
+  assert.equal(finish.data.streakUpdated, true, 'sahna tugaganda streak oshmadi');
+  assert.equal(finish.data.user.currentStreak, 1);
+});
+
+test('kunlik reja qadamlarini mijoz o\'zi yopa olmaydi', async () => {
+  const api = makeClient();
+  await api.register();
+
+  // Eski teshik: ikki so'rov bilan XP va streak
+  assert.equal((await api.post('/api/auth/sync-quest', { type: 'topic' })).status, 404);
+
+  // Navbatda so'z bor ekan, takrorlash qadamini yopib bo'lmaydi
+  await api.post('/api/words', { word: 'mountain', skipAI: true, manualTranslation: 'tog\'' });
+  const early = await api.post('/api/review/complete-day');
+  assert.equal(early.status, 409);
+  assert.equal(early.data.code, 'REVIEW_PENDING');
+
+  const me = await api.get('/api/auth/me');
+  assert.equal(me.data.xp, 0, 'hech narsa qilmasdan XP berildi');
+});
+
+test('muddati kelmagan so\'z mashq rejimida — bosqich o\'zgarmaydi', async () => {
+  const api = makeClient();
+  await api.register();
+
+  const added = await api.post('/api/words', { word: 'bridge', skipAI: true, manualTranslation: 'ko\'prik' });
+  const id = added.data._id;
+
+  const miss = await api.post(`/api/review/${id}/check`, { sentence: 'I like the river.' });
+  assert.equal(miss.data.practice, false);
+  assert.equal(miss.data.stage, 1);
+
+  // "Qayta urinish": ilgari bu so'zni o'sha zahoti 2-bosqichga ko'tarardi
+  const retry = await api.post(`/api/review/${id}/check`, { sentence: sentenceFor('bridge') });
+  assert.equal(retry.status, 200);
+  assert.equal(retry.data.practice, true);
+  assert.equal(retry.data.isCorrect, true, 'mashqda ham fikr-mulohaza beriladi');
+  assert.equal(retry.data.stage, 1, 'mashq bosqichni oshirmasligi kerak');
+
+  // 7 marta ketma-ket yuborib "yodlangan" qilib bo'lmaydi
+  for (let i = 0; i < 7; i++) {
+    await api.post(`/api/review/${id}/check`, { sentence: sentenceFor('bridge') });
+  }
+  const words = await api.get('/api/words');
+  const w = words.data.find((x) => x._id === id);
+  assert.equal(w.learned, false);
+  assert.equal(w.stage, 1);
 });
 
 test('streak muzlatish mavjud va profilda ko\'rinadi', async () => {

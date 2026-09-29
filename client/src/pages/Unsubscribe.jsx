@@ -2,6 +2,9 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { BellOff, Loader2, AlertTriangle } from 'lucide-react';
 import { useUnsubscribeMutation } from '../features/api/apiSlice';
+import { Button } from '@/components/ui/button';
+import { IconTile } from '@/components/ui/primitives';
+import { Logo } from '../components/brand/Logo';
 
 /**
  * Obunani bekor qilish.
@@ -37,45 +40,43 @@ const Unsubscribe = () => {
   }, [token, unsubscribe]);
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex items-center justify-center p-6">
-      <div className="max-w-md w-full bg-card border border-border rounded-3xl p-8 text-center shadow-xl">
+    <div className="app-backdrop flex min-h-dvh flex-col items-center justify-center bg-background p-6 text-foreground">
+      <Logo className="mb-8" />
+      <div className="surface w-full max-w-md p-8 text-center">
         {state === 'loading' && (
           <>
-            <Loader2 className="w-10 h-10 animate-spin text-primary mx-auto mb-4" />
-            <p className="text-muted-foreground">Bajarilmoqda...</p>
+            <Loader2 className="mx-auto mb-4 size-10 animate-spin text-primary" />
+            <p className="text-muted-foreground">Bajarilmoqda…</p>
           </>
         )}
 
         {state === 'done' && (
           <>
-            <BellOff className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-            <h1 className="text-2xl font-black mb-3">Eslatmalar o&apos;chirildi</h1>
-            <p className="text-muted-foreground mb-2">
-              {email ? `${email} manziliga ` : ''}Endi kunlik eslatma yubormaymiz.
+            <IconTile icon={BellOff} tone="muted" size="lg" className="mx-auto mb-5" />
+            <h1 className="text-2xl font-extrabold">Eslatmalar o&apos;chirildi</h1>
+            <p className="mt-2 text-muted-foreground">
+              {email ? `${email} manziliga ` : ''}endi kunlik eslatma yubormaymiz.
             </p>
-            <p className="text-sm text-muted-foreground mb-8">
-              Fikringiz o&apos;zgarsa, ilova sozlamalaridan qayta yoqishingiz mumkin.
+            <p className="mt-1 text-sm text-muted-foreground">
+              Fikringiz o&apos;zgarsa, ilovadagi &quot;Natijalar&quot; bo&apos;limidan qayta yoqishingiz mumkin.
             </p>
-            <Link
-              to="/"
-              className="inline-block px-6 py-3 bg-primary text-primary-foreground font-bold rounded-full"
-            >
-              Ilovaga qaytish
-            </Link>
+            <Button asChild size="lg" className="mt-8 w-full">
+              <Link to="/">Ilovaga qaytish</Link>
+            </Button>
           </>
         )}
 
         {(state === 'invalid' || state === 'error') && (
           <>
-            <AlertTriangle className="w-12 h-12 text-amber-500 mx-auto mb-4" />
-            <h1 className="text-2xl font-black mb-3">Havola ishlamadi</h1>
-            <p className="text-muted-foreground mb-8">
-              Havolani pochtangizdan to&apos;liq nusxalab ko&apos;ring yoki ilova
-              sozlamalaridan eslatmalarni o&apos;chiring.
+            <IconTile icon={AlertTriangle} tone="warning" size="lg" className="mx-auto mb-5" />
+            <h1 className="text-2xl font-extrabold">Havola ishlamadi</h1>
+            <p className="mt-2 text-muted-foreground">
+              Havolani pochtangizdan to&apos;liq nusxalab ko&apos;ring yoki ilovadagi &quot;Natijalar&quot;
+              bo&apos;limidan eslatmalarni o&apos;chiring.
             </p>
-            <Link to="/" className="text-primary font-bold">
-              Ilovaga o&apos;tish →
-            </Link>
+            <Button asChild size="lg" variant="outline" className="mt-8 w-full">
+              <Link to="/">Ilovaga o&apos;tish</Link>
+            </Button>
           </>
         )}
       </div>

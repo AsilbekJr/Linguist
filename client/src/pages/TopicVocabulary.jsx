@@ -1,9 +1,9 @@
 import React, { useMemo, useState, useEffect, useCallback, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
+import { AnimatePresence, motion } from 'motion/react';
 import {
   useGetCurrentTopicQuery,
-  useGetTopicBacklogQuery,
   useStartTopicQuizMutation,
   useSubmitTopicQuizMutation,
   useFinishTopicDayMutation,
@@ -13,22 +13,34 @@ import {
 } from '../features/api/apiSlice';
 import { setCredentials } from '../features/auth/authSlice';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { EmptyState, IconTile, PageSkeleton, ProgressBar } from '@/components/ui/primitives';
+import { cn } from '@/lib/utils';
 import {
   Loader2,
   CheckCircle2,
   Volume2,
-  PlusCircle,
+  Plus,
+  Check,
   ArrowRight,
   ChevronLeft,
   Sparkles,
-  BookOpen,
+  MessagesSquare,
   Headphones,
+  Lightbulb,
+  Trophy,
+  BookHeart,
+  RotateCcw,
+  PartyPopper,
+  AlertTriangle,
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { playTTSAudio } from '../utils/audio';
 import { getDailyWordTarget } from '../utils/learningUtils';
 import { fireConfetti } from '../utils/celebration';
 import { track, EVENTS } from '../lib/analytics';
+
+const EASE = [0.16, 1, 0.3, 1];
 
 /**
  * Mini-test.
@@ -92,22 +104,22 @@ const TopicQuiz = ({ quiz, onPass, onBack, submitQuiz, isSubmitting }) => {
 
   if (results && !results.passed) {
     return (
-      <div className="max-w-lg mx-auto text-center">
-        <div className="text-4xl mb-3">📚</div>
-        <h3 className="text-xl font-bold mb-2">Natija: {results.score}%</h3>
-        <p className="text-muted-foreground mb-6">
-          O'tish uchun {results.passPercent}% kerak. So'zlarni qayta ko'rib chiqing.
+      <div className="text-center">
+        <IconTile icon={RotateCcw} tone="warning" size="lg" className="mx-auto mb-4" />
+        <h3 className="text-2xl font-extrabold">Natija: {results.score}%</h3>
+        <p className="mt-1 text-muted-foreground">
+          O&apos;tish uchun {results.passPercent}% kerak. Adashgan so&apos;zlarni qayta ko&apos;rib chiqing.
         </p>
-        <div className="space-y-2 text-left mb-6">
+        <div className="mt-6 space-y-2 text-left">
           {results.results.filter((r) => !r.correct).map((r) => (
-            <div key={r.word} className="p-3 rounded-xl border border-destructive/30 bg-destructive/5">
-              <span className="font-bold capitalize">{r.word}</span>
+            <div key={r.word} className="rounded-2xl border border-destructive/25 bg-destructive/6 px-4 py-3">
+              <span className="font-bold">{r.word}</span>
               <span className="text-muted-foreground"> — {r.correctAnswer}</span>
             </div>
           ))}
         </div>
-        <Button onClick={retry} className="rounded-full font-bold">
-          So'zlarga qaytish
+        <Button onClick={retry} size="lg" className="mt-6">
+          <ChevronLeft /> So&apos;zlarga qaytish
         </Button>
       </div>
     );
@@ -116,35 +128,92 @@ const TopicQuiz = ({ quiz, onPass, onBack, submitQuiz, isSubmitting }) => {
   if (!q) return null;
 
   return (
-    <div className="max-w-lg mx-auto">
-      <button type="button" onClick={onBack} className="text-sm text-muted-foreground mb-4 flex items-center gap-1">
-        <ChevronLeft className="w-4 h-4" /> Orqaga
-      </button>
-      <p className="text-sm font-bold text-muted-foreground mb-2">
-        Mini-test {idx + 1}/{questions.length}
-      </p>
-      <h3 className="text-2xl font-black mb-6 capitalize">{q.word}</h3>
-      <div className="space-y-3">
-        {q.options.map((opt, optionIndex) => (
-          <button
-            key={opt}
-            type="button"
-            onClick={() => handlePick(optionIndex)}
-            disabled={selected !== null || isSubmitting}
-            className={`w-full text-left p-4 rounded-xl border font-medium transition-colors ${
-              selected === optionIndex
-                ? 'border-primary bg-primary/10'
-                : 'border-border hover:border-purple-500/50'
-            }`}
-          >
-            {opt}
-          </button>
-        ))}
+    <div>
+      <div className="mb-6 flex items-center gap-3">
+        <Button variant="ghost" size="icon-sm" onClick={onBack} aria-label="Orqaga">
+          <ChevronLeft />
+        </Button>
+        <ProgressBar value={idx} max={questions.length} className="h-2 flex-1" label="Mini-test jarayoni" />
+        <span className="text-sm font-bold tabular">
+          {idx + 1}<span className="text-muted-foreground">/{questions.length}</span>
+        </span>
       </div>
+
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={idx}
+          initial={{ opacity: 0, x: 24 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: -24 }}
+          transition={{ duration: 0.3, ease: EASE }}
+        >
+          <p className="text-sm font-semibold text-muted-foreground">Bu so&apos;z nimani anglatadi?</p>
+          <h3 className="mt-1 mb-6 text-4xl font-extrabold tracking-tight">{q.word}</h3>
+          <div className="space-y-3">
+            {q.options.map((opt, optionIndex) => (
+              <button
+                key={opt}
+                type="button"
+                onClick={() => handlePick(optionIndex)}
+                disabled={selected !== null || isSubmitting}
+                className={cn(
+                  'flex w-full items-center gap-3 rounded-2xl border-2 p-4 text-left font-medium transition-[border-color,background-color,opacity] active:scale-[0.99]',
+                  selected === optionIndex ? 'border-primary bg-primary/8' : 'border-border bg-card hover:border-primary/40',
+                  selected !== null && selected !== optionIndex && 'opacity-50'
+                )}
+              >
+                <span
+                  className={cn(
+                    'inline-flex size-8 shrink-0 items-center justify-center rounded-lg text-sm font-bold',
+                    selected === optionIndex ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
+                  )}
+                >
+                  {String.fromCharCode(65 + optionIndex)}
+                </span>
+                {opt}
+              </button>
+            ))}
+          </div>
+        </motion.div>
+      </AnimatePresence>
       {isSubmitting && (
-        <p className="text-center text-sm text-muted-foreground mt-4">Tekshirilmoqda...</p>
+        <p className="mt-4 flex items-center justify-center gap-2 text-sm text-muted-foreground">
+          <Loader2 className="size-4 animate-spin" /> Tekshirilmoqda…
+        </p>
       )}
     </div>
+  );
+};
+
+/** O'rganish → mini-test → yakunlash */
+const Stepper = ({ current, quizPassed, savedOk }) => {
+  const steps = [
+    { key: 'learn', label: "O'rganish", done: savedOk },
+    { key: 'quiz', label: 'Mini-test', done: quizPassed },
+    { key: 'finish', label: 'Yakunlash', done: false },
+  ];
+  return (
+    <ol className="flex items-center gap-2" aria-label="Sahna qadamlari">
+      {steps.map((s, i) => {
+        const active = s.key === current;
+        return (
+          <li key={s.key} className="flex flex-1 items-center gap-2">
+            <span
+              className={cn(
+                'inline-flex size-7 shrink-0 items-center justify-center rounded-full text-xs font-bold transition-colors',
+                s.done ? 'bg-success text-success-foreground' : active ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
+              )}
+            >
+              {s.done ? <Check className="size-4" strokeWidth={3} /> : i + 1}
+            </span>
+            <span className={cn('hidden text-sm font-semibold sm:inline', active ? 'text-foreground' : 'text-muted-foreground')}>
+              {s.label}
+            </span>
+            {i < steps.length - 1 && <span className="h-px flex-1 bg-border" />}
+          </li>
+        );
+      })}
+    </ol>
   );
 };
 
@@ -153,7 +222,6 @@ const TopicVocabulary = () => {
   const navigate = useNavigate();
   const token = useSelector((s) => s.auth.token);
   const { data: topicData, isLoading } = useGetCurrentTopicQuery();
-  const { data: backlogData } = useGetTopicBacklogQuery(undefined, { skip: !topicData });
   const { data: user } = useGetMeQuery();
   const [finishTopicDay, { isLoading: isFinishing }] = useFinishTopicDayMutation();
   const [startQuiz, { isLoading: isStartingQuiz }] = useStartTopicQuizMutation();
@@ -163,23 +231,26 @@ const TopicVocabulary = () => {
 
   const [step, setStep] = useState('intro');
   const [addingWords, setAddingWords] = useState({});
+  const [savingAll, setSavingAll] = useState(false);
   const [quiz, setQuiz] = useState(null);
-  const [showBacklog, setShowBacklog] = useState(false);
   const healRef = useRef(false);
 
   // Test o'tilgani SERVERDAN keladi. Ilgari bu sessionStorage'da edi.
   const quizPassed = Boolean(topicData?.quizPassed);
-  const pack = topicData?.words || [];
+  const pack = useMemo(() => topicData?.words || [], [topicData?.words]);
   const wordTarget = topicData?.wordTarget ?? user?.dailyWordTarget ?? getDailyWordTarget(user?.onboarding?.level);
   const requiredCount = topicData?.requiredCount ?? Math.min(wordTarget, pack.length || wordTarget);
 
+  const savedSet = useMemo(() => new Set(userWords.map((w) => w.word.toLowerCase())), [userWords]);
   const packSavedCount = useMemo(() => {
     if (topicData?.packSavedCount != null) return topicData.packSavedCount;
-    const saved = new Set(userWords.map((w) => w.word.toLowerCase()));
-    return pack.filter((w) => saved.has(w.word.toLowerCase())).length;
-  }, [topicData, pack, userWords]);
+    return pack.filter((w) => savedSet.has(w.word.toLowerCase())).length;
+  }, [topicData, pack, savedSet]);
 
   const canFinish = pack.length === 0 ? true : quizPassed && packSavedCount >= requiredCount;
+
+  // Dialogda birinchi gapiruvchi chapda, qolganlari o'ngda — chat kabi
+  const firstSpeaker = topicData?.dialogue?.[0]?.speaker;
 
   const applyUserUpdate = useCallback(
     (profile) => {
@@ -202,13 +273,20 @@ const TopicVocabulary = () => {
         cefr: topicData?.cefr,
         wordsSaved: packSavedCount,
       });
+      // Takrorlash oldinroq bajarilgan bo'lsa, kunlik reja aynan shu yerda tugaydi
+      if (res.planCompleted && res.streakUpdated) {
+        track(EVENTS.DAILY_PLAN_COMPLETED, {
+          streak: res.user?.currentStreak,
+          level: res.user?.level,
+        });
+      }
       setStep('done');
     } catch (err) {
       const msg = err?.data?.error || 'Yakunlashda xatolik';
       toast.error(msg);
       if (err?.data?.code === 'QUIZ_REQUIRED') setStep('learn');
     }
-  }, [finishTopicDay, applyUserUpdate]);
+  }, [finishTopicDay, applyUserUpdate, packSavedCount, topicData?.cefr, topicData?.day]);
 
   const handleStartQuiz = useCallback(async () => {
     try {
@@ -216,7 +294,7 @@ const TopicVocabulary = () => {
       setQuiz(res);
       setStep('quiz');
     } catch (err) {
-      toast.error(err?.data?.error || "Testni boshlashda xatolik");
+      toast.error(err?.data?.error || 'Testni boshlashda xatolik');
     }
   }, [startQuiz]);
 
@@ -234,22 +312,28 @@ const TopicVocabulary = () => {
     }
   }, [topicData, isLoading, handleFinishDay]);
 
+  const saveWord = (wordObj) =>
+    addWord({
+      word: wordObj.word,
+      skipAI: true,
+      fromTopic: true,
+      manualTranslation: wordObj.translation,
+      manualDefinition: wordObj.definition,
+      manualExamples: [wordObj.example],
+      partOfSpeech: wordObj.partOfSpeech,
+      synonyms: [],
+    }).unwrap();
+
+  const isDuplicate = (error) =>
+    error?.data?.type === 'DUPLICATE' || error?.data?.message?.includes('already');
+
   const handleAddWordToDict = async (wordObj) => {
     setAddingWords((prev) => ({ ...prev, [wordObj.word]: true }));
     try {
-      await addWord({
-        word: wordObj.word,
-        skipAI: true,
-        fromTopic: true,
-        manualTranslation: wordObj.translation,
-        manualDefinition: wordObj.definition,
-        manualExamples: [wordObj.example],
-        partOfSpeech: wordObj.partOfSpeech,
-        synonyms: [],
-      }).unwrap();
+      await saveWord(wordObj);
       toast.success(`"${wordObj.word}" saqlandi — takrorlashda chiqadi`);
     } catch (error) {
-      if (error?.data?.type === 'DUPLICATE' || error?.data?.message?.includes('already')) {
+      if (isDuplicate(error)) {
         toast.success(`"${wordObj.word}" allaqachon lug'atingizda`);
       } else {
         toast.error("So'zni qo'shishda xatolik.");
@@ -259,273 +343,376 @@ const TopicVocabulary = () => {
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh]">
-        <Loader2 className="w-12 h-12 animate-spin text-primary mb-4" />
-        <p className="text-muted-foreground">Bugungi sahna yuklanmoqda...</p>
-      </div>
-    );
-  }
+  /** Ilgari har so'zni bittalab bosib saqlash kerak edi */
+  const handleSaveAll = async () => {
+    const unsaved = pack.filter((w) => !savedSet.has(w.word.toLowerCase()));
+    if (!unsaved.length) return;
+    setSavingAll(true);
+    let failed = 0;
+    for (const w of unsaved) {
+      setAddingWords((prev) => ({ ...prev, [w.word]: true }));
+      try {
+        await saveWord(w);
+      } catch (error) {
+        if (!isDuplicate(error)) failed += 1;
+      } finally {
+        setAddingWords((prev) => ({ ...prev, [w.word]: false }));
+      }
+    }
+    setSavingAll(false);
+    if (failed) toast.error(`${failed} ta so'zni saqlab bo'lmadi. Qayta urining.`);
+    else toast.success(`${unsaved.length} ta so'z saqlandi`);
+  };
+
+  if (isLoading) return <PageSkeleton cards={2} />;
 
   if (topicData?.isFinished) {
     return (
-      <div className="max-w-lg mx-auto text-center py-16">
-        <div className="text-6xl mb-6">🏆</div>
-        <h2 className="text-3xl font-black mb-4">Barcha mavzular tugadi!</h2>
-        <Link to="/" className="text-primary font-bold">
-          Bosh sahifa →
-        </Link>
-      </div>
+      <EmptyState
+        icon={Trophy}
+        tone="xp"
+        title="Barcha mavzular tugadi!"
+        description="Siz kursning hamma sahnalarini o'tdingiz. Takrorlash va qo'shimcha mashqlar bilan davom eting."
+      >
+        <Button asChild size="lg">
+          <Link to="/">Bosh sahifa</Link>
+        </Button>
+      </EmptyState>
     );
   }
 
   if (!topicData) {
-    return <div className="text-center p-12">Sahifani yangilab ko'ring.</div>;
-  }
-
-  if (step === 'done' || topicData.topicQuestCompleted) {
     return (
-      <div className="max-w-lg mx-auto text-center py-12 px-4">
-        <div className="text-5xl mb-4">🎉</div>
-        <h2 className="text-2xl font-black mb-2">Kunlik sahna bajarildi!</h2>
-        <p className="text-muted-foreground mb-8">Dashboard’da keyingi qadam: Takrorlash</p>
-        <div className="flex flex-col gap-3">
-          <Button size="lg" className="rounded-full font-bold" onClick={() => navigate('/')}>
-            Bosh sahifaga qaytish
-          </Button>
-          <Link to="/review" className="text-primary font-bold text-sm">
-            Takrorlashga o'tish →
-          </Link>
-        </div>
-      </div>
+      <EmptyState
+        icon={AlertTriangle}
+        tone="warning"
+        title="Sahnani yuklab bo'lmadi"
+        description="Internet aloqasini tekshirib, sahifani yangilang."
+      >
+        <Button onClick={() => window.location.reload()}>Yangilash</Button>
+      </EmptyState>
     );
   }
 
-  const progressPercent = requiredCount > 0 ? Math.min(100, Math.round((packSavedCount / requiredCount) * 100)) : 100;
+  if (step === 'done' || topicData.topicQuestCompleted) {
+    const reviewDone = user?.dailyQuests?.reviewCompleted;
+    return (
+      <motion.div
+        initial={{ opacity: 0, scale: 0.97 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.5, ease: EASE }}
+        className="hero-mesh noise relative mx-auto max-w-xl overflow-hidden rounded-[1.75rem] p-8 text-center text-white sm:p-10"
+      >
+        <motion.div
+          initial={{ scale: 0, rotate: -30 }}
+          animate={{ scale: 1, rotate: 0 }}
+          transition={{ type: 'spring', stiffness: 260, damping: 14, delay: 0.15 }}
+          className="mx-auto mb-5 inline-flex size-20 items-center justify-center rounded-3xl bg-white/15"
+        >
+          <PartyPopper className="size-10" />
+        </motion.div>
+        <h1 className="text-3xl font-extrabold">Kunlik sahna bajarildi!</h1>
+        <p className="mx-auto mt-2 max-w-sm text-white/80">
+          {reviewDone
+            ? "Bugungi reja to'liq bajarildi. Ertaga yangi sahna ochiladi."
+            : "Keyingi qadam: “Bugun” sahifasida yangi so'zlarni takrorlash."}
+        </p>
+        {/* Takrorlash endi "Bugun" sahifasining o'zida — alohida /review sahifasi yo'q */}
+        <Button size="xl" className="mt-8 w-full bg-white text-primary shadow-lg hover:bg-white/90 sm:w-auto" onClick={() => navigate('/')}>
+          {reviewDone ? 'Bosh sahifaga qaytish' : "Takrorlashga o'tish"}
+          <ArrowRight />
+        </Button>
+      </motion.div>
+    );
+  }
+
+  const progressStep = step === 'quiz' ? 'quiz' : quizPassed ? 'finish' : 'learn';
 
   return (
-    <div className="max-w-3xl mx-auto px-3 sm:px-4 py-6 sm:py-8">
-      <div className="text-center mb-4 sm:mb-6">
-        <p className="text-xs font-bold uppercase text-purple-500">Kunlik sahna · 1-qadam</p>
-        <h1 className="text-2xl sm:text-3xl font-black mt-1">Bugungi mavzu</h1>
-        <p className="text-sm text-muted-foreground mt-2">
-          Saqlangan: {packSavedCount}/{requiredCount}
-          {quizPassed ? ' · Test ✓' : ' · Test kerak'}
-        </p>
-      </div>
-
-      <div className="h-2 bg-secondary rounded-full mb-8 overflow-hidden">
-        <div className="h-full bg-purple-500 transition-all" style={{ width: `${progressPercent}%` }} />
-      </div>
-
-      {step === 'intro' && (
-        <div className="bg-card border rounded-2xl sm:rounded-3xl p-5 sm:p-8 text-center">
-          <div className="text-4xl sm:text-6xl mb-3 sm:mb-4">{topicData.scenarioEmoji || '📚'}</div>
-          <h2 className="text-lg sm:text-xl font-bold mb-3 sm:mb-4">{topicData.topicUz || topicData.topic}</h2>
-          <p className="text-foreground mb-4 leading-relaxed">{topicData.story}</p>
-          <p className="text-sm text-muted-foreground mb-8">
-            Ketma-ketlik: o'rganish → mini-test → {requiredCount} ta so'z saqlash → takrorlash
-          </p>
-          {pack.length === 0 ? (
-            <Button size="lg" onClick={handleFinishDay} disabled={isFinishing}>
-              {isFinishing ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Kunlik sahni yakunlash'}
-            </Button>
-          ) : (
-            <Button size="lg" onClick={() => setStep('learn')}>
-              Boshlash <ArrowRight className="w-4 h-4 ml-2" />
-            </Button>
-          )}
+    <div className="mx-auto max-w-3xl">
+      {/* Sarlavha */}
+      <div className="mb-6 space-y-5">
+        <div className="flex items-start gap-4">
+          <span className="inline-flex size-14 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-3xl" aria-hidden="true">
+            {topicData.scenarioEmoji || '📚'}
+          </span>
+          <div className="min-w-0">
+            <p className="text-xs font-bold uppercase tracking-[0.12em] text-primary">
+              Kunlik sahna · {topicData.day}-kun{topicData.cefr ? ` · ${topicData.cefr}` : ''}
+            </p>
+            <h1 className="mt-1 text-[1.75rem] font-extrabold leading-tight sm:text-3xl">
+              {topicData.topicUz || topicData.topic}
+            </h1>
+          </div>
         </div>
-      )}
+        <Stepper current={progressStep} quizPassed={quizPassed} savedOk={packSavedCount >= requiredCount} />
+      </div>
 
-      {step === 'learn' && (
-        <>
-          {topicData.dialogue?.length > 0 && (
-            <div className="bg-card border rounded-2xl p-4 sm:p-6 mb-6">
-              <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
-                <h3 className="font-bold flex items-center gap-2">
-                  <BookOpen className="w-4 h-4 text-purple-500" />
-                  Dialog
-                </h3>
-                <div className="flex items-center gap-2">
-                  {topicData.cefr && (
-                    <span className="text-[10px] font-bold px-2 py-1 rounded-full bg-purple-500/10 text-purple-600">
-                      {topicData.cefr}
-                    </span>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() =>
-                      playTTSAudio(topicData.dialogue.map((l) => l.en).join(' '), 'en-GB', 0.9)
-                    }
-                    className="text-xs font-bold text-purple-600 flex items-center gap-1"
-                  >
-                    <Volume2 className="w-4 h-4" /> Eshitish
-                  </button>
+      <AnimatePresence mode="wait">
+        {step === 'intro' && (
+          <motion.section
+            key="intro"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -12 }}
+            transition={{ duration: 0.35, ease: EASE }}
+            className="surface p-6 sm:p-8"
+          >
+            <p className="text-[17px] leading-relaxed">{topicData.story}</p>
+            <div className="mt-6 grid gap-2 sm:grid-cols-3">
+              {[
+                { icon: MessagesSquare, text: 'Dialogni o\'qing va tinglang' },
+                { icon: Sparkles, text: 'Mini-testdan o\'ting' },
+                { icon: BookHeart, text: `${requiredCount} ta so'zni saqlang` },
+              ].map((s, i) => (
+                <div key={s.text} className="flex items-center gap-3 rounded-2xl bg-muted/60 p-3 text-sm font-medium">
+                  <span className="inline-flex size-7 shrink-0 items-center justify-center rounded-full bg-card text-xs font-bold text-primary shadow-xs">
+                    {i + 1}
+                  </span>
+                  {s.text}
                 </div>
-              </div>
-
-              {topicData.grammarFocus && (
-                <p className="text-xs text-muted-foreground mb-4 px-3 py-2 rounded-lg bg-secondary/60">
-                  <span className="font-bold">Grammatika:</span> {topicData.grammarFocus}
-                </p>
+              ))}
+            </div>
+            <div className="mt-6">
+              {pack.length === 0 ? (
+                <Button size="xl" onClick={handleFinishDay} disabled={isFinishing} className="w-full sm:w-auto">
+                  {isFinishing ? <Loader2 className="animate-spin" /> : 'Kunlik sahnani yakunlash'}
+                </Button>
+              ) : (
+                <Button size="xl" variant="brand" onClick={() => setStep('learn')} className="w-full sm:w-auto">
+                  Boshlash <ArrowRight />
+                </Button>
               )}
+            </div>
+          </motion.section>
+        )}
+
+        {step === 'learn' && (
+          <motion.div
+            key="learn"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -12 }}
+            transition={{ duration: 0.35, ease: EASE }}
+            className="space-y-6"
+          >
+            {topicData.dialogue?.length > 0 && (
+              <section className="surface p-4 sm:p-6" aria-labelledby="dialog-title">
+                <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                  <h2 id="dialog-title" className="flex items-center gap-2 text-lg font-extrabold">
+                    <MessagesSquare className="size-5 text-primary" /> Dialog
+                  </h2>
+                  <Button
+                    variant="soft"
+                    size="sm"
+                    onClick={() => playTTSAudio(topicData.dialogue.map((l) => l.en).join(' '), 'en-GB', 0.9)}
+                  >
+                    <Volume2 /> Butunini eshitish
+                  </Button>
+                </div>
+
+                {topicData.grammarFocus && (
+                  <div className="mb-5 flex items-start gap-2.5 rounded-2xl border border-warning/30 bg-warning/8 p-3 text-sm">
+                    <Lightbulb className="mt-0.5 size-4 shrink-0 text-warning" />
+                    <p>
+                      <span className="font-bold">Grammatika: </span>
+                      {topicData.grammarFocus}
+                    </p>
+                  </div>
+                )}
+
+                <div className="space-y-3">
+                  {topicData.dialogue.map((line, i) => {
+                    const mine = line.speaker !== firstSpeaker;
+                    return (
+                      <motion.div
+                        key={i}
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.04 * i, duration: 0.35, ease: EASE }}
+                        className={cn('flex', mine ? 'justify-end' : 'justify-start')}
+                      >
+                        <div className={cn('max-w-[88%] sm:max-w-[75%]', mine && 'text-right')}>
+                          <p className="mb-1 px-1 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
+                            {line.speaker}
+                          </p>
+                          <button
+                            type="button"
+                            onClick={() => playTTSAudio(line.en, 'en-GB', 0.9)}
+                            className={cn(
+                              'group rounded-2xl px-4 py-3 text-left transition-transform active:scale-[0.99]',
+                              mine
+                                ? 'rounded-tr-md bg-primary text-primary-foreground'
+                                : 'rounded-tl-md bg-muted text-foreground'
+                            )}
+                            aria-label={`Tinglash: ${line.en}`}
+                          >
+                            <span className="flex items-start gap-2">
+                              <span className="font-medium leading-snug">{line.en}</span>
+                              <Volume2 className="mt-0.5 size-4 shrink-0 opacity-60 transition-opacity group-hover:opacity-100" />
+                            </span>
+                            <span className={cn('mt-1 block text-sm', mine ? 'text-primary-foreground/75' : 'text-muted-foreground')}>
+                              {line.uz}
+                            </span>
+                          </button>
+                        </div>
+                      </motion.div>
+                    );
+                  })}
+                </div>
+
+                {/* Dialogni o'qigach — uni tinglab yozib ko'rish */}
+                <Link
+                  to="/listening"
+                  className="mt-5 flex items-center justify-between gap-3 rounded-2xl border border-teal-500/25 bg-teal-500/6 p-3 transition-colors hover:bg-teal-500/12"
+                >
+                  <span className="flex items-center gap-2 text-sm font-bold text-teal-700 dark:text-teal-300">
+                    <Headphones className="size-4" />
+                    Shu dialogni tinglab yozib ko&apos;ring
+                  </span>
+                  <ArrowRight className="size-4 shrink-0 text-teal-600" />
+                </Link>
+              </section>
+            )}
+
+            {/* So'zlar */}
+            <section aria-labelledby="words-title">
+              <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
+                <div>
+                  <h2 id="words-title" className="text-lg font-extrabold">Bugungi so&apos;zlar</h2>
+                  <p className="text-sm text-muted-foreground">
+                    Saqlangan: <span className="font-bold text-foreground tabular">{packSavedCount}/{requiredCount}</span> — kamida {requiredCount} ta kerak
+                  </p>
+                </div>
+                {packSavedCount < pack.length && (
+                  <Button variant="soft" size="sm" onClick={handleSaveAll} disabled={savingAll}>
+                    {savingAll ? <Loader2 className="animate-spin" /> : <Plus />}
+                    Barchasini saqlash
+                  </Button>
+                )}
+              </div>
 
               <div className="space-y-3">
-                {topicData.dialogue.map((line, i) => (
-                  <div key={i} className="flex gap-3">
-                    <span className="text-xs font-bold text-muted-foreground shrink-0 w-16 pt-1 truncate">
-                      {line.speaker}
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <p className="font-medium">{line.en}</p>
-                      <p className="text-sm text-muted-foreground">{line.uz}</p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => playTTSAudio(line.en, 'en-GB', 0.9)}
-                      className="shrink-0 text-muted-foreground hover:text-foreground self-start pt-1"
-                      aria-label="Tinglash"
+                {pack.map((w, index) => {
+                  const saved = savedSet.has(w.word.toLowerCase());
+                  return (
+                    <motion.article
+                      key={w.word}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.03 * index, duration: 0.35, ease: EASE }}
+                      className={cn('surface p-4 transition-colors sm:p-5', saved && 'border-success/30')}
                     >
-                      <Volume2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-
-              {/* Dialogni o'qigach — uni tinglab yozib ko'rish. Bu ilovadagi
-                  yagona input mashqi va aynan shu joyda tabiiy tushadi. */}
-              <Link
-                to="/listening"
-                className="mt-5 flex items-center justify-between gap-3 p-3 rounded-xl border border-teal-500/30 bg-teal-500/5 hover:bg-teal-500/10 transition-colors"
-              >
-                <span className="flex items-center gap-2 text-sm font-bold text-teal-700 dark:text-teal-300">
-                  <Headphones className="w-4 h-4" />
-                  Shu dialogni tinglab yozib ko&apos;ring
-                </span>
-                <ArrowRight className="w-4 h-4 text-teal-600 shrink-0" />
-              </Link>
-            </div>
-          )}
-
-          <div className="space-y-4 mb-6">
-            {pack.map((w, index) => {
-              const saved = userWords.some((uw) => uw.word.toLowerCase() === w.word.toLowerCase());
-              return (
-                <div key={index} className="bg-card border rounded-2xl p-5">
-                  <div className="flex justify-between items-start gap-3">
-                    <div className="min-w-0">
-                      <h3 className="text-xl font-bold flex items-center gap-2 flex-wrap">
-                        <span className="capitalize">{w.word}</span>
-                        <button type="button" onClick={() => playTTSAudio(w.word, 'en-GB', 1.0)} aria-label="Tinglash">
-                          <Volume2 className="w-4 h-4 text-muted-foreground" />
-                        </button>
-                        {w.phonetic && (
-                          <span className="text-sm font-normal text-muted-foreground">{w.phonetic}</span>
-                        )}
-                        {w.partOfSpeech && (
-                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-secondary text-muted-foreground">
-                            {w.partOfSpeech}
-                          </span>
-                        )}
-                      </h3>
-                      <p className="text-sm font-bold text-green-600 mt-2">{w.translation}</p>
-                      {w.definition && (
-                        <p className="text-sm text-muted-foreground mt-1">{w.definition}</p>
-                      )}
-                      {w.example && (
-                        <div className="mt-3 pl-3 border-l-2 border-purple-500/30">
-                          <p className="text-sm italic">{w.example}</p>
-                          {w.exampleUz && (
-                            <p className="text-xs text-muted-foreground">{w.exampleUz}</p>
+                      <div className="flex items-start gap-3">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                            <h3 className="text-xl font-extrabold tracking-tight">{w.word}</h3>
+                            {w.phonetic && <span className="font-ipa text-sm text-muted-foreground">{w.phonetic}</span>}
+                            {w.partOfSpeech && <Badge variant="outline">{w.partOfSpeech}</Badge>}
+                          </div>
+                          <p className="mt-1 font-semibold text-primary">{w.translation}</p>
+                          {w.definition && <p className="mt-1 text-sm text-muted-foreground">{w.definition}</p>}
+                          {w.example && (
+                            <div className="mt-3 border-l-2 border-primary/30 pl-3 text-sm">
+                              <p className="italic">{w.example}</p>
+                              {w.exampleUz && <p className="mt-0.5 text-muted-foreground">{w.exampleUz}</p>}
+                            </div>
+                          )}
+                          {w.collocations?.length > 0 && (
+                            <div className="mt-3 flex flex-wrap gap-1.5">
+                              {w.collocations.map((c) => (
+                                <span key={c} className="rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
+                                  {c}
+                                </span>
+                              ))}
+                            </div>
                           )}
                         </div>
-                      )}
-                      {w.collocations?.length > 0 && (
-                        <div className="flex flex-wrap gap-1.5 mt-3">
-                          {w.collocations.map((c) => (
-                            <span key={c} className="text-[11px] px-2 py-1 rounded-full bg-secondary text-muted-foreground">
-                              {c}
-                            </span>
-                          ))}
+                        <div className="flex shrink-0 flex-col gap-2">
+                          <Button
+                            variant="outline"
+                            size="icon-sm"
+                            className="rounded-full"
+                            onClick={() => playTTSAudio(w.word, 'en-GB', 1.0)}
+                            aria-label={`"${w.word}" talaffuzini eshitish`}
+                          >
+                            <Volume2 />
+                          </Button>
+                          <Button
+                            variant={saved ? 'success' : 'soft'}
+                            size="icon-sm"
+                            className="rounded-full"
+                            disabled={saved || addingWords[w.word]}
+                            onClick={() => handleAddWordToDict(w)}
+                            aria-label={saved ? 'Saqlangan' : `"${w.word}" so'zini lug'atga saqlash`}
+                          >
+                            {addingWords[w.word] ? (
+                              <Loader2 className="animate-spin" />
+                            ) : saved ? (
+                              <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} className="flex">
+                                <Check strokeWidth={3} />
+                              </motion.span>
+                            ) : (
+                              <Plus />
+                            )}
+                          </Button>
                         </div>
-                      )}
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      disabled={saved || addingWords[w.word]}
-                      onClick={() => handleAddWordToDict(w)}
-                      className={saved ? 'text-green-500' : ''}
-                    >
-                      {addingWords[w.word] ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : saved ? (
-                        <CheckCircle2 className="w-5 h-5" />
-                      ) : (
-                        <PlusCircle className="w-5 h-5" />
-                      )}
-                    </Button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+                      </div>
+                    </motion.article>
+                  );
+                })}
+              </div>
+            </section>
 
-          <div className="flex flex-wrap gap-3 justify-between">
-            <Button variant="outline" onClick={() => setStep('intro')}>
-              Orqaga
-            </Button>
-            {!quizPassed && pack.length > 0 && (
-              <Button onClick={handleStartQuiz} disabled={isStartingQuiz} className="font-bold">
-                {isStartingQuiz ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <>
-                    Mini-testga o'tish <Sparkles className="w-4 h-4 ml-2" />
-                  </>
+            {/* Harakatlar — telefonda pastda yopishib turadi */}
+            <div className="glass sticky bottom-[calc(env(safe-area-inset-bottom,0px)+3.875rem)] z-20 -mx-4 border-t border-border px-4 py-3 sm:-mx-6 sm:px-6 lg:static lg:mx-0 lg:border-0 lg:bg-transparent lg:p-0 lg:backdrop-blur-none">
+              <div className="flex items-center gap-2">
+                <Button variant="ghost" onClick={() => setStep('intro')}>
+                  <ChevronLeft /> Orqaga
+                </Button>
+                <div className="flex-1" />
+                {!quizPassed && pack.length > 0 && (
+                  <Button size="lg" onClick={handleStartQuiz} disabled={isStartingQuiz}>
+                    {isStartingQuiz ? <Loader2 className="animate-spin" /> : <>Mini-test <Sparkles /></>}
+                  </Button>
                 )}
-              </Button>
-            )}
-            {canFinish && (
-              <Button onClick={handleFinishDay} disabled={isFinishing} className="bg-green-600 hover:bg-green-500">
-                {isFinishing ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Sahnani yakunlash ✓'}
-              </Button>
-            )}
-          </div>
-          {!canFinish && quizPassed && packSavedCount < requiredCount && (
-            <p className="text-center text-sm text-amber-600 mt-4 font-medium">
-              Yana {requiredCount - packSavedCount} ta so'z saqlang, keyin "Sahnani yakunlash"
-            </p>
-          )}
-        </>
-      )}
+                {quizPassed && (
+                  <Button size="lg" variant="success" onClick={handleFinishDay} disabled={isFinishing || !canFinish}>
+                    {isFinishing ? <Loader2 className="animate-spin" /> : <>Yakunlash <CheckCircle2 /></>}
+                  </Button>
+                )}
+              </div>
+              {!canFinish && quizPassed && packSavedCount < requiredCount && (
+                <p className="mt-2 text-center text-xs font-medium text-muted-foreground">
+                  Yakunlash uchun yana {requiredCount - packSavedCount} ta so&apos;z saqlang
+                </p>
+              )}
+            </div>
+          </motion.div>
+        )}
 
-      {step === 'quiz' && quiz && (
-        <div className="bg-card border rounded-3xl p-6">
-          <TopicQuiz
-            quiz={quiz}
-            submitQuiz={submitQuiz}
-            isSubmitting={isSubmittingQuiz}
-            onPass={(res) => {
-              track(EVENTS.TOPIC_QUIZ_PASSED, { day: topicData?.day, score: res?.score });
-              setStep('learn');
-            }}
-            onBack={() => setStep('learn')}
-          />
-        </div>
-      )}
-
-      {topicData.backlogCount > 0 && step === 'intro' && (
-        <button
-          type="button"
-          className="w-full text-center text-xs text-muted-foreground mt-4"
-          onClick={() => setShowBacklog(!showBacklog)}
-        >
-          Qarzdorlik: {topicData.backlogCount} so'z {showBacklog ? '▲' : '▼'}
-        </button>
-      )}
+        {step === 'quiz' && quiz && (
+          <motion.section
+            key="quiz"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -12 }}
+            transition={{ duration: 0.35, ease: EASE }}
+            className="surface mx-auto max-w-xl p-5 sm:p-8"
+          >
+            <TopicQuiz
+              quiz={quiz}
+              submitQuiz={submitQuiz}
+              isSubmitting={isSubmittingQuiz}
+              onPass={(res) => {
+                track(EVENTS.TOPIC_QUIZ_PASSED, { day: topicData?.day, score: res?.score });
+                setStep('learn');
+              }}
+              onBack={() => setStep('learn')}
+            />
+          </motion.section>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

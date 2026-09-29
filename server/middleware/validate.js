@@ -52,20 +52,16 @@ const reviewCheckSchema = z.object({
   params: z.object({ id: objectId }),
   body: z.object({
     sentence: z.string().min(1).max(1000),
+    /** Gap klaviaturadan yozildimi yoki mikrofonga aytildimi — analitika uchun */
+    source: z.enum(['text', 'voice']).optional(),
   }),
 });
 
-/** 4 darajali baholash; eski mijozlar uchun `known` ham qabul qilinadi */
-const reviewGradeSchema = z.object({
-  params: z.object({ id: objectId }),
-  body: z
-    .object({
-      grade: z.number().int().min(0).max(3).optional(),
-      known: z.boolean().optional(),
-    })
-    .refine((b) => b.grade !== undefined || b.known !== undefined, {
-      message: 'grade (0-3) yoki known (boolean) kerak',
-    }),
+/** Gap tahlili: ega, kesim va so'z turkumlarini tushuntirish */
+const sentenceAnalyzeSchema = z.object({
+  body: z.object({
+    sentence: z.string().min(1).max(400),
+  }),
 });
 
 /** Mini-test: server yaratgan sessiyaga javoblarni yuborish */
@@ -154,12 +150,6 @@ const speakingEvaluateSchema = z.object({
   }),
 });
 
-const syncQuestSchema = z.object({
-  body: z.object({
-    type: z.enum(['review', 'topic', 'immersion']),
-  }),
-});
-
 const forgotPasswordSchema = z.object({
   body: z.object({
     email: z.string().email(),
@@ -187,22 +177,6 @@ const onboardSchema = z.object({
   }),
 });
 
-const roleplaySchema = z.object({
-  body: z.object({
-    scenario: z.string().min(1).max(200),
-    message: z.string().min(1).max(2000),
-    targetWords: z.array(z.string()).optional(),
-    chatHistory: z
-      .array(
-        z.object({
-          role: z.enum(['user', 'ai']),
-          content: z.string(),
-        })
-      )
-      .optional(),
-  }),
-});
-
 const speakingTranslateSchema = z.object({
   body: z.object({
     text: z.string().min(1).max(2000),
@@ -215,36 +189,6 @@ const checkoutSchema = z.object({
   }),
 });
 
-const practicePromptSchema = z.object({
-  body: z.object({
-    wordIds: z.array(z.string().min(1)).min(1).max(6),
-    bucketLabel: z.string().min(2).max(120).optional(),
-  }),
-});
-
-const practiceCheckSchema = z.object({
-  body: z.object({
-    wordIds: z.array(z.string().min(1)).min(1).max(6),
-    sentence: z.string().min(3).max(800),
-  }),
-});
-
-const teacherAskSchema = z.object({
-  body: z.object({
-    question: z.string().min(2).max(2000),
-    category: z.enum(['grammar', 'vocabulary', 'phrase', 'general']).optional(),
-    chatHistory: z
-      .array(
-        z.object({
-          role: z.enum(['user', 'ai']),
-          content: z.string().max(5000),
-        })
-      )
-      .max(20)
-      .optional(),
-  }),
-});
-
 module.exports = {
   validate,
   objectId,
@@ -252,7 +196,7 @@ module.exports = {
   authLoginSchema,
   wordCreateSchema,
   reviewCheckSchema,
-  reviewGradeSchema,
+  sentenceAnalyzeSchema,
   topicQuizSubmitSchema,
   topicFinishSchema,
   challengeCompleteSchema,
@@ -266,12 +210,7 @@ module.exports = {
   timezoneSchema,
   forgotPasswordSchema,
   resetPasswordSchema,
-  syncQuestSchema,
   onboardSchema,
-  roleplaySchema,
   speakingTranslateSchema,
   checkoutSchema,
-  teacherAskSchema,
-  practicePromptSchema,
-  practiceCheckSchema,
 };

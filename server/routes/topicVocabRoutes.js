@@ -11,7 +11,7 @@ const { validate, topicQuizSubmitSchema, topicFinishSchema } = require('../middl
 const { topicsCache } = require('../utils/cache');
 const { getSavedWordList, invalidateUserWords } = require('../utils/userWordsCache');
 const { userDayKey } = require('../utils/dayKey');
-const { enrichUserProfile, rollDailyQuests } = require('../utils/gamification');
+const { enrichUserProfile, completeDailyStep, dailyStepMessage } = require('../utils/gamification');
 const {
   getDailyWordTarget,
   resolveTopicDay,
@@ -314,31 +314,26 @@ router.post('/finish', protect, validate(topicFinishSchema), async (req, res) =>
       }
     }
 
-    rollDailyQuests(req.user, ctx.todayKey);
-
-    // Bugungi so'zlarni takrorlash navbatiga qo'yish.
-    // Ilgari bu har so'z uchun alohida `updateOne` + indekslanmagan RegExp edi (N ta so'rov).
-    // Endi bitta `updateMany` + indekslangan `wordKey`.
+    // Bugungi so'zlardan faqat YANGILARI (hali takrorlanmagan) navbatga qo'yiladi.
+    //
+    // Ilgari bu yerda mos kelgan HAR QANDAY so'z eski maydonlar bo'yicha
+    // nollanardi (`reviewStage: 0`, `mastered: false`), lekin hozirgi `stage`
+    // va `learned` tegilmasdi. Natija: allaqachon 5-bosqichdagi yoki yodlangan
+    // so'z o'ziga zid holatga tushardi (`learned: true`, `mastered: false`).
     const keys = dailyWords.map((w) => w.word.trim().toLowerCase());
     if (keys.length) {
       await Word.updateMany(
-        { user: req.user._id, wordKey: { $in: keys } },
         {
-          $set: {
-            nextReviewDate: getTopicReviewDate(),
-            mastered: false,
-            reviewStage: 0,
-            repetitions: 0,
-            intervalDays: 0,
-          },
-        }
+          user: req.user._id,
+          wordKey: { $in: keys },
+          learned: { $ne: true },
+          $or: [{ stage: 0 }, { stage: null }, { stage: { $exists: false } }],
+        },
+        { $set: { nextReviewDate: getTopicReviewDate() } }
       );
     }
 
-    if (!req.user.dailyQuests.topicCompleted) {
-      req.user.xp += 15;
-    }
-    req.user.dailyQuests.topicCompleted = true;
+    const step = completeDailyStep(req.user, 'topic', ctx.todayKey);
 
     if (!ctx.isCompleteForToday) {
       ctx.progress.history.push({ day: ctx.progress.currentDay, completedAt: new Date() });
@@ -354,9 +349,13 @@ router.post('/finish', protect, validate(topicFinishSchema), async (req, res) =>
     });
 
     res.json({
-      message: 'Kunlik sahna bajarildi!',
+      message: dailyStepMessage(step) || 'Kunlik sahna bajarildi!',
       user: profile,
       topicCompleted: true,
+      xpAwarded: step.xpAwarded,
+      streakUpdated: step.streakUpdated,
+      streakFrozen: step.streakFrozen,
+      planCompleted: step.planCompleted,
     });
   } catch (error) {
     console.error('Topic finish error:', error);

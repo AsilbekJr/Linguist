@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { AnimatePresence, motion } from 'motion/react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Loader2, Plus, AlertTriangle } from "lucide-react";
+import { Loader2, Plus, AlertTriangle, Sparkles, CornerDownLeft } from "lucide-react";
+import { suggestWords, preloadWordlist } from '@/utils/wordSuggest';
 
-const WordForm = ({ onAddWord }) => {
+const WordForm = ({ onAddWord, existingWords = [] }) => {
   const [word, setWord] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -13,6 +15,74 @@ const WordForm = ({ onAddWord }) => {
   const [manualExample, setManualExample] = useState('');
   const [manualTranslation, setManualTranslation] = useState('');
 
+  // ─── Yozayotganda chiqadigan takliflar ────────────────────────────────────
+  //
+  // Yuqoridagi `suggestions` — bu boshqa narsa: u serverdan "shuni nazarda
+  // tutdingizmi?" javobi bilan keladi va faqat xatodan keyin ko'rinadi.
+  const [completions, setCompletions] = useState([]);
+  const [activeIndex, setActiveIndex] = useState(-1);
+  const [focused, setFocused] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
+  const inputRef = useRef(null);
+  /** Sekin kelgan eski javob yangisini bosib ketmasligi uchun */
+  const requestRef = useRef(0);
+
+  // Foydalanuvchida allaqachon bor so'zlarni taklif qilmaymiz — bosilsa
+  // serverdan DUPLICATE xatosi kelardi
+  const excludeSet = useMemo(
+    () => new Set(existingWords.map((w) => String(w?.word ?? w).toLowerCase())),
+    [existingWords]
+  );
+
+  useEffect(() => {
+    const query = word.trim();
+    if (!query) {
+      setCompletions([]);
+      setActiveIndex(-1);
+      return;
+    }
+
+    const token = ++requestRef.current;
+    suggestWords(query, { exclude: excludeSet }).then((list) => {
+      if (token !== requestRef.current) return; // eskirgan javob
+      setCompletions(list);
+      setActiveIndex(-1);
+    });
+  }, [word, excludeSet]);
+
+  const listOpen = focused && !dismissed && !loading && !error && completions.length > 0;
+
+  const pickCompletion = (value) => {
+    // Ataylab yuborilmaydi: so'z maydonga qo'yiladi, qo'shishni foydalanuvchi
+    // o'zi tasdiqlaydi. Tasodifiy bosish keraksiz so'zni SRS navbatiga
+    // tushirib yubormasligi kerak.
+    setWord(value);
+    setDismissed(true);
+    setActiveIndex(-1);
+    inputRef.current?.focus();
+  };
+
+  const handleKeyDown = (e) => {
+    if (!listOpen) return;
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setActiveIndex((i) => (i + 1) % completions.length);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setActiveIndex((i) => (i <= 0 ? completions.length - 1 : i - 1));
+    } else if (e.key === 'Enter' && activeIndex >= 0) {
+      e.preventDefault();
+      pickCompletion(completions[activeIndex]);
+    } else if (e.key === 'Escape') {
+      // stopPropagation MUHIM: WordForm modal ichida turadi va Escape
+      // to'xtatilmasa Radix Dialog butun oynani yopib yuborardi
+      e.preventDefault();
+      e.stopPropagation();
+      setDismissed(true);
+    }
+  };
+
   const handleSubmit = async (e, skipAI = false) => {
     if (e) e.preventDefault();
     if (!word.trim()) return;
@@ -21,6 +91,7 @@ const WordForm = ({ onAddWord }) => {
     setError(null);
     setSuggestions([]);
     setShowForceSave(false);
+    setDismissed(true);
 
     try {
       await onAddWord(word, skipAI, { manualDefinition, manualExample, manualTranslation });
@@ -35,11 +106,14 @@ const WordForm = ({ onAddWord }) => {
           setSuggestions(err.suggestions || []);
       } else if (err.type === 'DUPLICATE') {
           setError(err.message);
-      } else if (err.type === 'QUOTA_EXCEEDED') {
+      } else if (err.type === 'QUOTA_EXCEEDED' || err.type === 'ENRICHMENT_FAILED') {
+          // Lug'at xizmatiga ulanib bo'lmadi. So'z SAQLANMADI — aks holda u
+          // ta'rifsiz kartochka bo'lib SRS navbatiga tushib qolardi. Shu yerda
+          // qo'lda ta'rif kiritish imkonini beramiz.
           setError(err.message);
           setShowForceSave(true);
       } else {
-          setError("Something went wrong. Please try again.");
+          setError(err.message || "Nimadir noto'g'ri ketdi. Qayta urinib ko'ring.");
       }
     } finally {
       setLoading(false);
@@ -54,117 +128,180 @@ const WordForm = ({ onAddWord }) => {
   };
 
   return (
-    <div className="w-full max-w-2xl mx-auto mb-12 px-4 md:px-0">
-        <form onSubmit={(e) => handleSubmit(e, false)} className="relative w-full">
-        <div className="relative flex items-center gap-2">
-            <Input
-              type="text"
-              value={word}
-              onChange={(e) => {
-                  setWord(e.target.value);
-                  setError(null);
-                  setShowForceSave(false);
-              }}
-              placeholder="Type a word to add to your ecosystem..."
-              className={`bg-background/50 backdrop-blur-sm text-base md:text-lg h-12 md:h-14 pl-6 pr-32 rounded-full border-border focus-visible:ring-primary/20 transition-all placeholder:text-muted-foreground placeholder:text-sm md:placeholder:text-base shadow-lg ${error ? 'border-destructive ring-destructive/20' : ''}`}
-              disabled={loading}
-            />
-            <Button
-              type="submit"
-              disabled={loading || !word.trim()}
-              size="lg"
-              className="absolute right-1 top-1 bottom-1 rounded-full px-6 bg-primary hover:bg-primary/90 text-white font-medium transition-all disabled:opacity-50"
-            >
+    <form onSubmit={(e) => handleSubmit(e, false)} className="relative w-full space-y-3">
+      <label htmlFor="new-word" className="sr-only">Inglizcha so&apos;z</label>
+      <div className="relative">
+        <div
+          className={`flex items-center gap-1.5 rounded-2xl border bg-card p-1.5 shadow-xs transition-[border-color,box-shadow] focus-within:ring-4 ${
+            error
+              ? 'border-destructive focus-within:ring-destructive/15'
+              : 'border-input focus-within:border-primary focus-within:ring-primary/15'
+          }`}
+        >
+          <Input
+            id="new-word"
+            ref={inputRef}
+            type="text"
+            value={word}
+            onChange={(e) => {
+                setWord(e.target.value);
+                setError(null);
+                setShowForceSave(false);
+                setDismissed(false);
+            }}
+            onFocus={() => {
+                setFocused(true);
+                // Ro'yxat chunk'ini oldindan yuklaymiz — birinchi harf
+                // yozilgunicha u tayyor bo'ladi
+                preloadWordlist();
+            }}
+            onBlur={() => setFocused(false)}
+            onKeyDown={handleKeyDown}
+            placeholder="masalan: journey"
+            className="h-11 flex-1 border-0 bg-transparent px-3 text-lg shadow-none hover:border-0 focus-visible:ring-0"
+            disabled={loading}
+            autoComplete="off"
+            autoCapitalize="none"
+            spellCheck="false"
+            autoFocus
+            role="combobox"
+            aria-expanded={listOpen}
+            aria-controls="word-completions"
+            aria-autocomplete="list"
+            aria-invalid={Boolean(error)}
+            aria-activedescendant={activeIndex >= 0 ? `word-completion-${activeIndex}` : undefined}
+          />
+          <Button type="submit" disabled={loading || !word.trim()} className="shrink-0 rounded-xl">
             {loading ? (
-                <span className="flex items-center gap-2">
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    Stats
-                </span>
+              <>
+                <Loader2 className="animate-spin" /> Qidirilmoqda
+              </>
             ) : (
-                <span className="flex items-center gap-2">
-                    <Plus className="w-5 h-5" />
-                    Add
-                </span>
+              <>
+                <Plus /> Qo&apos;shish
+              </>
             )}
-            </Button>
+          </Button>
         </div>
-        
+
+        <AnimatePresence>
+          {listOpen && (
+            <motion.ul
+              initial={{ opacity: 0, y: -4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4 }}
+              transition={{ duration: 0.15 }}
+              id="word-completions"
+              role="listbox"
+              aria-label="So'z takliflari"
+              // max-h to'liq 8 ta element sig'adigan qilib tanlangan
+              className="absolute inset-x-0 top-full z-50 mt-2 max-h-[21rem] overflow-y-auto rounded-2xl border border-border bg-popover p-1.5 shadow-xl"
+            >
+              {completions.map((item, i) => (
+                <li
+                  key={item}
+                  id={`word-completion-${i}`}
+                  role="option"
+                  aria-selected={i === activeIndex}
+                  // onMouseDown + preventDefault: aks holda input avval
+                  // blur bo'lib ro'yxat yopilardi va onClick hech qachon
+                  // ishlamasdi
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => pickCompletion(item)}
+                  onMouseEnter={() => setActiveIndex(i)}
+                  className={`flex cursor-pointer items-center justify-between rounded-xl px-3 py-2 text-base transition-colors ${
+                    i === activeIndex ? 'bg-primary/10 text-primary' : 'text-foreground hover:bg-accent'
+                  }`}
+                >
+                  <span>
+                    <span className="font-bold">{item.slice(0, word.trim().length)}</span>
+                    {item.slice(word.trim().length)}
+                  </span>
+                  {i === activeIndex && <CornerDownLeft className="size-4 opacity-60" />}
+                </li>
+              ))}
+            </motion.ul>
+          )}
+        </AnimatePresence>
+      </div>
+
+      <AnimatePresence initial={false}>
         {error && (
-            <div className="mt-4 p-4 bg-destructive/10 border border-destructive/30 rounded-xl animate-accordion-down">
-                <p className="text-destructive flex items-center gap-2 text-sm font-medium">
-                    <AlertTriangle className="w-4 h-4" /> {error}
-                </p>
-                
-                {showForceSave && (
-                    <div className="mt-4 flex flex-col gap-3">
-                         <p className="text-muted-foreground text-xs font-medium">Add details manually to save without AI:</p>
-                         <Input
-                            type="text"
-                            value={manualDefinition}
-                            onChange={(e) => setManualDefinition(e.target.value)}
-                            placeholder="Definition (e.g., A sweet fruit)"
-                            className="bg-background"
-                            disabled={loading}
-                         />
-                         <Input
-                            type="text"
-                            value={manualExample}
-                            onChange={(e) => setManualExample(e.target.value)}
-                            placeholder="Example sentence (e.g., I ate an apple)"
-                            className="bg-background"
-                            disabled={loading}
-                         />
-                         <Input
-                            type="text"
-                            value={manualTranslation}
-                            onChange={(e) => setManualTranslation(e.target.value)}
-                            placeholder="Translation (e.g., Olma)"
-                            className="bg-background"
-                            disabled={loading}
-                         />
-                         <Button 
-                            type="button"
-                            variant="primary"
-                            size="sm"
-                            disabled={!manualDefinition.trim()}
-                            onClick={() => handleSubmit(null, true)}
-                            className="w-full mt-2"
-                         >
-                             Save Manually
-                         </Button>
-                    </div>
-                )}
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="overflow-hidden"
+          >
+            <div className="space-y-3 rounded-2xl border border-destructive/30 bg-destructive/8 p-4" role="alert">
+              <p className="flex items-start gap-2 text-sm font-medium text-destructive">
+                <AlertTriangle className="mt-0.5 size-4 shrink-0" /> {error}
+              </p>
 
-                {suggestions.length > 0 && (
-                    <div className="mt-3">
-                        <p className="text-xs text-muted-foreground mb-2">Did you mean:</p>
-                        <div className="flex flex-wrap gap-2">
-                            {suggestions.map((s, i) => (
-                                <Button
-                                    key={i}
-                                    type="button"
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => handleSuggestionClick(s)}
-                                    className="h-7 text-xs border-primary/20 text-primary hover:bg-primary/10"
-                                >
-                                    {s}
-                                </Button>
-                            ))}
-                        </div>
-                    </div>
-                )}
+              {showForceSave && (
+                <div className="space-y-2.5">
+                  <p className="text-xs font-medium text-muted-foreground">
+                    Ma&apos;lumotni o&apos;zingiz kiritib saqlashingiz mumkin:
+                  </p>
+                  <Input
+                    type="text"
+                    value={manualDefinition}
+                    onChange={(e) => setManualDefinition(e.target.value)}
+                    placeholder="Ta'rif (majburiy) — masalan: a long trip"
+                    aria-label="Ta'rif"
+                    disabled={loading}
+                  />
+                  <Input
+                    type="text"
+                    value={manualTranslation}
+                    onChange={(e) => setManualTranslation(e.target.value)}
+                    placeholder="Tarjima — masalan: sayohat"
+                    aria-label="Tarjima"
+                    disabled={loading}
+                  />
+                  <Input
+                    type="text"
+                    value={manualExample}
+                    onChange={(e) => setManualExample(e.target.value)}
+                    placeholder="Misol gap — masalan: The journey took two days."
+                    aria-label="Misol gap"
+                    disabled={loading}
+                  />
+                  <Button
+                    type="button"
+                    disabled={!manualDefinition.trim() || loading}
+                    onClick={() => handleSubmit(null, true)}
+                    className="w-full"
+                  >
+                    Qo&apos;lda saqlash
+                  </Button>
+                </div>
+              )}
+
+              {suggestions.length > 0 && (
+                <div>
+                  <p className="mb-2 text-xs text-muted-foreground">Shuni nazarda tutdingizmi?</p>
+                  <div className="flex flex-wrap gap-2">
+                    {suggestions.map((s) => (
+                      <Button key={s} type="button" variant="soft" size="sm" onClick={() => handleSuggestionClick(s)}>
+                        {s}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
+          </motion.div>
         )}
+      </AnimatePresence>
 
-        {!error && (
-            <p className="text-center text-muted-foreground text-xs mt-3 flex items-center justify-center gap-1">
-                <span className="w-1 h-1 bg-primary rounded-full"></span>
-                Enter a word, and AI will generate context, stories, and connections.
-            </p>
-        )}
-        </form>
-    </div>
+      {!error && (
+        <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <Sparkles className="size-3.5 text-primary" />
+          Harf yozishingiz bilan takliflar chiqadi — tanlash uchun ↑ ↓ va Enter
+        </p>
+      )}
+    </form>
   );
 };
 
