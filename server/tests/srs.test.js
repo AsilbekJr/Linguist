@@ -2,122 +2,177 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 
 const {
-  GRADE,
-  MIN_EASE,
-  DEFAULT_EASE,
+  STAGE_INTERVALS,
+  MAX_STAGE,
+  RELEARN_STAGE,
+  readStage,
   schedule,
   applySchedule,
-  gradeFromBoolean,
-  isValidGrade,
-  migrateLegacyState,
+  restartLearning,
+  initialState,
+  stageInterval,
 } = require('../utils/srs');
 
-const NOW = new Date('2026-06-01T10:00:00Z');
-const newWord = (over = {}) => ({
-  easeFactor: DEFAULT_EASE,
-  intervalDays: 0,
-  repetitions: 0,
-  lapses: 0,
-  ...over,
+const { dayKey, daysBetween } = require('../utils/dayKey');
+
+/**
+ * nextReviewDate FOYDALANUVCHI zonasidagi yarim tunga to'g'rilanadi. Kalendar
+ * kunlari aniq zonada solishtiriladi — test mashinaning mahalliy vaqtiga
+ * bog'liq bo'lmasligi kerak (CI odatda UTC'da ishlaydi).
+ */
+const TZ = 'Asia/Tashkent';
+const calendarDaysBetween = (later, earlier, tz = TZ) =>
+  daysBetween(dayKey(earlier, tz), dayKey(later, tz));
+
+// ─── Bosqichlar jadvali ──────────────────────────────────────────────────────
+
+test('7 bosqich va ularning intervallari', () => {
+  assert.equal(MAX_STAGE, 7);
+  assert.deepEqual(STAGE_INTERVALS.slice(1), [1, 2, 4, 7, 14, 30, 60]);
+  assert.equal(stageInterval(1), 1);
+  assert.equal(stageInterval(4), 7);
+  assert.equal(stageInterval(7), 60);
 });
 
-test('yangi so\'z: GOOD → 1 kun', () => {
-  const next = schedule(newWord(), GRADE.GOOD, NOW);
+test('to\'g\'ri javob bosqichni bittaga oshiradi', () => {
+  const now = new Date('2026-01-01T10:00:00Z');
+  let word = { stage: 0 };
+
+  for (const expected of [1, 2, 3, 4, 5, 6]) {
+    const next = schedule(word, true, now);
+    assert.equal(next.stage, expected);
+    assert.equal(next.learned, false);
+    word = { stage: next.stage };
+  }
+});
+
+test('7-chi to\'g\'ri takrorlash so\'zni yodlangan qiladi (8-chi emas)', () => {
+  let word = { stage: 0 };
+  for (let i = 1; i <= 6; i++) {
+    const next = schedule(word, true);
+    assert.equal(next.learned, false, `${i}-takrorlashda hali yodlanmagan`);
+    word = { stage: next.stage };
+  }
+  const seventh = schedule(word, true);
+  assert.equal(seventh.learned, true, '7-takrorlash → yodlangan');
+});
+
+test('interval bosqichga mos kun beradi', () => {
+  const now = new Date('2026-01-01T10:00:00Z');
+  // Qisqa intervallarda fuzz qo'llanmaydi — aniq solishtirish mumkin
+  assert.equal(schedule({ stage: 0 }, true, now).intervalDays, 1);
+  assert.equal(schedule({ stage: 1 }, true, now).intervalDays, 2);
+  assert.equal(schedule({ stage: 2 }, true, now).intervalDays, 4);
+});
+
+test('uzun intervallarda ±5% fuzz qo\'llanadi, lekin chegaradan chiqmaydi', () => {
+  const now = new Date('2026-01-01T10:00:00Z');
+  // 6-bosqich → 30 kun ±5% (28..32)
+  for (let i = 0; i < 40; i++) {
+    const d = schedule({ stage: 5 }, true, now).intervalDays;
+    assert.ok(d >= 28 && d <= 32, `30 kun atrofida bo'lishi kerak, keldi: ${d}`);
+  }
+});
+
+test('nextReviewDate intervalga mos va yarim tunga to\'g\'rilangan', () => {
+  const now = new Date('2026-01-01T10:00:00Z');
+  const next = schedule({ stage: 0 }, true, now, TZ);
+  assert.equal(calendarDaysBetween(next.nextReviewDate, now), 1);
+  // Toshkent yarim tuni = 19:00 UTC oldingi kun (server UTC'da bo'lsa ham)
+  assert.equal(next.nextReviewDate.toISOString(), '2026-01-01T19:00:00.000Z');
+});
+
+test("nextReviewDate foydalanuvchi zonasiga bog'liq, server zonasiga emas", () => {
+  // Toshkentda allaqachon 2-yanvar (00:30), UTC'da hali 1-yanvar
+  const now = new Date('2026-01-01T19:30:00Z');
+  const tashkent = schedule({ stage: 0 }, true, now, 'Asia/Tashkent');
+  assert.equal(tashkent.nextReviewDate.toISOString(), '2026-01-02T19:00:00.000Z');
+
+  const newYork = schedule({ stage: 0 }, true, now, 'America/New_York');
+  assert.equal(newYork.nextReviewDate.toISOString(), '2026-01-02T05:00:00.000Z');
+});
+
+// ─── Xato ────────────────────────────────────────────────────────────────────
+
+test('xato javob bosqichni 1 ga qaytaradi (bir pog\'ona emas)', () => {
+  // Bir pog'ona pastga tushirish yetarli emas: 6-bosqichdan 5-ga tushgan so'z
+  // baribir 14 kundan keyin qaytardi va ikkinchi marta ham unutilardi.
+  const next = schedule({ stage: 6, lapses: 0 }, false);
+  assert.equal(next.stage, 1);
   assert.equal(next.intervalDays, 1);
-  assert.equal(next.repetitions, 1);
-  assert.equal(next.lapses, 0);
-});
-
-test('ikkinchi GOOD → 3 kun, keyingilari ease bilan ko\'payadi', () => {
-  const second = schedule(newWord({ intervalDays: 1, repetitions: 1 }), GRADE.GOOD, NOW);
-  assert.equal(second.intervalDays, 3);
-
-  const third = schedule(newWord({ intervalDays: 3, repetitions: 2 }), GRADE.GOOD, NOW);
-  // 3 * 2.5 = 7.5 → 8, ±5% fuzz
-  assert.ok(third.intervalDays >= 7 && third.intervalDays <= 9, `kutilmagan: ${third.intervalDays}`);
-});
-
-test('AGAIN intervalni qayta boshlaydi va lapse hisoblaydi — eski kodda faqat -1 pog\'ona edi', () => {
-  const mature = newWord({ intervalDays: 60, repetitions: 5, easeFactor: 2.5 });
-  const next = schedule(mature, GRADE.AGAIN, NOW);
-
-  assert.equal(next.repetitions, 0, 'takrorlashlar nolga tushishi kerak');
-  assert.equal(next.intervalDays, 0, 'shu sessiyada qaytishi kerak');
-  assert.equal(next.lapses, 1);
-  assert.ok(next.easeFactor < 2.5, 'ease jazolanishi kerak');
   assert.equal(next.isLapse, true);
+  assert.equal(next.lapses, 1);
 });
 
-test('AGAIN → so\'z 10 daqiqada qaytadi, ertaga emas', () => {
-  const next = schedule(newWord({ intervalDays: 10, repetitions: 3 }), GRADE.AGAIN, NOW);
-  const diffMin = (next.nextReviewDate - NOW) / 60000;
-  assert.ok(diffMin > 0 && diffMin <= 15, `kutilmagan: ${diffMin} daqiqa`);
+test('lapses to\'planib boradi', () => {
+  assert.equal(schedule({ stage: 3, lapses: 2 }, false).lapses, 3);
 });
 
-test('ease MIN_EASE dan pastga tushmaydi', () => {
-  let word = newWord({ easeFactor: 1.35, intervalDays: 5, repetitions: 2 });
-  for (let i = 0; i < 10; i++) {
-    const next = schedule(word, GRADE.AGAIN, NOW);
-    word = { ...word, ...next };
-  }
-  assert.ok(word.easeFactor >= MIN_EASE, `ease ${word.easeFactor} < ${MIN_EASE}`);
+// ─── Yodlangan holat ─────────────────────────────────────────────────────────
+
+test('7-bosqichdan o\'tgan so\'z yodlangan bo\'ladi va navbatdan chiqadi', () => {
+  const next = schedule({ stage: MAX_STAGE }, true);
+  assert.equal(next.learned, true);
+  assert.equal(next.nextReviewDate, null, 'navbatga tushmasligi uchun null');
+  assert.equal(next.stage, MAX_STAGE);
 });
 
-test('HARD intervalni sekin oshiradi, EASY tez', () => {
-  const base = newWord({ intervalDays: 10, repetitions: 3 });
-  const hard = schedule(base, GRADE.HARD, NOW);
-  const good = schedule(base, GRADE.GOOD, NOW);
-  const easy = schedule(base, GRADE.EASY, NOW);
+test('applySchedule hujjatga yodlangan holatni yozadi', () => {
+  const doc = { stage: MAX_STAGE };
+  const next = applySchedule(doc, true);
 
-  assert.ok(hard.intervalDays < good.intervalDays, 'HARD < GOOD');
-  assert.ok(good.intervalDays < easy.intervalDays, 'GOOD < EASY');
-  assert.ok(hard.easeFactor < base.easeFactor, 'HARD ease pasaytiradi');
-  assert.ok(easy.easeFactor > base.easeFactor, 'EASY ease oshiradi');
+  assert.equal(doc.learned, true);
+  assert.ok(doc.learnedAt instanceof Date);
+  assert.equal(doc.nextReviewDate, null);
+  // Eski maydonlar sinxron yuritiladi — mavjud mijozlar buzilmasin
+  assert.equal(doc.mastered, true);
+  assert.equal(doc.reviewStage, MAX_STAGE);
+  assert.equal(next.learned, true);
 });
 
-test('interval 365 kundan oshmaydi', () => {
-  const veryMature = newWord({ intervalDays: 300, repetitions: 12, easeFactor: 3.0 });
-  const next = schedule(veryMature, GRADE.EASY, NOW);
-  assert.ok(next.intervalDays <= 365, `kutilmagan: ${next.intervalDays}`);
+test('yodlangan so\'z xato javobdan keyin qayta o\'rganishga tushadi', () => {
+  const doc = { stage: MAX_STAGE, learned: true, learnedAt: new Date() };
+  applySchedule(doc, false);
+  assert.equal(doc.learned, false);
+  assert.equal(doc.learnedAt, null);
+  assert.equal(doc.stage, 1);
 });
 
-test('so\'z hech qachon takrorlashdan butunlay chiqmaydi', () => {
-  // Eski kodda 5 ta to'g'ri javobdan keyin nextReviewDate = null bo'lib,
-  // so'z abadiy yo'qolardi. Endi har doim sana bo'lishi kerak.
-  let word = newWord();
-  for (let i = 0; i < 12; i++) {
-    const next = schedule(word, GRADE.EASY, NOW);
-    assert.ok(next.nextReviewDate instanceof Date, `${i}-takrorlashda sana yo'q`);
-    assert.ok(Number.isFinite(next.nextReviewDate.getTime()), 'sana yaroqsiz');
-    word = { ...word, ...next };
-  }
+test('restartLearning o\'rtadagi 4-bosqichdan boshlaydi', () => {
+  // Bir marta yodlangan so'zni yangi so'z kabi 1 kundan boshlash
+  // keraksiz takrorlash bo'lardi
+  const doc = { stage: MAX_STAGE, learned: true, learnedAt: new Date() };
+  const next = restartLearning(doc);
+
+  assert.equal(next.stage, RELEARN_STAGE);
+  assert.equal(RELEARN_STAGE, 4);
+  assert.equal(next.intervalDays, 7);
+  assert.equal(doc.learned, false);
+  assert.equal(doc.learnedAt, null);
+  assert.equal(doc.mastered, false);
 });
 
-test('applySchedule hujjatni yangilaydi va mastered faqat yorliq bo\'ladi', () => {
-  const doc = newWord({ intervalDays: 200, repetitions: 8 });
-  applySchedule(doc, GRADE.GOOD, NOW);
+// ─── Migratsiya ──────────────────────────────────────────────────────────────
 
-  assert.ok(doc.mastered === true, '180+ kun → mastered yorlig\'i');
-  assert.ok(doc.nextReviewDate instanceof Date, 'mastered bo\'lsa ham sana saqlanadi');
-  assert.equal(doc.lastReviewedAt, NOW);
-  assert.equal(doc.reviewStage, doc.repetitions);
+test('eski hujjatlar SM-2 maydonlaridan bosqichga ko\'chadi', () => {
+  // `stage` yo'q — bu SM-2 davridagi hujjat
+  assert.equal(readStage({ repetitions: 3 }), 3);
+  assert.equal(readStage({ reviewStage: 5 }), 5);
+  assert.equal(readStage({}), 0);
+  // Chegaradan oshgan qiymat qisiladi
+  assert.equal(readStage({ repetitions: 99 }), MAX_STAGE);
+  assert.equal(readStage({ repetitions: -4 }), 0);
 });
 
-test('eski reviewStage SM-2 holatiga to\'g\'ri ko\'chadi', () => {
-  assert.equal(migrateLegacyState({ reviewStage: 0 }).intervalDays, 0);
-  assert.equal(migrateLegacyState({ reviewStage: 3 }).intervalDays, 7);
-  assert.equal(migrateLegacyState({ reviewStage: 5 }).intervalDays, 30);
-  // chegaradan tashqari qiymat ham xavfsiz
-  assert.ok(Number.isFinite(migrateLegacyState({ reviewStage: 99 }).intervalDays));
-  assert.ok(Number.isFinite(migrateLegacyState({}).intervalDays));
+test('stage mavjud bo\'lsa eski maydonlar e\'tiborga olinmaydi', () => {
+  assert.equal(readStage({ stage: 2, repetitions: 6 }), 2);
 });
 
-test('binary → 4 darajali shkala', () => {
-  assert.equal(gradeFromBoolean(true), GRADE.GOOD);
-  assert.equal(gradeFromBoolean(false), GRADE.AGAIN);
-  assert.equal(isValidGrade(0), true);
-  assert.equal(isValidGrade(3), true);
-  assert.equal(isValidGrade(4), false);
-  assert.equal(isValidGrade('2'), false);
-  assert.equal(isValidGrade(undefined), false);
+test('initialState yangi so\'zni bugun navbatga qo\'yadi', () => {
+  const now = new Date('2026-01-01T10:00:00Z');
+  const s = initialState(now);
+  assert.equal(s.stage, 0);
+  assert.equal(s.learned, false);
+  assert.equal(s.lapses, 0);
+  assert.equal(s.nextReviewDate, now);
 });

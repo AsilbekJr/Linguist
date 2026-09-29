@@ -12,7 +12,7 @@ const makeUser = (over = {}) => ({
   onboarding: { completed: true },
   currentStreak: 0,
   lastStreakDay: '2026-06-09',
-  dailyQuests: { date: '2026-06-10', reviewCompleted: false, topicCompleted: false, immersionCompleted: false },
+  dailyQuests: { date: '2026-06-10', reviewCompleted: false, topicCompleted: false },
   notifications: { email: { enabled: true, hour: 19, lastSentDay: '' } },
   streakFreeze: { available: 2 },
   ...over,
@@ -51,7 +51,6 @@ test("kunlik reja tugagan bo'lsa yuborilmaydi", () => {
       date: '2026-06-10',
       reviewCompleted: true,
       topicCompleted: true,
-      immersionCompleted: true,
     },
   });
   const res = shouldSendReminder(user, AT_19_TASHKENT);
@@ -147,10 +146,9 @@ test('qolgan qadamlar aniq sanab o\'tiladi', () => {
         date: '2026-06-10',
         topicCompleted: true,
         reviewCompleted: false,
-        immersionCompleted: false,
       },
     })
   );
-  assert.deepEqual(content.remaining, ['Takrorlash', 'Amaliyot']);
+  assert.deepEqual(content.remaining, ['Takrorlash']);
   assert.ok(!content.stepsLine.includes('Kunlik sahna'), 'bajarilgan qadam sanalmasligi kerak');
 });

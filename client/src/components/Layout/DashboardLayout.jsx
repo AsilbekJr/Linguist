@@ -1,108 +1,83 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Outlet, NavLink } from 'react-router-dom';
-import { useSelector, useDispatch } from 'react-redux';
-import { performLogout } from '../../utils/authHelpers';
-import { ThemeToggle } from '../ThemeToggle';
+import React, { useEffect } from 'react';
+import { useLocation, useOutlet } from 'react-router-dom';
+import { useSelector } from 'react-redux';
+import { AnimatePresence, motion } from 'motion/react';
 import Sidebar from '../Sidebar';
-import { LogOut, ChevronDown, Loader2 } from 'lucide-react';
 import OnboardingModal from '../Onboarding/OnboardingModal';
 import InstallPrompt from '../InstallPrompt';
+import { SplashScreen } from '../brand/SplashScreen';
+import { MobileTopBar, MobileTabBar } from './MobileNav';
 import { useGetMeQuery } from '../../features/api/apiSlice';
 
+/**
+ * Ilova qobig'i.
+ *  - lg+: chapda sidebar, kontent to'liq balandlikda
+ *  - lg dan kichik: yuqorida top bar, pastda tab-bar (bosh barmoq zonasi)
+ *
+ * Sahifalar almashganda kontent yumshoq paydo bo'ladi. `useOutlet` ishlatiladi:
+ * `<Outlet/>` bilan chiqib ketayotgan sahifa animatsiya davomida allaqachon
+ * YANGI sahifani ko'rsatib qo'yardi.
+ */
 const DashboardLayout = () => {
   const authUser = useSelector((state) => state.auth.user);
   const token = useSelector((state) => state.auth.token);
-  const dispatch = useDispatch();
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const dropdownRef = useRef(null);
+  const location = useLocation();
+  const outlet = useOutlet();
 
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setIsDropdownOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-  
   const { data: fullUser, isLoading } = useGetMeQuery(undefined, { skip: !token });
   const user = fullUser || authUser;
-  
   const isOnboardingComplete = user?.onboarding?.completed === true;
 
+  // Yangi sahifa tepadan boshlansin
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }, [location.pathname]);
+
   if (isLoading) {
-      return (
-        <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
-           <Loader2 className="w-12 h-12 md:w-16 md:h-16 animate-spin text-primary mb-6" />
-           <h2 className="text-xl md:text-2xl font-black text-foreground mb-2 text-center">Tizimga kirilmoqda...</h2>
-           <p className="text-muted-foreground text-sm md:text-base text-center max-w-md">
-             Ma'lumotlar yuklanmoqda. Agar server uyqu rejimida bo'lsa, bu 1-2 daqiqa vaqt olishi mumkin. Iltimos, kuting!
-           </p>
-        </div>
-      );
+    return (
+      <SplashScreen
+        title="Tizimga kirilmoqda…"
+        hint="Server uyqu rejimida bo'lsa, birinchi ochilish 1 daqiqagacha cho'zilishi mumkin."
+      />
+    );
+  }
+
+  if (!isOnboardingComplete) {
+    return (
+      <div className="app-backdrop min-h-dvh bg-background">
+        <OnboardingModal />
+      </div>
+    );
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex">
-      {!isOnboardingComplete && <OnboardingModal />}
-      {/* Desktop Sidebar (Optional: Keep Sidebar logic clean here or in Sidebar.jsx itself) */}
-      {isOnboardingComplete && <Sidebar user={user} />}
-      
-      {/* Main Content Area */}
-      <div className={`flex-1 flex flex-col min-w-0 transition-all ${isOnboardingComplete ? 'md:ml-64' : ''}`}>
-        
-        {/* Top Header */}
-        {isOnboardingComplete && (
-        <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-md border-b border-border h-16 flex items-center justify-end px-4 md:px-8 gap-4 shadow-sm hidden md:flex">
-          {user && (
-            <div className="relative" ref={dropdownRef}>
-              <button 
-                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                className="flex items-center gap-2 hover:bg-secondary px-2 py-1.5 rounded-full transition-colors focus:outline-none"
-              >
-                 <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm">
-                    {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
-                 </div>
-                 <span className="text-sm font-bold text-foreground max-w-[100px] truncate">{user.name}</span>
-                 <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
-              </button>
+    <div className="app-backdrop min-h-dvh bg-background text-foreground">
+      <Sidebar user={user} />
+      <MobileTopBar user={user} />
 
-              {isDropdownOpen && (
-                 <div className="absolute right-0 top-full mt-2 w-56 bg-card border border-border rounded-xl shadow-lg py-2 animate-in fade-in slide-in-from-top-2 z-50">
-                    <div className="px-4 py-3 border-b border-border mb-2">
-                       <p className="text-sm font-bold text-foreground truncate">{user.name}</p>
-                       <p className="text-xs text-muted-foreground truncate">{user.email}</p>
-                    </div>
-                    <button 
-                      onClick={() => {
-                          performLogout(dispatch);
-                          setIsDropdownOpen(false);
-                      }}
-                      className="w-full flex items-center justify-between px-4 py-2.5 text-sm font-bold text-red-500 hover:bg-red-500/10 transition-colors"
-                    >
-                      <span>Chiqish</span>
-                      <LogOut className="w-4 h-4" />
-                    </button>
-                 </div>
-              )}
-            </div>
-          )}
-          <ThemeToggle />
-        </header>
-        )}
-
-        {/* Page Content */}
-        {isOnboardingComplete && (
-        <main className="flex-1 p-4 sm:p-6 md:p-8 pt-20 md:pt-8 w-full max-w-[1400px] mx-auto overflow-x-hidden">
-          <Outlet />
+      <div className="lg:pl-[272px]">
+        <main
+          id="main"
+          className="mx-auto w-full max-w-6xl px-4 pb-[calc(env(safe-area-inset-bottom,0px)+6.5rem)] pt-5 sm:px-6 lg:px-10 lg:pb-12 lg:pt-10"
+        >
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div
+              key={location.pathname}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+            >
+              {outlet}
+            </motion.div>
+          </AnimatePresence>
         </main>
-        )}
-
-        {/* Onboarding tugagandan keyingina taklif qilamiz — birinchi
-            daqiqada ikkita modal foydalanuvchini bosib ketadi */}
-        {isOnboardingComplete && <InstallPrompt />}
       </div>
+
+      <MobileTabBar />
+      {/* Onboarding tugagandan keyingina taklif qilamiz — birinchi
+          daqiqada ikkita modal foydalanuvchini bosib ketadi */}
+      <InstallPrompt />
     </div>
   );
 };

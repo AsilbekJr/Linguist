@@ -1,0 +1,34 @@
+{
+  "note": "Lug'at bilan farq qiladigan, lekin TO'G'RI deb tan olingan transkripsiyalar. Kurrikulum izchil britancha RP yozadi, Wiktionary esa ko'pincha amerikacha yoki tor (dialektal) transkripsiya beradi — farqning asosiy sababi shu. Yangi so'z bu yerga tushsa, avval haqiqatan to'g'riligini tekshiring, keyingina qo'shing.",
+  "words": {
+    "agree": "Lug'at cho'ziqlik belgisini tushirgan: /əˈɡɹi/ ~ /əˈɡriː/",
+    "answer": "BATH bo'linishi: BrE /ˈɑːnsə/, AmE /ˈænsɚ/",
+    "app": "Lug'atda faqat tor transkripsiya [ʔæʔp̚] — glottal to'xtamlar bilan",
+    "bag": "Lug'atda dialektal variantlar (/ˈbæːɡ/, /ˈbeɪɡ/); /bæɡ/ standart",
+    "better": "Lug'atda faqat tor transkripsiyalar — amerikacha qoqma [ɾ] bilan",
+    "cold": "GOAT unlisi: BrE /kəʊld/, AmE /koʊld/",
+    "exam": "Urg'usiz prefiks: BrE /ɪɡ-/, AmE /ɛɡ-/",
+    "exchange": "Urg'usiz prefiks: BrE /ɪks-/, AmE /ɛks-/",
+    "expensive": "Urg'usiz prefiks: BrE /ɪk-/, AmE /ɛk-/",
+    "goal": "GOAT unlisi: BrE /ɡəʊl/, AmE /ɡoʊl/",
+    "issue": "Ikkala shakl ham britancha me'yorda: /ˈɪʃuː/ va /ˈɪsjuː/",
+    "mark": "Rotiklik: BrE /mɑːk/, AmE /mɑrk/",
+    "menu": "Lug'at cho'ziqlik belgisini tushirgan: /ˈmɛnju/ ~ /ˈmenjuː/",
+    "old": "GOAT unlisi: BrE /əʊld/, AmE /oʊld/",
+    "opportunity": "Oxirgi unli reduksiyasi va cho'ziqlik notatsiyasi farqi",
+    "pass": "BATH bo'linishi + lug'atda tor transkripsiyalar",
+    "password": "BATH bo'linishi: BrE /ˈpɑːswɜːd/, AmE /ˈpæswɜːd/",
+    "privacy": "BrE /ˈprɪvəsi/, AmE /ˈpraɪvəsi/ — ikkalasi ham me'yoriy",
+    "recycle": "Lug'at cho'ziqlik belgisini tushirgan: /ɹiˈsaɪkəl/ ~ /ˌriːˈsaɪkl/",
+    "son": "/sʌn/ standart; lug'atdagi /sɒn/ dialektal",
+    "sure": "CURE/FORCE qo'shilishi: /ʃʊə/ va /ʃɔː/ — ikkalasi ham qabul qilingan",
+    "thank": "Lug'atda tor va dialektal transkripsiyalar ([θaŋk], [t̪eɪ̯ŋk])",
+    "tour": "An'anaviy /tʊə/ va zamonaviy /tɔː/ — ikkalasi ham me'yoriy",
+    "university": "Cho'ziqlik va reduksiya notatsiyasi farqi",
+    "usually": "Variant talaffuz: /ˈjuːʒuəli/ ~ /ˈjuːʒjuəli/",
+    "wind": "OMOGRAF: kurrikulumda ot (shamol) /wɪnd/, lug'at esa fe'l (o'ramoq) /waɪnd/ ni bergan"
+  },
+  "posWords": {
+    "near": "Cambridge va Oxford \"near\" ni predlog deb beradi (\"near the station\"), Wiktionary esa faqat sifat/ravish deb belgilaydi. Kurrikulum to'g'ri."
+  }
+}

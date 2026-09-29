@@ -100,16 +100,29 @@ const quotaExceededResponse = (res, { limit, plan }) =>
 /**
  * Middleware: kvotani band qiladi va `req.aiCall.refund()` ni ochib beradi.
  * Route AI xatosini ushlasa — refund() chaqirsin.
+ *
+ * `soft: true` — kvota tugaganda 402 o'rniga so'rov o'tkaziladi va
+ * `req.aiCall.quotaExceeded = true` bo'ladi. AI'siz ham ishlay oladigan
+ * yo'llar uchun (takrorlash mahalliy tekshiruvga tushadi).
  */
-const trackAiUsage = async (req, res, next) => {
+const makeAiUsageTracker = ({ soft = false } = {}) => async (req, res, next) => {
   try {
     const result = await reserveAiCall(req.user);
     if (!result.ok) {
-      return quotaExceededResponse(res, result);
+      if (!soft) return quotaExceededResponse(res, result);
+      req.aiCall = {
+        quotaExceeded: true,
+        limit: result.limit,
+        used: result.used,
+        refund: async () => {},
+        commit: () => {},
+      };
+      return next();
     }
 
     let settled = false;
     req.aiCall = {
+      quotaExceeded: false,
       limit: result.limit,
       used: result.used,
       /** AI javob bermadi — bandlikni bekor qilish */
@@ -132,6 +145,17 @@ const trackAiUsage = async (req, res, next) => {
     res.status(500).json({ message: 'Server error' });
   }
 };
+
+const trackAiUsage = makeAiUsageTracker();
+
+/**
+ * Takrorlash kabi AI'siz ham ishlay oladigan yo'llar uchun.
+ *
+ * Bepul tarifda kuniga 15 ta AI chaqiruvi bor, kunlik takrorlash maqsadi esa
+ * 20 ta so'z. Qattiq kvota bilan foydalanuvchi 16-so'zda 402 olib, kunlik
+ * rejani yopa olmasdi va streak'i uzilardi.
+ */
+const trackAiUsageSoft = makeAiUsageTracker({ soft: true });
 
 /** Eski nom — faqat tekshiradi, band qilmaydi (speaking/translate kabi shartli oqimlar uchun) */
 const checkAiQuota = async (req, res, next) => {
@@ -156,6 +180,7 @@ const recordAiUsage = async (user) => {
 
 module.exports = {
   trackAiUsage,
+  trackAiUsageSoft,
   checkAiQuota,
   recordAiUsage,
   reserveAiCall,

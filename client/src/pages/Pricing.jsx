@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { motion } from 'motion/react';
 import { toast } from 'react-hot-toast';
 import {
   useGetSubscriptionQuery,
@@ -7,43 +8,71 @@ import {
   useCreatePortalSessionMutation,
 } from '../features/api/apiSlice';
 import { Button } from '@/components/ui/button';
-import { Check, Loader2, Crown, Zap } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { PageHeader, PageSkeleton, IconTile } from '@/components/ui/primitives';
+import { cn } from '@/lib/utils';
+import { Check, Loader2, Crown, Zap, Sprout, CreditCard, Info } from 'lucide-react';
 import { track, EVENTS } from '../lib/analytics';
 
+/**
+ * Faqat HAQIQATAN mavjud imkoniyatlar yoziladi. Ilgari bu yerda olib
+ * tashlangan "roleplay" va "3 qadamli reja" va'da qilinardi.
+ * AI limitlari server `PLAN_LIMITS` (middleware/usageQuota.js) bilan bir xil.
+ */
 const PLANS = [
   {
     id: 'free',
-    name: 'Free',
+    name: 'Bepul',
     price: '0',
-    features: ['15 AI chaqiruv/kun', 'Kunlik 3 qadam reja', '100 kun challenge'],
+    icon: Sprout,
+    tone: 'success',
+    tagline: 'Boshlash uchun hamma narsa',
+    features: [
+      'Kunlik sahna, takrorlash va tinglash',
+      'Kuniga 15 ta AI tekshiruv',
+      'Limit tugasa ham takrorlash to\'xtamaydi',
+      '100 kunlik challenge',
+    ],
   },
   {
     id: 'pro',
     name: 'Pro',
     price: '$9.99',
-    features: ['200 AI chaqiruv/kun', 'Cheksiz roleplay', 'Speaking Lab to\'liq'],
+    icon: Zap,
+    tone: 'primary',
+    tagline: 'Har kuni jiddiy shug\'ullanadiganlar uchun',
     highlight: true,
+    features: [
+      'Kuniga 200 ta AI tekshiruv',
+      "Takrorlashda AI grammatika tekshiruvi kun bo'yi",
+      'Gap tahlili va gapirish uchun katta limit',
+      'Bepul tarifdagi hamma narsa',
+    ],
   },
   {
     id: 'premium',
     name: 'Premium',
     price: '$19.99',
-    features: ['Cheksiz AI', 'Maxsus ssenariylar', 'Analytics va ustuvor qo\'llab-quvvatlash'],
+    icon: Crown,
+    tone: 'xp',
+    tagline: 'Chegarasiz mashq',
+    features: ['Kuniga 2000 ta AI tekshiruv', "Pro'dagi hamma narsa"],
   },
 ];
 
 const Pricing = () => {
   const [params] = useSearchParams();
   const { data: sub, isLoading } = useGetSubscriptionQuery();
-  const [checkout, { isLoading: checkingOut }] = useCreateCheckoutSessionMutation();
+  const [checkout, { isLoading: checkingOut, originalArgs: checkoutPlan }] = useCreateCheckoutSessionMutation();
   const [portal, { isLoading: openingPortal }] = useCreatePortalSessionMutation();
 
   useEffect(() => {
-    if (params.get('success')) toast.success('To\'lov muvaffaqiyatli! Pro tarif faollashdi.');
-    if (params.get('canceled')) toast('To\'lov bekor qilindi.', { icon: 'ℹ️' });
+    if (params.get('success')) toast.success("To'lov muvaffaqiyatli! Tarif faollashdi.");
+    if (params.get('canceled')) toast("To'lov bekor qilindi.", { icon: 'ℹ️' });
   }, [params]);
 
   const currentPlan = sub?.plan || 'free';
+  const used = sub?.usage?.aiCallsToday;
 
   const handleUpgrade = async (plan) => {
     track(EVENTS.UPGRADE_CLICKED, { plan, currentPlan });
@@ -51,7 +80,7 @@ const Pricing = () => {
       const res = await checkout(plan).unwrap();
       if (res.url) window.location.href = res.url;
     } catch (err) {
-      toast.error(err?.data?.message || 'Stripe sozlanmagan. .env da STRIPE kalitlarini tekshiring.');
+      toast.error(err?.data?.message || "To'lov tizimi hozir mavjud emas. Keyinroq urining.");
     }
   };
 
@@ -60,80 +89,100 @@ const Pricing = () => {
       const res = await portal().unwrap();
       if (res.url) window.location.href = res.url;
     } catch (err) {
-      toast.error(err?.data?.message || 'Billing portal mavjud emas.');
+      toast.error(err?.data?.message || 'Obunani boshqarish sahifasi hozir mavjud emas.');
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex justify-center py-20">
-        <Loader2 className="w-10 h-10 animate-spin text-primary" />
-      </div>
-    );
-  }
+  if (isLoading) return <PageSkeleton cards={3} />;
 
   return (
-    <div className="max-w-5xl mx-auto space-y-8 animate-fade-in-up">
-      <div className="text-center">
-        <h1 className="text-3xl md:text-5xl font-black mb-3">Tariflar</h1>
-        <p className="text-muted-foreground">
-          Hozirgi tarif: <span className="font-bold text-primary uppercase">{currentPlan}</span>
-        </p>
-        {currentPlan !== 'free' && (
-          <Button variant="outline" className="mt-4 rounded-full" onClick={handlePortal} disabled={openingPortal}>
-            Obunani boshqarish
-          </Button>
-        )}
+    <div>
+      <PageHeader
+        eyebrow="Tariflar"
+        title="O'zingizga mos tarifni tanlang"
+        icon={CreditCard}
+        description={
+          used != null
+            ? `Joriy tarif: ${PLANS.find((p) => p.id === currentPlan)?.name || currentPlan} · bugun ${used} ta AI tekshiruv ishlatildi`
+            : undefined
+        }
+        actions={
+          currentPlan !== 'free' && (
+            <Button variant="outline" onClick={handlePortal} disabled={openingPortal}>
+              {openingPortal && <Loader2 className="animate-spin" />}
+              Obunani boshqarish
+            </Button>
+          )
+        }
+      />
+
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3 md:items-stretch">
+        {PLANS.map((plan, i) => {
+          const isCurrent = currentPlan === plan.id;
+          return (
+            <motion.article
+              key={plan.id}
+              initial={{ opacity: 0, y: 18 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.08 * i, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+              className={cn(
+                'relative flex flex-col rounded-3xl border p-6',
+                plan.highlight
+                  ? 'border-primary/50 bg-card shadow-[0_24px_60px_-28px_color-mix(in_oklch,var(--primary)_70%,transparent)] ring-4 ring-primary/10 md:-translate-y-2'
+                  : 'surface'
+              )}
+            >
+              {plan.highlight && (
+                <Badge variant="default" className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 shadow-md">
+                  Eng mashhur
+                </Badge>
+              )}
+              <div className="flex items-center gap-3">
+                <IconTile icon={plan.icon} tone={plan.tone} />
+                <div>
+                  <h2 className="text-lg font-extrabold">{plan.name}</h2>
+                  <p className="text-xs text-muted-foreground">{plan.tagline}</p>
+                </div>
+              </div>
+              <p className="mt-6 text-4xl font-extrabold tracking-tight">
+                {plan.price === '0' ? '$0' : plan.price}
+                {plan.price !== '0' && <span className="text-base font-semibold text-muted-foreground"> /oy</span>}
+              </p>
+              <ul className="mt-6 flex-1 space-y-3">
+                {plan.features.map((f) => (
+                  <li key={f} className="flex items-start gap-2.5 text-sm">
+                    <span className="mt-0.5 inline-flex size-5 shrink-0 items-center justify-center rounded-full bg-success/15 text-success">
+                      <Check className="size-3" strokeWidth={3} />
+                    </span>
+                    {f}
+                  </li>
+                ))}
+              </ul>
+              <div className="mt-8">
+                {isCurrent ? (
+                  <Button disabled variant="secondary" size="lg" className="w-full">Joriy tarif</Button>
+                ) : plan.id === 'free' ? (
+                  <Button disabled variant="ghost" size="lg" className="w-full">Har doim bepul</Button>
+                ) : (
+                  <Button
+                    size="lg"
+                    variant={plan.highlight ? 'brand' : 'default'}
+                    className="w-full"
+                    onClick={() => handleUpgrade(plan.id)}
+                    disabled={checkingOut}
+                  >
+                    {checkingOut && checkoutPlan === plan.id ? <Loader2 className="animate-spin" /> : `${plan.name} ga o'tish`}
+                  </Button>
+                )}
+              </div>
+            </motion.article>
+          );
+        })}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {PLANS.map((plan) => (
-          <div
-            key={plan.id}
-            className={`rounded-3xl border p-6 flex flex-col ${
-              plan.highlight ? 'border-primary shadow-lg shadow-primary/10 bg-primary/5' : 'border-border bg-card'
-            }`}
-          >
-            <div className="flex items-center gap-2 mb-4">
-              {plan.id === 'premium' ? <Crown className="w-6 h-6 text-yellow-500" /> : <Zap className="w-6 h-6 text-primary" />}
-              <h2 className="text-xl font-black">{plan.name}</h2>
-            </div>
-            <p className="text-3xl font-black mb-6">
-              {plan.price}
-              {plan.id !== 'free' && <span className="text-sm font-normal text-muted-foreground">/oy</span>}
-            </p>
-            <ul className="space-y-2 mb-8 flex-grow">
-              {plan.features.map((f) => (
-                <li key={f} className="flex items-start gap-2 text-sm">
-                  <Check className="w-4 h-4 text-green-500 shrink-0 mt-0.5" />
-                  {f}
-                </li>
-              ))}
-            </ul>
-            {plan.id === 'free' ? (
-              <Button disabled variant="secondary" className="rounded-full">
-                Joriy (bepul)
-              </Button>
-            ) : currentPlan === plan.id ? (
-              <Button disabled className="rounded-full">
-                Faol tarif
-              </Button>
-            ) : (
-              <Button
-                className="rounded-full font-bold"
-                onClick={() => handleUpgrade(plan.id)}
-                disabled={checkingOut}
-              >
-                {checkingOut ? <Loader2 className="w-4 h-4 animate-spin" /> : `${plan.name} ga o'tish`}
-              </Button>
-            )}
-          </div>
-        ))}
-      </div>
-
-      <p className="text-center text-xs text-muted-foreground">
-        Hozircha faqat xalqaro to&apos;lov (Stripe). O&apos;zbekiston kartalari uchun Payme va Click
-        integratsiyasi ishlanmoqda.
+      <p className="mx-auto mt-8 flex max-w-xl items-start justify-center gap-2 text-center text-xs text-muted-foreground">
+        <Info className="mt-0.5 size-3.5 shrink-0" />
+        Hozircha faqat xalqaro kartalar (Stripe) qabul qilinadi. Uzcard/Humo uchun Payme va Click tez orada.
       </p>
     </div>
   );

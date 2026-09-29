@@ -58,12 +58,6 @@ Rules you never break:
   word order after question words, using present simple for ongoing actions). Watch for these first.
 - Never invent a mistake in a sentence that is already correct.`;
 
-const truncateHistory = (chatHistory, maxTurns = 6, maxChars = 280) =>
-  (chatHistory || []).slice(-maxTurns).map((m) => ({
-    role: m.role,
-    content: String(m.content || '').slice(0, maxChars),
-  }));
-
 const cacheKey = (...parts) =>
   crypto.createHash('sha256').update(JSON.stringify(parts)).digest('hex').slice(0, 40);
 
@@ -98,23 +92,58 @@ const looseJson = (text) => {
  * Sxemaga majburlangan JSON javob.
  * @throws {AiUnavailableError} model yo'q, limit tugagan yoki javob yaroqsiz bo'lsa
  */
-const runStructured = async (prompt, responseSchema, { maxTokens = 512, temperature = 0.3 } = {}) => {
+/**
+ * Diqqat — `maxTokens` ni ziqna qo'ymang.
+ *
+ * Limitga urilgan javob YARIM JSON bo'lib keladi va `looseJson` uni parse
+ * qila olmaydi → `BAD_RESPONSE` → foydalanuvchi uchun bu "AI ishlamadi" bo'lib
+ * ko'rinadi. Aynan shu sabab `generateWordContext` so'zlarning bir qismida
+ * jimgina tarjimasiz qaytardi: o'zbekcha matn inglizchaga qaraganda ancha
+ * ko'p token yeydi va 300 token yetmasdi.
+ *
+ * ⚠️ IKKINCHI, YASHIRINROQ SABAB — O'YLASH TOKENLARI.
+ *
+ * `gemini-2.5-flash` da "thinking" STANDART HOLATDA YOQIQ va o'ylash tokenlari
+ * `maxOutputTokens` byudjetidan yeyiladi. Ya'ni 800 token so'ralganda model
+ * 700 tasini o'ylashga sarflab, javobga 100 ta qoldirishi mumkin — JSON esa
+ * o'rtasida kesiladi. Byudjet har chaqiruvda har xil bo'lgani uchun bu
+ * "ba'zan ishlaydi, ba'zan yo'q" ko'rinishidagi tasodifiy nosozlik berardi:
+ * bir so'z tarjima bilan, keyingisi tarjimasiz saqlanardi.
+ *
+ * Yechim — o'ylash byudjetini ANIQ belgilash va uni javob byudjetiga QO'SHIB
+ * yuborish. Shunda `maxTokens` har doim "javobning o'ziga ajratilgan joy"
+ * ma'nosini saqlaydi va o'ylash uni hech qachon yeb qo'ya olmaydi.
+ *
+ * `thinkingBudget`: 0 — o'ylash o'chiq (sxema bo'yicha oddiy ma'lumot
+ * ajratish uchun shu yetarli). Noldan katta qiymat 512 dan boshlanishi kerak —
+ * model qabul qiladigan eng kichik byudjet shu.
+ */
+const runStructured = async (
+  prompt,
+  responseSchema,
+  { maxTokens = 512, temperature = 0.3, thinkingBudget = 0 } = {}
+) => {
   if (!genAI) throw new AiUnavailableError('NO_API_KEY', 'AI xizmati sozlanmagan.');
 
   let text;
+  let finishReason;
   try {
     const model = genAI.getGenerativeModel({
       model: MODEL,
       systemInstruction: SYSTEM_INSTRUCTION,
       generationConfig: {
-        maxOutputTokens: maxTokens,
+        // O'ylash byudjeti javob byudjetining USTIGA qo'shiladi
+        maxOutputTokens: maxTokens + thinkingBudget,
+        thinkingConfig: { thinkingBudget },
         temperature,
         responseMimeType: 'application/json',
         responseSchema,
       },
     });
     const result = await model.generateContent(prompt);
-    text = (await result.response).text();
+    const response = await result.response;
+    finishReason = response.candidates?.[0]?.finishReason;
+    text = response.text();
   } catch (error) {
     if (isQuotaError(error)) {
       throw new AiUnavailableError('QUOTA_EXCEEDED', "AI limiti tugadi. Keyinroq urinib ko'ring.");
@@ -123,35 +152,22 @@ const runStructured = async (prompt, responseSchema, { maxTokens = 512, temperat
     throw new AiUnavailableError('AI_ERROR');
   }
 
+  // Kesilgan javobni ALOHIDA belgilaymiz. Ilgari u ham `BAD_RESPONSE` edi va
+  // logdan "model sxemani buzdi"mi yoki "joy yetmadi"mi — ajratib bo'lmasdi.
+  if (finishReason === 'MAX_TOKENS') {
+    console.error(
+      `Gemini: javob token limitiga urildi (maxTokens=${maxTokens}, thinkingBudget=${thinkingBudget}). ` +
+        `Kelgan qism: ${String(text).slice(0, 120)}`
+    );
+    throw new AiUnavailableError('TRUNCATED');
+  }
+
   const parsed = looseJson(text);
   if (!parsed || typeof parsed !== 'object') {
     console.error('Gemini: sxemaga mos JSON kelmadi:', String(text).slice(0, 200));
     throw new AiUnavailableError('BAD_RESPONSE');
   }
   return parsed;
-};
-
-/** Erkin matnli javob (roleplay kabi suhbat oqimlari uchun) */
-const runText = async (prompt, { maxTokens = 400, temperature = 0.6 } = {}) => {
-  if (!genAI) throw new AiUnavailableError('NO_API_KEY', 'AI xizmati sozlanmagan.');
-  try {
-    const model = genAI.getGenerativeModel({
-      model: MODEL,
-      systemInstruction: SYSTEM_INSTRUCTION,
-      generationConfig: { maxOutputTokens: maxTokens, temperature },
-    });
-    const result = await model.generateContent(prompt);
-    const text = (await result.response).text().trim();
-    if (!text) throw new AiUnavailableError('EMPTY_RESPONSE');
-    return text;
-  } catch (error) {
-    if (error instanceof AiUnavailableError) throw error;
-    if (isQuotaError(error)) {
-      throw new AiUnavailableError('QUOTA_EXCEEDED', "AI limiti tugadi. Keyinroq urinib ko'ring.");
-    }
-    console.error('Gemini text error:', error.message);
-    throw new AiUnavailableError('AI_ERROR');
-  }
 };
 
 // ─── Sxemalar ────────────────────────────────────────────────────────────────
@@ -173,45 +189,72 @@ const sentenceCheckSchema = {
   required: ['isCorrect', 'usedTargetWord', 'feedback', 'errorType'],
 };
 
-const practicePromptSchema = {
+/**
+ * Gap tahlili — har bir so'z uchun turkum va gap bo'lagi.
+ *
+ * `partOfSpeech` va `role` ENUM bilan cheklangan: erkin matn qaytsa UI ularni
+ * ranglar bilan ajrata olmasdi va model har safar boshqa atama ishlatardi
+ * ("fe'l", "verb", "harakat so'zi").
+ */
+const sentenceAnalysisSchema = {
   type: S.OBJECT,
   properties: {
-    promptUz: { type: S.STRING, description: 'O\'zbekcha vaziyat tavsifi, 2 gap' },
-    targetWords: { type: S.ARRAY, items: { type: S.STRING } },
-    miniTipUz: { type: S.STRING },
-  },
-  required: ['promptUz', 'targetWords', 'miniTipUz'],
-};
-
-const practiceCheckSchema = {
-  type: S.OBJECT,
-  properties: {
-    isCorrect: { type: S.BOOLEAN },
-    feedback: { type: S.STRING, description: 'O\'zbekcha izoh' },
-    corrected: { type: S.STRING },
-    wordsUsed: { type: S.ARRAY, items: { type: S.STRING }, description: 'To\'g\'ri ishlatilgan maqsadli so\'zlar' },
-  },
-  required: ['isCorrect', 'feedback', 'wordsUsed'],
-};
-
-const teacherSchema = {
-  type: S.OBJECT,
-  properties: {
-    title: { type: S.STRING },
-    explanation: { type: S.STRING, description: 'O\'zbekcha, 2 qisqa xatboshi' },
-    rule: { type: S.STRING, description: 'Bitta qatorli inglizcha qoida' },
-    examples: {
+    translationUz: { type: S.STRING, description: 'Butun gapning o\'zbekcha tarjimasi' },
+    tenseUz: { type: S.STRING, description: 'Zamon, o\'zbekcha (masalan: Hozirgi oddiy zamon)' },
+    structureUz: {
+      type: S.STRING,
+      description: 'Gap tuzilishi haqida 1-2 gaplik o\'zbekcha izoh',
+    },
+    tokens: {
       type: S.ARRAY,
+      description: 'Gapdagi har bir so\'z, gapda kelgan tartibida',
       items: {
         type: S.OBJECT,
-        properties: { en: { type: S.STRING }, uz: { type: S.STRING } },
-        required: ['en', 'uz'],
+        properties: {
+          word: { type: S.STRING, description: 'So\'zning gapdagi shakli' },
+          partOfSpeech: {
+            type: S.STRING,
+            description: 'So\'z turkumi',
+            enum: [
+              'ot', 'fe\'l', 'sifat', 'ravish', 'olmosh', 'son',
+              'predlog', 'artikl', 'bog\'lovchi', 'yuklama', 'undov',
+            ],
+          },
+          role: {
+            type: S.STRING,
+            description: 'Gap bo\'lagi. Mustaqil bo\'lak bo\'lmasa "yordamchi".',
+            enum: ['ega', 'kesim', 'to\'ldiruvchi', 'aniqlovchi', 'hol', 'yordamchi'],
+          },
+          meaningUz: { type: S.STRING, description: 'So\'zning shu gapdagi o\'zbekcha ma\'nosi' },
+          noteUz: { type: S.STRING, description: 'Qisqa izoh: nega shu turkum/bo\'lak' },
+        },
+        required: ['word', 'partOfSpeech', 'role', 'meaningUz'],
       },
     },
-    commonMistake: { type: S.STRING, description: 'O\'zbeklar ko\'p qiladigan xato' },
-    tip: { type: S.STRING },
   },
-  required: ['title', 'explanation', 'rule', 'examples'],
+  required: ['translationUz', 'tenseUz', 'structureUz', 'tokens'],
+};
+
+/**
+ * Yangi so'zga daraja bo'yicha ta'rif, misol va tarjima.
+ *
+ * `definitionEn` nega kerak: lug'at snapshoti Wiktionary'ning BIRINCHI ma'nosini
+ * oladi, u esa ko'pincha eng keng tarqalgani emas. "kids" uchun u "A young goat"
+ * beradi — natijada kartochkada tarjima "bolalar", ta'rif esa "echki bolasi"
+ * bo'lib, o'z-o'ziga zid chiqadi.
+ */
+const wordContextSchema = {
+  type: S.OBJECT,
+  properties: {
+    translationUz: { type: S.STRING, description: 'So\'zning o\'zbekcha tarjimasi, 1-3 so\'z' },
+    definitionEn: {
+      type: S.STRING,
+      description: 'Eng keng tarqalgan ma\'noning sodda inglizcha ta\'rifi, bitta qisqa gap',
+    },
+    exampleEn: { type: S.STRING, description: 'Misol gap, so\'z ishtirok etishi SHART' },
+    exampleUz: { type: S.STRING, description: 'Misol gapning o\'zbekcha tarjimasi' },
+  },
+  required: ['translationUz', 'definitionEn', 'exampleEn', 'exampleUz'],
 };
 
 const translateSchema = {
@@ -244,7 +287,9 @@ Talaba yozgan gap: "${String(sentence).slice(0, 500)}"
 Baholang: (1) so'z ma'nosiga mos ishlatilganmi, (2) gap grammatik to'g'rimi.
 Agar gap to'g'ri bo'lsa isCorrect=true va corrected bo'sh bo'lsin — sun'iy xato o'ylab topmang.`,
         sentenceCheckSchema,
-        { maxTokens: 400 }
+        // Grammatik hukm — o'ylash sifatni oshiradi, shuning uchun byudjet
+        // beriladi. U javob byudjetidan alohida, ya'ni feedback'ni kesmaydi.
+        { maxTokens: 900, thinkingBudget: 512 }
       );
       return {
         status: 'ok',
@@ -268,7 +313,7 @@ const translateUzbekToEnglish = async (uzbekText) => {
         `O'zbekcha gapni ikki xil inglizchaga tarjima qiling.
 O'zbekcha: "${String(uzbekText).slice(0, 400)}"`,
         translateSchema,
-        { maxTokens: 300, temperature: 0.4 }
+        { maxTokens: 900, temperature: 0.4 }
       );
       const casual = String(parsed.casual || parsed.advanced || '').trim();
       const advanced = String(parsed.advanced || parsed.casual || '').trim();
@@ -331,142 +376,131 @@ const evaluateSpokenAccuracy = (targetSentence, spokenText) => {
   };
 };
 
-const generateRoleplayResponse = async (
-  scenario,
-  targetWords,
-  chatHistory,
-  userMessage,
-  learnerLevel = 'beginner'
-) => {
-  try {
-    const history = truncateHistory(chatHistory)
-      .map((m) => `${m.role === 'user' ? 'Talaba' : 'Siz'}: ${m.content}`)
-      .join('\n');
-    const words = (targetWords || []).slice(0, 8).join(', ');
+/**
+ * Gapni grammatik tahlil qilish — "Ustoz AI" ning o'rniga.
+ *
+ * Eski Ustoz AI erkin savol-javob chati edi: foydalanuvchi nima so'rashini
+ * bilmasdi, javob sifati savolga bog'liq edi va u hech qanday tarzda
+ * foydalanuvchining o'z lug'atiga bog'lanmagan edi. Bu funksiya aniq bitta ish
+ * qiladi: foydalanuvchi yozgan (yoki takrorlashda tuzgan) gapni olib, har bir
+ * so'zning turkumi va gap bo'lagini ko'rsatadi.
+ *
+ * @returns {{status:'ok', analysis} | {status:'unavailable', reason}}
+ */
+const analyzeSentence = async (sentence, learnerLevel = 'beginner') => {
+  const text = String(sentence || '').trim().slice(0, 400);
+  if (!text) return UNAVAILABLE('EMPTY');
 
-    const reply = await runText(
-      `Rol o'ynash mashqi. Talaba darajasi: ${levelTag(learnerLevel)}.
-Vaziyat: ${String(scenario).slice(0, 160)}
-Talaba takrorlashi kerak bo'lgan so'zlar: [${words || '—'}]
-
-Suhbat:
-${history || '(boshlanishi)'}
-Talaba: ${String(userMessage || '').slice(0, 400)}
-
-Rolda qoling. 1-2 ta inglizcha gap bilan javob bering va suhbatni davom ettiradigan savol qo'shing.
-Iloji bo'lsa maqsadli so'zlardan bittasini tabiiy ishlating.
-Agar talaba jiddiy grammatik xato qilgan bo'lsa, oxirida qavs ichida bitta qisqa o'zbekcha maslahat bering.`,
-      { maxTokens: 300, temperature: 0.75 }
-    );
-    return { status: 'ok', reply };
-  } catch (error) {
-    return UNAVAILABLE(error.reason);
-  }
-};
-
-const generateTeacherResponse = async (
-  question,
-  category = 'general',
-  chatHistory = [],
-  learnerLevel = 'beginner'
-) => {
-  const q = String(question).slice(0, 300);
-  const history = truncateHistory(chatHistory, 4, 200);
-  const historyText = history
-    .map((m) => `${m.role === 'user' ? 'Talaba' : 'Ustoz'}: ${m.content}`)
-    .join('\n');
-
-  const fetch = async () => {
+  return withCache(cacheKey('analyze-v1', text, learnerLevel), async () => {
     try {
       const parsed = await runStructured(
-        `Siz "Ustoz AI"siz. Talaba darajasi: ${levelTag(learnerLevel)}. Mavzu turi: ${category}.
-${historyText ? `Oldingi suhbat:\n${historyText}\n` : ''}
-Talaba savoli: "${q}"
+        `Talaba darajasi: ${levelTag(learnerLevel)}.
+Quyidagi inglizcha gapni tahlil qiling:
 
-Tushuntirishni o'zbek tilida yozing. 2-3 ta misol bering. commonMistake'da aynan o'zbek tilida
-so'zlashuvchilar shu mavzuda qiladigan tipik xatoni ko'rsating.`,
-        teacherSchema,
-        { maxTokens: 900, temperature: 0.35 }
+"${text}"
+
+Qoidalar:
+- tokens massivida gapdagi HAR BIR so'z bo'lishi kerak, gapda kelgan tartibda.
+  Tinish belgilarini alohida token qilmang.
+- role: faqat bitta ega va bitta kesim bo'lishi kerak (qo'shma gapda har bir
+  sodda gap uchun bittadan). Artikl, predlog, ko'makchi fe'l — "yordamchi".
+- noteUz qisqa bo'lsin: bir gap, ko'pi bilan 12 so'z.
+- Izohlar o'zbek tilida (lotin yozuvida).`,
+        sentenceAnalysisSchema,
+        // Har bir so'zning turkumi va gap bo'lagi — eng murakkab tahlil,
+        // shuning uchun byudjet kattaroq.
+        { maxTokens: 3000, temperature: 0.2, thinkingBudget: 1024 }
       );
-      return { status: 'ok', answer: parsed };
+
+      const tokens = Array.isArray(parsed.tokens) ? parsed.tokens : [];
+      if (!tokens.length) return UNAVAILABLE('EMPTY_ANALYSIS');
+
+      return {
+        status: 'ok',
+        analysis: {
+          sentence: text,
+          translationUz: String(parsed.translationUz || '').trim(),
+          tenseUz: String(parsed.tenseUz || '').trim(),
+          structureUz: String(parsed.structureUz || '').trim(),
+          tokens: tokens.map((t) => ({
+            word: String(t.word || '').trim(),
+            partOfSpeech: String(t.partOfSpeech || '').trim(),
+            role: String(t.role || 'yordamchi').trim(),
+            meaningUz: String(t.meaningUz || '').trim(),
+            noteUz: String(t.noteUz || '').trim(),
+          })),
+        },
+      };
     } catch (error) {
       return UNAVAILABLE(error.reason);
     }
-  };
-
-  // Suhbat konteksti bo'lmasa keshlash mumkin
-  if (history.length === 0) {
-    return withCache(cacheKey('teacher-v2', learnerLevel, category, q), fetch);
-  }
-  return fetch();
+  });
 };
 
-const generatePracticePrompt = async (words, bucketLabel, learnerLevel = 'beginner') => {
-  const wordList = words.slice(0, 6).map((w) => w.word).join(', ');
+/**
+ * Yangi so'zga tarjima va DARAJAGA MOS misol gap.
+ *
+ * Nega lug'atdagi misol yetmaydi: `dictionary-snapshot.json` dagi misollar
+ * Wiktionary'dan keladi va ular A1 o'quvchisi uchun ko'pincha juda og'ir
+ * ("He is a student of life"). Bu yerda misol foydalanuvchining darajasiga
+ * qarab yoziladi va o'zbekcha tarjimasi bilan keladi.
+ *
+ * @returns {{status:'ok', translationUz, exampleEn, exampleUz}
+ *          | {status:'unavailable', reason}}
+ */
+const generateWordContext = async (word, definition = '', learnerLevel = 'beginner') => {
+  const w = String(word || '').trim().slice(0, 60);
+  if (!w) return UNAVAILABLE('EMPTY');
 
-  // AI bo'lmasa ham mashq to'xtamasligi kerak — bu o'rganishga to'sqinlik qilmaydigan zaxira
-  const fallback = {
-    status: 'fallback',
-    promptUz: `${bucketLabel}: ${wordList} so'zlaridan kamida 2 tasini ishlatib inglizcha gap yozing.`,
-    targetWords: words.slice(0, 3).map((w) => w.word),
-    miniTipUz: "So'zlarni tabiiy jumla ichida ishlating.",
-  };
+  return withCache(cacheKey('wordctx-v1', w, learnerLevel), async () => {
+    // Bitta qayta urinish: bu foydalanuvchi kutib turgan interaktiv oqim va
+    // ketma-ket so'z qo'shilganda Gemini qisqa muddatli 429 qaytaradi.
+    // Qayta urinmasak so'z tarjimasiz va misolsiz saqlanib qolardi.
+    const attempt = async () => runStructured(
+        `Talaba darajasi: ${levelTag(learnerLevel)}. So'z: "${w}".
+${definition ? `Inglizcha ta'rifi: ${String(definition).slice(0, 200)}` : ''}
 
-  try {
-    return await withCache(
-      cacheKey('practice-p-v2', wordList, bucketLabel, learnerLevel),
-      async () => {
-        const parsed = await runStructured(
-          `Talaba darajasi: ${levelTag(learnerLevel)}. Takrorlanayotgan so'zlar: ${wordList}.
-Shu so'zlarni ishlatishga majbur qiladigan real hayotiy vaziyat o'ylab toping.
-promptUz — o'zbekcha, 2 gap, "siz ..." shaklida murojaat qiling.`,
-          practicePromptSchema,
-          { maxTokens: 320, temperature: 0.7 }
-        );
-        return {
-          status: 'ok',
-          promptUz: parsed.promptUz || fallback.promptUz,
-          targetWords: Array.isArray(parsed.targetWords) && parsed.targetWords.length
-            ? parsed.targetWords
-            : fallback.targetWords,
-          miniTipUz: parsed.miniTipUz || fallback.miniTipUz,
-        };
+Vazifa — so'zning ENG KENG TARQALGAN kundalik ma'nosini oling
+(lug'atdagi birinchi ma'no eng keng tarqalgani bo'lmasligi mumkin):
+1. translationUz — shu ma'noning o'zbekcha tarjimasi (1-3 so'z).
+2. definitionEn — shu ma'noning sodda inglizcha ta'rifi, bitta qisqa gap.
+   translationUz bilan BIR XIL ma'noni tavsiflashi shart.
+3. exampleEn — AYNAN shu darajaga mos misol gap. "${w}" so'zi gapda BO'LISHI SHART.
+   Gap qisqa va kundalik bo'lsin; darajadan yuqori leksika ishlatmang.
+4. exampleUz — misol gapning tabiiy o'zbekcha tarjimasi.`,
+        wordContextSchema,
+        { maxTokens: 800, temperature: 0.4 }
+      );
+
+    // Qayta urinishga arziydigan sabablar — hammasi o'tkinchi.
+    // `BAD_RESPONSE` ham shu ro'yxatda: model vaqti-vaqti bilan sxemani buzadi
+    // va bu bitta so'zning tarjimasiz saqlanib qolishiga olib kelardi.
+    // `NO_API_KEY` va `TRUNCATED` yo'q — ular qayta urinishdan o'zgarmaydi.
+    const RETRYABLE = new Set(['QUOTA_EXCEEDED', 'AI_ERROR', 'BAD_RESPONSE']);
+
+    let parsed;
+    try {
+      parsed = await attempt();
+    } catch (first) {
+      if (!RETRYABLE.has(first.reason)) {
+        return UNAVAILABLE(first.reason);
       }
-    );
-  } catch {
-    return fallback;
-  }
-};
-
-const checkPracticeSentence = async (words, sentence, learnerLevel = 'beginner') => {
-  const targetList = words.map((w) => w.word).join(', ');
-
-  try {
-    return await withCache(
-      cacheKey('practice-c-v2', targetList, sentence, learnerLevel),
-      async () => {
-        const parsed = await runStructured(
-          `Talaba darajasi: ${levelTag(learnerLevel)}.
-Maqsadli so'zlar: ${targetList}
-Talaba yozgan gap: "${String(sentence).slice(0, 400)}"
-
-Kamida 2 ta maqsadli so'z ma'noga mos ishlatilgan bo'lishi kerak.
-wordsUsed'ga faqat HAQIQATAN va TO'G'RI ishlatilgan so'zlarni kiriting.`,
-          practiceCheckSchema,
-          { maxTokens: 400 }
-        );
-        return {
-          status: 'ok',
-          isCorrect: Boolean(parsed.isCorrect),
-          feedback: String(parsed.feedback || '').trim(),
-          corrected: String(parsed.corrected || '').trim(),
-          wordsUsed: Array.isArray(parsed.wordsUsed) ? parsed.wordsUsed : [],
-        };
+      await new Promise((r) => setTimeout(r, 1500));
+      try {
+        parsed = await attempt();
+      } catch (second) {
+        return UNAVAILABLE(second.reason);
       }
-    );
-  } catch (error) {
-    return UNAVAILABLE(error.reason);
-  }
+    }
+
+    return {
+      status: 'ok',
+      translationUz: String(parsed.translationUz || '').trim(),
+      definitionEn: String(parsed.definitionEn || '').trim(),
+      exampleEn: String(parsed.exampleEn || '').trim(),
+      exampleUz: String(parsed.exampleUz || '').trim(),
+    };
+  });
 };
 
 module.exports = {
@@ -475,8 +509,6 @@ module.exports = {
   checkSentence,
   translateUzbekToEnglish,
   evaluateSpokenAccuracy,
-  generateRoleplayResponse,
-  generateTeacherResponse,
-  generatePracticePrompt,
-  checkPracticeSentence,
+  analyzeSentence,
+  generateWordContext,
 };

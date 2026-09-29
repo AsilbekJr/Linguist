@@ -1,77 +1,152 @@
 import React from 'react';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Trash2, ExternalLink, Repeat, Volume2 } from "lucide-react";
+import { motion } from 'motion/react';
+import { Trash2, RotateCcw, Volume2, Loader2, RefreshCw, AlertTriangle, CalendarClock, CheckCircle2, Clock } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 import { playTTSAudio } from '../utils/audio';
+import { reviewStatus } from '../utils/wordStatus';
+import { formatUzDate } from '../utils/dateUtils';
 
-const WordCard = ({ word, onDelete }) => {
-  const playPronunciation = (text) => {
-    playTTSAudio(text, 'en-GB', 1.0);
-  };
+/** Serverdagi MAX_STAGE bilan bir xil (server/utils/srs.js) */
+const MAX_STAGE = 7;
+
+/**
+ * Tarmoq uzilgan paytda qo'shilgan eski so'zlarda ta'rif o'rniga inglizcha
+ * xizmat matni yozilgan bo'lishi mumkin ("Definition unavailable (API failed)").
+ * Yangi kod bunday yozuvni umuman saqlamaydi, lekin bazada qolganlari bor —
+ * ularni tanib, tuzatish tugmasini ko'rsatamiz.
+ */
+const PLACEHOLDER_DEFINITION = /^(Definition|Example) unavailable/i;
+
+const isIncomplete = (word) =>
+  !word.definition || PLACEHOLDER_DEFINITION.test(word.definition);
+
+// forwardRef: Vocabulary'dagi AnimatePresence (popLayout) chiqib ketayotgan
+// kartani o'lchashi uchun DOM elementiga yetishi kerak
+const WordCard = React.forwardRef(({ word, onDelete, onRelearn, onRefresh, isRelearning = false, isRefreshing = false }, ref) => {
+  const stage = word.stage ?? word.reviewStage ?? 0;
+  const learned = word.learned ?? word.mastered;
+  const incomplete = isIncomplete(word);
+  const status = reviewStatus(word);
+  const examples = (word.examples || []).filter((ex) => !PLACEHOLDER_DEFINITION.test(ex));
+  const hard = (word.lapses || 0) >= 3;
+
   return (
-    <Card className="group relative overflow-hidden transition-all duration-300 hover:shadow-lg hover:shadow-primary/5 hover:border-primary/50 bg-card/50 backdrop-blur-sm">
-      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-secondary/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
-      
-      <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
-        <div className="flex flex-col">
-          <CardTitle className="text-2xl font-bold capitalize flex items-center gap-3">
-            <div className="flex flex-col">
-               <span className="bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent">{word.word}</span>
-               {word.phonetic && <span className="text-sm font-normal text-muted-foreground normal-case mt-0.5">{word.phonetic}</span>}
-            </div>
-            <Button variant="ghost" size="icon" className="h-8 w-8 text-primary hover:bg-primary/10 rounded-full shrink-0" onClick={(e) => { e.stopPropagation(); playPronunciation(word.word); }} title="Tinglash (UK)">
-               <Volume2 className="w-4 h-4" />
-            </Button>
-          </CardTitle>
-          {word.translation && (
-            <p className="text-sm font-medium text-muted-foreground/80 lowercase mt-1 italic w-fit border-l-2 border-primary/30 pl-2">
-              uz: {word.translation}
-            </p>
-          )}
+    <motion.article
+      ref={ref}
+      layout
+      initial={{ opacity: 0, y: 12, scale: 0.98 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.2 } }}
+      transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+      className="surface group flex h-full flex-col p-5 transition-[border-color,box-shadow] duration-300 hover:border-primary/30 hover:shadow-lg"
+    >
+      {/* Sarlavha */}
+      <div className="flex items-start gap-3">
+        <div className="min-w-0 flex-1">
+          <h3 className="truncate text-xl font-extrabold tracking-tight">{word.word}</h3>
+          <div className="mt-0.5 flex flex-wrap items-center gap-x-2 text-sm">
+            {word.phonetic && <span className="font-ipa text-muted-foreground">{word.phonetic}</span>}
+            {word.partOfSpeech && (
+              <span className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground/80">
+                {word.partOfSpeech}
+              </span>
+            )}
+          </div>
         </div>
-        <div className="flex flex-col items-end gap-2">
-            <Badge variant={word.mastered ? "default" : "secondary"} className="text-[10px] font-mono">
-                {word.mastered ? 'MASTERED' : 'LEARNING'}
-            </Badge>
-            <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground bg-muted hover:bg-muted/80 px-2 py-0.5 rounded-md transition-colors border border-border/50 cursor-help" title="Muvaffaqiyatli takrorlash bosqichi">
-                <Repeat className="w-3 h-3 text-primary" />
-                <span>{word.reviewStage || 0}</span>
-            </div>
-        </div>
-      </CardHeader>
-      
-      <CardContent className="space-y-4">
-        <p className="text-muted-foreground leading-relaxed">
-          {word.definition}
-        </p>
+        <Button
+          variant="soft"
+          size="icon-sm"
+          className="rounded-full"
+          onClick={() => playTTSAudio(word.word, 'en-GB', 1.0)}
+          aria-label={`"${word.word}" talaffuzini eshitish`}
+        >
+          <Volume2 />
+        </Button>
+      </div>
 
-        <div className="space-y-2">
-          {word.examples.map((ex, i) => (
-            <div key={i} className="flex gap-2 text-sm text-muted-foreground/80 italic border-l-2 border-primary/20 pl-3">
-              <span className="text-primary font-bold opacity-50">"</span>
-              <p>{ex}</p>
-            </div>
+      {word.translation && <p className="mt-2 font-semibold text-primary">{word.translation}</p>}
+
+      {/* Takrorlash holati */}
+      <div className="mt-3 flex items-center justify-between gap-2">
+        <div className="flex items-center gap-1" title={`Bosqich ${stage} / ${MAX_STAGE}`} aria-label={`Bosqich ${stage} / ${MAX_STAGE}`}>
+          {Array.from({ length: MAX_STAGE }).map((_, i) => (
+            <span
+              key={i}
+              className={cn('h-1.5 w-2.5 rounded-full', i < stage ? (learned ? 'bg-success' : 'bg-primary') : 'bg-muted-foreground/15')}
+            />
           ))}
         </div>
-      </CardContent>
+        <div className="flex items-center gap-1.5">
+          {hard && !learned && <Badge variant="destructive">Qiyin</Badge>}
+          <Badge variant={status.tone === 'success' ? 'success' : status.tone === 'warning' ? 'warning' : 'outline'}>
+            {status.key === 'learned' ? <CheckCircle2 /> : status.key === 'due' ? <Clock /> : <CalendarClock />}
+            {status.label}
+          </Badge>
+        </div>
+      </div>
 
-      <CardFooter className="pt-2 flex justify-between opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
-        <Button variant="ghost" size="sm" className="text-xs h-8 text-primary hover:text-primary hover:bg-primary/10">
-            <ExternalLink className="w-3 h-3 mr-2" /> Context
-        </Button>
-        
-        <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={() => onDelete(word._id)}
-            className="text-xs h-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+      {/* Mazmun */}
+      <div className="mt-4 flex-1 space-y-3">
+        {incomplete ? (
+          <div className="space-y-2 rounded-xl border border-warning/30 bg-warning/10 p-3">
+            <p className="flex items-start gap-2 text-sm">
+              <AlertTriangle className="mt-0.5 size-4 shrink-0 text-warning" />
+              <span>Qo&apos;shilganda lug&apos;at xizmatiga ulanib bo&apos;lmagan — ta&apos;rif va misol yo&apos;q.</span>
+            </p>
+            {onRefresh && (
+              <Button variant="outline" size="sm" disabled={isRefreshing} onClick={() => onRefresh(word._id)}>
+                {isRefreshing ? <Loader2 className="animate-spin" /> : <RefreshCw />}
+                Ma&apos;lumotni yuklash
+              </Button>
+            )}
+          </div>
+        ) : (
+          <p className="line-clamp-3 text-sm leading-relaxed text-muted-foreground">{word.definition}</p>
+        )}
+
+        {examples[0] && (
+          <div className="border-l-2 border-primary/30 pl-3 text-sm">
+            <p className="italic">{examples[0]}</p>
+            {/* O'zbekcha tarjima faqat birinchi (darajaga moslangan) misolda bo'ladi */}
+            {word.exampleUz && <p className="mt-0.5 text-muted-foreground">{word.exampleUz}</p>}
+          </div>
+        )}
+      </div>
+
+      {/* Amallar — hover ortiga yashirilmaydi: telefonda hover yo'q */}
+      <div className="mt-4 flex items-center justify-between gap-2 border-t border-border pt-3">
+        {learned && onRelearn ? (
+          <Button
+            variant="soft"
+            size="sm"
+            disabled={isRelearning}
+            onClick={() => onRelearn(word._id)}
+            title="So'z 4-bosqichdan (7 kun) qayta boshlanadi"
+          >
+            {isRelearning ? <Loader2 className="animate-spin" /> : <RotateCcw />}
+            Qayta yodlash
+          </Button>
+        ) : (
+          <span className="text-xs text-muted-foreground">
+            {word.createdAt && `Qo'shilgan: ${formatUzDate(word.createdAt)}`}
+          </span>
+        )}
+
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          onClick={() => onDelete(word)}
+          className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+          aria-label={`"${word.word}" so'zini o'chirish`}
         >
-            <Trash2 className="w-3 h-3 mr-2" /> Delete
+          <Trash2 />
         </Button>
-      </CardFooter>
-    </Card>
+      </div>
+    </motion.article>
   );
-};
+});
+WordCard.displayName = 'WordCard';
 
 export default WordCard;

@@ -1,47 +1,52 @@
-/** Lightweight confetti burst without extra dependencies */
-export const fireConfetti = (durationMs = 1200) => {
-  if (typeof document === 'undefined') return;
+// Dinamik import: konfetti kodi faqat birinchi bayramda yuklanadi —
+// boshlang'ich bundle'ga kirmaydi
+let confettiPromise = null;
+const loadConfetti = () => {
+  confettiPromise ||= import('canvas-confetti').then((m) => m.default);
+  return confettiPromise;
+};
 
-  const colors = ['#8b5cf6', '#ec4899', '#22c55e', '#f59e0b', '#3b82f6'];
-  const container = document.createElement('div');
-  container.setAttribute('aria-hidden', 'true');
-  container.style.cssText =
-    'position:fixed;inset:0;pointer-events:none;z-index:9999;overflow:hidden;';
-  document.body.appendChild(container);
+const BRAND_COLORS = ['#7c3aed', '#a855f7', '#ec4899', '#22c55e', '#f59e0b', '#38bdf8'];
 
-  const particleCount = 48;
-  for (let i = 0; i < particleCount; i += 1) {
-    const el = document.createElement('span');
-    const size = 6 + Math.random() * 8;
-    const left = Math.random() * 100;
-    const delay = Math.random() * 300;
-    const color = colors[i % colors.length];
-    el.style.cssText = `
-      position:absolute;
-      top:-12px;
-      left:${left}%;
-      width:${size}px;
-      height:${size}px;
-      background:${color};
-      border-radius:2px;
-      opacity:0.9;
-      transform:rotate(${Math.random() * 360}deg);
-      animation:linguist-confetti ${0.8 + Math.random() * 0.6}s ease-out ${delay}ms forwards;
-    `;
-    container.appendChild(el);
-  }
+const prefersReducedMotion = () =>
+  typeof window !== 'undefined' &&
+  window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 
-  if (!document.getElementById('linguist-confetti-style')) {
-    const style = document.createElement('style');
-    style.id = 'linguist-confetti-style';
-    style.textContent = `
-      @keyframes linguist-confetti {
-        0% { transform: translateY(0) rotate(0deg); opacity: 1; }
-        100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
-      }
-    `;
-    document.head.appendChild(style);
-  }
+/**
+ * Bayram effekti: ikki yondan "otiladigan" konfetti.
+ * `canvas-confetti` GPU'da chiziladi va tugagach o'zini tozalaydi.
+ * Harakatni kamaytirish yoqilgan bo'lsa — hech narsa qilinmaydi.
+ */
+export const fireConfetti = async (durationMs = 1400) => {
+  if (typeof document === 'undefined' || prefersReducedMotion()) return;
+  const confetti = await loadConfetti();
 
-  setTimeout(() => container.remove(), durationMs);
+  const end = Date.now() + durationMs;
+  const defaults = { startVelocity: 42, spread: 70, ticks: 220, zIndex: 9999, colors: BRAND_COLORS, scalar: 0.95 };
+
+  (function frame() {
+    confetti({ ...defaults, particleCount: 5, angle: 60, origin: { x: 0, y: 0.75 } });
+    confetti({ ...defaults, particleCount: 5, angle: 120, origin: { x: 1, y: 0.75 } });
+    if (Date.now() < end) requestAnimationFrame(frame);
+  })();
+};
+
+/** Kichik "portlash" — bitta to'g'ri javob uchun */
+export const burstAt = async (element) => {
+  if (!element || prefersReducedMotion()) return;
+  const confetti = await loadConfetti();
+  const rect = element.getBoundingClientRect();
+  confetti({
+    particleCount: 36,
+    spread: 60,
+    startVelocity: 26,
+    ticks: 120,
+    scalar: 0.75,
+    zIndex: 9999,
+    colors: BRAND_COLORS,
+    origin: {
+      x: (rect.left + rect.width / 2) / window.innerWidth,
+      y: (rect.top + rect.height / 2) / window.innerHeight,
+    },
+  });
 };

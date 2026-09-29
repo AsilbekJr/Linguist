@@ -1,6 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { start, stop, makeClient } = require('./helpers/testServer');
+const { finishTopicDay, reviewAllDue } = require('./helpers/dailyFlow');
 
 test.before(async () => {
   await start();
@@ -98,21 +99,20 @@ test('yakunlash XP beradi, lekin ikki marta bermaydi', async () => {
   assert.equal(second.data.user.xp, before.data.xp + 10);
 });
 
-test('tinglash mashqi kunlik 3 qadamni va streak\'ni BLOKLAMAYDI', async () => {
+test('tinglash mashqi kunlik rejani va streak\'ni BLOKLAMAYDI', async () => {
   const api = makeClient();
   await api.register();
 
-  // Tinglashga tegmasdan 3 qadamni bajaramiz
-  await api.post('/api/auth/sync-quest', { type: 'topic' });
-  await api.post('/api/auth/sync-quest', { type: 'review' });
-  const last = await api.post('/api/auth/sync-quest', { type: 'immersion' });
+  // Tinglashga tegmasdan kunlik rejani bajaramiz
+  await finishTopicDay(api);
+  const last = await reviewAllDue(api);
 
   assert.equal(
-    last.data.streakUpdated,
+    last.data.dailyStep.streakUpdated,
     true,
     'tinglash bajarilmagani streak\'ni to\'sib qo\'ydi — bu qo\'shimcha mashq bo\'lishi kerak'
   );
-  assert.equal(last.data.user.currentStreak, 1);
+  assert.equal(last.data.dailyStep.currentStreak, 1);
 });
 
 test('yakunlangani sessiyada ko\'rinadi', async () => {

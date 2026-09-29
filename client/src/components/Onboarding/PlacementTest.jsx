@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { Loader2, Gauge, ArrowRight } from 'lucide-react';
+import { motion } from 'motion/react';
+import { Loader2, Gauge, ArrowRight, Clock, Sparkles } from 'lucide-react';
+import { IconTile, ProgressBar } from '@/components/ui/primitives';
+import { cn } from '@/lib/utils';
 import { toast } from 'react-hot-toast';
 import {
   useStartPlacementMutation,
@@ -89,30 +92,37 @@ const PlacementTest = ({ onDone, onSkip }) => {
     }
   };
 
-  // ── Natija ────────────────────────────────────────────────────────────
+  // ── Natija ──────────────────────────────────────────────────────────
   if (result) {
     const label = CEFR_LABEL[result.resultCefr] || CEFR_LABEL.A1;
     return (
       <div className="text-center">
-        <div className="text-5xl mb-4">🎯</div>
-        <p className="text-xs font-bold uppercase text-primary mb-1">Sizning darajangiz</p>
-        <h2 className="text-3xl font-black mb-2">{label.title}</h2>
-        <p className="text-muted-foreground mb-6">{label.desc}</p>
+        <motion.div
+          initial={{ scale: 0.5, opacity: 0, rotate: -12 }}
+          animate={{ scale: 1, opacity: 1, rotate: 0 }}
+          transition={{ type: 'spring', stiffness: 260, damping: 16 }}
+          className="brand-gradient mx-auto mb-6 inline-flex size-28 items-center justify-center rounded-[2rem] text-4xl font-extrabold text-white shadow-[0_20px_50px_-15px_color-mix(in_oklch,var(--primary)_80%,transparent)]"
+        >
+          {result.resultCefr}
+        </motion.div>
+        <p className="mb-1 text-xs font-bold uppercase tracking-[0.12em] text-primary">Sizning darajangiz</p>
+        <h1 className="text-3xl font-extrabold">{label.title}</h1>
+        <p className="mt-2 text-muted-foreground">{label.desc}</p>
 
-        <div className="bg-secondary/60 rounded-2xl p-4 mb-6 text-sm">
-          <p className="font-bold mb-1">
-            {result.correctCount} / {result.totalQuestions} to&apos;g&apos;ri
+        <div className="surface mt-6 p-4 text-left text-sm">
+          <p className="font-bold">
+            {result.correctCount} / {result.totalQuestions} ta to&apos;g&apos;ri javob
           </p>
           {result.startTopic && (
-            <p className="text-muted-foreground">
-              Kurs <span className="font-bold text-foreground">{result.startDay}-kundan</span> boshlanadi:
-              {' '}&quot;{result.startTopic.topicUz}&quot;
+            <p className="mt-1 text-muted-foreground">
+              Kurs <span className="font-bold text-foreground">{result.startDay}-kundan</span> boshlanadi:{' '}
+              &quot;{result.startTopic.topicUz}&quot;
             </p>
           )}
         </div>
 
-        <Button size="lg" className="rounded-full font-bold w-full" onClick={() => onDone?.(result)}>
-          Boshlash <ArrowRight className="w-4 h-4 ml-2" />
+        <Button size="xl" variant="brand" className="mt-6 w-full" onClick={() => onDone?.(result)}>
+          Davom etish <ArrowRight />
         </Button>
       </div>
     );
@@ -122,39 +132,51 @@ const PlacementTest = ({ onDone, onSkip }) => {
   if (question) {
     return (
       <div>
-        <div className="flex items-center justify-between mb-2">
-          <p className="text-xs font-bold uppercase text-primary">Daraja aniqlash</p>
-          <span className="text-xs text-muted-foreground">{answeredCount + 1}-savol</span>
+        <div className="mb-2 flex items-center justify-between">
+          <p className="text-xs font-bold uppercase tracking-[0.12em] text-primary">Daraja aniqlash</p>
+          <span className="text-xs font-semibold text-muted-foreground tabular">{answeredCount + 1}-savol</span>
         </div>
+        <ProgressBar value={Math.min(answeredCount, 12)} max={12} className="mb-8 h-1.5" label="Test jarayoni" />
 
-        <div className="h-1.5 bg-secondary rounded-full mb-6 overflow-hidden">
-          <div
-            className="h-full bg-primary transition-all duration-300"
-            style={{ width: `${Math.min(100, (answeredCount / 12) * 100)}%` }}
-          />
-        </div>
-
-        <p className="text-lg sm:text-xl font-bold mb-6 leading-relaxed">{question.prompt}</p>
+        <motion.p
+          key={question.itemId}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-6 text-xl font-bold leading-relaxed sm:text-2xl"
+        >
+          {question.prompt}
+        </motion.p>
 
         <div className="space-y-3">
           {question.options.map((opt, i) => (
-            <button
-              key={opt}
+            <motion.button
+              key={`${question.itemId}-${opt}`}
               type="button"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.04 * i }}
               disabled={selected !== null || isAnswering}
               onClick={() => handleAnswer(i)}
-              className={`w-full text-left p-4 rounded-xl border font-medium transition-colors ${
-                selected === i
-                  ? 'border-primary bg-primary/10'
-                  : 'border-border hover:border-primary/50'
-              } disabled:opacity-60`}
+              className={cn(
+                'flex w-full items-center gap-3 rounded-2xl border-2 p-4 text-left font-medium transition-[border-color,background-color] active:scale-[0.99] disabled:cursor-default',
+                selected === i ? 'border-primary bg-primary/8' : 'border-border bg-card hover:border-primary/40',
+                selected !== null && selected !== i && 'opacity-50'
+              )}
             >
+              <span
+                className={cn(
+                  'inline-flex size-8 shrink-0 items-center justify-center rounded-lg text-sm font-bold',
+                  selected === i ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
+                )}
+              >
+                {String.fromCharCode(65 + i)}
+              </span>
               {opt}
-            </button>
+            </motion.button>
           ))}
         </div>
 
-        <p className="text-center text-xs text-muted-foreground mt-6">
+        <p className="mt-6 text-center text-xs text-muted-foreground">
           Bilmasangiz taxmin qilmang — noto&apos;g&apos;ri daraja o&apos;rganishni sekinlashtiradi.
         </p>
       </div>
@@ -163,32 +185,36 @@ const PlacementTest = ({ onDone, onSkip }) => {
 
   // ── Boshlash ──────────────────────────────────────────────────────────
   return (
-    <div className="text-center">
-      <Gauge className="w-12 h-12 text-primary mx-auto mb-4" />
-      <h2 className="text-2xl sm:text-3xl font-black mb-3">Darajangizni aniqlaymiz</h2>
-      <p className="text-muted-foreground mb-2">
-        2 daqiqalik qisqa test. Savollar javobingizga qarab moslashadi.
+    <div className="flex flex-col items-center pt-4 text-center sm:pt-10">
+      <div className="relative mb-6">
+        <div className="absolute inset-0 -z-10 scale-150 rounded-full bg-primary/20 blur-2xl" />
+        <IconTile icon={Gauge} tone="primary" size="lg" className="size-20 animate-float rounded-3xl [&_svg]:size-10" />
+      </div>
+      <h1 className="text-[1.9rem] font-extrabold leading-tight sm:text-4xl">Darajangizni aniqlaymiz</h1>
+      <p className="mt-3 max-w-md text-[15px] text-muted-foreground">
+        Qisqa test — savollar javobingizga qarab moslashadi. Natijaga ko&apos;ra kurs sizga mos kundan
+        boshlanadi va vaqtingiz tejaladi.
       </p>
-      <p className="text-sm text-muted-foreground mb-8">
-        Natijaga qarab kurs sizga mos kundan boshlanadi — bu vaqtingizni tejaydi.
-      </p>
+      <div className="mt-5 flex flex-wrap justify-center gap-2 text-sm">
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-3 py-1.5 font-medium">
+          <Clock className="size-4 text-primary" /> ~2 daqiqa
+        </span>
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-3 py-1.5 font-medium">
+          <Sparkles className="size-4 text-primary" /> ~12 savol
+        </span>
+      </div>
 
-      <Button
-        size="lg"
-        className="rounded-full font-bold w-full mb-3"
-        onClick={handleStart}
-        disabled={isStarting}
-      >
-        {isStarting ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Testni boshlash'}
+      <Button size="xl" variant="brand" className="mt-8 w-full max-w-sm" onClick={handleStart} disabled={isStarting}>
+        {isStarting ? <Loader2 className="animate-spin" /> : <>Testni boshlash <ArrowRight /></>}
       </Button>
 
       {onSkip && (
         <button
           type="button"
           onClick={onSkip}
-          className="text-sm text-muted-foreground hover:text-foreground"
+          className="mt-4 text-sm font-semibold text-muted-foreground hover:text-foreground"
         >
-          Keyinroq, darajani o&apos;zim tanlayman
+          Keyinroq — darajani o&apos;zim tanlayman
         </button>
       )}
     </div>

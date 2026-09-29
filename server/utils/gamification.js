@@ -36,7 +36,6 @@ const computeEarnedBadges = ({
   totalWords = 0,
   currentStreak = 0,
   longestStreak = 0,
-  immersionCompleted = false,
   allQuestsDoneToday = false,
 }) => {
   const earned = [];
@@ -45,7 +44,6 @@ const computeEarnedBadges = ({
   if (totalWords >= 250) earned.push('words_250');
   if (currentStreak >= 7 || longestStreak >= 7) earned.push('streak_7');
   if (currentStreak >= 30 || longestStreak >= 30) earned.push('streak_30');
-  if (immersionCompleted) earned.push('first_chat');
   if (allQuestsDoneToday) earned.push('daily_complete');
   return earned;
 };
@@ -117,10 +115,66 @@ const rollDailyQuests = (user, todayKey) => {
     date: todayKey,
     reviewCompleted: false,
     topicCompleted: false,
-    immersionCompleted: false,
     listeningCompleted: false,
+    reviewedCount: 0,
   };
   return true;
+};
+
+const DAILY_STEP_KEYS = { review: 'reviewCompleted', topic: 'topicCompleted' };
+
+/**
+ * Kunlik rejaning bitta qadamini belgilaydi va ikkalasi tugagan bo'lsa
+ * streak'ni oshiradi. Streak FAQAT shu yerda oshadi.
+ *
+ * Ilgari streak faqat mijoz chaqiradigan `/auth/sync-quest` da oshardi,
+ * `/topics/finish` esa uni umuman chaqirmasdi. Natijada foydalanuvchi avval
+ * takrorlab, keyin sahnani tugatsa, o'sha kuni streak oshmay qolardi. Bundan
+ * tashqari sync-quest mijozga ishonardi — ikki so'rov bilan streak olish
+ * mumkin edi. Endi qadamni faqat server, haqiqiy ish bajarilganda belgilaydi.
+ *
+ * Mutatsiya qiladi, saqlamaydi — chaqiruvchi `user.save()` qiladi.
+ */
+const completeDailyStep = (user, step, todayKey) => {
+  const key = DAILY_STEP_KEYS[step];
+  if (!key) throw new Error(`Noma'lum qadam: ${step}`);
+
+  rollDailyQuests(user, todayKey);
+
+  let xpAwarded = 0;
+  const stepNewlyCompleted = !user.dailyQuests[key];
+  if (stepNewlyCompleted) {
+    user.dailyQuests[key] = true;
+    user.xp = (user.xp || 0) + QUEST_STEP_XP;
+    xpAwarded += QUEST_STEP_XP;
+  }
+
+  let streak = { changed: false, streakFrozen: false };
+  if (user.dailyQuests.reviewCompleted && user.dailyQuests.topicCompleted) {
+    streak = advanceStreak(user, todayKey);
+    if (streak.changed) {
+      user.xp += DAILY_BONUS_XP;
+      xpAwarded += DAILY_BONUS_XP;
+    }
+  }
+
+  return {
+    stepNewlyCompleted,
+    xpAwarded,
+    streakUpdated: streak.changed,
+    streakFrozen: streak.streakFrozen,
+    planCompleted: Boolean(user.dailyQuests.reviewCompleted && user.dailyQuests.topicCompleted),
+  };
+};
+
+/** Foydalanuvchiga ko'rsatiladigan xabar */
+const dailyStepMessage = ({ xpAwarded, streakUpdated, streakFrozen }) => {
+  if (streakUpdated && streakFrozen) {
+    return `Kunlik reja tugadi! +${xpAwarded} XP · Streak muzlatish ishlatildi, ketma-ketlik saqlandi 🧊`;
+  }
+  if (streakUpdated) return `Kunlik reja tugadi! +${xpAwarded} XP va streak yangilandi`;
+  if (xpAwarded > 0) return `Qadam bajarildi! +${xpAwarded} XP`;
+  return null;
 };
 
 const enrichUserProfile = (user, { totalWords = 0 } = {}) => {
@@ -131,7 +185,7 @@ const enrichUserProfile = (user, { totalWords = 0 } = {}) => {
   const quests = obj.dailyQuests || {};
   const isToday = quests.date === today;
   const allQuestsDoneToday =
-    isToday && quests.reviewCompleted && quests.topicCompleted && quests.immersionCompleted;
+    isToday && quests.reviewCompleted && quests.topicCompleted;
 
   obj.level = computeLevelFromXp(obj.xp);
   obj.xpProgress = xpProgressInLevel(obj.xp);
@@ -139,7 +193,6 @@ const enrichUserProfile = (user, { totalWords = 0 } = {}) => {
     totalWords,
     currentStreak: obj.currentStreak || 0,
     longestStreak: obj.longestStreak || 0,
-    immersionCompleted: isToday && quests.immersionCompleted,
     allQuestsDoneToday,
   });
   obj.dailyWordTarget = getDailyWordTarget(obj.onboarding?.level);
@@ -160,6 +213,8 @@ module.exports = {
   computeEarnedBadges,
   advanceStreak,
   rollDailyQuests,
+  completeDailyStep,
+  dailyStepMessage,
   grantMonthlyFreezes,
   enrichUserProfile,
 };

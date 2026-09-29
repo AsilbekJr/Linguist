@@ -1,124 +1,130 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Menu, Home, Book, LogOut, Flame, BarChart3, CreditCard, BookHeart, Brain, GraduationCap, PenLine, MessageCircle, AudioLines, Headphones } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { ThemeToggle } from "./ThemeToggle";
-import { useDispatch } from 'react-redux';
-import { performLogout } from '../utils/authHelpers';
+import { motion } from 'motion/react';
+import { Flame, Snowflake } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import Logo from './brand/Logo';
+import UserMenu from './Layout/UserMenu';
+import { PRIMARY_NAV, PRACTICE_NAV, ACCOUNT_NAV } from './Layout/nav';
 
-const Sidebar = ({ user }) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const dispatch = useDispatch();
-
-  const handleLogout = () => performLogout(dispatch);
-
-  const primaryNav = [
-    { id: '/', label: 'Bugun', icon: Home },
-    { id: '/vocabulary', label: 'Lug\'at', icon: Book },
-  ];
-
-  const practiceNav = [
-    { id: '/review', label: 'Takrorlash', icon: Brain },
-    { id: '/topic', label: 'Kunlik sahna', icon: BookHeart },
-    { id: '/listening', label: 'Tinglash', icon: Headphones },
-    { id: '/practice', label: 'Amaliyot', icon: PenLine },
-    { id: '/tutor', label: 'Ustoz AI', icon: GraduationCap },
-    { id: '/roleplay', label: 'AI suhbat', icon: MessageCircle },
-    { id: '/speaking', label: 'Speaking Lab', icon: AudioLines },
-    { id: '/challenge', label: '100 kun', icon: Flame },
-  ];
-
-  const accountNav = [
-    { id: '/analytics', label: 'Progress', icon: BarChart3 },
-    { id: '/pricing', label: 'Tariflar', icon: CreditCard },
-  ];
-
-  const NavGroup = ({ title, items }) => (
-    <div className="mb-4">
-      {title && <p className="px-4 text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2">{title}</p>}
-      <div className="space-y-1">
-        {items.map((item) => (
-          <NavLink
-            key={item.id}
-            to={item.id}
-            onClick={() => setIsOpen(false)}
-            className={({ isActive }) => cn(
-              "flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all font-medium text-sm",
-              isActive
-                ? "bg-primary text-primary-foreground shadow-md shadow-primary/20"
-                : "text-muted-foreground hover:bg-secondary hover:text-foreground"
-            )}
-            end={item.id === '/'}
-          >
-            <item.icon className="w-5 h-5 shrink-0" />
-            {item.label}
-          </NavLink>
-        ))}
-      </div>
-    </div>
-  );
-
-  const SidebarContent = () => (
-    <div className="flex flex-col h-full">
-      <div className="mb-6 hidden md:block px-4">
-        <h2 className="text-2xl font-black bg-gradient-to-r from-primary via-purple-500 to-pink-500 bg-clip-text text-transparent">
-          Linguist AI
-        </h2>
-      </div>
-
-      <nav className="flex-1 overflow-y-auto">
-        <NavGroup items={primaryNav} />
-        <NavGroup title="Mashq" items={practiceNav} />
-        <NavGroup title="Hisob" items={accountNav} />
-      </nav>
-
-      <div className="mt-auto pt-6 border-t border-border">
-        {user && (
-          <div className="mb-4 px-4">
-            <p className="text-sm font-bold truncate">{user.name}</p>
-            <p className="text-xs text-muted-foreground truncate">{user.email}</p>
-          </div>
+/**
+ * Desktop sidebar (lg+). Telefon va planshetda o'rniga pastki tab-bar ishlaydi
+ * (MobileNav). Faol element ostidagi fon bir joydan ikkinchisiga suzib o'tadi.
+ *
+ * NavGroup ataylab komponentdan TASHQARIDA e'lon qilingan — ilgari u render
+ * ichida yaratilardi va har renderda butun menyu qayta mount bo'lardi.
+ */
+const NavItem = ({ item }) => (
+  <NavLink
+    to={item.to}
+    end={item.end}
+    className={({ isActive }) =>
+      cn(
+        'group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-colors',
+        isActive ? 'text-primary' : 'text-muted-foreground hover:bg-accent/60 hover:text-foreground'
+      )
+    }
+  >
+    {({ isActive }) => (
+      <>
+        {isActive && (
+          <motion.span
+            layoutId="sidebar-active"
+            className="absolute inset-0 rounded-xl bg-primary/10 ring-1 ring-primary/15"
+            transition={{ type: 'spring', stiffness: 380, damping: 32 }}
+          />
         )}
-        <button
-          onClick={handleLogout}
-          className="w-full flex items-center justify-center gap-3 px-4 py-3 text-sm font-bold text-red-500 hover:bg-red-500/10 rounded-xl"
-        >
-          <LogOut className="w-5 h-5" />
-          Chiqish
-        </button>
-      </div>
-    </div>
-  );
+        <item.icon className="relative z-10 size-[18px] shrink-0 transition-transform group-hover:scale-110" />
+        <span className="relative z-10">{item.label}</span>
+      </>
+    )}
+  </NavLink>
+);
+
+const NavGroup = ({ title, items }) => (
+  <div className="space-y-0.5">
+    {title && (
+      <p className="px-3 pb-1.5 pt-4 text-[11px] font-bold uppercase tracking-[0.12em] text-muted-foreground/70">
+        {title}
+      </p>
+    )}
+    {items.map((item) => (
+      <NavItem key={item.to} item={item} />
+    ))}
+  </div>
+);
+
+/** Streak — motivatsiyaning asosiy dvigateli, doim ko'z oldida tursin */
+const StreakCard = ({ user }) => {
+  const streak = user?.currentStreak || 0;
+  const today = user?.today;
+  const q = user?.dailyQuests || {};
+  const isToday = today && q.date === today;
+  const steps = [isToday && q.topicCompleted, isToday && q.reviewCompleted];
+  const done = steps.filter(Boolean).length;
 
   return (
-    <>
-      <div className="md:hidden fixed top-0 left-0 right-0 h-16 bg-background/95 backdrop-blur-md border-b border-border z-50 flex items-center px-4 justify-between">
-        <div className="flex items-center">
-          <Sheet open={isOpen} onOpenChange={setIsOpen}>
-            <SheetTrigger asChild>
-              <Button variant="outline" size="icon">
-                <Menu className="h-5 w-5" />
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="left" className="w-[280px] p-4 bg-background">
-              <SheetHeader><SheetTitle className="sr-only">Menyu</SheetTitle></SheetHeader>
-              <div className="mt-8 h-[calc(100vh-8rem)]"><SidebarContent /></div>
-            </SheetContent>
-          </Sheet>
-          <span className="ml-4 font-black text-lg bg-gradient-to-r from-primary to-purple-500 bg-clip-text text-transparent">
-            Linguist AI
-          </span>
+    <div className="surface noise overflow-hidden p-4">
+      <div className="flex items-center gap-3">
+        <span
+          className={cn(
+            'inline-flex size-10 items-center justify-center rounded-xl',
+            streak > 0 ? 'bg-streak/15 text-streak' : 'bg-muted text-muted-foreground'
+          )}
+        >
+          <Flame className={cn('size-5', streak > 0 && 'animate-flame')} />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="text-lg font-extrabold leading-none tabular">
+            {streak} <span className="text-sm font-semibold text-muted-foreground">kun</span>
+          </p>
+          <p className="mt-1 text-xs text-muted-foreground">ketma-ket streak</p>
         </div>
-        <ThemeToggle />
+        <span
+          className="inline-flex items-center gap-1 rounded-full bg-info/12 px-2 py-1 text-xs font-bold text-info"
+          title="Streak muzlatish: bir kun o'tkazib yuborsangiz, streak saqlanadi"
+        >
+          <Snowflake className="size-3" />
+          {user?.streakFreezesLeft ?? 0}
+        </span>
       </div>
-
-      <aside className="hidden md:flex flex-col w-64 fixed inset-y-0 left-0 z-50 bg-card border-r border-border p-4 lg:p-6 shadow-sm overflow-y-auto">
-        <SidebarContent />
-      </aside>
-    </>
+      <div className="mt-3.5 flex items-center gap-2">
+        <div className="flex flex-1 gap-1.5">
+          {steps.map((s, i) => (
+            <span
+              key={i}
+              className={cn('h-1.5 flex-1 rounded-full transition-colors duration-500', s ? 'bg-success' : 'bg-muted')}
+            />
+          ))}
+        </div>
+        <span className="text-[11px] font-semibold text-muted-foreground tabular">{done}/2 bugun</span>
+      </div>
+    </div>
   );
 };
+
+const Sidebar = ({ user }) => (
+  <aside className="fixed inset-y-0 left-0 z-40 hidden w-[272px] flex-col border-r border-border bg-sidebar lg:flex">
+    <div className="px-5 pb-4 pt-6">
+      <NavLink to="/" aria-label="Bosh sahifa" className="inline-flex rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+        <Logo />
+      </NavLink>
+    </div>
+
+    <div className="px-4">
+      <StreakCard user={user} />
+    </div>
+
+    <nav className="no-scrollbar flex-1 overflow-y-auto px-3 pb-4 pt-3" aria-label="Asosiy menyu">
+      <NavGroup items={PRIMARY_NAV} />
+      <NavGroup title="Mashqlar" items={PRACTICE_NAV} />
+      <NavGroup title="Hisob" items={ACCOUNT_NAV} />
+    </nav>
+
+    <div className="border-t border-border p-3">
+      <UserMenu user={user} side="top" align="start" />
+    </div>
+  </aside>
+);
 
 export default Sidebar;

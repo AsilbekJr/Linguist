@@ -5,14 +5,27 @@
  *   npm run content:validate            # data/topics.json ni tekshiradi
  *   node content/validate.js <fayl>     # boshqa faylni tekshiradi
  *
+ *   npm run content:validate -- --update-baseline
+ *       Joriy IPA farqlarini "ko'rib chiqilgan" deb belgilaydi
+ *       (content/phonetic-exceptions.json). Farqlarni O'QIB CHIQMASDAN
+ *       ishlatmang — bu tekshiruvni ma'nosiz qilib qo'yadi.
+ *
  * Xato topilsa 1 kodi bilan chiqadi — CI'da build'ni to'xtatadi.
  */
 
 const fs = require('fs');
 const path = require('path');
 const { validateCurriculum } = require('./schema');
+const {
+  checkAgainstDictionary,
+  loadSnapshot,
+  loadExceptions,
+  saveExceptions,
+} = require('./dictionaryCheck');
 
-const target = process.argv[2] || path.join(__dirname, '../data/topics.json');
+const args = process.argv.slice(2);
+const updateBaseline = args.includes('--update-baseline');
+const target = args.find((a) => !a.startsWith('--')) || path.join(__dirname, '../data/topics.json');
 
 if (!fs.existsSync(target)) {
   console.error(`Fayl topilmadi: ${target}`);
@@ -28,6 +41,14 @@ try {
 }
 
 const result = validateCurriculum(topics);
+const dict = checkAgainstDictionary(topics, loadSnapshot(), loadExceptions());
+
+if (updateBaseline) {
+  const count = saveExceptions(dict.mismatched);
+  console.log(`\n✓ phonetic-exceptions.json yangilandi: ${count} ta yozuv.`);
+  console.log('  Har birini ko\'rib chiqing — bu fayl kod ko\'rigidan o\'tishi kerak.\n');
+  process.exit(0);
+}
 
 console.log(`\nKontent: ${path.relative(process.cwd(), target)}`);
 if (result.stats) {
@@ -37,18 +58,26 @@ if (result.stats) {
   console.log(`  Unikal so'zlar:  ${s.uniqueWords} (${s.uniqueRatio}%)`);
   console.log(`  Daraja bo'yicha: ${JSON.stringify(s.byCefr)}`);
 }
-
-if (result.warnings.length) {
-  console.log(`\nOgohlantirishlar (${result.warnings.length}):`);
-  for (const w of result.warnings) console.log(`  ! ${w}`);
+if (dict.stats) {
+  const d = dict.stats;
+  console.log(`  Lug'at bilan:    ${d.checked} ta tekshirildi, ` +
+    `${d.phoneticMismatches} IPA / ${d.posMismatches} POS farqi, ` +
+    `${d.exceptions} ta ko'rib chiqilgan istisno`);
 }
 
-if (!result.ok) {
-  const shown = result.errors.slice(0, 40);
-  console.error(`\nXatolar (${result.errors.length}):`);
+const warnings = [...result.warnings, ...dict.warnings];
+if (warnings.length) {
+  console.log(`\nOgohlantirishlar (${warnings.length}):`);
+  for (const w of warnings) console.log(`  ! ${w}`);
+}
+
+const errors = [...result.errors, ...dict.errors];
+if (errors.length) {
+  const shown = errors.slice(0, 40);
+  console.error(`\nXatolar (${errors.length}):`);
   for (const e of shown) console.error(`  ✗ ${e}`);
-  if (result.errors.length > shown.length) {
-    console.error(`  … va yana ${result.errors.length - shown.length} ta`);
+  if (errors.length > shown.length) {
+    console.error(`  … va yana ${errors.length - shown.length} ta`);
   }
   console.error('');
   process.exit(1);

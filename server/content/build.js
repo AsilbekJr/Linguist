@@ -14,6 +14,7 @@
 const fs = require('fs');
 const path = require('path');
 const { validateCurriculum } = require('./schema');
+const { checkAgainstDictionary, loadSnapshot, loadExceptions } = require('./dictionaryCheck');
 
 const WORD_FIELDS = ['word', 'translation', 'phonetic', 'partOfSpeech', 'definition', 'example', 'exampleUz'];
 
@@ -67,6 +68,7 @@ const main = () => {
   const topics = raw.map(expandTopic);
 
   const result = validateCurriculum(topics);
+  const dict = checkAgainstDictionary(topics, loadSnapshot(), loadExceptions());
 
   console.log(`\nManba: ${files.length} fayl, ${topics.length} mavzu`);
   if (result.stats) {
@@ -75,12 +77,26 @@ const main = () => {
     console.log(`  Unikal so'zlar:  ${s.uniqueWords} (${s.uniqueRatio}%)`);
     console.log(`  Daraja bo'yicha: ${JSON.stringify(s.byCefr)}`);
   }
+  if (dict.stats) {
+    const d = dict.stats;
+    console.log(`  Lug'at bilan:    ${d.checked} ta tekshirildi, ` +
+      `${d.phoneticMismatches} IPA / ${d.posMismatches} POS farqi, ` +
+      `${d.exceptions} ta ko'rib chiqilgan istisno`);
+  }
 
-  if (!result.ok) {
-    console.error(`\nBuild to'xtatildi — ${result.errors.length} ta xato:`);
-    for (const e of result.errors.slice(0, 40)) console.error(`  ✗ ${e}`);
-    if (result.errors.length > 40) {
-      console.error(`  … va yana ${result.errors.length - 40} ta`);
+  const warnings = [...result.warnings, ...dict.warnings];
+  if (warnings.length) {
+    console.log(`\nOgohlantirishlar (${warnings.length}):`);
+    for (const w of warnings.slice(0, 20)) console.log(`  ! ${w}`);
+    if (warnings.length > 20) console.log(`  … va yana ${warnings.length - 20} ta`);
+  }
+
+  const errors = [...result.errors, ...dict.errors];
+  if (errors.length) {
+    console.error(`\nBuild to'xtatildi — ${errors.length} ta xato:`);
+    for (const e of errors.slice(0, 40)) console.error(`  ✗ ${e}`);
+    if (errors.length > 40) {
+      console.error(`  … va yana ${errors.length - 40} ta`);
     }
     console.error('');
     process.exit(1);

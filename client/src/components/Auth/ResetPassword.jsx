@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
-import { Loader2, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { Loader2, CheckCircle2, AlertTriangle, Lock } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { useResetPasswordMutation } from '../../features/api/apiSlice';
-import PasswordInput from './PasswordInput';
+import { Button } from '@/components/ui/button';
+import { FadeIn, IconTile } from '@/components/ui/primitives';
+import { AuthHeading, FormAlert, PasswordField } from './Field';
 
 const MIN_LENGTH = 8;
 
@@ -20,16 +22,16 @@ const ResetPassword = () => {
 
   if (!token) {
     return (
-      <div className="w-full max-w-md bg-card border border-border rounded-3xl p-8 shadow-xl text-center">
-        <AlertTriangle className="w-12 h-12 text-amber-500 mx-auto mb-4" />
-        <h2 className="text-2xl font-black mb-3">Havola to&apos;liq emas</h2>
-        <p className="text-muted-foreground mb-8">
-          Havolani pochtangizdan to&apos;liq nusxalab qo&apos;ying yoki yangisini so&apos;rang.
-        </p>
-        <Link to="/forgot-password" className="text-primary font-bold">
-          Yangi havola so&apos;rash →
-        </Link>
-      </div>
+      <FadeIn className="text-center">
+        <IconTile icon={AlertTriangle} tone="warning" size="lg" className="mx-auto mb-5" />
+        <AuthHeading
+          title="Havola to'liq emas"
+          subtitle="Havolani pochtangizdan to'liq nusxalab qo'ying yoki yangisini so'rang."
+        />
+        <Button asChild size="lg" className="w-full">
+          <Link to="/forgot-password">Yangi havola so&apos;rash</Link>
+        </Button>
+      </FadeIn>
     );
   }
 
@@ -52,74 +54,58 @@ const ResetPassword = () => {
       toast.success('Parol yangilandi');
       setTimeout(() => navigate('/login'), 2500);
     } catch (err) {
-      setError(
-        err?.data?.message ||
-          "Havola yaroqsiz yoki muddati tugagan. Yangi havola so'rang."
-      );
+      setError(err?.data?.message || "Havola yaroqsiz yoki muddati tugagan. Yangi havola so'rang.");
     }
   };
 
   if (done) {
     return (
-      <div className="w-full max-w-md bg-card border border-border rounded-3xl p-8 shadow-xl text-center">
-        <CheckCircle2 className="w-12 h-12 text-green-500 mx-auto mb-4" />
-        <h2 className="text-2xl font-black mb-3">Parol yangilandi</h2>
-        <p className="text-muted-foreground mb-8">
-          Xavfsizlik uchun barcha qurilmalardagi sessiyalar yopildi.
-          Endi yangi parol bilan kiring.
-        </p>
-        <Link to="/login" className="text-primary font-bold">
-          Kirish →
-        </Link>
-      </div>
+      <FadeIn className="text-center">
+        <IconTile icon={CheckCircle2} tone="success" size="lg" className="mx-auto mb-5 animate-pop" />
+        <AuthHeading
+          title="Parol yangilandi"
+          subtitle="Xavfsizlik uchun barcha qurilmalardagi sessiyalar yopildi. Endi yangi parol bilan kiring."
+        />
+        <Button asChild size="lg" className="w-full">
+          <Link to="/login">Kirish</Link>
+        </Button>
+      </FadeIn>
     );
   }
 
   return (
-    <div className="w-full max-w-md bg-card border border-border rounded-3xl p-8 shadow-xl">
-      <h2 className="text-2xl sm:text-3xl font-black bg-gradient-to-r from-primary via-purple-500 to-pink-500 bg-clip-text text-transparent mb-2">
-        Yangi parol
-      </h2>
-      <p className="text-muted-foreground text-sm mb-8">
-        Kamida {MIN_LENGTH} ta belgidan iborat yangi parol o&apos;ylab toping.
-      </p>
-
-      {error && (
-        <div className="bg-destructive/10 border border-destructive/40 text-destructive rounded-xl p-3 mb-5 text-sm font-medium">
-          {error}
+    <FadeIn>
+      <AuthHeading title="Yangi parol" subtitle={`Kamida ${MIN_LENGTH} ta belgidan iborat yangi parol o'ylab toping.`} />
+      <div className="space-y-4">
+        {error && <FormAlert>{error}</FormAlert>}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <PasswordField
+            label="Yangi parol"
+            icon={Lock}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            autoComplete="new-password"
+            required
+          />
+          <PasswordField
+            label="Parolni takrorlang"
+            icon={Lock}
+            value={confirm}
+            onChange={(e) => setConfirm(e.target.value)}
+            autoComplete="new-password"
+            required
+          />
+          <Button type="submit" size="xl" variant="brand" disabled={isLoading} className="w-full">
+            {isLoading ? <Loader2 className="animate-spin" /> : 'Parolni saqlash'}
+          </Button>
+        </form>
+        <div className="pt-2 text-center">
+          <Link to="/login" className="text-sm font-semibold text-muted-foreground hover:text-foreground">
+            Kirish sahifasiga qaytish
+          </Link>
         </div>
-      )}
-
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <PasswordInput
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          placeholder="Yangi parol"
-          autoComplete="new-password"
-          required
-        />
-        <PasswordInput
-          value={confirm}
-          onChange={(e) => setConfirm(e.target.value)}
-          placeholder="Parolni takrorlang"
-          autoComplete="new-password"
-          required
-        />
-        <button
-          type="submit"
-          disabled={isLoading}
-          className="w-full py-3 bg-primary text-primary-foreground font-bold rounded-xl disabled:opacity-50 hover:opacity-90 transition-opacity"
-        >
-          {isLoading ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : 'Parolni saqlash'}
-        </button>
-      </form>
-
-      <div className="mt-6 text-center">
-        <Link to="/login" className="text-sm text-muted-foreground hover:text-foreground">
-          Kirish sahifasiga qaytish
-        </Link>
       </div>
-    </div>
+    </FadeIn>
   );
 };
 

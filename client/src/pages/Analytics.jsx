@@ -1,108 +1,147 @@
 import React from 'react';
+import { motion } from 'motion/react';
 import { useGetMeQuery, useGetWordsQuery, useGetChallengeHistoryQuery } from '../features/api/apiSlice';
-import { Flame, Star, BookOpen, Target, Loader2, Award } from 'lucide-react';
-import { BADGE_DEFINITIONS, computeLevelFromXp, xpProgressInLevel } from '../utils/learningUtils';
+import {
+  Flame, Star, BookOpen, Trophy, Award, BarChart3, CheckCircle2, Target, Lock, PenLine, Library, CalendarCheck,
+} from 'lucide-react';
+import { computeLevelFromXp, xpProgressInLevel } from '../utils/learningUtils';
+import { isLearned } from '../utils/wordStatus';
 import NotificationSettings from '../components/NotificationSettings';
+import {
+  AnimatedNumber, IconTile, PageHeader, PageSkeleton, ProgressRing, Stagger, StaggerItem, StatTile,
+} from '@/components/ui/primitives';
+import { cn } from '@/lib/utils';
+
+/** Server `computeEarnedBadges` bilan bir xil identifikatorlar */
+const BADGES = [
+  { id: 'first_word', title: "Birinchi so'z", description: "Lug'atga birinchi so'z qo'shildi", icon: PenLine, tone: 'primary' },
+  { id: 'words_50', title: "50 so'z", description: "Lug'atda 50 ta so'z", icon: BookOpen, tone: 'info' },
+  { id: 'words_250', title: "250 so'z", description: "Lug'atda 250 ta so'z", icon: Library, tone: 'teal' },
+  { id: 'streak_7', title: '7 kunlik streak', description: 'Ketma-ket 7 kun faol', icon: Flame, tone: 'streak' },
+  { id: 'streak_30', title: '30 kunlik streak', description: 'Ketma-ket 30 kun faol', icon: Trophy, tone: 'xp' },
+  { id: 'daily_complete', title: 'Kunlik reja', description: 'Bugungi reja 100% bajarildi', icon: CalendarCheck, tone: 'success' },
+];
+
+const LEVEL_LABELS = { beginner: "Boshlang'ich", intermediate: "O'rta", advanced: 'Yuqori' };
+const GOAL_LABELS = { speaking: "So'zlashuv", vocabulary: "So'z boyligi", general: 'Umumiy' };
+const PLAN_LABELS = { sprint: 'Sprint (1 hafta)', foundation: 'Poydevor (1 oy)', fluency: 'Erkinlik (100 kun)', standard: 'Standart' };
 
 const Analytics = () => {
   const { data: user, isLoading: loadingUser } = useGetMeQuery();
   const { data: words = [], isLoading: loadingWords } = useGetWordsQuery();
   const { data: challenges = [], isLoading: loadingChallenges } = useGetChallengeHistoryQuery();
 
-  const isLoading = loadingUser || loadingWords || loadingChallenges;
-  const mastered = words.filter((w) => w.mastered).length;
+  if (loadingUser || loadingWords || loadingChallenges) return <PageSkeleton cards={6} />;
+
+  const learned = words.filter(isLearned).length;
   const completedChallenges = challenges.filter((c) => c.status === 'completed').length;
   const level = user?.level ?? computeLevelFromXp(user?.xp);
   const xpProgress = user?.xpProgress ?? xpProgressInLevel(user?.xp);
-  const earnedBadgeIds = user?.badges || [];
-
-  if (isLoading) {
-    return (
-      <div className="flex justify-center py-20">
-        <Loader2 className="w-10 h-10 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  const stats = [
-    { label: 'Total XP', value: user?.xp || 0, icon: Star, color: 'text-yellow-500' },
-    { label: 'Daraja', value: level, icon: Award, color: 'text-primary' },
-    { label: 'Kunlik streak', value: user?.currentStreak || 0, icon: Flame, color: 'text-orange-500' },
-    { label: 'Eng uzun streak', value: user?.longestStreak || 0, icon: Flame, color: 'text-orange-400' },
-    { label: "Lug'atdagi so'zlar", value: words.length, icon: BookOpen, color: 'text-purple-500' },
-    { label: "O'zlashtirilgan", value: mastered, icon: Target, color: 'text-green-500' },
-    { label: '100 kun challenge', value: completedChallenges, icon: Target, color: 'text-blue-500' },
-  ];
+  const earned = new Set(user?.badges || []);
+  const learnedPct = words.length ? Math.round((learned / words.length) * 100) : 0;
+  const cefr = user?.onboarding?.placedCefr;
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8 animate-fade-in-up">
-      <div>
-        <h1 className="text-3xl font-black mb-2">Progress</h1>
-        <p className="text-muted-foreground">O'rganish statistikangiz bir joyda.</p>
-      </div>
+    <div className="space-y-6 sm:space-y-8">
+      <PageHeader
+        eyebrow="Natijalar"
+        title="Sizning yo'lingiz"
+        icon={BarChart3}
+        description="O'rganish statistikangiz, nishonlar va eslatma sozlamalari."
+      />
 
-      <div className="bg-card border border-border rounded-2xl p-5">
-        <div className="flex justify-between text-sm font-bold mb-2">
-          <span>Daraja {level}</span>
-          <span className="text-muted-foreground">
-            {xpProgress.current}/{xpProgress.needed} XP
+      {/* Daraja */}
+      <motion.section
+        initial={{ opacity: 0, y: 14 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
+        className="hero-mesh noise relative overflow-hidden rounded-[1.75rem] p-6 text-white sm:p-8"
+      >
+        <div className="pointer-events-none absolute -right-10 -top-10 size-48 rounded-full bg-white/10 blur-2xl" />
+        <div className="relative flex flex-col items-center gap-6 sm:flex-row sm:items-center">
+          <ProgressRing value={xpProgress.current} max={xpProgress.needed} size={132} stroke={11} gradientId="level-ring">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-white/70">Daraja</span>
+            <span className="text-4xl font-extrabold leading-none tabular">{level}</span>
+          </ProgressRing>
+          <div className="text-center sm:text-left">
+            <p className="text-sm font-medium text-white/75">Jami tajriba</p>
+            <p className="text-4xl font-extrabold tabular">
+              <AnimatedNumber value={user?.xp || 0} /> <span className="text-xl text-white/70">XP</span>
+            </p>
+            <p className="mt-2 text-sm text-white/80">
+              Keyingi darajagacha <span className="font-bold text-white">{xpProgress.xpToNext ?? xpProgress.needed - xpProgress.current} XP</span>
+            </p>
+          </div>
+        </div>
+      </motion.section>
+
+      {/* Ko'rsatkichlar */}
+      <Stagger className="grid grid-cols-2 gap-3 lg:grid-cols-3" delay={0.1}>
+        <StaggerItem><StatTile icon={Flame} tone="streak" value={user?.currentStreak || 0} label="joriy streak" /></StaggerItem>
+        <StaggerItem><StatTile icon={Trophy} tone="xp" value={user?.longestStreak || 0} label="eng uzun streak" /></StaggerItem>
+        <StaggerItem><StatTile icon={BookOpen} tone="primary" value={words.length} label="lug'atdagi so'zlar" /></StaggerItem>
+        <StaggerItem><StatTile icon={CheckCircle2} tone="success" value={learned} label={`yodlangan · ${learnedPct}%`} /></StaggerItem>
+        <StaggerItem><StatTile icon={Target} tone="pink" value={completedChallenges} label="100 kun: bajarilgan" /></StaggerItem>
+        <StaggerItem><StatTile icon={Star} tone="info" value={cefr || '—'} label="aniqlangan daraja (CEFR)" /></StaggerItem>
+      </Stagger>
+
+      {/* Nishonlar */}
+      <section className="surface p-5 sm:p-6" aria-labelledby="badges-title">
+        <div className="mb-5 flex items-center justify-between gap-3">
+          <h2 id="badges-title" className="flex items-center gap-2 text-lg font-extrabold">
+            <Award className="size-5 text-xp" /> Nishonlar
+          </h2>
+          <span className="text-sm font-semibold text-muted-foreground tabular">
+            {BADGES.filter((b) => earned.has(b.id)).length}/{BADGES.length}
           </span>
         </div>
-        <div className="w-full bg-secondary rounded-full h-3">
-          <div
-            className="h-full bg-primary rounded-full transition-all"
-            style={{ width: `${xpProgress.percent}%` }}
-          />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-        {stats.map((s) => (
-          <div key={s.label} className="bg-card border border-border rounded-2xl p-5">
-            <s.icon className={`w-6 h-6 mb-3 ${s.color}`} />
-            <div className="text-2xl font-black">{s.value}</div>
-            <div className="text-xs text-muted-foreground font-medium mt-1">{s.label}</div>
-          </div>
-        ))}
-      </div>
-
-      <div className="bg-card border border-border rounded-2xl p-6">
-        <h2 className="font-bold mb-4 flex items-center gap-2">
-          <Award className="w-5 h-5 text-yellow-500" /> Nishonlar
-        </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {BADGE_DEFINITIONS.map((badge) => {
-            const earned = earnedBadgeIds.includes(badge.id);
+        <Stagger className="grid grid-cols-2 gap-3 sm:grid-cols-3" gap={0.05}>
+          {BADGES.map((badge) => {
+            const has = earned.has(badge.id);
             return (
-              <div
+              <StaggerItem
                 key={badge.id}
-                className={`p-4 rounded-xl border flex items-start gap-3 ${
-                  earned ? 'border-green-500/40 bg-green-500/5' : 'border-border opacity-60'
-                }`}
+                className={cn(
+                  'relative flex flex-col items-center rounded-2xl border p-4 text-center transition-colors',
+                  has ? 'border-border bg-card' : 'border-dashed border-border bg-muted/40'
+                )}
               >
-                <span className="text-2xl">{badge.icon}</span>
-                <div>
-                  <p className="font-bold">{badge.title}</p>
-                  <p className="text-xs text-muted-foreground">{badge.description}</p>
-                  {earned && <p className="text-xs text-green-500 font-bold mt-1">Olingan</p>}
+                <div className={cn('relative mb-3', !has && 'opacity-40 grayscale')}>
+                  {has && <div className="absolute inset-0 -z-10 scale-125 rounded-full bg-xp/25 blur-xl" />}
+                  <IconTile icon={badge.icon} tone={badge.tone} size="lg" className="rounded-full" />
+                  {!has && (
+                    <span className="absolute -bottom-1 -right-1 inline-flex size-6 items-center justify-center rounded-full border border-border bg-card">
+                      <Lock className="size-3 text-muted-foreground" />
+                    </span>
+                  )}
                 </div>
-              </div>
+                <p className="text-sm font-bold">{badge.title}</p>
+                <p className="mt-0.5 text-xs text-muted-foreground">{badge.description}</p>
+              </StaggerItem>
             );
           })}
-        </div>
-      </div>
+        </Stagger>
+      </section>
 
-      <NotificationSettings />
+      <div className="grid gap-6 lg:grid-cols-2">
+        <NotificationSettings />
 
-      <div className="bg-card border border-border rounded-2xl p-6">
-        <h2 className="font-bold mb-2">Onboarding profili</h2>
-        <p className="text-sm text-muted-foreground">
-          Daraja: <span className="font-bold text-foreground">{user?.onboarding?.level || '—'}</span>
-          {' · '}
-          Maqsad: <span className="font-bold text-foreground">{user?.onboarding?.goal || '—'}</span>
-          {' · '}
-          Reja: <span className="font-bold text-foreground">{user?.onboarding?.planType || '—'}</span>
-        </p>
+        <section className="surface p-5 sm:p-6" aria-labelledby="profile-title">
+          <h2 id="profile-title" className="mb-4 font-bold">O&apos;quv profili</h2>
+          <dl className="space-y-3 text-sm">
+            {[
+              ['Daraja', LEVEL_LABELS[user?.onboarding?.level] || '—'],
+              ['Maqsad', GOAL_LABELS[user?.onboarding?.goal] || '—'],
+              ['Reja', PLAN_LABELS[user?.onboarding?.planType] || '—'],
+              ['Vaqt zonasi', user?.timezone || '—'],
+            ].map(([k, v]) => (
+              <div key={k} className="flex items-center justify-between gap-3 border-b border-border pb-3 last:border-0 last:pb-0">
+                <dt className="text-muted-foreground">{k}</dt>
+                <dd className="font-semibold">{v}</dd>
+              </div>
+            ))}
+          </dl>
+        </section>
       </div>
     </div>
   );

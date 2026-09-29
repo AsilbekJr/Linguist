@@ -1,414 +1,364 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Button } from "@/components/ui/button";
-import { Mic, MicOff, Volume2, Sparkles, Loader2, RefreshCw, AudioLines, ArrowRightLeft } from "lucide-react";
+import React, { useCallback, useState } from 'react';
+import { AnimatePresence, motion } from 'motion/react';
+import { Mic, MicOff, Volume2, Loader2, RefreshCw, AudioLines, Languages, Info, Sparkles } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/input';
+import { PageHeader } from '@/components/ui/primitives';
+import { cn } from '@/lib/utils';
 import { useTranslateSpeakingMutation, useEvaluateSpeakingMutation } from '../features/api/apiSlice';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useSpeechInput } from '../hooks/useSpeechInput';
 import { playTTSAudio } from '../utils/audio';
 import { getApiErrorMessage } from '../utils/apiErrors';
 
+const EASE = [0.16, 1, 0.3, 1];
+const CACHE_KEY = 'linguist_speak_translate_cache';
+
+const readTranslateCache = (text) => {
+  try {
+    const cache = JSON.parse(sessionStorage.getItem(CACHE_KEY) || '{}');
+    return cache[text.trim().toLowerCase()] || null;
+  } catch {
+    return null;
+  }
+};
+
+const writeTranslateCache = (text, data) => {
+  try {
+    const cache = JSON.parse(sessionStorage.getItem(CACHE_KEY) || '{}');
+    cache[text.trim().toLowerCase()] = data;
+    const keys = Object.keys(cache);
+    if (keys.length > 40) delete cache[keys[0]];
+    sessionStorage.setItem(CACHE_KEY, JSON.stringify(cache));
+  } catch {
+    /* shaxsiy rejim — kesh shart emas */
+  }
+};
+
+const VARIANTS = [
+  { key: 'casual', label: 'Sodda', hint: 'Kundalik suhbat uchun', tone: 'info' },
+  { key: 'advanced', label: 'Murakkab', hint: 'Boyroq lug\'at bilan', tone: 'primary' },
+];
+
+const scoreTone = (score) => (score >= 85 ? 'success' : score >= 55 ? 'warning' : 'destructive');
+
+/**
+ * Gapirish mashqi: o'zbekcha fikr → ikki xil inglizcha variant → o'zi aytib ko'rish.
+ *
+ * Ilgari: brauzerda SpeechRecognition bo'lmasa (Firefox, ko'p iOS) tugma
+ * `null.start()` chaqirib sahifani qulatardi, `uz-UZ` tanish esa deyarli hech
+ * qayerda ishlamaydi — va matn kiritish imkoni yo'q edi. Endi o'zbekcha gapni
+ * yozish ham mumkin; mikrofon — qo'shimcha qulaylik.
+ *
+ * Baho TALAFFUZ emas: brauzer tanigan matn maqsadli gap bilan solishtiriladi.
+ * UI buni ochiq aytadi.
+ */
 const SpeakingLab = () => {
-  const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:5000';
-  
-  const [isListening, setIsListening] = useState(false);
-  const [uzbekText, setUzbekText] = useState("");
-  const [isTranslating, setIsTranslating] = useState(false);
-  const [translations, setTranslations] = useState(null); // { casual: '', advanced: '' }
-  const [error, setError] = useState("");
-  const [uzbekRecognition, setUzbekRecognition] = useState(null);
+  const [uzbekText, setUzbekText] = useState('');
+  const [translations, setTranslations] = useState(null);
+  const [practiceType, setPracticeType] = useState(null);
+  const [spokenEnglish, setSpokenEnglish] = useState('');
+  const [evaluation, setEvaluation] = useState(null);
+  const [error, setError] = useState('');
 
-  // Phase 2 State
-  const [isPracticing, setIsPracticing] = useState(false);
-  const [practiceType, setPracticeType] = useState(null); // 'casual' or 'advanced'
-  const [spokenEnglish, setSpokenEnglish] = useState("");
-  const [isEvaluating, setIsEvaluating] = useState(false);
-  const [evaluationData, setEvaluationData] = useState(null); // { score, feedback, color }
-  const [englishRecognition, setEnglishRecognition] = useState(null);
+  const [translateSpeaking, { isLoading: isTranslating }] = useTranslateSpeakingMutation();
+  const [evaluateSpeaking, { isLoading: isEvaluating }] = useEvaluateSpeakingMutation();
 
-  // RTK Query Mutations
-  const [translateSpeaking] = useTranslateSpeakingMutation();
-  const [evaluateSpeakingMutation] = useEvaluateSpeakingMutation();
-
-  // Use refs to avoid stale closures in Web Speech API event listeners
-  const translationsRef = useRef(null);
-  const practiceTypeRef = useRef(null);
-  const spokenEnglishRef = useRef('');
-  const apiCallRef = useRef(null);
-  const finalUzbekRef = useRef('');
-  const lastTranslatedRef = useRef('');
-  const translateInFlightRef = useRef(false);
-  const translateCacheKey = 'linguist_speak_translate_cache';
-
-  useEffect(() => {
-      translationsRef.current = translations;
-      practiceTypeRef.current = practiceType;
-  }, [translations, practiceType]);
-
-  // We define the evaluate function in a ref so listeners can call the latest version
-  useEffect(() => {
-      apiCallRef.current = async (spokenRawText, currentPracticeType) => {
-          setIsEvaluating(true);
-          const currentTranslations = translationsRef.current;
-          
-          if (!currentTranslations) {
-              setIsEvaluating(false);
-              return;
-          }
-
-          const targetSentence = currentTranslations[currentPracticeType];
-
-          try {
-              const data = await evaluateSpeakingMutation({ targetSentence, spokenText: spokenRawText }).unwrap();
-              setEvaluationData(data);
-          } catch (err) {
-              setError(getApiErrorMessage(err, "Sun'iy intellekt baholashda xatolik berdi."));
-          } finally {
-              setIsEvaluating(false);
-          }
-      };
-  });
-
-  const readTranslateCache = (text) => {
-    try {
-      const raw = sessionStorage.getItem(translateCacheKey);
-      if (!raw) return null;
-      const cache = JSON.parse(raw);
-      return cache[text.trim().toLowerCase()] || null;
-    } catch {
-      return null;
-    }
-  };
-
-  const writeTranslateCache = (text, data) => {
-    try {
-      const key = text.trim().toLowerCase();
-      const raw = sessionStorage.getItem(translateCacheKey);
-      const cache = raw ? JSON.parse(raw) : {};
-      cache[key] = data;
-      const keys = Object.keys(cache);
-      if (keys.length > 40) {
-        delete cache[keys[0]];
+  const translate = useCallback(
+    async (raw) => {
+      const text = String(raw || '').trim();
+      if (text.length < 3) {
+        setError("Kamida bir nechta so'zdan iborat gap yozing.");
+        return;
       }
-      sessionStorage.setItem(translateCacheKey, JSON.stringify(cache));
-    } catch {
-      /* ignore */
-    }
-  };
-
-  const handleTranslation = useCallback(async (textToTranslate) => {
-      const text = String(textToTranslate || '').trim();
-      if (text.length < 3) return;
-      if (translateInFlightRef.current) return;
-      if (text === lastTranslatedRef.current) return;
+      setError('');
+      setEvaluation(null);
+      setSpokenEnglish('');
+      setPracticeType(null);
 
       const cached = readTranslateCache(text);
       if (cached) {
-        lastTranslatedRef.current = text;
         setTranslations(cached);
         return;
       }
-
-      translateInFlightRef.current = true;
-      setIsTranslating(true);
-      setError('');
       try {
-          const data = await translateSpeaking(text).unwrap();
-          lastTranslatedRef.current = text;
-          writeTranslateCache(text, data);
-          setTranslations(data);
+        const data = await translateSpeaking(text).unwrap();
+        writeTranslateCache(text, data);
+        setTranslations(data);
       } catch (err) {
-          setError(getApiErrorMessage(err, 'Tarjima qilishda xatolik yuz berdi.'));
-      } finally {
-          translateInFlightRef.current = false;
-          setIsTranslating(false);
+        setError(getApiErrorMessage(err, 'Tarjima qilishda xatolik yuz berdi.'));
       }
-  }, [translateSpeaking]);
+    },
+    [translateSpeaking]
+  );
 
-  const handleTranslationRef = useRef(handleTranslation);
-  useEffect(() => {
-    handleTranslationRef.current = handleTranslation;
-  }, [handleTranslation]);
+  // O'zbekcha: tanilgan matn maydonga tushadi — foydalanuvchi tuzatib, keyin tarjima qiladi
+  const uzSpeech = useSpeechInput({
+    lang: 'uz-UZ',
+    onResult: (text) => setUzbekText(text),
+  });
 
-  // Initialize Web Speech APIs
-  useEffect(() => {
-    let uzRec;
-    let enRec;
-
-    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      
-      // 1. Uzbek Listener (Phase 1)
-      uzRec = new SpeechRecognition();
-      uzRec.continuous = false;
-      uzRec.interimResults = true;
-      uzRec.lang = 'uz-UZ';
-
-      uzRec.onresult = (event) => {
-        let finalTrans = '';
-        let interimTrans = '';
-        for (let i = event.resultIndex; i < event.results.length; ++i) {
-          if (event.results[i].isFinal) finalTrans += event.results[i][0].transcript;
-          else interimTrans += event.results[i][0].transcript;
-        }
-        if (finalTrans) finalUzbekRef.current = finalTrans;
-        setUzbekText(finalTrans || interimTrans);
-      };
-
-      uzRec.onend = () => {
-        setIsListening(false);
-        const text = (finalUzbekRef.current || '').trim();
-        if (text.length > 2) handleTranslationRef.current(text);
-      };
-      uzRec.onerror = () => { setIsListening(false); setError("O'zbek mikrofoni bilan xatolik."); };
-      setUzbekRecognition(uzRec);
-
-      // 2. English Listener (Phase 2)
-      enRec = new SpeechRecognition();
-      enRec.continuous = false;
-      enRec.interimResults = true;
-      enRec.lang = 'en-US';
-
-      enRec.onresult = (event) => {
-        let finalTrans = '';
-        let interimTrans = '';
-        for (let i = event.resultIndex; i < event.results.length; ++i) {
-          if (event.results[i].isFinal) finalTrans += event.results[i][0].transcript;
-          else interimTrans += event.results[i][0].transcript;
-        }
-        const newText = finalTrans || interimTrans;
-        spokenEnglishRef.current = newText;
-        setSpokenEnglish(newText);
-      };
-
-      enRec.onend = () => {
-        setIsPracticing(false);
-        const finalSpoken = spokenEnglishRef.current;
-        const pt = practiceTypeRef.current;
-        
-        if (finalSpoken.trim().length > 1 && pt && apiCallRef.current) {
-            apiCallRef.current(finalSpoken, pt);
-        }
-      };
-      enRec.onerror = () => { setIsPracticing(false); setError("Ingliz mikrofonida xatolik yuz berdi."); };
-      setEnglishRecognition(enRec);
-      
-    } else {
-      setError("Brauzeringiz Speech API ni qo'llab-quvvatlamaydi.");
-    }
-
-    return () => {
-      try {
-        uzRec?.stop();
-        enRec?.stop();
-      } catch {
-        /* ignore */
-      }
-    };
-  }, []);
-
-  const toggleUzbekListening = () => {
-    if (isListening) uzbekRecognition.stop();
-    else {
-      setUzbekText('');
-      setTranslations(null);
-      setSpokenEnglish('');
-      setEvaluationData(null);
-      setError('');
-      finalUzbekRef.current = '';
-      lastTranslatedRef.current = '';
-      uzbekRecognition.start();
-      setIsListening(true);
+  const evaluate = async (spoken, type) => {
+    const target = translations?.[type];
+    if (!target || spoken.trim().length < 2) return;
+    try {
+      const data = await evaluateSpeaking({ targetSentence: target, spokenText: spoken }).unwrap();
+      setEvaluation(data);
+    } catch (err) {
+      setError(getApiErrorMessage(err, "Javobni tekshirib bo'lmadi."));
     }
   };
 
-  const toggleEnglishPractice = (type) => {
-      if (isPracticing) {
-          englishRecognition.stop();
-      } else {
-          setPracticeType(type);
-          setSpokenEnglish("");
-          setEvaluationData(null);
-          englishRecognition.start();
-          setIsPracticing(true);
-      }
+  const enSpeech = useSpeechInput({
+    lang: 'en-US',
+    onResult: (text) => {
+      setSpokenEnglish(text);
+      evaluate(text, practiceType);
+    },
+  });
+
+  const startPractice = (type) => {
+    if (enSpeech.listening) {
+      enSpeech.stop();
+      return;
+    }
+    setPracticeType(type);
+    setSpokenEnglish('');
+    setEvaluation(null);
+    setError('');
+    enSpeech.start();
   };
 
-  const evaluateSpeech = async (spokenRawText, currentPracticeType) => {
-      setIsEvaluating(true);
-      const targetSentence = translations[currentPracticeType];
-
-      try {
-          const data = await evaluateSpeakingMutation({ targetSentence, spokenText: spokenRawText }).unwrap();
-          setEvaluationData(data);
-      } catch (err) {
-          setError(getApiErrorMessage(err, "Sun'iy intellekt baholashda xatolik berdi."));
-      } finally {
-          setIsEvaluating(false);
-      }
+  const reset = () => {
+    setUzbekText('');
+    setTranslations(null);
+    setSpokenEnglish('');
+    setEvaluation(null);
+    setPracticeType(null);
+    setError('');
   };
-
-
-
-  const getEvaluationColor = (color) => {
-      if (color === 'green') return 'bg-green-500/10 border-green-500 text-green-600';
-      if (color === 'yellow') return 'bg-yellow-500/10 border-yellow-500 text-yellow-600';
-      return 'bg-red-500/10 border-red-500 text-red-600';
-  };
-
-
 
   return (
-    <div className="max-w-4xl mx-auto animate-fade-in-up py-8 px-4">
-      <div className="text-center mb-8">
-        <h2 className="text-3xl md:text-5xl font-black bg-gradient-to-r from-orange-400 to-rose-500 bg-clip-text text-transparent mb-4">
-          Speaking Lab
-        </h2>
-        <p className="text-muted-foreground text-base md:text-lg">
-          O'zbek tilida gapiring, tarjimasini ko'ring yoki 1 daqiqalik podcastlarni qaytaring!
-        </p>
-      </div>
+    <div className="mx-auto max-w-3xl">
+      <PageHeader
+        eyebrow="Gapirish"
+        title="Fikringizni inglizcha ayting"
+        tone="pink"
+        icon={AudioLines}
+        description="O'zbekcha gap yozing yoki ayting — ikki xil inglizcha variantini ko'rsatamiz. Keyin uni o'zingiz aytib ko'rasiz."
+      />
 
-      {error && (
-         <div className="bg-destructive/15 border border-destructive/50 text-destructive p-4 rounded-xl mb-6 sm:mb-8 text-center text-sm sm:text-base font-medium">
-             {error}
-         </div>
-      )}
-
-      <Tabs defaultValue="translate" className="w-full">
-        <div className="flex justify-center mb-8">
-            <TabsList className="grid w-full max-w-[400px] grid-cols-2 p-1 bg-secondary rounded-2xl h-12 sm:h-14">
-                <TabsTrigger value="translate" className="rounded-xl font-bold data-[state=active]:bg-background data-[state=active]:shadow-sm">Translate & Speak</TabsTrigger>
-            </TabsList>
+      {/* 1-qadam: o'zbekcha fikr */}
+      <section className="surface p-5 sm:p-6">
+        <div className="mb-3 flex items-center gap-2">
+          <span className="inline-flex size-6 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">1</span>
+          <h2 className="font-bold">O&apos;zbekcha fikringiz</h2>
         </div>
-
-        {/* --- TAB 1: Translate & Speak --- */}
-        <TabsContent value="translate" className="space-y-8 animate-fade-in">
-          {/* STAGE 1: Uzbek Base Input */}
-          <div className={`relative bg-card rounded-3xl p-5 sm:p-8 border text-center transition-all duration-500 mb-8 ${isListening ? 'border-orange-500/50 shadow-lg shadow-orange-500/20' : 'border-border'}`}>
-              <div className="mb-8 flex justify-center flex-col items-center">
-                  <Button
-                     onClick={toggleUzbekListening}
-                     size="lg"
-                     className={`w-24 h-24 rounded-full transition-all duration-300 mb-4 ${isListening ? 'bg-destructive hover:bg-destructive/90 animate-pulse ring-8 ring-destructive/20' : 'bg-primary hover:bg-primary/90 hover:scale-105'}`}
-                  >
-                      {isListening ? <MicOff className="w-10 h-10" /> : <Mic className="w-10 h-10" />}
-                  </Button>
-                  <h3 className="font-bold text-muted-foreground">O'zbekcha Ovoz 🇺🇿</h3>
-              </div>
-
-              <div className="min-h-[60px] flex flex-col justify-center items-center">
-                  {!isListening && !uzbekText && <p className="text-muted-foreground italic">Mikrofonni bosing va O'zbek tilida gapiring...</p>}
-                  {isListening && !uzbekText && <p className="text-orange-500 font-medium animate-pulse">Eshitmoqdaman...</p>}
-                  {uzbekText && <h3 className="text-xl md:text-2xl font-bold text-card-foreground">"{uzbekText}"</h3>}
-              </div>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            translate(uzbekText);
+          }}
+        >
+          <div className="relative">
+            <Textarea
+              value={uzSpeech.listening ? uzSpeech.interim : uzbekText}
+              onChange={(e) => setUzbekText(e.target.value)}
+              placeholder="Masalan: Ertaga do'stlarim bilan tog'ga chiqmoqchiman."
+              rows={3}
+              maxLength={400}
+              disabled={uzSpeech.listening || isTranslating}
+              className="pr-16 text-lg"
+              aria-label="O'zbekcha gap"
+            />
+            {uzSpeech.supported && (
+              <Button
+                type="button"
+                size="icon"
+                variant={uzSpeech.listening ? 'destructive' : 'soft'}
+                className="absolute bottom-3 right-3 rounded-full"
+                onClick={uzSpeech.toggle}
+                aria-label={uzSpeech.listening ? "To'xtatish" : "O'zbekcha aytish"}
+              >
+                {uzSpeech.listening && <span className="absolute inset-0 animate-ping rounded-full bg-destructive/40" />}
+                {uzSpeech.listening ? <MicOff /> : <Mic />}
+              </Button>
+            )}
           </div>
+          {uzSpeech.error && <p className="mt-2 text-sm text-destructive">{uzSpeech.error}</p>}
+          <div className="mt-4 flex flex-wrap items-center gap-2">
+            <Button type="submit" size="lg" disabled={isTranslating || uzbekText.trim().length < 3}>
+              {isTranslating ? <Loader2 className="animate-spin" /> : <Languages />}
+              Inglizchaga o&apos;girish
+            </Button>
+            {translations && (
+              <Button type="button" variant="ghost" size="lg" onClick={reset}>
+                <RefreshCw /> Yangi gap
+              </Button>
+            )}
+          </div>
+        </form>
+      </section>
 
-          {isTranslating && (
-              <div className="flex flex-col items-center justify-center p-5 sm:p-8 bg-card rounded-3xl border border-border mt-8">
-                  <Loader2 className="w-12 h-12 text-primary animate-spin mb-4" />
-                  <p className="text-muted-foreground font-medium">Mukammal tarjima qilinmoqda...</p>
-              </div>
-          )}
+      <AnimatePresence>
+        {error && (
+          <motion.div
+            initial={{ opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            role="alert"
+            className="mt-4 rounded-2xl border border-destructive/30 bg-destructive/8 px-4 py-3 text-sm font-medium text-destructive"
+          >
+            {error}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-          {/* STAGE 2: English Output & Pronunciation Practice */}
-          {!isTranslating && translations && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-8 animate-fade-in">
-                  
-                  {/* Casual Column */}
-                  <div className="flex flex-col gap-4">
-                      <div className="bg-background rounded-3xl p-4 sm:p-6 border border-border shadow-sm flex flex-col h-full">
-                          <div className="flex justify-between items-start mb-4">
-                              <div>
-                                  <h4 className="font-bold text-blue-500 text-lg flex items-center gap-2">
-                                     Sodda <Sparkles className="w-4 h-4" />
-                                  </h4>
-                              </div>
-                              <Button variant="secondary" size="icon" onClick={() => playTTSAudio(translations.casual, 'en-US')} className="rounded-full bg-blue-500/10 text-blue-500 hover:bg-blue-500 hover:text-white">
-                                  <Volume2 className="w-5 h-5" />
-                              </Button>
-                          </div>
-                          <p className="text-xl md:text-2xl font-black text-card-foreground mb-6 flex-grow">{translations.casual}</p>
-                          
-                          {/* Practice Button */}
-                          <Button 
-                              onClick={() => toggleEnglishPractice('casual')}
-                              className={`w-full font-bold ${isPracticing && practiceType === 'casual' ? 'bg-destructive animate-pulse' : 'bg-blue-500 hover:bg-blue-600 text-white'}`}
-                          >
-                             {isPracticing && practiceType === 'casual' ? 'Eshitmoqdaman...' : <><AudioLines className="w-4 h-4 mr-2" /> O'zim Aytib Ko'raman</>}
-                          </Button>
+      {/* 2-qadam: variantlar va aytib ko'rish */}
+      <AnimatePresence>
+        {translations && !isTranslating && (
+          <motion.section
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.45, ease: EASE }}
+            className="mt-6"
+          >
+            <div className="mb-3 flex items-center gap-2">
+              <span className="inline-flex size-6 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">2</span>
+              <h2 className="font-bold">Tanlang, tinglang va o&apos;zingiz ayting</h2>
+            </div>
+            <div className="grid gap-4 md:grid-cols-2">
+              {VARIANTS.map((v, i) => {
+                const active = practiceType === v.key;
+                const listening = active && enSpeech.listening;
+                return (
+                  <motion.div
+                    key={v.key}
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.08 * i, duration: 0.4, ease: EASE }}
+                    className={cn('surface flex flex-col p-5 transition-[border-color,box-shadow]', active && 'border-primary/40 ring-4 ring-primary/10')}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="flex items-center gap-1.5 font-bold text-primary">
+                          <Sparkles className="size-4" /> {v.label}
+                        </p>
+                        <p className="text-xs text-muted-foreground">{v.hint}</p>
                       </div>
-                  </div>
+                      <Button
+                        variant="outline"
+                        size="icon-sm"
+                        className="rounded-full"
+                        onClick={() => playTTSAudio(translations[v.key], 'en-US')}
+                        aria-label={`${v.label} variantni eshitish`}
+                      >
+                        <Volume2 />
+                      </Button>
+                    </div>
+                    <p className="mt-4 flex-1 text-xl font-extrabold leading-snug">{translations[v.key]}</p>
+                    {enSpeech.supported ? (
+                      <Button
+                        className="mt-5 w-full"
+                        variant={listening ? 'destructive' : 'default'}
+                        onClick={() => startPractice(v.key)}
+                        disabled={isEvaluating}
+                      >
+                        {listening ? (
+                          <>
+                            <span className="relative flex size-2.5">
+                              <span className="absolute inline-flex size-full animate-ping rounded-full bg-white/70" />
+                              <span className="relative inline-flex size-2.5 rounded-full bg-white" />
+                            </span>
+                            Eshitmoqdaman — to&apos;xtatish
+                          </>
+                        ) : (
+                          <>
+                            <Mic /> O&apos;zim aytib ko&apos;raman
+                          </>
+                        )}
+                      </Button>
+                    ) : null}
+                    {listening && enSpeech.interim && (
+                      <p className="mt-3 text-sm italic text-muted-foreground">&ldquo;{enSpeech.interim}&rdquo;</p>
+                    )}
+                  </motion.div>
+                );
+              })}
+            </div>
+            {!enSpeech.supported && (
+              <p className="mt-3 flex items-start gap-2 text-sm text-muted-foreground">
+                <Info className="mt-0.5 size-4 shrink-0" />
+                Bu brauzer ovozni tanimaydi — variantlarni tinglab, ovoz chiqarib takrorlang. Tekshiruv uchun Chrome yoki Edge&apos;dan foydalaning.
+              </p>
+            )}
+          </motion.section>
+        )}
+      </AnimatePresence>
 
-                  {/* Advanced Column */}
-                  <div className="flex flex-col gap-4">
-                      <div className="bg-background rounded-3xl p-4 sm:p-6 border border-border shadow-sm flex flex-col h-full">
-                          <div className="flex justify-between items-start mb-4">
-                              <div>
-                                  <h4 className="font-bold text-purple-500 text-lg flex items-center gap-2">
-                                      Murakkab <Sparkles className="w-4 h-4" />
-                                  </h4>
-                              </div>
-                              <Button variant="secondary" size="icon" onClick={() => playTTSAudio(translations.advanced, 'en-US')} className="rounded-full bg-purple-500/10 text-purple-500 hover:bg-purple-500 hover:text-white">
-                                  <Volume2 className="w-5 h-5" />
-                              </Button>
-                          </div>
-                          <p className="text-xl md:text-2xl font-black text-card-foreground mb-6 flex-grow">{translations.advanced}</p>
-                          
-                          {/* Practice Button */}
-                          <Button 
-                              onClick={() => toggleEnglishPractice('advanced')}
-                              className={`w-full font-bold ${isPracticing && practiceType === 'advanced' ? 'bg-destructive animate-pulse' : 'bg-purple-500 hover:bg-purple-600 text-white'}`}
-                          >
-                              {isPracticing && practiceType === 'advanced' ? 'Eshitmoqdaman...' : <><AudioLines className="w-4 h-4 mr-2" /> O'zim Aytib Ko'raman</>}
-                          </Button>
-                      </div>
-                  </div>
-
+      {/* 3-qadam: natija */}
+      <AnimatePresence mode="wait">
+        {isEvaluating && (
+          <motion.div
+            key="evaluating"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="surface mt-6 flex items-center justify-center gap-3 p-6 text-muted-foreground"
+          >
+            <Loader2 className="size-5 animate-spin" /> Aytganingiz tekshirilmoqda…
+          </motion.div>
+        )}
+        {!isEvaluating && evaluation && spokenEnglish && (
+          <motion.section
+            key="result"
+            initial={{ opacity: 0, y: 16, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.45, ease: EASE }}
+            className={cn(
+              'mt-6 rounded-3xl border p-6 sm:p-7',
+              scoreTone(evaluation.score) === 'success' && 'border-success/30 bg-success/8',
+              scoreTone(evaluation.score) === 'warning' && 'border-warning/35 bg-warning/10',
+              scoreTone(evaluation.score) === 'destructive' && 'border-destructive/30 bg-destructive/8'
+            )}
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Moslik</p>
+                <p
+                  className={cn(
+                    'text-5xl font-extrabold tabular',
+                    scoreTone(evaluation.score) === 'success' && 'text-success',
+                    scoreTone(evaluation.score) === 'warning' && 'text-warning',
+                    scoreTone(evaluation.score) === 'destructive' && 'text-destructive'
+                  )}
+                >
+                  {evaluation.score}%
+                </p>
               </div>
-          )}
-
-          {/* STAGE 3: Pronunciation Feedback Output */}
-          {isEvaluating && (
-              <div className="mt-8 p-4 sm:p-6 text-center border border-border bg-card rounded-2xl">
-                  <Loader2 className="w-8 h-8 text-orange-500 animate-spin mx-auto mb-2" />
-                  <p className="text-muted-foreground font-medium">Talaffuzingiz AI orqali tekshirilmoqda...</p>
+              <span className="text-4xl" aria-hidden="true">
+                {evaluation.score >= 85 ? '🔥' : evaluation.score >= 55 ? '💪' : '📚'}
+              </span>
+            </div>
+            <div className="mt-5 space-y-3 text-sm">
+              <div className="rounded-2xl bg-card/80 p-4">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Maqsadli gap</p>
+                <p className="mt-1 font-semibold">{translations?.[practiceType]}</p>
               </div>
-          )}
-
-          {!isEvaluating && evaluationData && spokenEnglish && (
-              <div className={`mt-8 p-5 sm:p-8 border-2 rounded-3xl shadow-lg transition-all animate-fade-in ${getEvaluationColor(evaluationData.color)}`}>
-                  <div className="flex justify-between items-start mb-6">
-                     <div>
-                         <h3 className="text-3xl font-black mb-1">Natija: {evaluationData.score} / 100</h3>
-                         <p className="opacity-80 font-medium">Maqsadli gap: {translations[practiceType]}</p>
-                     </div>
-                     {evaluationData.score >= 90 && <span className="text-4xl">🔥</span>}
-                     {evaluationData.score >= 50 && evaluationData.score < 90 && <span className="text-4xl">💪</span>}
-                     {evaluationData.score < 50 && <span className="text-4xl">📚</span>}
-                  </div>
-                  
-                  <div className="bg-background/50 rounded-xl p-4 mb-4 border border-black/10 dark:border-white/10">
-                      <span className="text-xs uppercase font-bold opacity-60 block mb-1">Siz Aytdingiz:</span>
-                      <p className="text-xl font-bold">"{spokenEnglish}"</p>
-                  </div>
-
-                  <p className="text-lg leading-relaxed mix-blend-multiply dark:mix-blend-lighten">
-                      <span className="font-bold">Izoh: </span> 
-                      {evaluationData.feedback}
-                  </p>
+              <div className="rounded-2xl bg-card/80 p-4">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Brauzer tanigan matn</p>
+                <p className="mt-1 font-semibold">&ldquo;{spokenEnglish}&rdquo;</p>
               </div>
-          )}
-
-          {translations && !isTranslating && (
-              <div className="mt-12 flex justify-center">
-                 <Button variant="outline" onClick={() => { setUzbekText(""); setTranslations(null); setSpokenEnglish(""); setEvaluationData(null); }} className="rounded-full">
-                     <RefreshCw className="w-4 h-4 mr-2" /> Yangi gap boshlash
-                 </Button>
-              </div>
-          )}
-        </TabsContent>
-
-        {/* --- TAB 2: Text Translator --- */}
-      </Tabs>
+              <p className="leading-relaxed">{evaluation.feedback}</p>
+              <p className="flex items-start gap-1.5 text-xs text-muted-foreground">
+                <Info className="mt-0.5 size-3.5 shrink-0" />
+                Bu talaffuz bahosi emas: brauzer tanigan matn maqsadli gap bilan solishtiriladi.
+              </p>
+            </div>
+          </motion.section>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
