@@ -7,7 +7,6 @@ import {
   useStartTopicQuizMutation,
   useSubmitTopicQuizMutation,
   useFinishTopicDayMutation,
-  useAddWordMutation,
   useGetWordsQuery,
   useGetMeQuery,
 } from '../features/api/apiSlice';
@@ -20,7 +19,6 @@ import {
   Loader2,
   CheckCircle2,
   Volume2,
-  Plus,
   Check,
   ArrowRight,
   ChevronLeft,
@@ -29,14 +27,13 @@ import {
   Headphones,
   Lightbulb,
   Trophy,
-  BookHeart,
+  BookCheck,
   RotateCcw,
   PartyPopper,
   AlertTriangle,
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { playTTSAudio } from '../utils/audio';
-import { getDailyWordTarget } from '../utils/learningUtils';
 import { fireConfetti } from '../utils/celebration';
 import { track, EVENTS } from '../lib/analytics';
 
@@ -186,9 +183,9 @@ const TopicQuiz = ({ quiz, onPass, onBack, submitQuiz, isSubmitting }) => {
 };
 
 /** O'rganish → mini-test → yakunlash */
-const Stepper = ({ current, quizPassed, savedOk }) => {
+const Stepper = ({ current, quizPassed }) => {
   const steps = [
-    { key: 'learn', label: "O'rganish", done: savedOk },
+    { key: 'learn', label: "O'rganish", done: quizPassed || current !== 'learn' },
     { key: 'quiz', label: 'Mini-test', done: quizPassed },
     { key: 'finish', label: 'Yakunlash', done: false },
   ];
@@ -226,28 +223,21 @@ const TopicVocabulary = () => {
   const [finishTopicDay, { isLoading: isFinishing }] = useFinishTopicDayMutation();
   const [startQuiz, { isLoading: isStartingQuiz }] = useStartTopicQuizMutation();
   const [submitQuiz, { isLoading: isSubmittingQuiz }] = useSubmitTopicQuizMutation();
-  const [addWord] = useAddWordMutation();
   const { data: userWords = [] } = useGetWordsQuery();
 
   const [step, setStep] = useState('intro');
-  const [addingWords, setAddingWords] = useState({});
-  const [savingAll, setSavingAll] = useState(false);
+  // Yakunlashda lug'atga avtomatik qo'shilgan so'zlar soni (server javobi)
+  const [wordsAdded, setWordsAdded] = useState(null);
   const [quiz, setQuiz] = useState(null);
   const healRef = useRef(false);
 
   // Test o'tilgani SERVERDAN keladi. Ilgari bu sessionStorage'da edi.
   const quizPassed = Boolean(topicData?.quizPassed);
   const pack = useMemo(() => topicData?.words || [], [topicData?.words]);
-  const wordTarget = topicData?.wordTarget ?? user?.dailyWordTarget ?? getDailyWordTarget(user?.onboarding?.level);
-  const requiredCount = topicData?.requiredCount ?? Math.min(wordTarget, pack.length || wordTarget);
-
   const savedSet = useMemo(() => new Set(userWords.map((w) => w.word.toLowerCase())), [userWords]);
-  const packSavedCount = useMemo(() => {
-    if (topicData?.packSavedCount != null) return topicData.packSavedCount;
-    return pack.filter((w) => savedSet.has(w.word.toLowerCase())).length;
-  }, [topicData, pack, savedSet]);
 
-  const canFinish = pack.length === 0 ? true : quizPassed && packSavedCount >= requiredCount;
+  // So'zlar yakunlashda avtomatik saqlanadi — faqat mini-test talab qilinadi
+  const canFinish = pack.length === 0 || quizPassed;
 
   // Dialogda birinchi gapiruvchi chapda, qolganlari o'ngda — chat kabi
   const firstSpeaker = topicData?.dialogue?.[0]?.speaker;
@@ -266,12 +256,13 @@ const TopicVocabulary = () => {
       // Test natijasini server o'zi tekshiradi — mijoz `quizPassed` yubormaydi
       const res = await finishTopicDay({}).unwrap();
       applyUserUpdate(res.user);
+      setWordsAdded(res.wordsAdded ?? null);
       fireConfetti();
       toast.success(res.message || 'Kunlik sahna bajarildi!');
       track(EVENTS.TOPIC_DAY_FINISHED, {
         day: topicData?.day,
         cefr: topicData?.cefr,
-        wordsSaved: packSavedCount,
+        wordsSaved: res.wordsAdded ?? 0,
       });
       // Takrorlash oldinroq bajarilgan bo'lsa, kunlik reja aynan shu yerda tugaydi
       if (res.planCompleted && res.streakUpdated) {
@@ -286,7 +277,7 @@ const TopicVocabulary = () => {
       toast.error(msg);
       if (err?.data?.code === 'QUIZ_REQUIRED') setStep('learn');
     }
-  }, [finishTopicDay, applyUserUpdate, packSavedCount, topicData?.cefr, topicData?.day]);
+  }, [finishTopicDay, applyUserUpdate, topicData?.cefr, topicData?.day]);
 
   const handleStartQuiz = useCallback(async () => {
     try {
@@ -311,58 +302,6 @@ const TopicVocabulary = () => {
       handleFinishDay();
     }
   }, [topicData, isLoading, handleFinishDay]);
-
-  const saveWord = (wordObj) =>
-    addWord({
-      word: wordObj.word,
-      skipAI: true,
-      fromTopic: true,
-      manualTranslation: wordObj.translation,
-      manualDefinition: wordObj.definition,
-      manualExamples: [wordObj.example],
-      partOfSpeech: wordObj.partOfSpeech,
-      synonyms: [],
-    }).unwrap();
-
-  const isDuplicate = (error) =>
-    error?.data?.type === 'DUPLICATE' || error?.data?.message?.includes('already');
-
-  const handleAddWordToDict = async (wordObj) => {
-    setAddingWords((prev) => ({ ...prev, [wordObj.word]: true }));
-    try {
-      await saveWord(wordObj);
-      toast.success(`"${wordObj.word}" saqlandi — takrorlashda chiqadi`);
-    } catch (error) {
-      if (isDuplicate(error)) {
-        toast.success(`"${wordObj.word}" allaqachon lug'atingizda`);
-      } else {
-        toast.error("So'zni qo'shishda xatolik.");
-      }
-    } finally {
-      setAddingWords((prev) => ({ ...prev, [wordObj.word]: false }));
-    }
-  };
-
-  /** Ilgari har so'zni bittalab bosib saqlash kerak edi */
-  const handleSaveAll = async () => {
-    const unsaved = pack.filter((w) => !savedSet.has(w.word.toLowerCase()));
-    if (!unsaved.length) return;
-    setSavingAll(true);
-    let failed = 0;
-    for (const w of unsaved) {
-      setAddingWords((prev) => ({ ...prev, [w.word]: true }));
-      try {
-        await saveWord(w);
-      } catch (error) {
-        if (!isDuplicate(error)) failed += 1;
-      } finally {
-        setAddingWords((prev) => ({ ...prev, [w.word]: false }));
-      }
-    }
-    setSavingAll(false);
-    if (failed) toast.error(`${failed} ta so'zni saqlab bo'lmadi. Qayta urining.`);
-    else toast.success(`${unsaved.length} ta so'z saqlandi`);
-  };
 
   if (isLoading) return <PageSkeleton cards={2} />;
 
@@ -412,6 +351,11 @@ const TopicVocabulary = () => {
           <PartyPopper className="size-10" />
         </motion.div>
         <h1 className="text-3xl font-extrabold">Kunlik sahna bajarildi!</h1>
+        {wordsAdded > 0 && (
+          <p className="mx-auto mt-3 inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-sm font-semibold">
+            <BookCheck className="size-4" /> {wordsAdded} ta so&apos;z lug&apos;atingizga qo&apos;shildi
+          </p>
+        )}
         <p className="mx-auto mt-2 max-w-sm text-white/80">
           {reviewDone
             ? "Bugungi reja to'liq bajarildi. Ertaga yangi sahna ochiladi."
@@ -445,7 +389,7 @@ const TopicVocabulary = () => {
             </h1>
           </div>
         </div>
-        <Stepper current={progressStep} quizPassed={quizPassed} savedOk={packSavedCount >= requiredCount} />
+        <Stepper current={progressStep} quizPassed={quizPassed} />
       </div>
 
       <AnimatePresence mode="wait">
@@ -463,7 +407,7 @@ const TopicVocabulary = () => {
               {[
                 { icon: MessagesSquare, text: 'Dialogni o\'qing va tinglang' },
                 { icon: Sparkles, text: 'Mini-testdan o\'ting' },
-                { icon: BookHeart, text: `${requiredCount} ta so'zni saqlang` },
+                { icon: BookCheck, text: "So'zlar lug'atga o'zi qo'shiladi" },
               ].map((s, i) => (
                 <div key={s.text} className="flex items-center gap-3 rounded-2xl bg-muted/60 p-3 text-sm font-medium">
                   <span className="inline-flex size-7 shrink-0 items-center justify-center rounded-full bg-card text-xs font-bold text-primary shadow-xs">
@@ -581,15 +525,9 @@ const TopicVocabulary = () => {
                 <div>
                   <h2 id="words-title" className="text-lg font-extrabold">Bugungi so&apos;zlar</h2>
                   <p className="text-sm text-muted-foreground">
-                    Saqlangan: <span className="font-bold text-foreground tabular">{packSavedCount}/{requiredCount}</span> — kamida {requiredCount} ta kerak
+                    Sahnani yakunlaganingizda hammasi lug&apos;atingizga qo&apos;shiladi va takrorlashda chiqadi
                   </p>
                 </div>
-                {packSavedCount < pack.length && (
-                  <Button variant="soft" size="sm" onClick={handleSaveAll} disabled={savingAll}>
-                    {savingAll ? <Loader2 className="animate-spin" /> : <Plus />}
-                    Barchasini saqlash
-                  </Button>
-                )}
               </div>
 
               <div className="space-y-3">
@@ -601,7 +539,7 @@ const TopicVocabulary = () => {
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.03 * index, duration: 0.35, ease: EASE }}
-                      className={cn('surface p-4 transition-colors sm:p-5', saved && 'border-success/30')}
+                      className="surface p-4 sm:p-5"
                     >
                       <div className="flex items-start gap-3">
                         <div className="min-w-0 flex-1">
@@ -609,6 +547,11 @@ const TopicVocabulary = () => {
                             <h3 className="text-xl font-extrabold tracking-tight">{w.word}</h3>
                             {w.phonetic && <span className="font-ipa text-sm text-muted-foreground">{w.phonetic}</span>}
                             {w.partOfSpeech && <Badge variant="outline">{w.partOfSpeech}</Badge>}
+                            {saved && (
+                              <span className="inline-flex items-center gap-1 text-xs font-semibold text-success">
+                                <Check className="size-3.5" strokeWidth={3} /> Lug&apos;atda
+                              </span>
+                            )}
                           </div>
                           <p className="mt-1 font-semibold text-primary">{w.translation}</p>
                           {w.definition && <p className="mt-1 text-sm text-muted-foreground">{w.definition}</p>}
@@ -638,24 +581,6 @@ const TopicVocabulary = () => {
                           >
                             <Volume2 />
                           </Button>
-                          <Button
-                            variant={saved ? 'success' : 'soft'}
-                            size="icon-sm"
-                            className="rounded-full"
-                            disabled={saved || addingWords[w.word]}
-                            onClick={() => handleAddWordToDict(w)}
-                            aria-label={saved ? 'Saqlangan' : `"${w.word}" so'zini lug'atga saqlash`}
-                          >
-                            {addingWords[w.word] ? (
-                              <Loader2 className="animate-spin" />
-                            ) : saved ? (
-                              <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} className="flex">
-                                <Check strokeWidth={3} />
-                              </motion.span>
-                            ) : (
-                              <Plus />
-                            )}
-                          </Button>
                         </div>
                       </div>
                     </motion.article>
@@ -682,11 +607,6 @@ const TopicVocabulary = () => {
                   </Button>
                 )}
               </div>
-              {!canFinish && quizPassed && packSavedCount < requiredCount && (
-                <p className="mt-2 text-center text-xs font-medium text-muted-foreground">
-                  Yakunlash uchun yana {requiredCount - packSavedCount} ta so&apos;z saqlang
-                </p>
-              )}
             </div>
           </motion.div>
         )}

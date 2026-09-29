@@ -4,6 +4,7 @@ const Word = require('../models/Word');
 const { shouldSendReminder, buildReminderContent, SKIP } = require('../utils/reminders');
 const { sendMail, dailyReminderEmail, isConfigured } = require('./mailer');
 const { sendToUser, isPushConfigured } = require('./pushService');
+const { isTelegramConfigured, sendMessage, escapeHtml } = require('./telegramService');
 
 /**
  * Eslatmalarni yuborish sikli.
@@ -28,15 +29,46 @@ const ensureUnsubscribeToken = async (user) => {
   return token;
 };
 
+/** Eslatmaning Telegram ko'rinishi */
+const telegramReminderText = (user, content) =>
+  [
+    `<b>${escapeHtml(content.subject)}</b>`,
+    '',
+    escapeHtml(content.headline),
+    '',
+    escapeHtml(content.stepsLine),
+  ].join('\n');
+
+/**
+ * Telegram orqali yuborishga urinish.
+ * Bot bloklangan bo'lsa bog'lanish uziladi va eslatma boshqa kanalga o'tadi.
+ * @returns {Promise<boolean>} yuborildimi
+ */
+const trySendTelegram = async (user, content, clientUrl) => {
+  const chatId = user.telegram?.chatId;
+  if (!chatId || !isTelegramConfigured()) return false;
+
+  const res = await sendMessage(chatId, telegramReminderText(user, content), {
+    buttonText: 'Mashqni boshlash',
+    buttonUrl: clientUrl,
+  });
+  if (res.ok) return true;
+  if (res.blocked) {
+    user.telegram.chatId = undefined;
+    user.telegram.linkedAt = null;
+  }
+  return false;
+};
+
 /**
  * @returns {Promise<{checked, sent, skipped, failed, reasons}>}
  */
 const runReminders = async (now = new Date(), { dryRun = false } = {}) => {
   const stats = { checked: 0, sent: 0, skipped: 0, failed: 0, reasons: {}, byChannel: {} };
 
-  if (!isConfigured() && !isPushConfigured() && !dryRun) {
+  if (!isConfigured() && !isPushConfigured() && !isTelegramConfigured() && !dryRun) {
     // Hech qanday kanal yo'q — jimgina to'xtaymiz, lekin buni bildirib qo'yamiz
-    console.warn('Eslatmalar: na MAIL_PROVIDER, na VAPID kalitlari sozlangan');
+    console.warn('Eslatmalar: na MAIL_PROVIDER, na VAPID, na Telegram sozlangan');
   }
 
   const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
@@ -49,7 +81,7 @@ const runReminders = async (now = new Date(), { dryRun = false } = {}) => {
     'onboarding.completed': true,
   })
     .select(
-      'name email timezone onboarding currentStreak lastStreakDay dailyQuests notifications streakFreeze createdAt'
+      'name email timezone onboarding currentStreak lastStreakDay dailyQuests notifications telegram streakFreeze createdAt'
     )
     .cursor();
 
@@ -73,23 +105,28 @@ const runReminders = async (now = new Date(), { dryRun = false } = {}) => {
       const content = buildReminderContent(user, { dueCount });
 
       /**
-       * Kanal tanlash: push bo'lsa push, aks holda email.
+       * Kanal tanlash: Telegram → push → email, faqat BITTASI.
        *
-       * Ikkalasini birga yuborish spam bo'lardi — bir xil eslatma ikki
+       * Hammasini birga yuborish spam bo'lardi — bir xil eslatma ikki
        * joydan kelsa foydalanuvchi ikkalasini ham o'chirib qo'yadi.
-       * Push afzal: ochilish darajasi emaildan sezilarli yuqori va
-       * bildirishnoma darhol ko'rinadi.
+       * Telegram afzal: O'zbekistonda hamma kuniga bir necha marta ochadi,
+       * push esa iOS'da faqat o'rnatilgan PWA'da ishlaydi.
        */
       let channel = 'email';
       if (!dryRun) {
-        const pushResult = await sendToUser(user._id, {
-          title: content.subject,
-          body: content.stepsLine,
-          url: '/',
-          tag: 'daily-reminder',
-        });
+        const viaTelegram = await trySendTelegram(user, content, clientUrl);
+        const pushResult = viaTelegram
+          ? null
+          : await sendToUser(user._id, {
+              title: content.subject,
+              body: content.stepsLine,
+              url: '/',
+              tag: 'daily-reminder',
+            });
 
-        if (pushResult.sent > 0) {
+        if (viaTelegram) {
+          channel = 'telegram';
+        } else if (pushResult.sent > 0) {
           channel = 'push';
         } else {
           const token = await ensureUnsubscribeToken(user);

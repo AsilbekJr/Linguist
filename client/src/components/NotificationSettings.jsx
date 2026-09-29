@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
-import { Bell, BellOff, Loader2, Smartphone, Send } from 'lucide-react';
+import { Bell, BellOff, Loader2, Smartphone, Send, CheckCircle2 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import {
   useGetNotificationPrefsQuery,
@@ -10,6 +10,9 @@ import {
   useSubscribePushMutation,
   useUnsubscribePushMutation,
   useSendTestPushMutation,
+  useGetTelegramStatusQuery,
+  useCreateTelegramLinkMutation,
+  useUnlinkTelegramMutation,
 } from '../features/api/apiSlice';
 import {
   isPushSupported,
@@ -145,6 +148,111 @@ const PushToggle = () => {
 };
 
 /**
+ * Telegram orqali eslatma — asosiy kanal.
+ *
+ * Bog'lash: server bir martalik havola beradi → foydalanuvchi botda "Start"
+ * bosadi → bot hisobni ulaydi. Shu vaqt ichida holatni har 3 soniyada
+ * so'raymiz, ulanishi bilan UI o'zi yangilanadi.
+ */
+const TelegramConnect = () => {
+  const [waiting, setWaiting] = useState(false);
+  const [linkUrl, setLinkUrl] = useState(null);
+  const { data: status } = useGetTelegramStatusQuery(undefined, {
+    pollingInterval: waiting ? 3000 : 0,
+    skipPollingIfUnfocused: false,
+  });
+  const [createLink, { isLoading: isCreating }] = useCreateTelegramLinkMutation();
+  const [unlink, { isLoading: isUnlinking }] = useUnlinkTelegramMutation();
+
+  const linked = Boolean(status?.linked);
+
+  useEffect(() => {
+    if (waiting && linked) {
+      setWaiting(false);
+      setLinkUrl(null);
+      toast.success('Telegram ulandi');
+    }
+  }, [waiting, linked]);
+
+  // Havola 15 daqiqa yashaydi — undan keyin kutishni to'xtatamiz
+  useEffect(() => {
+    if (!waiting) return undefined;
+    const t = setTimeout(() => setWaiting(false), 15 * 60 * 1000);
+    return () => clearTimeout(t);
+  }, [waiting]);
+
+  if (!status?.configured) return null;
+
+  const connect = async () => {
+    // Oynani DARHOL ochamiz: await'dan keyin ochilgan oynani brauzer
+    // "popup" deb bloklaydi. Bloklansa — pastdagi havola qoladi.
+    const win = window.open('', '_blank');
+    try {
+      const { url } = await createLink().unwrap();
+      setLinkUrl(url);
+      setWaiting(true);
+      if (win) win.location.href = url;
+    } catch (err) {
+      win?.close();
+      toast.error(err?.data?.message || "Havola yaratilmadi. Qayta urinib ko'ring.");
+    }
+  };
+
+  const disconnect = async () => {
+    try {
+      await unlink().unwrap();
+      toast.success('Telegram uzildi');
+    } catch {
+      toast.error("Uzib bo'lmadi. Qayta urining.");
+    }
+  };
+
+  return (
+    <div className="border-t border-border pt-5">
+      <div className="flex items-start gap-3">
+        <IconTile icon={Send} tone="info" size="sm" />
+        <div className="min-w-0 flex-1">
+          <p className="flex flex-wrap items-center gap-2 text-sm font-bold">
+            Telegram
+            {linked && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-success/12 px-2 py-0.5 text-[11px] font-bold text-success">
+                <CheckCircle2 className="size-3" /> Ulangan
+              </span>
+            )}
+          </p>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            {linked
+              ? `Eslatmalar Telegram'ga keladi${status.username ? ` (@${status.username})` : ''}. Botda /bugun — bugungi reja.`
+              : "Eng qulay yo'l: eslatma Telegram'ga keladi, boshqa joyga yuborilmaydi."}
+          </p>
+          {waiting && !linked && (
+            <div className="mt-2 space-y-1 text-xs">
+              <p className="flex items-center gap-1.5 font-medium text-primary">
+                <Loader2 className="size-3.5 animate-spin" /> Botda «Start» tugmasini bosing — shu yerda o&apos;zi yangilanadi
+              </p>
+              {linkUrl && (
+                <a href={linkUrl} target="_blank" rel="noreferrer" className="font-bold text-primary underline underline-offset-2">
+                  Telegram ochilmadimi? Shu yerni bosing
+                </a>
+              )}
+            </div>
+          )}
+        </div>
+        {linked ? (
+          <Button size="sm" variant="outline" onClick={disconnect} disabled={isUnlinking}>
+            {isUnlinking ? <Loader2 className="animate-spin" /> : 'Uzish'}
+          </Button>
+        ) : (
+          <Button size="sm" onClick={connect} disabled={isCreating}>
+            {isCreating ? <Loader2 className="animate-spin" /> : 'Ulash'}
+          </Button>
+        )}
+      </div>
+    </div>
+  );
+};
+
+/**
  * Kunlik eslatma sozlamalari.
  *
  * Soat foydalanuvchining MAHALLIY vaqtida — server UTC'da ishlasa ham xat
@@ -181,6 +289,7 @@ const NotificationSettings = () => {
         <Switch checked={enabled} disabled={isSaving} onChange={() => save({ enabled: !enabled })} label="Kunlik eslatma" />
       </div>
 
+      {enabled && <TelegramConnect />}
       {enabled && <PushToggle />}
 
       {enabled && (

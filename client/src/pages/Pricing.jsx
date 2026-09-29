@@ -31,7 +31,7 @@ const PLANS = [
       'Kunlik sahna, takrorlash va tinglash',
       'Kuniga 15 ta AI tekshiruv',
       'Limit tugasa ham takrorlash to\'xtamaydi',
-      '100 kunlik challenge',
+      'Yoddan aytish mashqi (challenge)',
     ],
   },
   {

@@ -127,6 +127,8 @@ const createApp = ({ isProd = process.env.NODE_ENV === 'production', enableRateL
         mail: Boolean(process.env.RESEND_API_KEY || process.env.BREVO_API_KEY),
         push: Boolean(process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY),
         cron: Boolean(process.env.CRON_SECRET),
+        telegram: Boolean(process.env.TELEGRAM_BOT_TOKEN && process.env.TELEGRAM_BOT_USERNAME),
+        telegramWebhook: Boolean(process.env.TELEGRAM_WEBHOOK_SECRET),
       },
       // Aynan shu ro'yxatga tushmagan origin CORS'da rad etiladi
       allowedOrigins: getAllowedOrigins(isProd),
@@ -145,6 +147,7 @@ const createApp = ({ isProd = process.env.NODE_ENV === 'production', enableRateL
   app.use('/api/placement', require('./routes/placementRoutes'));
   app.use('/api/notifications', require('./routes/notificationRoutes'));
   app.use('/api/push', require('./routes/pushRoutes'));
+  app.use('/api/telegram', require('./routes/telegramRoutes'));
   app.use('/api/challenge', require('./routes/challengeRoutes'));
   app.use('/api/topics', require('./routes/topicVocabRoutes'));
   app.use('/api/auth', require('./routes/authRoutes'));

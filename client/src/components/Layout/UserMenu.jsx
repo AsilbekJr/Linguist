@@ -1,7 +1,7 @@
 import React from 'react';
 import { useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, Moon, Sun, Monitor, BarChart3, CreditCard, ChevronsUpDown } from 'lucide-react';
+import { LogOut, Moon, Sun, Monitor, BarChart3, CreditCard, ChevronsUpDown, Settings } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -83,10 +83,13 @@ const UserMenu = ({ user, variant = 'sidebar', align = 'end', side = 'bottom' })
         <DropdownMenuSeparator />
 
         <DropdownMenuItem onSelect={() => navigate('/analytics')}>
-          <BarChart3 /> Natijalar va sozlamalar
+          <BarChart3 /> Natijalar
         </DropdownMenuItem>
         <DropdownMenuItem onSelect={() => navigate('/pricing')}>
           <CreditCard /> Tariflar
+        </DropdownMenuItem>
+        <DropdownMenuItem onSelect={() => navigate('/settings')}>
+          <Settings /> Sozlamalar
         </DropdownMenuItem>
         <DropdownMenuSeparator />
 

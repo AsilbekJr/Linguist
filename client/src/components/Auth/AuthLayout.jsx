@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Link, Outlet } from 'react-router-dom';
 import { AnimatePresence, motion } from 'motion/react';
 import { Repeat2, Mic, Headphones, CheckCircle2, Volume2 } from 'lucide-react';
 import { Logo, LogoMark } from '../brand/Logo';
@@ -110,7 +111,7 @@ const BrandPanel = () => (
       </ul>
     </div>
 
-    <p className="relative text-sm text-white/60">A1 → B1 · 30 mavzu · 300 so&apos;z · oflayn ham ishlaydi</p>
+    <p className="relative text-sm text-white/60">A1 → B2 · 90 mavzu · 900 so&apos;z · oflayn ham ishlaydi</p>
   </div>
 );
 
@@ -124,13 +125,13 @@ const AuthLayout = ({ children }) => (
     <BrandPanel />
     <div className="app-backdrop relative flex flex-col pb-safe pt-safe">
       <div className="flex items-center justify-between p-4 sm:p-6">
-        <span className="lg:invisible">
+        <Link to="/" aria-label="Bosh sahifa" className="lg:invisible">
           <Logo />
-        </span>
+        </Link>
         <ThemeToggle />
       </div>
       <div className="flex flex-1 items-start justify-center px-5 pb-10 pt-6 sm:items-center sm:px-8 sm:pt-0">
-        <div className="w-full max-w-[400px]">{children}</div>
+        <div className="w-full max-w-[400px]">{children ?? <Outlet />}</div>
       </div>
     </div>
   </div>

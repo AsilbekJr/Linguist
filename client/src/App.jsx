@@ -25,6 +25,8 @@ const SpeakingLab = lazy(() => import("./pages/SpeakingLab"));
 const Challenge = lazy(() => import("./pages/Challenge"));
 const Pricing = lazy(() => import("./pages/Pricing"));
 const Analytics = lazy(() => import("./pages/Analytics"));
+const Landing = lazy(() => import("./pages/Landing"));
+const Settings = lazy(() => import("./pages/Settings"));
 const SentenceAnalysis = lazy(() => import("./pages/SentenceAnalysis"));
 
 // Lazy sahifa yuklanguncha — spinner o'rniga sahifa shaklidagi skelet:
@@ -114,8 +116,18 @@ function App() {
     // /login yoki /reset-password kabi URL'lar umuman mavjud emas edi —
     // pochtadagi tiklash havolasini ochib bo'lmasdi.
     return (
-      <AuthLayout>
-        <Routes>
+      <Routes>
+        {/* Tizimga kirmagan odam ilova nima ekanini ko'rsin — ilgari u
+            to'g'ridan-to'g'ri login formasiga tushardi */}
+        <Route
+          index
+          element={
+            <Suspense fallback={<PageLoader />}>
+              <Landing />
+            </Suspense>
+          }
+        />
+        <Route element={<AuthLayout />}>
           <Route
             path="/register"
             element={
@@ -159,8 +171,8 @@ function App() {
               />
             }
           />
-        </Routes>
-      </AuthLayout>
+        </Route>
+      </Routes>
     );
   }
 
@@ -229,6 +241,14 @@ function App() {
           element={
             <Suspense fallback={<PageLoader />}>
               <SentenceAnalysis />
+            </Suspense>
+          }
+        />
+        <Route
+          path="settings"
+          element={
+            <Suspense fallback={<PageLoader />}>
+              <Settings />
             </Suspense>
           }
         />

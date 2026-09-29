@@ -187,7 +187,7 @@ const OnboardingModal = () => {
             )}
 
             {step === 3 && (
-              <StepShell title="Qancha vaqt ajratasiz?" subtitle="Til o'rganishda muntazamlik eng muhimi. O'zingizga mosini tanlang.">
+              <StepShell title="Qancha vaqt ajratasiz?" subtitle="Muntazamlik eng muhimi. Tanlovlarni keyinroq Sozlamalar'da o'zgartirishingiz mumkin.">
                 {PLANS.map((opt, i) => (
                   <Choice key={opt.id} index={i} option={opt} selected={answers.planType === opt.id} onSelect={() => pick('planType', opt.id)} />
                 ))}

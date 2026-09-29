@@ -38,6 +38,8 @@ const LOANWORDS = new Set([
   'bank', 'internet', 'sport', 'menu', 'coffee', 'taxi', 'metro',
   'kilogram', 'litre', 'president', 'doctor', 'problem', 'project',
   'stress', 'stadium', 'hotel', 'radio', 'film', 'kilometre',
+  // 85-86-kunlar (B2): o'zbek tilida aynan shu shaklda ishlatiladi
+  'hostel', 'antivirus',
 ]);
 
 /**

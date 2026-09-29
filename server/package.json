@@ -12,7 +12,8 @@
     "content:validate": "node content/validate.js",
     "dict:fetch": "node scripts/fetch-dictionary.js",
     "pretest": "node content/validate.js",
-    "push:keys": "node scripts/generate-vapid-keys.js"
+    "push:keys": "node scripts/generate-vapid-keys.js",
+    "telegram:webhook": "node scripts/telegram-webhook.js"
   },
   "keywords": [],
   "author": "",
