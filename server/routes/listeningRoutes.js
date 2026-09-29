@@ -3,14 +3,14 @@ const router = express.Router();
 const fs = require('fs');
 const path = require('path');
 const TopicProgress = require('../models/TopicProgress');
-const Word = require('../models/Word');
 const { protect } = require('../middleware/authMiddleware');
 const { validate, listeningCheckSchema } = require('../middleware/validate');
 const { topicsCache } = require('../utils/cache');
 const { userDayKey } = require('../utils/dayKey');
 const { resolveTopicDay } = require('../utils/topicHelpers');
 const { scoreDictation, dictationFeedback } = require('../utils/dictation');
-const { enrichUserProfile, rollDailyQuests } = require('../utils/gamification');
+const { rollDailyQuests } = require('../utils/gamification');
+const { buildUserProfile } = require('../utils/userProfile');
 
 const topicsDataPath = path.join(__dirname, '../data/topics.json');
 
@@ -131,12 +131,10 @@ router.post('/complete', protect, async (req, res) => {
     }
     await req.user.save();
 
-    const profile = enrichUserProfile(req.user, {
-      totalWords: await Word.countDocuments({ user: req.user._id }),
-    });
+    const profile = await buildUserProfile(req.user);
 
     res.json({
-      message: xpAwarded ? `Tinglash mashqi bajarildi! +${xpAwarded} XP` : 'Allaqachon bajarilgan',
+      message: xpAwarded ? 'Tinglash mashqi bajarildi!' : 'Allaqachon bajarilgan',
       xpAwarded,
       user: profile,
     });

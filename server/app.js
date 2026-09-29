@@ -142,14 +142,13 @@ const createApp = ({ isProd = process.env.NODE_ENV === 'production', enableRateL
   app.use('/api/words', require('./routes/wordRoutes'));
   app.use('/api/review', require('./routes/reviewRoutes'));
   app.use('/api/analysis', require('./routes/analysisRoutes'));
-  app.use('/api/speaking', require('./routes/speakingRoutes'));
   app.use('/api/listening', require('./routes/listeningRoutes'));
   app.use('/api/placement', require('./routes/placementRoutes'));
   app.use('/api/notifications', require('./routes/notificationRoutes'));
   app.use('/api/push', require('./routes/pushRoutes'));
   app.use('/api/telegram', require('./routes/telegramRoutes'));
-  app.use('/api/challenge', require('./routes/challengeRoutes'));
   app.use('/api/topics', require('./routes/topicVocabRoutes'));
+  app.use('/api/vocab-topics', require('./routes/vocabTopicRoutes'));
   app.use('/api/auth', require('./routes/authRoutes'));
   app.use('/api/billing', require('./routes/billingRoutes'));
 

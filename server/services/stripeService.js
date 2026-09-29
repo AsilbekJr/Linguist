@@ -30,9 +30,9 @@ const readPeriodEnd = (subscription) => {
   return raw ? new Date(raw * 1000) : null;
 };
 
+// Yangi obuna faqat Pro. Eski Premium obunalar webhook orqali yangilanishda davom etadi.
 const PRICE_MAP = {
   pro: process.env.STRIPE_PRICE_PRO,
-  premium: process.env.STRIPE_PRICE_PREMIUM,
 };
 
 const createCheckoutSession = async ({ user, plan, successUrl, cancelUrl }) => {

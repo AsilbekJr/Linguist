@@ -13,7 +13,7 @@
  * Rejimni SERVER belgilaydi — mijoz o'ziga osonini tanlay olmaydi.
  */
 
-const MODES = Object.freeze({ RECOGNIZE: 'recognize', RECALL: 'recall', SENTENCE: 'sentence' });
+const MODES = Object.freeze({ RECOGNIZE: 'recognize', RECALL: 'recall', SENTENCE: 'sentence', TRANSLATE: 'translate' });
 
 const modeForStage = (stage) => {
   const s = Number(stage) || 0;
@@ -21,6 +21,21 @@ const modeForStage = (stage) => {
   if (s <= 3) return MODES.RECALL;
   return MODES.SENTENCE;
 };
+
+/**
+ * So'z uchun haqiqiy rejim. Tarjimasi yo'q so'z (AI javob bermaganda faqat
+ * inglizcha ta'rif bilan saqlanadi) tanib olish va eslashda ishlamaydi:
+ * tanib olishda to'g'ri variant — tarjima, eslashda esa tarjima savolning
+ * o'zi. Ilgari bunday so'zda variantlardan biri BO'SH chiqardi va uni tanlash
+ * "Validation failed" berardi.
+ *
+ * Gap tuzishga o'tkazish ham yechim emas — boshlovchi uchun yangi so'z bilan
+ * darhol gap tuzish juda qiyin. Shuning uchun bunday so'z bitta oddiy qadam
+ * oladi: to'liq kartochkani ko'rib, o'zbekcha tarjimasini yozish. Tarjima
+ * saqlanadi va so'z odatiy tartibda davom etadi (tanib olish → eslash → gap).
+ */
+const hasTranslation = (w) => Boolean(String(w?.translation || '').trim());
+const modeForWord = (w, stage) => (hasTranslation(w) ? modeForStage(stage) : MODES.TRANSLATE);
 
 const normalizeAnswer = (s) =>
   String(s || '')
@@ -95,6 +110,7 @@ const buildOptions = (translation, { ownPool = [], coursePool = [] } = {}, rando
     }
     return out;
   };
+  // Bo'sh tarjimalar hech qachon variant bo'lmaydi (pick ichida `!key` tekshiruvi)
   const distractors = pick(ownPool);
   if (distractors.length < 3) distractors.push(...pick(coursePool).slice(0, 3 - distractors.length));
   return shuffle([translation, ...distractors], random);
@@ -122,6 +138,16 @@ const presentDueWord = (w, mode, options) => {
   if (mode === MODES.RECOGNIZE) {
     // Tarjima va o'zbekcha misol javobni oshkor qiladi; inglizcha ta'rif ham
     return { ...base, word: w.word, phonetic: w.phonetic, examples: (w.examples || []).slice(0, 1), options };
+  }
+  if (mode === MODES.TRANSLATE) {
+    // Tarjima yo'q — kartochkaning qolgan hammasi ko'rinadi, foydalanuvchi uni o'zi yozadi
+    return {
+      ...base,
+      word: w.word,
+      phonetic: w.phonetic,
+      definition: w.definition,
+      examples: (w.examples || []).slice(0, 1),
+    };
   }
   if (mode === MODES.RECALL) {
     // So'zning o'zi ham, talaffuzi ham yashiriladi
@@ -152,6 +178,7 @@ const revealWord = (w) => ({
 module.exports = {
   MODES,
   modeForStage,
+  modeForWord,
   normalizeAnswer,
   editDistance,
   checkRecall,

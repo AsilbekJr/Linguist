@@ -364,40 +364,6 @@ test('token siz himoyalangan yo\'llarga kirib bo\'lmaydi', async () => {
   assert.equal((await anon.post('/api/topics/quiz/start')).status, 401);
 });
 
-test('audio hajmi cheklangan — Mongo 16MB limitiga urilmaydi', async () => {
-  const api = makeClient();
-  await api.register();
-
-  const challenge = await api.get('/api/challenge/current');
-  const challengeId = challenge.data._id;
-
-  const huge = 'data:audio/webm;base64,' + 'A'.repeat(4_000_000);
-  const res = await api.post('/api/challenge/complete', {
-    challengeId,
-    audioData: huge,
-    spokenText: 'hello',
-  });
-  assert.equal(res.status, 400, 'juda katta audio rad etilishi kerak');
-});
-
-test('challenge baholash usuli halol belgilanadi', async () => {
-  const api = makeClient();
-  await api.register();
-
-  const challenge = await api.get('/api/challenge/current');
-  const res = await api.post('/api/challenge/complete', {
-    challengeId: challenge.data._id,
-    spokenText: 'Welcome to day 1 of your challenge',
-  });
-
-  assert.equal(res.status, 200);
-  assert.equal(
-    res.data.challenge.evaluationMethod,
-    'transcript_match',
-    'baho talaffuz emas, transkript mosligi ekani yozilishi kerak'
-  );
-});
-
 test('lug\'at xizmati ishlamasa so\'z SOXTA ta\'rif bilan saqlanmaydi', async () => {
   // Ilgari bu holatda so'z shunday saqlanardi:
   //   definition: "Definition unavailable (API failed). You can edit this later."
@@ -466,4 +432,52 @@ test('boshqa foydalanuvchining so\'zini refresh qilib bo\'lmaydi', async () => {
 
   const w = await a.post('/api/words', { word: 'zzzsecretword', skipAI: true, manualTranslation: 'sir' });
   assert.equal((await b.post(`/api/words/${w.data._id}/refresh`)).status, 404);
+});
+
+test("tarjimasiz so'z: kontentdan to'ldiriladi, topilmasa — tarjima yozish, keyin tanib olish", async () => {
+  const Word = require('../models/Word');
+  const api = makeClient();
+  await api.register();
+
+  for (const [word, tr] of [['river', 'daryo'], ['mountain', "tog'"], ['forest', "o'rmon"]]) {
+    await api.post('/api/words', { word, skipAI: true, manualTranslation: tr });
+  }
+  // AI javob bermagan holat: so'zlar tarjimasiz saqlangan
+  const valley = await api.post('/api/words', { word: 'valley', skipAI: true, manualTranslation: 'x' });
+  const rare = await api.post('/api/words', { word: 'serendipity', skipAI: true, manualTranslation: 'x', manualDefinition: 'finding good things by chance' });
+  assert.equal(valley.status, 201, JSON.stringify(valley.data));
+  assert.equal(rare.status, 201, JSON.stringify(rare.data));
+  for (const w of [valley, rare]) {
+    await Word.updateOne({ _id: w.data._id }, { $set: { translation: '' } });
+    await setStage(w.data._id, 0);
+  }
+
+  const due = await api.get('/api/review/due');
+  assert.equal(due.status, 200);
+  for (const item of due.data) {
+    for (const opt of item.options || []) assert.ok(String(opt).trim(), "bo'sh variant");
+  }
+  // 1) Kurs kontentida bor so'z — tarjima o'zi to'ldiriladi, oddiy tanib olish
+  const v = due.data.find((w) => String(w._id) === String(valley.data._id));
+  assert.equal(v.mode, 'recognize');
+  assert.ok(v.options.includes('vodiy'));
+  assert.equal((await Word.findById(valley.data._id)).translation, 'vodiy');
+
+  // 2) Hech qayerda yo'q so'z — tarjimani foydalanuvchi yozadi, gap tuzish emas
+  const r = due.data.find((w) => String(w._id) === String(rare.data._id));
+  assert.equal(r.mode, 'translate');
+  assert.ok(r.word && !r.translation);
+  const wrong = await api.post(`/api/review/${rare.data._id}/check`, { mode: 'sentence', sentence: 'Serendipity is nice.' });
+  assert.equal(wrong.status, 409);
+  assert.equal(wrong.data.expectedMode, 'translate');
+
+  const empty = await api.post(`/api/review/${rare.data._id}/translation`, { translation: '  ' });
+  assert.equal(empty.status, 400);
+  const saved = await api.post(`/api/review/${rare.data._id}/translation`, { translation: 'omadli tasodif' });
+  assert.equal(saved.status, 200, JSON.stringify(saved.data));
+  assert.equal(saved.data.item.mode, 'recognize');
+  assert.ok(saved.data.item.options.includes('omadli tasodif'));
+  const ok = await api.post(`/api/review/${rare.data._id}/check`, { mode: 'recognize', answer: 'omadli tasodif' });
+  assert.equal(ok.status, 200);
+  assert.equal(ok.data.isCorrect, true);
 });

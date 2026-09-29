@@ -69,6 +69,14 @@ const reviewCheckSchema = z.object({
     }),
 });
 
+/** Tarjimasiz so'zga foydalanuvchi yozgan o'zbekcha tarjima */
+const reviewTranslationSchema = z.object({
+  params: z.object({ id: objectId }),
+  body: z.object({
+    translation: z.string().trim().min(1, 'Tarjimani yozing').max(120),
+  }),
+});
+
 /** Gap tahlili: ega, kesim va so'z turkumlarini tushuntirish */
 const sentenceAnalyzeSchema = z.object({
   body: z.object({
@@ -87,23 +95,6 @@ const topicQuizSubmitSchema = z.object({
 const topicFinishSchema = z.object({
   body: z.object({
     quizId: z.string().min(8).max(80).optional(),
-  }),
-});
-
-/**
- * Challenge audio. Base64 hajmi cheklangan — ilgari cheklov yo'q edi va
- * 16MB'lik Mongo hujjat limiti tufayli uzun yozuv 500 xatosi berardi.
- */
-const challengeCompleteSchema = z.object({
-  body: z.object({
-    challengeId: objectId,
-    audioData: z
-      .string()
-      .min(32)
-      .max(3_500_000, "Audio juda uzun — 60 soniyagacha yozing")
-      .regex(/^data:audio\/(webm|mp4|mpeg|ogg|wav)(;codecs=[\w.,-]+)?;base64,/, 'Yaroqsiz audio format')
-      .optional(),
-    spokenText: z.string().max(5000).optional(),
   }),
 });
 
@@ -140,6 +131,15 @@ const unsubscribeSchema = z.object({
   }),
 });
 
+/** Mavzular kutubxonasi: `words` bo'lmasa — mavzudagi hamma so'z */
+const vocabTopicAddSchema = z.object({
+  body: z
+    .object({
+      words: z.array(z.string().trim().min(1).max(80)).min(1).max(100).optional(),
+    })
+    .default({}),
+});
+
 const placementAnswerSchema = z.object({
   body: z.object({
     sessionId: objectId,
@@ -152,13 +152,6 @@ const listeningCheckSchema = z.object({
   body: z.object({
     lineIndex: z.number().int().min(0).max(50),
     typed: z.string().max(1000),
-  }),
-});
-
-const speakingEvaluateSchema = z.object({
-  body: z.object({
-    targetSentence: z.string().min(1).max(2000),
-    spokenText: z.string().min(1).max(2000),
   }),
 });
 
@@ -215,15 +208,11 @@ const deleteAccountSchema = z.object({
   }),
 });
 
-const speakingTranslateSchema = z.object({
-  body: z.object({
-    text: z.string().min(1).max(2000),
-  }),
-});
-
 const checkoutSchema = z.object({
   body: z.object({
-    plan: z.enum(['pro', 'premium']),
+    // Faqat ikki tarif: Bepul va Pro. 'premium' eski obunachilar uchun
+    // modelda qoladi, lekin uni yangidan sotib olib bo'lmaydi.
+    plan: z.enum(['pro']),
   }),
 });
 
@@ -234,15 +223,15 @@ module.exports = {
   authLoginSchema,
   wordCreateSchema,
   reviewCheckSchema,
+  reviewTranslationSchema,
   sentenceAnalyzeSchema,
   topicQuizSubmitSchema,
   topicFinishSchema,
-  challengeCompleteSchema,
-  speakingEvaluateSchema,
   listeningCheckSchema,
   placementAnswerSchema,
   notificationPrefsSchema,
   unsubscribeSchema,
+  vocabTopicAddSchema,
   pushSubscribeSchema,
   pushUnsubscribeSchema,
   timezoneSchema,
@@ -252,6 +241,5 @@ module.exports = {
   profileUpdateSchema,
   changePasswordSchema,
   deleteAccountSchema,
-  speakingTranslateSchema,
   checkoutSchema,
 };

@@ -74,3 +74,24 @@ test("navbat ko'rinishi javobni oshkor qilmaydi", () => {
   assert.ok(!/journey/i.test(recall.exampleMasked));
   assert.deepEqual(recall.hint, { firstLetter: 'j', length: 7 });
 });
+
+test("tarjimasiz so'z tanib olish/eslash/gapga emas — tarjima yozishga tushadi", () => {
+  const { modeForWord } = require('../utils/reviewModes');
+  assert.equal(modeForWord({ translation: '' }, 0), 'translate');
+  assert.equal(modeForWord({ translation: '   ' }, 2), 'translate');
+  assert.equal(modeForWord({}, 5), 'translate');
+  assert.equal(modeForWord({ translation: 'vodiy' }, 0), 'recognize');
+  assert.equal(modeForWord({ translation: 'vodiy' }, 2), 'recall');
+});
+
+test("variantlarda bo'sh tarjima bo'lmaydi", () => {
+  const opts = buildOptions('vodiy', { ownPool: ['', '  ', 'bolalar', 'kalit', null, 'tog\''], coursePool: [] });
+  assert.ok(opts.every((o) => String(o).trim()), JSON.stringify(opts));
+});
+
+test("o'z kontentimizdan AI'siz tarjima topiladi", () => {
+  const { lookupTranslation } = require('../utils/localTranslations');
+  assert.equal(lookupTranslation('Valley'), 'vodiy');
+  assert.equal(lookupTranslation('mother'), 'ona');
+  assert.equal(lookupTranslation('serendipity'), '');
+});

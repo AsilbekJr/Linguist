@@ -5,15 +5,26 @@ const QUEST_STEP_XP = 15;
 const DAILY_BONUS_XP = 50;
 const MONTHLY_FREEZE_GRANT = 2;
 
-const getDailyWordTarget = (level) => {
-  switch (level) {
-    case 'intermediate':
-      return 5;
-    case 'advanced':
-      return 7;
-    default:
-      return 3;
-  }
+/**
+ * Kunlik reja → kunlik yangi so'zlar soni.
+ *
+ * Ilgari `planType` faqat yorliq edi ("Sprint", "Erkinlik") — foydalanuvchi
+ * reja tanlardi, lekin ilova o'zini hech o'zgartirmasdi. Endi reja kunlik
+ * yukni belgilaydi. Sahnada 10 ta so'z bor, shuning uchun eng yuqori reja
+ * butun sahnani o'z ichiga oladi.
+ */
+const PLAN_WORD_TARGETS = Object.freeze({ sprint: 5, foundation: 7, fluency: 10 });
+
+/** Reja tanlanmagan eski foydalanuvchilar ('standard') — darajaga qarab, avvalgidek */
+const LEVEL_WORD_TARGETS = Object.freeze({ beginner: 3, intermediate: 5, advanced: 7 });
+
+/**
+ * @param {{level?: string, planType?: string}|string} onboarding — onboarding
+ *   obyekti; eski chaqiruvlar uchun daraja satri ham qabul qilinadi
+ */
+const getDailyWordTarget = (onboarding) => {
+  const ob = typeof onboarding === 'string' ? { level: onboarding } : onboarding || {};
+  return PLAN_WORD_TARGETS[ob.planType] || LEVEL_WORD_TARGETS[ob.level] || LEVEL_WORD_TARGETS.beginner;
 };
 
 const computeLevelFromXp = (xp = 0) => {
@@ -170,14 +181,14 @@ const completeDailyStep = (user, step, todayKey) => {
 /** Foydalanuvchiga ko'rsatiladigan xabar */
 const dailyStepMessage = ({ xpAwarded, streakUpdated, streakFrozen }) => {
   if (streakUpdated && streakFrozen) {
-    return `Kunlik reja tugadi! +${xpAwarded} XP · Streak muzlatish ishlatildi, ketma-ketlik saqlandi 🧊`;
+    return 'Kunlik reja tugadi! Streak muzlatish ishlatildi, ketma-ketlik saqlandi 🧊';
   }
-  if (streakUpdated) return `Kunlik reja tugadi! +${xpAwarded} XP va streak yangilandi`;
-  if (xpAwarded > 0) return `Qadam bajarildi! +${xpAwarded} XP`;
+  if (streakUpdated) return 'Kunlik reja tugadi! Streak yangilandi 🔥';
+  if (xpAwarded > 0) return 'Qadam bajarildi!';
   return null;
 };
 
-const enrichUserProfile = (user, { totalWords = 0 } = {}) => {
+const enrichUserProfile = (user, { totalWords = 0, knownWords = 0, course = null } = {}) => {
   const obj = user.toObject ? user.toObject() : { ...user };
   delete obj.password;
 
@@ -195,7 +206,12 @@ const enrichUserProfile = (user, { totalWords = 0 } = {}) => {
     longestStreak: obj.longestStreak || 0,
     allQuestsDoneToday,
   });
-  obj.dailyWordTarget = getDailyWordTarget(obj.onboarding?.level);
+  obj.dailyWordTarget = getDailyWordTarget(obj.onboarding);
+  // Asosiy o'sish ko'rsatkichlari: yodlangan so'zlar va kursdagi CEFR yo'li.
+  // XP ichkarida qoladi (eski mijozlar va nishonlar uchun), lekin ko'rsatilmaydi.
+  obj.totalWords = totalWords;
+  obj.knownWords = knownWords;
+  obj.course = course;
   obj.today = today;
   obj.streakFreezesLeft = obj.streakFreeze?.available ?? 0;
 

@@ -5,12 +5,11 @@ const fs = require('fs');
 const path = require('path');
 const PlacementSession = require('../models/PlacementSession');
 const TopicProgress = require('../models/TopicProgress');
-const Word = require('../models/Word');
 const { protect } = require('../middleware/authMiddleware');
 const { validate, placementAnswerSchema } = require('../middleware/validate');
 const { topicsCache } = require('../utils/cache');
 const { getStartDayForLevel } = require('../utils/topicHelpers');
-const { enrichUserProfile } = require('../utils/gamification');
+const { buildUserProfile } = require('../utils/userProfile');
 const {
   itemsByLevel,
   getItemById,
@@ -172,9 +171,7 @@ router.post('/answer', protect, validate(placementAnswerSchema), async (req, res
       totalQuestions: session.answers.length,
       startDay: progress.currentDay,
       startTopic: startTopic ? { day: startTopic.day, topicUz: startTopic.topicUz, cefr: startTopic.cefr } : null,
-      user: enrichUserProfile(req.user, {
-        totalWords: await Word.countDocuments({ user: req.user._id }),
-      }),
+      user: await buildUserProfile(req.user),
     });
   } catch (error) {
     console.error('Placement answer error:', error);

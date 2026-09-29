@@ -257,15 +257,6 @@ const wordContextSchema = {
   required: ['translationUz', 'definitionEn', 'exampleEn', 'exampleUz'],
 };
 
-const translateSchema = {
-  type: S.OBJECT,
-  properties: {
-    casual: { type: S.STRING, description: 'Kundalik og\'zaki ingliz tili' },
-    advanced: { type: S.STRING, description: 'Rasmiyroq / boyroq variant' },
-  },
-  required: ['casual', 'advanced'],
-};
-
 // ─── Ommaviy API ─────────────────────────────────────────────────────────────
 
 /**
@@ -303,77 +294,6 @@ Agar gap to'g'ri bo'lsa isCorrect=true va corrected bo'sh bo'lsin — sun'iy xat
       return UNAVAILABLE(error.reason);
     }
   });
-};
-
-const translateUzbekToEnglish = async (uzbekText) => {
-  const key = cacheKey('uz-en-v2', uzbekText);
-  return withCache(key, async () => {
-    try {
-      const parsed = await runStructured(
-        `O'zbekcha gapni ikki xil inglizchaga tarjima qiling.
-O'zbekcha: "${String(uzbekText).slice(0, 400)}"`,
-        translateSchema,
-        { maxTokens: 900, temperature: 0.4 }
-      );
-      const casual = String(parsed.casual || parsed.advanced || '').trim();
-      const advanced = String(parsed.advanced || parsed.casual || '').trim();
-      if (!casual) return UNAVAILABLE('EMPTY_RESPONSE');
-      return { status: 'ok', casual, advanced };
-    } catch (error) {
-      return UNAVAILABLE(error.reason);
-    }
-  });
-};
-
-// ─── Gapirilgan matn aniqligi ────────────────────────────────────────────────
-
-const normalizeWords = (s) =>
-  String(s)
-    .toLowerCase()
-    .replace(/[^\w\s']/g, ' ')
-    .split(/\s+/)
-    .filter(Boolean);
-
-/**
- * DIQQAT: bu talaffuz baholovchi EMAS.
- *
- * Kirish `spokenText` brauzerning SpeechRecognition'idan keladi va u allaqachon
- * to'g'ri inglizcha so'zlarga normallashtirilgan. Ya'ni bu o'lchov "aksent qanchalik
- * to'g'ri" degan savolga javob bermaydi — u faqat "aytilgan so'zlar matnga mos keldimi"
- * ni tekshiradi. Shuning uchun natija `method: 'transcript_match'` bilan belgilanadi
- * va UI uni "talaffuz bahosi" deb ko'rsatmasligi kerak.
- *
- * Haqiqiy talaffuz bahosi uchun fonema darajasidagi xizmat kerak (Azure Pronunciation
- * Assessment yoki shunga o'xshash) — bu keyingi bosqichda.
- */
-const evaluateSpokenAccuracy = (targetSentence, spokenText) => {
-  const target = normalizeWords(targetSentence);
-  const spoken = new Set(normalizeWords(spokenText));
-
-  if (!target.length) {
-    return { score: 0, feedback: 'Matn topilmadi.', color: 'red', method: 'transcript_match', missedWords: [] };
-  }
-
-  const missedWords = target.filter((w) => w.length > 1 && !spoken.has(w));
-  const hits = target.length - target.filter((w) => !spoken.has(w)).length;
-  const score = Math.round((hits / target.length) * 100);
-
-  let feedback;
-  if (score >= 90) {
-    feedback = "Ajoyib — matndagi so'zlarning deyarli hammasi aniq eshitildi.";
-  } else if (missedWords.length > 0) {
-    feedback = `Bu so'zlar eshitilmadi yoki boshqacha aytildi: ${missedWords.slice(0, 6).join(', ')}. Sekinroq va aniqroq takrorlang.`;
-  } else {
-    feedback = "Yaxshi urinish. Jumlani yana bir bor sekin o'qib ko'ring.";
-  }
-
-  return {
-    score,
-    feedback,
-    color: score >= 90 ? 'green' : score >= 50 ? 'yellow' : 'red',
-    missedWords: missedWords.slice(0, 10),
-    method: 'transcript_match',
-  };
 };
 
 /**
@@ -507,8 +427,6 @@ module.exports = {
   isGeminiReady,
   AiUnavailableError,
   checkSentence,
-  translateUzbekToEnglish,
-  evaluateSpokenAccuracy,
   analyzeSentence,
   generateWordContext,
 };

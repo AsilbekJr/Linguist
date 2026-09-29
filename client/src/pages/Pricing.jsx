@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { PageHeader, PageSkeleton, IconTile } from '@/components/ui/primitives';
 import { cn } from '@/lib/utils';
-import { Check, Loader2, Crown, Zap, Sprout, CreditCard, Info } from 'lucide-react';
+import { Check, Loader2, Zap, Sprout, CreditCard, Info } from 'lucide-react';
 import { track, EVENTS } from '../lib/analytics';
 
 /**
@@ -31,7 +31,7 @@ const PLANS = [
       'Kunlik sahna, takrorlash va tinglash',
       'Kuniga 15 ta AI tekshiruv',
       'Limit tugasa ham takrorlash to\'xtamaydi',
-      'Yoddan aytish mashqi (challenge)',
+      'Dialogni takrorlash va yoddan aytish',
     ],
   },
   {
@@ -45,20 +45,14 @@ const PLANS = [
     features: [
       'Kuniga 200 ta AI tekshiruv',
       "Takrorlashda AI grammatika tekshiruvi kun bo'yi",
-      'Gap tahlili va gapirish uchun katta limit',
+      'Gap tahlili uchun katta limit',
       'Bepul tarifdagi hamma narsa',
     ],
   },
-  {
-    id: 'premium',
-    name: 'Premium',
-    price: '$19.99',
-    icon: Crown,
-    tone: 'xp',
-    tagline: 'Chegarasiz mashq',
-    features: ['Kuniga 2000 ta AI tekshiruv', "Pro'dagi hamma narsa"],
-  },
 ];
+
+/** Ikki tarif: Bepul va Pro. Eski Premium obunachilar Pro kartasida ko'rinadi. */
+const displayPlan = (plan) => (plan === 'premium' ? 'pro' : plan || 'free');
 
 const Pricing = () => {
   const [params] = useSearchParams();
@@ -71,7 +65,8 @@ const Pricing = () => {
     if (params.get('canceled')) toast("To'lov bekor qilindi.", { icon: 'ℹ️' });
   }, [params]);
 
-  const currentPlan = sub?.plan || 'free';
+  const currentPlan = displayPlan(sub?.plan);
+  const currentPlanName = sub?.plan === 'premium' ? 'Premium' : PLANS.find((p) => p.id === currentPlan)?.name;
   const used = sub?.usage?.aiCallsToday;
 
   const handleUpgrade = async (plan) => {
@@ -93,7 +88,7 @@ const Pricing = () => {
     }
   };
 
-  if (isLoading) return <PageSkeleton cards={3} />;
+  if (isLoading) return <PageSkeleton cards={2} />;
 
   return (
     <div>
@@ -103,7 +98,7 @@ const Pricing = () => {
         icon={CreditCard}
         description={
           used != null
-            ? `Joriy tarif: ${PLANS.find((p) => p.id === currentPlan)?.name || currentPlan} · bugun ${used} ta AI tekshiruv ishlatildi`
+            ? `Joriy tarif: ${currentPlanName} · bugun ${used} ta AI tekshiruv ishlatildi`
             : undefined
         }
         actions={
@@ -116,7 +111,7 @@ const Pricing = () => {
         }
       />
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-3 md:items-stretch">
+      <div className="mx-auto grid max-w-3xl grid-cols-1 gap-4 md:grid-cols-2 md:items-stretch">
         {PLANS.map((plan, i) => {
           const isCurrent = currentPlan === plan.id;
           return (
@@ -134,7 +129,7 @@ const Pricing = () => {
             >
               {plan.highlight && (
                 <Badge variant="default" className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 shadow-md">
-                  Eng mashhur
+                  Tavsiya etiladi
                 </Badge>
               )}
               <div className="flex items-center gap-3">

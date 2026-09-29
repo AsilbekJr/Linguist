@@ -19,6 +19,7 @@
 const { getDictionaryEntry } = require('./cache');
 const { lookupSnapshot } = require('./dictionarySnapshot');
 const { generateWordContext } = require('../services/geminiService');
+const { lookupTranslation } = require('./localTranslations');
 
 const API = 'https://api.dictionaryapi.dev/api/v2/entries/en';
 const TIMEOUT_MS = 8000;
@@ -137,7 +138,8 @@ const enrichWord = async (word, { learnerLevel = 'beginner', manual = {}, skipAI
 
   const base = resolved.status === 'ok' ? resolved.data : {};
 
-  let translation = base.translation || manual.translation || '';
+  // Oxirgi zaxira — o'z kontentimiz (AI'siz ham ishlaydi)
+  let translation = base.translation || manual.translation || lookupTranslation(word);
   let examples = Array.isArray(base.examples) ? [...base.examples] : [];
   if (manual.examples?.length) examples = [...manual.examples, ...examples];
   let exampleUz = '';

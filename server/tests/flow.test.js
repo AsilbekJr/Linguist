@@ -64,6 +64,58 @@ test('kunlik sahna mijoz kutayotgan barcha maydonlarni qaytaradi', async () => {
   assert.equal(d.quizPassed, false, 'boshida test o\'tilmagan bo\'lishi kerak');
 });
 
+test('profil XP o\'rniga yodlangan so\'zlar va CEFR yo\'lini qaytaradi', async () => {
+  const { computeCourseProgress } = require('../utils/topicsData');
+  const list = [
+    { day: 1, cefr: 'A1' }, { day: 2, cefr: 'A1' },
+    { day: 3, cefr: 'A2' }, { day: 4, cefr: 'A2' }, { day: 5, cefr: 'A2' },
+  ];
+  assert.deepEqual(computeCourseProgress(list, 4), {
+    cefr: 'A2', nextCefr: null, done: 1, total: 3, percent: 33, daysCompleted: 3, totalDays: 5, finished: false,
+  });
+  assert.equal(computeCourseProgress(list, 1).nextCefr, 'A2');
+  assert.equal(computeCourseProgress(list, 6).finished, true);
+  assert.equal(computeCourseProgress(list, 6).percent, 100);
+
+  const api = makeClient();
+  await api.register();
+  const me = await api.get('/api/auth/me');
+  assert.equal(me.status, 200);
+  assert.equal(me.data.knownWords, 0);
+  assert.equal(me.data.totalWords, 0);
+  assert.ok(me.data.course?.cefr, "course.cefr yo'q");
+  assert.equal(me.data.course.daysCompleted, 0);
+});
+
+test('reja kunlik yangi so\'zlar sonini belgilaydi', async () => {
+  const { getDailyWordTarget } = require('../utils/gamification');
+  assert.equal(getDailyWordTarget({ planType: 'sprint', level: 'advanced' }), 5);
+  assert.equal(getDailyWordTarget({ planType: 'fluency' }), 10);
+  // Eski 'standard' reja — darajaga qarab
+  assert.equal(getDailyWordTarget({ planType: 'standard', level: 'intermediate' }), 5);
+  assert.equal(getDailyWordTarget(undefined), 3);
+
+  const api = makeClient();
+  await api.register();
+
+  const setPlan = async (planType) => {
+    const res = await api.patch('/api/auth/profile', { planType });
+    assert.equal(res.status, 200, JSON.stringify(res.data));
+    return res.data;
+  };
+
+  const sprint = await setPlan('sprint');
+  assert.equal(sprint.dailyWordTarget, 5);
+  let today = await api.get('/api/topics/current');
+  assert.equal(today.data.wordTarget, 5);
+  assert.equal(today.data.words.length, 5);
+
+  await setPlan('fluency');
+  today = await api.get('/api/topics/current');
+  assert.equal(today.data.wordTarget, 10);
+  assert.equal(today.data.words.length, Math.min(10, today.data.totalWordsInTopic));
+});
+
 test('to\'liq kunlik oqim: test → yakunlash → so\'zlar avtomatik lug\'atda', async () => {
   const api = makeClient();
   await api.register();
@@ -279,28 +331,6 @@ test('takrorlash statistikasi to\'g\'ri hisoblanadi', async () => {
   assert.equal(stats.data.struggling, 0);
 });
 
-test('challenge real kontentdan keladi, shablon emas', async () => {
-  const api = makeClient();
-  await api.register();
-
-  const res = await api.get('/api/challenge/current');
-  assert.equal(res.status, 200);
-  assert.ok(res.data.text.length > 50);
-  assert.ok(Array.isArray(res.data.lines) && res.data.lines.length >= 4, 'qatorlar yo\'q');
-  assert.ok(res.data.focusWords?.length > 0);
-  assert.ok(res.data.totalDays > 0);
-
-  // Eski shablon matni qaytmasligi kerak
-  assert.ok(
-    !res.data.text.includes('Welcome to day'),
-    'eski shablon matni qaytdi'
-  );
-  assert.ok(
-    !res.data.text.includes('Target words will be dynamically injected'),
-    'to\'ldirilmagan shablon qoldi'
-  );
-});
-
 test('olib tashlangan yo\'llar endi mavjud emas', async () => {
   const api = makeClient();
   await api.register();
@@ -315,4 +345,11 @@ test('olib tashlangan yo\'llar endi mavjud emas', async () => {
 
   // Payme/Click stub'lari ham olib tashlandi
   assert.equal((await api.post('/api/billing/payme/checkout', {})).status, 404);
+
+  // Gapirish va challenge kunlik sahnaga ko'chdi — alohida endpoint'lar yo'q
+  assert.equal((await api.post('/api/speaking/translate', { text: 'salom' })).status, 404);
+  assert.equal((await api.get('/api/challenge/current')).status, 404);
+
+  // Ikki tarif: Premium endi sotilmaydi
+  assert.equal((await api.post('/api/billing/checkout', { plan: 'premium' })).status, 400);
 });

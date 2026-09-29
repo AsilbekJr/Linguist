@@ -21,8 +21,6 @@ const Unsubscribe = lazy(() => import("./pages/Unsubscribe"));
 const ForgotPassword = lazy(() => import("./components/Auth/ForgotPassword"));
 const ResetPassword = lazy(() => import("./components/Auth/ResetPassword"));
 const Listening = lazy(() => import("./pages/Listening"));
-const SpeakingLab = lazy(() => import("./pages/SpeakingLab"));
-const Challenge = lazy(() => import("./pages/Challenge"));
 const Pricing = lazy(() => import("./pages/Pricing"));
 const Analytics = lazy(() => import("./pages/Analytics"));
 const Landing = lazy(() => import("./pages/Landing"));
@@ -188,22 +186,9 @@ function App() {
             </Suspense>
           }
         />
-        <Route
-          path="speaking"
-          element={
-            <Suspense fallback={<PageLoader />}>
-              <SpeakingLab />
-            </Suspense>
-          }
-        />
-        <Route
-          path="challenge"
-          element={
-            <Suspense fallback={<PageLoader />}>
-              <Challenge />
-            </Suspense>
-          }
-        />
+        {/* Gapirish va yoddan aytish endi kunlik sahnaning qadamlari */}
+        <Route path="speaking" element={<Navigate to="/topic" replace />} />
+        <Route path="challenge" element={<Navigate to="/topic" replace />} />
         <Route
           path="topic"
           element={

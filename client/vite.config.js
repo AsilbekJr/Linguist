@@ -10,6 +10,15 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
+  // Ishlab chiqishda /api so'rovlari lokal backendga uzatiladi. Sahifa va API
+  // bitta manzilda bo'ladi — kompyuterda ham, Wi-Fi'dagi telefonda ham
+  // (192.168.x.x:5173), USB port forwarding'da ham (faqat 5173 ni ochish
+  // kifoya). CORS ham kerak emas. VITE_API_URL yozilsa, proxy ishlatilmaydi.
+  server: {
+    proxy: {
+      '/api': { target: process.env.DEV_API_TARGET || 'http://127.0.0.1:5000', changeOrigin: false },
+    },
+  },
   build: {
     rollupOptions: {
       output: {
