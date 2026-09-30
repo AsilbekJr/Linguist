@@ -57,6 +57,8 @@ test('to\'liq oqim: tiklash so\'rovi → yangi parol → yangi parol bilan kiris
     password: 'yangiParol12345',
   });
   assert.equal(reset.status, 200, JSON.stringify(reset.data));
+  // Qaysi hisob tiklangani ko'rsatiladi — bir qutiga bir nechta hisob xati kelishi mumkin
+  assert.equal(reset.data.account, email);
 
   // Eski parol endi ishlamasligi kerak
   const oldLogin = await api.post('/api/auth/login', { email, password: 'password12345' });

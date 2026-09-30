@@ -364,7 +364,14 @@ router.post('/reset-password', validate(resetPasswordSchema), async (req, res) =
     await revokeAllSessionsForUser(user._id, 'password_change');
     clearRefreshCookie(res);
 
-    res.json({ message: "Parol yangilandi. Endi yangi parol bilan kiring." });
+    // Qaysi hisob tiklangani to'liq ko'rsatiladi. Bu xavfsiz: javobni faqat
+    // xatdagi tokenga, ya'ni o'sha pochta qutisiga ega odam oladi. Kerakligi:
+    // Gmail nuqtalar va `+teg`ni e'tiborsiz qoldiradi — `ali.v@gmail.com` va
+    // `aliv@gmail.com` bitta qutiga keladi, lekin bizda bu ikki xil hisob.
+    res.json({
+      message: "Parol yangilandi. Endi yangi parol bilan kiring.",
+      account: user.email,
+    });
   } catch (error) {
     console.error('Reset password error:', error);
     res.status(500).json({ message: 'Server error' });
