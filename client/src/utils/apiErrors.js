@@ -9,8 +9,8 @@ const networkHint = () => {
   if (IS_DEV) return LOCAL_BACKEND_HINT;
   if (!API_URL) {
     return (
-      "Build'da VITE_API_URL yo'q. Vercel → Settings → Environment Variables ga " +
-      "backend manzilini qo'shing va qayta deploy qiling."
+      "Server uxlab qolgan bo'lishi mumkin (Render bepul tarifi — 30-50 soniya kuting). " +
+      "Muammo davom etsa, vercel.json dagi /api yo'naltirish manzilini tekshiring."
     );
   }
   return (
@@ -32,7 +32,7 @@ export const getApiErrorMessage = (err, fallback = "So'rovda xatolik yuz berdi."
    * dasturchi ham nima bo'lganini bilmaydi.
    */
   if (status === 'FETCH_ERROR' || err?.name === 'TypeError') {
-    const where = API_URL || (IS_DEV ? 'lokal backend' : 'API manzili sozlanmagan');
+    const where = API_URL || (IS_DEV ? 'lokal backend' : 'backend');
     return `Serverga ulanib bo'lmadi (${where}). ${networkHint()}`;
   }
   // Dev'da so'rovlar Vite proxy orqali ketadi: backend o'chiq bo'lsa proxy
@@ -41,7 +41,7 @@ export const getApiErrorMessage = (err, fallback = "So'rovda xatolik yuz berdi."
     return `Serverga ulanib bo'lmadi (lokal backend). ${LOCAL_BACKEND_HINT}`;
   }
   if (status === 'PARSING_ERROR') {
-    return "Serverdan kutilmagan javob keldi. VITE_API_URL to'g'ri backendga ishora qilyaptimi?";
+    return "Serverdan kutilmagan javob keldi. /api so'rovlari backendga yetib boryaptimi (vercel.json → rewrites)?";
   }
 
   if (status === 403 && data.code === 'CORS_ORIGIN_NOT_ALLOWED') {

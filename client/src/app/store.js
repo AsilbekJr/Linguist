@@ -38,6 +38,14 @@ const apiTransform = createTransform(
   { whitelist: [apiSlice.reducerPath] }
 );
 
+/**
+ * Access token hech qachon localStorage'ga yozilmaydi: XSS bo'lsa u darhol
+ * o'g'irlanardi. Chiquvchi tomonda ham tozalanadi — yangilanishdan oldin
+ * saqlangan eski token qayta tiklanmasin.
+ */
+const stripToken = (state) => (state && state.token ? { ...state, token: null } : state);
+const authTransform = createTransform(stripToken, stripToken, { whitelist: ['auth'] });
+
 const rootReducer = combineReducers({
   [apiSlice.reducerPath]: apiSlice.reducer,
   ui: uiReducer,
@@ -48,7 +56,7 @@ const persistConfig = {
   key: 'linguist-root',
   storage,
   whitelist: ['auth', apiSlice.reducerPath],
-  transforms: [apiTransform],
+  transforms: [apiTransform, authTransform],
 };
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);

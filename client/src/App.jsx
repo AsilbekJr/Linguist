@@ -5,6 +5,7 @@ import { logout } from "./features/auth/authSlice";
 import {
   apiSlice,
   useGetMeQuery,
+  useRestoreSessionMutation,
   useSetTimezoneMutation,
 } from "./features/api/apiSlice";
 import AuthLayout from "./components/Auth/AuthLayout";
@@ -45,6 +46,16 @@ function App() {
     error: meError,
   } = useGetMeQuery(undefined, { skip: !token });
   const [setTimezone] = useSetTimezoneMutation();
+  const [restoreSession] = useRestoreSessionMutation();
+
+  // Access token faqat xotirada: sahifa qayta ochilganda uni refresh cookie
+  // orqali tiklaymiz. Shu vaqtda UI saqlangan keshdan chiziladi, so'rovlar
+  // esa tiklanishni kutadi (apiSlice → baseQueryWithReauth).
+  useEffect(() => {
+    if (isAuthenticated && !token) {
+      restoreSession();
+    }
+  }, [isAuthenticated, token, restoreSession]);
 
   useEffect(() => {
     if (isAuthenticated) {

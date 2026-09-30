@@ -18,17 +18,35 @@ const validate =
     next();
   };
 
+/**
+ * Email bir xil ko'rinishga keltiriladi: " Ali@Mail.uz " va "ali@mail.uz"
+ * bitta hisob bo'lishi kerak.
+ */
+const emailField = z.string().trim().toLowerCase().pipe(z.email().max(254));
+
+/**
+ * Yangi parol. bcrypt faqat birinchi 72 baytni hisobga oladi — undan uzun
+ * parolning qolgan qismi jimgina e'tiborsiz qolardi (kirill/emoji harflari
+ * 2-4 bayt, shuning uchun belgilar emas, baytlar sanaladi).
+ */
+const newPasswordField = z
+  .string()
+  .min(8)
+  .refine((value) => Buffer.byteLength(value, 'utf8') <= 72, {
+    message: 'Parol juda uzun (maksimum 72 bayt)',
+  });
+
 const authRegisterSchema = z.object({
   body: z.object({
-    name: z.string().min(2).max(80),
-    email: z.string().email(),
-    password: z.string().min(8).max(128),
+    name: z.string().trim().min(2).max(80),
+    email: emailField,
+    password: newPasswordField,
   }),
 });
 
 const authLoginSchema = z.object({
   body: z.object({
-    email: z.string().email(),
+    email: emailField,
     password: z.string().min(1).max(128),
   }),
 });
@@ -157,14 +175,14 @@ const listeningCheckSchema = z.object({
 
 const forgotPasswordSchema = z.object({
   body: z.object({
-    email: z.string().email(),
+    email: emailField,
   }),
 });
 
 const resetPasswordSchema = z.object({
   body: z.object({
     token: z.string().min(32).max(128),
-    password: z.string().min(8).max(128),
+    password: newPasswordField,
   }),
 });
 
@@ -198,7 +216,7 @@ const profileUpdateSchema = z.object({
 const changePasswordSchema = z.object({
   body: z.object({
     currentPassword: z.string().min(1).max(128),
-    newPassword: z.string().min(8).max(128),
+    newPassword: newPasswordField,
   }),
 });
 
