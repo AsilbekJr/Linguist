@@ -199,7 +199,9 @@
   body {
     @apply bg-background text-foreground font-sans antialiased;
     font-feature-settings: "ss01", "cv11";
-    text-rendering: optimizeLegibility;
+    /* `text-rendering: optimizeLegibility` olib tashlandi: zamonaviy brauzerlar
+       kerningni o'zi yoqadi, bu xususiyat esa telefonda har bir matn qatorini
+       qimmatroq hisoblatib, birinchi chizishni sekinlashtirardi. */
     /* Telefonda sahifa "sakrab" tortilmasin */
     overscroll-behavior-y: none;
   }

@@ -19,7 +19,7 @@
 const { getDictionaryEntry } = require('./cache');
 const { lookupSnapshot } = require('./dictionarySnapshot');
 const { generateWordContext } = require('../services/geminiService');
-const { lookupTranslation } = require('./localTranslations');
+const { lookupTranslation, lookupEntry } = require('./localTranslations');
 
 const API = 'https://api.dictionaryapi.dev/api/v2/entries/en';
 const TIMEOUT_MS = 8000;
@@ -138,16 +138,24 @@ const enrichWord = async (word, { learnerLevel = 'beginner', manual = {}, skipAI
 
   const base = resolved.status === 'ok' ? resolved.data : {};
 
-  // Oxirgi zaxira — o'z kontentimiz (AI'siz ham ishlaydi)
-  let translation = base.translation || manual.translation || lookupTranslation(word);
-  let examples = Array.isArray(base.examples) ? [...base.examples] : [];
+  // O'z kontentimiz (kurs/kutubxona): qo'lda yozilgan va tekshirilgan. Ta'rifi
+  // bor bo'lsa (kurs so'zi), MA'NO to'liq undan olinadi — tashqi lug'at
+  // ba'zan boshqa so'zning ma'nosini beradi. Snapshotdan faqat talaffuz va
+  // sinonimlar qoladi. Tarjima esa har holda zaxira sifatida ishlatiladi.
+  const local = lookupEntry(word);
+  const curated = Boolean(local?.definition);
+
+  let translation = manual.translation || (curated ? local.translation : base.translation) || lookupTranslation(word);
+  let examples = curated && local.example ? [local.example] : Array.isArray(base.examples) ? [...base.examples] : [];
+  if (!examples.length && local?.example) examples = [local.example];
   if (manual.examples?.length) examples = [...manual.examples, ...examples];
-  let exampleUz = '';
-  let definition = base.definition || manual.definition || '';
+  let exampleUz = !manual.examples?.length && local?.example && examples[0] === local.example ? local.exampleUz : '';
+  let definition = manual.definition || (curated ? local.definition : base.definition) || '';
 
   // Tarjima yoki misol yetishmasa AI to'ldiradi. Lug'atdagi misol ko'pincha
   // Wiktionary'niki va A1 uchun og'ir, tarjima esa u yerda umuman yo'q.
-  if (!skipAI && (!translation || !examples.length)) {
+  // Kurs so'zi uchun AI chaqirilmaydi — hamma narsa bor.
+  if (!skipAI && !curated && (!translation || !examples.length)) {
     const ctx = await generateWordContext(word, base.definition, learnerLevel);
     if (ctx.status === 'ok') {
       if (!translation) translation = ctx.translationUz;
@@ -184,14 +192,14 @@ const enrichWord = async (word, { learnerLevel = 'beginner', manual = {}, skipAI
     data: {
       // Chaqiruvchi bergan yozilish saqlanadi — dublikat tekshiruvi shunga tayanadi
       word,
-      phonetic: base.phonetic || '',
+      phonetic: base.phonetic || local?.phonetic || '',
       definition,
-      partOfSpeech: base.partOfSpeech || '',
+      partOfSpeech: (curated && local.partOfSpeech) || base.partOfSpeech || local?.partOfSpeech || '',
       synonyms: base.synonyms || [],
       examples,
       exampleUz,
       translation,
-      collocations: base.collocations || [],
+      collocations: (curated && local.collocations.length ? local.collocations : base.collocations) || [],
     },
   };
 };

@@ -9,10 +9,45 @@ const {
   presentDueWord,
 } = require('../utils/reviewModes');
 
-test('rejim bosqichga qarab qiyinlashadi: 2 × tanib olish, 2 × eslash, qolgani gap', () => {
-  assert.deepEqual([0, 1, 2, 3, 4, 5, 6].map(modeForStage), [
-    'recognize', 'recognize', 'recall', 'recall', 'sentence', 'sentence', 'sentence',
-  ]);
+test('rejim bosqich va darajaga qarab qiyinlashadi; boshlovchidan erkin gap talab qilinmaydi', () => {
+  const ladder = (level) => [0, 1, 2, 3, 4, 5, 6].map((s) => modeForStage(s, level));
+  assert.deepEqual(ladder('beginner'), ['recognize', 'recognize', 'recall', 'recall', 'cloze', 'build', 'build']);
+  assert.deepEqual(ladder('intermediate'), ['recognize', 'recognize', 'recall', 'recall', 'cloze', 'build', 'sentence']);
+  assert.deepEqual(ladder('advanced'), ['recognize', 'recognize', 'recall', 'recall', 'cloze', 'sentence', 'sentence']);
+  // Daraja noma'lum bo'lsa — eng yumshoq zinapoya
+  assert.deepEqual(ladder(undefined), ladder('beginner'));
+});
+
+test("misol gapi yo'q so'z bo'sh joy/gap yig'ishdan osonrog'iga tushadi", () => {
+  const { modeForWord } = require('../utils/reviewModes');
+  const noExample = { word: 'valley', translation: 'vodiy', examples: [] };
+  assert.equal(modeForWord(noExample, 4, 'beginner'), 'recall');
+  assert.equal(modeForWord(noExample, 5, 'beginner'), 'recall');
+  // Gapda so'z yo'q (boshqa shakl) — cloze ham mumkin emas
+  const irregular = { word: 'go', translation: 'bormoq', examples: ['She went home early.'] };
+  assert.equal(modeForWord(irregular, 4, 'beginner'), 'recall');
+  // Juda uzun gap — yig'ish o'rniga bo'sh joy
+  const long = { word: 'river', translation: 'daryo', examples: ['We walked along the river for a very long time yesterday and saw many birds there.'] };
+  assert.equal(modeForWord(long, 5, 'beginner'), 'cloze');
+});
+
+test("bo'sh joy: asosiy shakl ham, gapdagi shakl ham to'g'ri; gap yig'ish tartibni tekshiradi", () => {
+  const { checkCloze, checkBuild, presentDueWord } = require('../utils/reviewModes');
+  const w = { _id: 'x', word: 'journey', translation: 'sayohat', examples: ['Our journeys were long and tiring.'], exampleUz: 'Safarlarimiz uzoq edi.' };
+  assert.deepEqual(checkCloze(w, 'journeys'), { isCorrect: true, nearMiss: false });
+  assert.equal(checkCloze(w, 'journey').isCorrect, true);
+  assert.equal(checkCloze(w, 'trip').isCorrect, false);
+  assert.equal(checkBuild(w, 'our journeys were LONG and tiring').isCorrect, true);
+  assert.equal(checkBuild(w, 'Were our journeys long and tiring').isCorrect, false);
+
+  const cloze = presentDueWord(w, 'cloze');
+  assert.equal(cloze.exampleMasked, 'Our _____ were long and tiring.');
+  assert.equal(cloze.translation, undefined, "bo'sh joyda so'z tarjimasi ko'rinmaydi");
+  assert.equal(cloze.word, undefined);
+  const build = presentDueWord(w, 'build');
+  assert.deepEqual([...build.tiles].sort(), ['Our', 'and', 'journeys', 'long', 'tiring', 'were'].sort());
+  assert.notEqual(build.tiles.join(' '), 'Our journeys were long and tiring', "bo'laklar aralashtirilmagan");
+  assert.equal(build.examples, undefined, "asl gap oshkor qilinmaydi");
 });
 
 test('eslash: katta-kichik harf va bo\'shliq ahamiyatsiz', () => {

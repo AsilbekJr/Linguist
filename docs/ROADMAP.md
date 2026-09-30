@@ -104,6 +104,15 @@ Shuning uchun ustuvorlik: **kontent va asosiy kunlik tsikl**, yangi bo'limlar em
 - [x] `planType` kunlik yangi so'zlar sonini belgilaydi: Yengil 5 · Barqaror 7 · Jadal 10 (eski `standard` — darajaga qarab)
 - [x] Tariflar: 3 → 2 (Bepul, Pro). Premium sotilmaydi; eski Premium obunachilar limiti saqlanadi
 
+### 5b. O'rganish ketma-ketligi va faol ishlatish (2026-09-30)
+- [x] Takrorlashda oraliq pog'onalar — darajaga qarab (`LADDERS`, `utils/reviewModes.js`):
+  boshlovchi: tanib olish ×2 → eslash ×2 → **bo'sh joy** → **gap yig'ish** ×2 (erkin gap talab qilinmaydi);
+  o'rta: … → bo'sh joy → gap yig'ish → erkin gap; yuqori: … → bo'sh joy → erkin gap ×2.
+  Misol gapi yo'q so'z osonrog'iga tushadi
+- [x] Kunlik sahnada **"Sizning so'zlaringiz"**: lug'atdagi 2–4 so'z bugungi mavzu / kurs / kutubxona gaplarida bo'sh joyga qo'yiladi (`utils/activeWords.js`, AI'siz, SRS'ga tegmaydi)
+- [x] Kurs so'zi qo'shilganda ma'no kursdan olinadi — tashqi lug'at ba'zan boshqa so'zning ma'nosini beradi ("window" → "chaff")
+- [ ] Keyinroq (tanlanmagan): yumshoq xato (1-bosqichga emas, 2 pog'ona pastga), eshitib tanish, qiyin so'zlar uchun yordam
+
 ### 6. Xatolar daftari
 - [ ] AI qaytargan `errorType` va tuzatishlarni saqlash
 - [ ] "Sizning xatolaringiz" sahifasi: turlar bo'yicha guruh, eng ko'p takrorlanganlar

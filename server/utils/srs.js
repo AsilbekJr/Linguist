@@ -167,8 +167,31 @@ const restartLearning = (wordDoc, now = new Date(), tz) => {
   wordDoc.repetitions = RELEARN_STAGE;
   wordDoc.reviewStage = RELEARN_STAGE;
   wordDoc.mastered = false;
+  wordDoc.markedKnown = false;
 
   return { stage: RELEARN_STAGE, intervalDays, nextReviewDate, learned: false };
+};
+
+/**
+ * Foydalanuvchi so'zni allaqachon bilishini aytdi — takrorlash navbatidan
+ * chiqariladi va yodlanganlarga qo'shiladi.
+ *
+ * Tanish so'zni 7 marta (~2 oy) takrorlatish vaqtni bekorga oladi va
+ * zeriktiradi. Adashib bosilgan bo'lsa, "Qayta yodlash" (restartLearning)
+ * uni 4-bosqichdan qaytaradi. `markedKnown` — o'zi belgilaganini takrorlab
+ * yodlaganidan ajratish uchun.
+ */
+const markKnown = (wordDoc, now = new Date()) => {
+  wordDoc.stage = MAX_STAGE;
+  wordDoc.intervalDays = STAGE_INTERVALS[MAX_STAGE];
+  wordDoc.nextReviewDate = null;
+  wordDoc.learned = true;
+  wordDoc.learnedAt = now;
+  wordDoc.markedKnown = true;
+  wordDoc.repetitions = MAX_STAGE;
+  wordDoc.reviewStage = MAX_STAGE;
+  wordDoc.mastered = true;
+  return { stage: MAX_STAGE, learned: true, nextReviewDate: null };
 };
 
 /** Yangi qo'shilgan so'zning boshlang'ich holati */
@@ -193,6 +216,7 @@ module.exports = {
   schedule,
   applySchedule,
   restartLearning,
+  markKnown,
   initialState,
   stageInterval,
 };

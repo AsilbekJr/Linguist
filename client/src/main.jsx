@@ -15,7 +15,10 @@ import ErrorBoundary from './components/ErrorBoundary'
 import { SplashScreen } from './components/brand/SplashScreen'
 import { trackError } from './lib/analytics'
 import { initPwa } from './lib/pwa'
+import { warmUpServer } from './lib/apiUrl'
 
+// Birinchi navbatda — React chizilishini ham kutmasdan
+warmUpServer()
 initPwa()
 
 // Promise ichidagi ushlanmagan xatolar ErrorBoundary'ga tushmaydi — alohida ushlaymiz

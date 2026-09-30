@@ -1,0 +1,25 @@
+# Render bepul tarifida server 15 daqiqa jimlikdan keyin uxlaydi va keyingi
+# birinchi foydalanuvchi ~20-50 soniya kutadi (o'lchangan: 22,9 s). Har 10
+# daqiqada /health ga so'rov yuborib, serverni uyg'oq tutamiz.
+#
+# Bitta servis oyiga ~730 soat ishlaydi — Render'ning bepul 750 soati ichida.
+# Eslatma: GitHub rejalashtirilgan ishlarni ba'zan 5-15 daqiqa kechiktiradi;
+# kafolat kerak bo'lsa UptimeRobot yoki cron-job.org dan ham foydalaning.
+name: keep-alive
+
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Ping backend
+        run: |
+          curl -fsS --max-time 90 -o /dev/null -w "status=%{http_code} time=%{time_total}s\n" \
+            "${{ vars.BACKEND_URL || 'https://linguist-backend.onrender.com' }}/health"

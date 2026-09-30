@@ -14,10 +14,12 @@
  *    keshdagi app shell ko'rsatiladi.
  *
  * 3. Statik fayllar (assets/) — kontent-xesh bilan nomlangani uchun
- *    o'zgarmaydi, ularni bemalol uzoq keshlash mumkin.
+ *    o'zgarmaydi: keshda bo'lsa tarmoqqa umuman chiqilmaydi. Ilgari ular ham
+ *    "stale-while-revalidate" edi — har ochilishda BUTUN bundle fonda qayta
+ *    yuklanardi va sekin mobil internetni band qilardi.
  */
 
-const VERSION = 'v1';
+const VERSION = 'v2';
 const SHELL_CACHE = `linguist-shell-${VERSION}`;
 const ASSET_CACHE = `linguist-assets-${VERSION}`;
 
@@ -166,11 +168,13 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 3-qoida: statik fayllar — stale-while-revalidate
+  // 3-qoida: xeshli fayllar — faqat kesh (o'zgarmaydi); qolganlari — stale-while-revalidate
+  const immutable = url.pathname.startsWith('/assets/');
   event.respondWith(
     caches.open(ASSET_CACHE).then(async (cache) => {
       const cached = await cache.match(request);
 
+      if (cached && immutable) return cached;
       if (cached) {
         // Fonda yangilaymiz, lekin javobni kutmaymiz
         fetch(request)

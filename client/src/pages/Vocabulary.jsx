@@ -8,6 +8,7 @@ import {
   useAddWordMutation,
   useDeleteWordMutation,
   useRelearnWordMutation,
+  useMarkWordKnownMutation,
   useRefreshWordMutation,
 } from '../features/api/apiSlice';
 import WordForm from '../components/WordForm';
@@ -62,6 +63,7 @@ const Vocabulary = () => {
   const [addWordMutation] = useAddWordMutation();
   const [deleteWordMutation, { isLoading: isDeleting }] = useDeleteWordMutation();
   const [relearnWordMutation] = useRelearnWordMutation();
+  const [markWordKnownMutation] = useMarkWordKnownMutation();
   const [refreshWordMutation] = useRefreshWordMutation();
 
   // Ko'rinish URL'da — havola orqali to'g'ridan-to'g'ri mavzularni ochish mumkin
@@ -74,6 +76,7 @@ const Vocabulary = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [pendingDelete, setPendingDelete] = useState(null);
   const [relearningId, setRelearningId] = useState(null);
+  const [markingKnownId, setMarkingKnownId] = useState(null);
   const [refreshingId, setRefreshingId] = useState(null);
 
   const handleAddWord = async (newWord, skipAI = false, manualData = {}) => {
@@ -125,6 +128,22 @@ const Vocabulary = () => {
       toast.error(err?.data?.message || "Amalni bajarib bo'lmadi. Qayta urining.");
     } finally {
       setRelearningId(null);
+    }
+  };
+
+  /**
+   * "Bilaman" — tanish so'zni takrorlashsiz yodlanganlarga o'tkazish.
+   * Adashib bosilsa, kartochkadagi "Qayta yodlash" uni qaytaradi.
+   */
+  const handleMarkKnown = async (word) => {
+    setMarkingKnownId(word._id);
+    try {
+      await markWordKnownMutation(word._id).unwrap();
+      toast.success(`"${word.word}" yodlanganlarga qo'shildi — takrorlashda chiqmaydi`);
+    } catch (err) {
+      toast.error(err?.data?.message || "Amalni bajarib bo'lmadi. Qayta urining.");
+    } finally {
+      setMarkingKnownId(null);
     }
   };
 
@@ -278,8 +297,10 @@ const Vocabulary = () => {
                       word={word}
                       onDelete={setPendingDelete}
                       onRelearn={handleRelearn}
+                      onMarkKnown={handleMarkKnown}
                       onRefresh={handleRefresh}
                       isRelearning={relearningId === word._id}
+                      isMarkingKnown={markingKnownId === word._id}
                       isRefreshing={refreshingId === word._id}
                     />
                   ))}
