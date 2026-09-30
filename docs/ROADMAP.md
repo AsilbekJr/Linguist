@@ -34,7 +34,7 @@ almashtirilmasdi va logout access tokenni darhol bekor qilmasdi.
   - [x] Login javob vaqti tenglashtirildi; email trim + kichik harf; bcrypt 12 (eskilar login'da yangilanadi); parol ≤ 72 bayt
   - [x] Logout access token talab qilmaydi; `COOKIE_SAMESITE`, `TRUST_PROXY_HOPS` sozlamalari
   - [x] Vercel `/api` proxy (`client/vercel.json`) — domen shart emas, proxy 120 s kutadi (Render sovuq starti sig'adi)
-  - [ ] **Deploy tartibi:** (1) Vercel'dan `VITE_API_URL`ni o'chirib client'ni deploy qilish → (2) Render'da `COOKIE_SAMESITE=lax`, `TRUST_PROXY_HOPS=2` → (3) `/health`dagi `clientIp` haqiqiy IP ekanini tekshirish. Tartib buzilsa hamma chiqib ketadi
+  - [x] **Deploy tartibi:** (1) Vercel'dan `VITE_API_URL`ni o'chirib client'ni deploy qilish → (2) Render'da `COOKIE_SAMESITE=lax`, `TRUST_PROXY_HOPS=4` → (3) `/health`dagi `clientIp` haqiqiy IP ekanini tekshirish. Bajarildi 2026-10-01: Chrome, Android, parol o'zgartirish tekshirildi
   - [ ] Keyinroq: Linguist uchun alohida domen (proxy o'rniga `app.` + `api.`)
 - [ ] **B. Hisob hayotiy sikli:** email tasdiqlash (shundan keyin register javobi umumiy bo'ladi), faol qurilmalar ro'yxati, yangi kirish/parol haqida xabar, hisob bo'yicha urinish cheklovi, HIBP parol tekshiruvi
 - [ ] **C. Ijtimoiy kirish:** Google (OIDC), Telegram Login Widget, hisoblarni bog'lash
