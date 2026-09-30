@@ -2,12 +2,18 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion, useAnimationControls } from 'motion/react';
 import {
   Mic, MicOff, Send, Loader2, CheckCircle2, XCircle, ArrowRight, ScanText, Sparkles,
-  AlertTriangle, WifiOff, CalendarClock, Volume2, RotateCcw, Eye, Brain, PenLine, Languages,
+  AlertTriangle, WifiOff, CalendarClock, Volume2, RotateCcw, Eye, Brain, PenLine, Languages, TextCursorInput, Puzzle, Eraser, BadgeCheck,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Kbd, ProgressBar } from '@/components/ui/primitives';
 import { cn } from '@/lib/utils';
-import { useCheckReviewMutation, useAnalyzeSentenceMutation, useSaveReviewTranslationMutation } from '../../features/api/apiSlice';
+import { toast } from 'react-hot-toast';
+import {
+  useCheckReviewMutation,
+  useAnalyzeSentenceMutation,
+  useSaveReviewTranslationMutation,
+  useMarkWordKnownMutation,
+} from '../../features/api/apiSlice';
 import { useSpeechInput } from '../../hooks/useSpeechInput';
 import { playTTSAudio } from '../../utils/audio';
 import { burstAt } from '../../utils/celebration';
@@ -19,7 +25,8 @@ const EASE = [0.16, 1, 0.3, 1];
 
 /**
  * Rejimlar — server so'z bosqichiga qarab tanlaydi (server/utils/reviewModes.js):
- *   recognize (0-1) → recall (2-3) → sentence (4+)
+ *   recognize (0-1) → recall (2-3) → cloze (4) → build / sentence (5-6, darajaga qarab)
+ * Boshlovchidan erkin gap tuzish talab qilinmaydi — 5-6-bosqichda gap yig'adi.
  * Tarjimasi yo'q so'z (AI javob bermagan) — avval `translate`: foydalanuvchi
  * o'zbekchasini yozadi, keyin so'z odatiy tartibda davom etadi.
  */
@@ -27,6 +34,8 @@ const MODE_META = {
   translate: { label: 'Tanishish', hint: "Bu so'zning o'zbekcha tarjimasini yozing", icon: Languages },
   recognize: { label: 'Tanib olish', hint: "To'g'ri tarjimani tanlang", icon: Eye },
   recall: { label: 'Eslash', hint: "Inglizcha so'zni yozing", icon: Brain },
+  cloze: { label: "Bo'sh joy", hint: "Gapdagi bo'sh joyga mos so'zni yozing", icon: TextCursorInput },
+  build: { label: "Gap yig'ish", hint: "So'zlarni to'g'ri tartibda bosing", icon: Puzzle },
   sentence: { label: 'Gap tuzish', hint: "Shu so'z bilan inglizcha gap tuzing", icon: PenLine },
 };
 
@@ -85,6 +94,46 @@ const SpeakButton = ({ text }) =>
 const WordCard = ({ item, reveal }) => {
   const mode = item.mode || 'sentence';
   const w = reveal ? { ...item, ...reveal } : item;
+
+  // Bo'sh joy: faqat kontekst — so'z tarjimasi va harf ishorasi yo'q
+  if (mode === 'cloze' && !reveal) {
+    return (
+      <div>
+        <p className="text-sm font-semibold text-muted-foreground">Qaysi so&apos;z tushib qolgan?</p>
+        <p className="mt-2 text-[1.35rem] font-bold leading-snug sm:text-2xl">{w.exampleMasked}</p>
+        {w.exampleUz && <p className="mt-2 text-[15px] text-muted-foreground">{w.exampleUz}</p>}
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          {w.partOfSpeech && (
+            <span className="rounded-full bg-card/80 px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wide text-muted-foreground ring-1 ring-border">
+              {w.partOfSpeech}
+            </span>
+          )}
+          {w.hint?.length > 0 && <span className="text-xs text-muted-foreground">{w.hint.length} ta harf</span>}
+        </div>
+      </div>
+    );
+  }
+
+  // Gap yig'ish: so'z va gapning o'zbekchasi — inglizcha gapni bo'laklardan yig'adi
+  if (mode === 'build' && !reveal) {
+    return (
+      <div>
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h3 className="text-[1.75rem] font-extrabold leading-none tracking-tight sm:text-3xl">{w.word}</h3>
+            {w.translation && <p className="mt-1.5 text-lg font-semibold text-primary">{w.translation}</p>}
+          </div>
+          <SpeakButton text={w.word} />
+        </div>
+        {w.exampleUz && (
+          <p className="mt-4 text-[15px]">
+            <span className="text-muted-foreground">Inglizchasini yig&apos;ing: </span>
+            <span className="font-semibold">{w.exampleUz}</span>
+          </p>
+        )}
+      </div>
+    );
+  }
 
   // Eslash rejimi, javobdan oldin: o'zbekchasi asosiy, inglizcha so'z yashirin
   if (mode === 'recall' && !reveal) {
@@ -201,6 +250,70 @@ const RecognizeTask = ({ item, disabled, result, chosen, onChoose }) => {
 };
 
 /**
+ * Gap yig'ish: pastdagi bo'laklarni bosib gapni tuzish, yuqoridagini bosib
+ * qaytarish. `picked` — bo'laklar indekslari (bir xil so'z ikki marta
+ * kelishi mumkin, shuning uchun matn emas, indeks saqlanadi).
+ */
+const BuildTask = ({ tiles, picked, setPicked, disabled, onSubmit }) => {
+  const used = new Set(picked);
+  const complete = picked.length === tiles.length;
+  return (
+    <div className="space-y-3">
+      <div
+        className={cn(
+          'flex min-h-16 flex-wrap content-start gap-2 rounded-2xl border-2 border-dashed p-3 transition-colors',
+          complete ? 'border-primary/50 bg-primary/5' : 'border-border bg-card'
+        )}
+        aria-label="Yig'ilgan gap"
+      >
+        {picked.length === 0 && <span className="self-center text-sm text-muted-foreground">So&apos;zlarni tartib bilan bosing…</span>}
+        {picked.map((tileIndex, i) => (
+          <motion.button
+            key={`${tileIndex}-${i}`}
+            type="button"
+            layout
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            disabled={disabled}
+            onClick={() => setPicked(picked.filter((_, j) => j !== i))}
+            className="rounded-xl bg-primary px-3 py-1.5 text-base font-semibold text-primary-foreground shadow-sm active:scale-95"
+            aria-label={`"${tiles[tileIndex]}" ni olib tashlash`}
+          >
+            {tiles[tileIndex]}
+          </motion.button>
+        ))}
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        {tiles.map((tile, i) => (
+          <button
+            key={`${tile}-${i}`}
+            type="button"
+            disabled={disabled || used.has(i)}
+            onClick={() => setPicked([...picked, i])}
+            className={cn(
+              'rounded-xl border px-3 py-1.5 text-base font-semibold transition-[opacity,transform] active:scale-95',
+              used.has(i) ? 'border-dashed border-border text-transparent' : 'border-border bg-card hover:border-primary/50'
+            )}
+          >
+            {tile}
+          </button>
+        ))}
+      </div>
+
+      <div className="flex gap-2">
+        <Button type="button" variant="ghost" onClick={() => setPicked([])} disabled={disabled || picked.length === 0}>
+          <Eraser /> Tozalash
+        </Button>
+        <Button type="button" className="flex-1" onClick={onSubmit} disabled={disabled || !complete}>
+          {disabled ? <Loader2 className="animate-spin" /> : <Send />} Tekshirish
+        </Button>
+      </div>
+    </div>
+  );
+};
+
+/**
  * Takrorlash oqimi. So'z o'rganilgan sari topshiriq qiyinlashadi:
  * tanib olish → eslash → gap tuzish. Qaysi biri bo'lishini server aytadi.
  *
@@ -224,8 +337,11 @@ const ReviewRunner = ({ words, onChecked, onFinished }) => {
 
   const [checkReview, { isLoading: isChecking }] = useCheckReviewMutation();
   const [saveTranslation, { isLoading: isSavingTranslation }] = useSaveReviewTranslationMutation();
+  const [markKnown, { isLoading: isMarkingKnown }] = useMarkWordKnownMutation();
   // Tarjima yozilgan so'zlar yangi topshiriq bilan almashtiriladi (id → item)
   const [replaced, setReplaced] = useState({});
+  // Gap yig'ish: tanlangan bo'laklar tartibi
+  const [picked, setPicked] = useState([]);
   const [analyzeSentence, { isLoading: isAnalyzing }] = useAnalyzeSentenceMutation();
 
   const inputRef = useRef(null);
@@ -265,9 +381,15 @@ const ReviewRunner = ({ words, onChecked, onFinished }) => {
     send({ mode: 'sentence', sentence: value, source });
   };
 
+  // Eslash va bo'sh joy — ikkalasida ham bitta so'z yoziladi
   const submitRecall = () => {
     const value = typed.trim();
-    if (value) send({ mode: 'recall', answer: value });
+    if (value) send({ mode: mode === 'cloze' ? 'cloze' : 'recall', answer: value });
+  };
+
+  const submitBuild = () => {
+    if (!item?.tiles || picked.length !== item.tiles.length) return;
+    send({ mode: 'build', answer: picked.map((i) => item.tiles[i]).join(' ') });
   };
 
   const submitTranslation = async () => {
@@ -280,6 +402,19 @@ const ReviewRunner = ({ words, onChecked, onFinished }) => {
       setReplaced((r) => ({ ...r, [item._id]: res.item }));
     } catch (err) {
       setSendError(err?.data?.message || "Tarjimani saqlab bo'lmadi. Internetni tekshirib qayta urining.");
+    }
+  };
+
+  /** "Bilaman": so'z yodlanganlarga o'tadi va navbatdan chiqadi — keyingisiga */
+  const skipAsKnown = async () => {
+    if (isMarkingKnown || isChecking) return;
+    try {
+      await markKnown(item._id).unwrap();
+      onChecked?.(item._id, null);
+      toast.success(`"${item.word || "So'z"}" yodlanganlarga qo'shildi. Lug'atdan qaytarish mumkin.`);
+      goNext();
+    } catch (err) {
+      setSendError(err?.data?.message || "Belgilab bo'lmadi. Internetni tekshirib qayta urining.");
     }
   };
 
@@ -300,6 +435,7 @@ const ReviewRunner = ({ words, onChecked, onFinished }) => {
   useEffect(() => {
     setSentence('');
     setTyped('');
+    setPicked([]);
     setChosen(null);
     setResult(null);
     setSendError(null);
@@ -339,7 +475,8 @@ const ReviewRunner = ({ words, onChecked, onFinished }) => {
     setResult(null);
     setAnalysis(null);
     setAnalysisError(null);
-    if (mode === 'recall') setTyped('');
+    if (mode === 'recall' || mode === 'cloze') setTyped('');
+    if (mode === 'build') setPicked([]);
     requestAnimationFrame(() => inputRef.current?.focus());
   };
 
@@ -434,9 +571,22 @@ const ReviewRunner = ({ words, onChecked, onFinished }) => {
           </motion.form>
         )}
 
-        {!result && mode === 'recall' && (
+        {!result && mode === 'build' && item.tiles?.length > 0 && (
+          <motion.div
+            key="build"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            className="space-y-2"
+          >
+            <p className="text-sm font-bold">{meta.hint}</p>
+            <BuildTask tiles={item.tiles} picked={picked} setPicked={setPicked} disabled={isChecking} onSubmit={submitBuild} />
+          </motion.div>
+        )}
+
+        {!result && (mode === 'recall' || mode === 'cloze') && (
           <motion.form
-            key="recall"
+            key={mode}
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
@@ -537,6 +687,21 @@ const ReviewRunner = ({ words, onChecked, onFinished }) => {
         )}
       </AnimatePresence>
 
+      {/* Tanish so'z — takrorlashni davom ettirish shart emas */}
+      {!result && (
+        <div className="flex justify-end">
+          <button
+            type="button"
+            onClick={skipAsKnown}
+            disabled={isMarkingKnown || isChecking}
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground underline-offset-2 hover:text-success hover:underline disabled:opacity-50"
+          >
+            {isMarkingKnown ? <Loader2 className="size-3.5 animate-spin" /> : <BadgeCheck className="size-3.5" />}
+            Bu so&apos;zni bilaman — boshqa chiqmasin
+          </button>
+        </div>
+      )}
+
       {/* Tarmoq xatosi */}
       <AnimatePresence>
         {sendError && !result && (
@@ -589,10 +754,16 @@ const ReviewRunner = ({ words, onChecked, onFinished }) => {
                       <span className="italic">{sentence}</span>
                     </p>
                   )}
-                  {mode === 'recall' && (
+                  {(mode === 'recall' || mode === 'cloze') && (
                     <p className="mt-1 text-sm">
                       <span className="text-muted-foreground">Siz yozdingiz: </span>
                       <span className="font-semibold">{typed}</span>
+                    </p>
+                  )}
+                  {mode === 'build' && item.tiles && (
+                    <p className="mt-1 break-words text-sm">
+                      <span className="text-muted-foreground">Siz yig&apos;dingiz: </span>
+                      <span className="italic">{picked.map((i) => item.tiles[i]).join(' ')}</span>
                     </p>
                   )}
                   {(mode === 'sentence' || !result.isCorrect || result.nearMiss) && <p className="mt-1.5 text-sm">{result.feedback}</p>}

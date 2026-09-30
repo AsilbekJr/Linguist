@@ -6,6 +6,7 @@ const path = require('path');
 const TopicProgress = require('../models/TopicProgress');
 const QuizSession = require('../models/QuizSession');
 const Word = require('../models/Word');
+const { buildActiveItems } = require('../utils/activeWords');
 const { protect } = require('../middleware/authMiddleware');
 const { validate, topicQuizSubmitSchema, topicFinishSchema } = require('../middleware/validate');
 const { topicsCache } = require('../utils/cache');
@@ -256,6 +257,37 @@ router.post('/quiz/submit', protect, validate(topicQuizSubmitSchema), async (req
 
 // @desc    O'tgan kunlardan saqlanmagan so'zlar
 // @route   GET /api/topics/backlog
+// @desc    "Sizning so'zlaringiz": foydalanuvchining takrorlashdagi so'zlari
+//          bugungi mavzu (yoki kurs) gaplarida — bo'sh joyga qo'yish uchun
+// @route   GET /api/topics/active-words
+//
+// Mashq — SRS jadvaliga tegmaydi. So'zlar ustuvorligi: takrorlashi yaqin
+// (nextReviewDate), keyin ko'p unutilgani (lapses). Bugungi sahnaning yangi
+// so'zlari chiqarib tashlanadi — ular sahnaning o'zida o'rganiladi.
+router.get('/active-words', protect, async (req, res) => {
+  try {
+    const ctx = await resolveDailyContext(req.user);
+    if (ctx.isFinished || !ctx.baseTopic) return res.json({ items: [] });
+
+    const words = await Word.find({
+      user: req.user._id,
+      learned: { $ne: true },
+      translation: { $nin: [null, ''] },
+    })
+      .select('word translation examples exampleUz nextReviewDate lapses')
+      .sort({ nextReviewDate: 1, lapses: -1 })
+      .limit(40)
+      .lean();
+
+    const exclude = new Set((ctx.baseTopic.words || []).map((w) => String(w.word).toLowerCase()));
+    const items = buildActiveItems(words, { dialogue: ctx.baseTopic.dialogue || [], exclude });
+    res.json({ items });
+  } catch (error) {
+    console.error('Active words error:', error);
+    res.status(500).json({ error: 'Server Error' });
+  }
+});
+
 router.get('/backlog', protect, async (req, res) => {
   try {
     const progress = await TopicProgress.findOne({ user: req.user._id });

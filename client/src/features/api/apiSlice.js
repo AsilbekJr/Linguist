@@ -114,14 +114,14 @@ export const apiSlice = createApi({
         method: 'POST',
         body: initialWord,
       }),
-      invalidatesTags: ['Word', 'Topic'],
+      invalidatesTags: ['Word', 'Topic', 'User'],
     }),
     deleteWord: builder.mutation({
       query: (id) => ({
         url: `/api/words/${id}`,
         method: 'DELETE',
       }),
-      invalidatesTags: ['Word'],
+      invalidatesTags: ['Word', 'User'],
     }),
     /** Ta'rifsiz qolgan so'zni tuzatish — tarmoq uzilganda qo'shilganlar uchun */
     refreshWord: builder.mutation({
@@ -159,13 +159,21 @@ export const apiSlice = createApi({
         body: { translation },
       }),
     }),
+    /** "Bilaman": so'zni takrorlashsiz yodlanganlarga o'tkazish (relearn bilan qaytariladi) */
+    markWordKnown: builder.mutation({
+      query: (id) => ({
+        url: `/api/review/${id}/known`,
+        method: 'POST',
+      }),
+      invalidatesTags: ['Word', 'User'],
+    }),
     /** Yodlangan so'zni qayta yodlashga qaytarish (4-bosqichdan) */
     relearnWord: builder.mutation({
       query: (id) => ({
         url: `/api/review/${id}/relearn`,
         method: 'POST',
       }),
-      invalidatesTags: ['Word'],
+      invalidatesTags: ['Word', 'User'],
     }),
     /** Gapni ega/kesim va so'z turkumlariga ajratib tushuntirish */
     analyzeSentence: builder.mutation({
@@ -204,6 +212,11 @@ export const apiSlice = createApi({
       query: () => '/api/topics/current',
       providesTags: ['Topic'],
       keepUnusedDataFor: 300,
+    }),
+    /** "Sizning so'zlaringiz": lug'atdagi so'zlar bugungi mavzu gaplarida (mashq) */
+    getActiveWords: builder.query({
+      query: () => '/api/topics/active-words',
+      providesTags: ['Topic'],
     }),
     getTopicBacklog: builder.query({
       query: () => '/api/topics/backlog',
@@ -288,7 +301,7 @@ export const apiSlice = createApi({
         method: 'POST',
         body: words ? { words } : {},
       }),
-      invalidatesTags: (result, error, { id }) => ['VocabTopic', { type: 'VocabTopic', id }, 'Word'],
+      invalidatesTags: (result, error, { id }) => ['VocabTopic', { type: 'VocabTopic', id }, 'Word', 'User'],
     }),
     getTelegramStatus: builder.query({
       query: () => '/api/telegram/status',
@@ -428,6 +441,7 @@ export const {
   useCheckReviewMutation,
   useSaveReviewTranslationMutation,
   useRelearnWordMutation,
+  useMarkWordKnownMutation,
   useAnalyzeSentenceMutation,
   useGetReviewStatsQuery,
   useGetListeningSessionQuery,
@@ -457,6 +471,7 @@ export const {
   useGetMeQuery,
   useGetReviewDueQuery,
   useGetCurrentTopicQuery,
+  useGetActiveWordsQuery,
   useGetTopicBacklogQuery,
   useStartTopicQuizMutation,
   useSubmitTopicQuizMutation,

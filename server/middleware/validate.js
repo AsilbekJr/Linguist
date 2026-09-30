@@ -57,9 +57,9 @@ const reviewCheckSchema = z.object({
        * Qaysi rejim kutilayotganini server so'z bosqichidan o'zi aniqlaydi va
        * boshqasi yuborilsa rad etadi (utils/reviewModes.js).
        */
-      mode: z.enum(['recognize', 'recall', 'sentence']).optional(),
-      /** recognize: tanlangan variant; recall: yozilgan so'z */
-      answer: z.string().trim().min(1).max(200).optional(),
+      mode: z.enum(['recognize', 'recall', 'cloze', 'build', 'sentence']).optional(),
+      /** recognize: tanlangan variant; recall/cloze: yozilgan so'z; build: yig'ilgan gap */
+      answer: z.string().trim().min(1).max(400).optional(),
       sentence: z.string().min(1).max(1000).optional(),
       /** Gap klaviaturadan yozildimi yoki mikrofonga aytildimi — analitika uchun */
       source: z.enum(['text', 'voice']).optional(),

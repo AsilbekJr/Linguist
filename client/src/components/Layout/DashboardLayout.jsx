@@ -33,7 +33,12 @@ const DashboardLayout = () => {
     window.scrollTo({ top: 0, behavior: 'instant' });
   }, [location.pathname]);
 
-  if (isLoading) {
+  // Login paytida saqlangan profil bo'lsa kutmaymiz: sahifa darhol chiziladi,
+  // uning so'rovlari /me bilan PARALLEL ketadi. Ilgari hamma narsa /me javobini
+  // kutardi — Render uyg'onayotganda bu 30-50 soniyalik bo'sh splash edi.
+  // (Faqat onboarding tugagani ma'lum bo'lsa — aks holda onboarding oynasi bir
+  // lahza ko'rinib, keyin yo'qolardi.)
+  if (isLoading && authUser?.onboarding?.completed !== true) {
     return (
       <SplashScreen
         title="Tizimga kirilmoqda…"

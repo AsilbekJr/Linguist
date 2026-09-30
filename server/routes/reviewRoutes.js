@@ -6,7 +6,8 @@ const { protect } = require('../middleware/authMiddleware');
 const { validate, reviewCheckSchema, reviewTranslationSchema } = require('../middleware/validate');
 const { lookupTranslation } = require('../utils/localTranslations');
 const { trackAiUsageSoft } = require('../middleware/usageQuota');
-const { applySchedule, restartLearning, stageInterval, readStage, MAX_STAGE } = require('../utils/srs');
+const { applySchedule, restartLearning, markKnown, stageInterval, readStage, MAX_STAGE } = require('../utils/srs');
+const mongoose = require('mongoose');
 const { userDayKey } = require('../utils/dayKey');
 const User = require('../models/User');
 const {
@@ -23,6 +24,9 @@ const {
   modeForWord,
   checkRecall,
   checkRecognize,
+  checkCloze,
+  checkBuild,
+  exampleOf,
   buildOptions,
   presentDueWord,
   revealWord,
@@ -150,15 +154,19 @@ const getCoursePool = () => {
 };
 
 /** So'zlarni rejimiga mos ko'rinishga keltiradi (tanib olishda — variantlar bilan) */
-const presentWords = async (userId, words) => {
-  const needsOptions = words.some((w) => modeForWord(w, readStage(w)) === MODES.RECOGNIZE);
+/** Rejim zinapoyasi darajaga bog'liq (utils/reviewModes.js → LADDERS) */
+const levelOf = (user) => user?.onboarding?.level || 'beginner';
+
+const presentWords = async (user, words) => {
+  const level = levelOf(user);
+  const needsOptions = words.some((w) => modeForWord(w, readStage(w), level) === MODES.RECOGNIZE);
   const ownPool = needsOptions
-    ? (await Word.find({ user: userId }).select('translation').limit(300).lean())
+    ? (await Word.find({ user: user._id }).select('translation').limit(300).lean())
         .map((w) => w.translation)
         .filter(Boolean)
     : [];
   return words.map((w) => {
-    const mode = modeForWord(w, readStage(w));
+    const mode = modeForWord(w, readStage(w), level);
     const options =
       mode === MODES.RECOGNIZE ? buildOptions(w.translation, { ownPool, coursePool: getCoursePool() }) : undefined;
     return presentDueWord(w, mode, options);
@@ -178,7 +186,7 @@ router.post('/:id/translation', protect, validate(reviewTranslationSchema), asyn
     wordDoc.translation = req.validated.body.translation;
     await wordDoc.save();
     invalidateUserWords(req.user._id);
-    const [item] = await presentWords(req.user._id, [wordDoc.toObject()]);
+    const [item] = await presentWords(req.user, [wordDoc.toObject()]);
     res.json({ item });
   } catch (error) {
     console.error('Review translation error:', error);
@@ -214,7 +222,7 @@ router.get('/due', protect, async (req, res) => {
       invalidateUserWords(req.user._id);
     }
 
-    res.json(await presentWords(req.user._id, dueWords));
+    res.json(await presentWords(req.user, dueWords));
   } catch (error) {
     console.error('Fetch Due Words Error:', error);
     res.status(500).json({ message: 'Server Error' });
@@ -262,8 +270,30 @@ const aiQuotaForSentenceOnly = (req, res, next) => {
   return trackAiUsageSoft(req, res, next);
 };
 
-/** Tanib olish va eslash — AI'siz, aniq javob bilan tekshiriladi */
+/** Tanib olish, eslash, bo'sh joy va gap yig'ish — AI'siz, aniq javob bilan */
 const gradeExact = (wordDoc, mode, answer) => {
+  if (mode === MODES.BUILD) {
+    const { isCorrect } = checkBuild(wordDoc, answer);
+    const sentence = exampleOf(wordDoc);
+    return {
+      isCorrect,
+      feedback: isCorrect ? "To'g'ri!" : `To'g'ri tartib: "${sentence}"`,
+      correctAnswer: sentence,
+    };
+  }
+  if (mode === MODES.CLOZE) {
+    const { isCorrect, nearMiss } = checkCloze(wordDoc, answer);
+    return {
+      isCorrect,
+      nearMiss,
+      feedback: nearMiss
+        ? `Deyarli to'g'ri — bitta harf xato. To'g'ri yozilishi: ${wordDoc.word}`
+        : isCorrect
+          ? "To'g'ri!"
+          : `To'g'ri javob: ${wordDoc.word}`,
+      correctAnswer: wordDoc.word,
+    };
+  }
   if (mode === MODES.RECOGNIZE) {
     const isCorrect = checkRecognize(wordDoc.translation, answer);
     return {
@@ -311,7 +341,7 @@ router.post('/:id/check', protect, validate(reviewCheckSchema), aiQuotaForSenten
 
     const now = new Date();
     const due = isDue(wordDoc, now);
-    const expectedMode = modeForWord(wordDoc, readStage(wordDoc));
+    const expectedMode = modeForWord(wordDoc, readStage(wordDoc), levelOf(req.user));
     if (due && mode !== expectedMode) {
       await req.aiCall.refund();
       return res.status(409).json({
@@ -394,7 +424,7 @@ router.post('/:id/check', protect, validate(reviewCheckSchema), aiQuotaForSenten
       nextReviewDate: next.nextReviewDate,
       learned: next.learned,
       // Keyingi safar qaysi topshiriq bo'lishi — UI "keyingi safar gap tuzasiz" deya oladi
-      nextMode: next.learned ? null : modeForWord(wordDoc, next.stage),
+      nextMode: next.learned ? null : modeForWord(wordDoc, next.stage, levelOf(req.user)),
     });
   } catch (error) {
     console.error('Review Check Error:', error);
@@ -428,6 +458,31 @@ router.post('/:id/relearn', protect, async (req, res) => {
     });
   } catch (error) {
     console.error('Relearn error:', error);
+    res.status(500).json({ message: 'Server Error' });
+  }
+});
+
+// @desc    "Bilaman": so'zni takrorlashsiz yodlanganlarga o'tkazish
+// @route   POST /api/review/:id/known
+//
+// Kunlik reja qadamini YOPMAYDI — bu takrorlash emas. Navbat shu bilan
+// bo'shasa, "Bugun" sahifasi odatdagidek complete-day orqali yopadi.
+router.post('/:id/known', protect, async (req, res) => {
+  try {
+    if (!mongoose.isValidObjectId(req.params.id)) return res.status(404).json({ message: 'Word not found' });
+    const wordDoc = await Word.findOne({ _id: req.params.id, user: req.user._id });
+    if (!wordDoc) return res.status(404).json({ message: 'Word not found' });
+    if (wordDoc.learned) {
+      return res.status(400).json({ message: "Bu so'z allaqachon yodlanganlar ro'yxatida." });
+    }
+
+    const next = markKnown(wordDoc);
+    await wordDoc.save();
+    invalidateUserWords(req.user._id);
+
+    res.json({ status: 'ok', wordId: wordDoc._id, ...next, markedKnown: true });
+  } catch (error) {
+    console.error('Mark known error:', error);
     res.status(500).json({ message: 'Server Error' });
   }
 });

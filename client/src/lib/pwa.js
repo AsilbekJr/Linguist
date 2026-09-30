@@ -60,6 +60,12 @@ export const initPwa = () => {
 
   if (!('serviceWorker' in navigator) || !import.meta.env.PROD) return;
 
+  // Sahifa ochilganda SW boshqaruvida edimi. Birinchi tashrifda bu `false`:
+  // o'shanda `clients.claim()` ham `controllerchange` chiqaradi, lekin bu
+  // yangilanish EMAS — sahifani qayta yuklash kerak emas. Ilgari har bir yangi
+  // foydalanuvchida sahifa ikki marta yuklanardi (sekin tarmoqda +5 soniya).
+  const hadController = Boolean(navigator.serviceWorker.controller);
+
   window.addEventListener('load', () => {
     navigator.serviceWorker
       .register('/sw.js', { scope: '/' })
@@ -80,7 +86,7 @@ export const initPwa = () => {
 
     let reloading = false;
     navigator.serviceWorker.addEventListener('controllerchange', () => {
-      if (reloading) return;
+      if (reloading || !hadController) return;
       reloading = true;
       window.location.reload();
     });

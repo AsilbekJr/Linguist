@@ -57,6 +57,11 @@ const wordSchema = new mongoose.Schema({
         index: true
     },
     learnedAt: Date,
+    /** Foydalanuvchi "Bilaman" deb o'zi belgilagan (takrorlab yodlamagan) */
+    markedKnown: {
+        type: Boolean,
+        default: false
+    },
     /**
      * Eski SM-2 maydoni. Endi ishlatilmaydi — hisob-kitob qat'iy bosqichlar
      * bo'yicha boradi. Mavjud hujjatlarni buzmaslik uchun sxemada qoldirilgan.

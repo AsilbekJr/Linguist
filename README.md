@@ -92,7 +92,12 @@ Profil (ism), daraja/maqsad/reja, mavzu, eslatmalar, parol va hisobni o'chirish.
 ### Kunlik reja (2 qadam)
 1. **Kunlik sahna** — mavzu dialogi, so'zlar, mini-test, **shadowing** (dialog
    qatorlarini eshitib takrorlash; o'tkazib yuborsa ham bo'ladi)
-2. **Takrorlash** — "Bugun" sahifasining o'zida: tanib olish → eslash → gap tuzish
+2. **Takrorlash** — "Bugun" sahifasining o'zida: tanib olish → eslash → bo'sh joy →
+   gap yig'ish / erkin gap (darajaga qarab; boshlovchidan erkin gap talab qilinmaydi —
+   `LADDERS`, `server/utils/reviewModes.js`)
+
+Sahnaning oxirida **"Sizning so'zlaringiz"**: lug'atdagi 2–4 so'z bugungi mavzu (yoki kurs)
+gaplarida bo'sh joyga qo'yiladi (`server/utils/activeWords.js`).
 
 Ikkalasi bajarilgach streak oshadi — qaysi tartibda bajarilishidan qat'i nazar.
 Sahna tugagach ixtiyoriy **"dialogni yoddan ayt"** qadami ochiladi: rol tanlanadi,

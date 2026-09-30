@@ -13,7 +13,7 @@ const { getTopicReviewDate } = require('../utils/topicHelpers');
 router.get('/', protect, async (req, res) => {
     try {
         const words = await Word.find({ user: req.user._id })
-            .select('word phonetic definition translation partOfSpeech synonyms examples exampleUz collocations stage learned learnedAt lapses intervalDays nextReviewDate createdAt')
+            .select('word phonetic definition translation partOfSpeech synonyms examples exampleUz collocations stage learned learnedAt markedKnown lapses intervalDays nextReviewDate createdAt')
             .sort({ createdAt: -1 })
             .lean();
         res.json(words);

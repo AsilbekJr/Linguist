@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { Trash2, RotateCcw, Volume2, Loader2, RefreshCw, AlertTriangle, CalendarClock, CheckCircle2, Clock } from 'lucide-react';
+import { Trash2, RotateCcw, Volume2, Loader2, RefreshCw, AlertTriangle, CalendarClock, CheckCircle2, Clock, BadgeCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -19,17 +19,25 @@ const MAX_STAGE = 7;
  */
 const PLACEHOLDER_DEFINITION = /^(Definition|Example) unavailable/i;
 
-const isIncomplete = (word) =>
-  !word.definition || PLACEHOLDER_DEFINITION.test(word.definition);
+const hasDefinition = (word) => Boolean(word.definition) && !PLACEHOLDER_DEFINITION.test(word.definition);
+const usableExamples = (word) => (word.examples || []).filter((ex) => ex && !PLACEHOLDER_DEFINITION.test(ex));
+
+/**
+ * Ogohlantirish faqat ta'rif HAM, misol HAM yo'q bo'lsa. Ilgari faqat ta'rifga
+ * qaralardi: "Mavzular" kutubxonasidan qo'shilgan so'zlarda tarjima va misol
+ * bor, inglizcha ta'rif esa yo'q — kartochkada misol ko'rinib turgan holda
+ * "ta'rif va misol yo'q" deb yozilardi.
+ */
+const isIncomplete = (word) => !hasDefinition(word) && usableExamples(word).length === 0;
 
 // forwardRef: Vocabulary'dagi AnimatePresence (popLayout) chiqib ketayotgan
 // kartani o'lchashi uchun DOM elementiga yetishi kerak
-const WordCard = React.forwardRef(({ word, onDelete, onRelearn, onRefresh, isRelearning = false, isRefreshing = false }, ref) => {
+const WordCard = React.forwardRef(({ word, onDelete, onRelearn, onMarkKnown, onRefresh, isRelearning = false, isMarkingKnown = false, isRefreshing = false }, ref) => {
   const stage = word.stage ?? word.reviewStage ?? 0;
   const learned = word.learned ?? word.mastered;
   const incomplete = isIncomplete(word);
   const status = reviewStatus(word);
-  const examples = (word.examples || []).filter((ex) => !PLACEHOLDER_DEFINITION.test(ex));
+  const examples = usableExamples(word);
   const hard = (word.lapses || 0) >= 3;
 
   return (
@@ -103,7 +111,7 @@ const WordCard = React.forwardRef(({ word, onDelete, onRelearn, onRefresh, isRel
             )}
           </div>
         ) : (
-          <p className="line-clamp-3 text-sm leading-relaxed text-muted-foreground">{word.definition}</p>
+          hasDefinition(word) && <p className="line-clamp-3 text-sm leading-relaxed text-muted-foreground">{word.definition}</p>
         )}
 
         {examples[0] && (
@@ -118,15 +126,34 @@ const WordCard = React.forwardRef(({ word, onDelete, onRelearn, onRefresh, isRel
       {/* Amallar — hover ortiga yashirilmaydi: telefonda hover yo'q */}
       <div className="mt-4 flex items-center justify-between gap-2 border-t border-border pt-3">
         {learned && onRelearn ? (
+          <div className="flex min-w-0 items-center gap-2">
+            <Button
+              variant="soft"
+              size="sm"
+              disabled={isRelearning}
+              onClick={() => onRelearn(word._id)}
+              title="So'z 4-bosqichdan (7 kun) qayta boshlanadi"
+            >
+              {isRelearning ? <Loader2 className="animate-spin" /> : <RotateCcw />}
+              Qayta yodlash
+            </Button>
+            {word.markedKnown && (
+              <span className="truncate text-xs text-muted-foreground" title="«Bilaman» deb o'zingiz belgilagansiz">
+                «Bilaman»
+              </span>
+            )}
+          </div>
+        ) : onMarkKnown ? (
           <Button
-            variant="soft"
+            variant="ghost"
             size="sm"
-            disabled={isRelearning}
-            onClick={() => onRelearn(word._id)}
-            title="So'z 4-bosqichdan (7 kun) qayta boshlanadi"
+            disabled={isMarkingKnown}
+            onClick={() => onMarkKnown(word)}
+            title="So'zni allaqachon bilsangiz — takrorlashda boshqa chiqmaydi"
+            className="text-success hover:bg-success/10 hover:text-success"
           >
-            {isRelearning ? <Loader2 className="animate-spin" /> : <RotateCcw />}
-            Qayta yodlash
+            {isMarkingKnown ? <Loader2 className="animate-spin" /> : <BadgeCheck />}
+            Bilaman
           </Button>
         ) : (
           <span className="text-xs text-muted-foreground">

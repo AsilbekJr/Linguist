@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
+const compression = require('compression');
 const rateLimit = require('express-rate-limit');
 const mongoSanitize = require('express-mongo-sanitize');
 const hpp = require('hpp');
@@ -23,6 +24,10 @@ const createApp = ({ isProd = process.env.NODE_ENV === 'production', enableRateL
       crossOriginResourcePolicy: { policy: 'cross-origin' },
     })
   );
+  // JSON javoblar siqiladi: lug'at ro'yxati (/api/words) 400 so'zda ~180 KB →
+  // ~30 KB. Render'ning o'zi brotli bilan siqadi (gzip'dan kichikroq) — u yerda
+  // ikkinchi marta siqmaymiz (Render `RENDER=true` o'zgaruvchisini beradi).
+  if (!process.env.RENDER) app.use(compression({ threshold: 1024 }));
   app.use(hpp());
   app.use(cors(getCorsOptions(isProd)));
   // CORS'dan o'tmagan so'rovga "Failed to fetch" o'rniga aniq sabab

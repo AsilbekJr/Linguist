@@ -124,6 +124,7 @@ export const EVENTS = {
   TOPIC_DAY_FINISHED: 'topic_day_finished',
   DIALOGUE_SHADOWED: 'dialogue_shadowed',
   DIALOGUE_RECALLED: 'dialogue_recalled',
+  ACTIVE_WORDS_DONE: 'active_words_done',
   REVIEW_SESSION_FINISHED: 'review_session_finished',
   LISTENING_FINISHED: 'listening_finished',
   PRACTICE_FINISHED: 'practice_finished',

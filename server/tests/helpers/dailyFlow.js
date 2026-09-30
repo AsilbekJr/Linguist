@@ -36,7 +36,8 @@ const fullWord = async (wordId) => Word.findById(wordId).lean();
 /** Rejimga mos TO'G'RI javob tanasi */
 const correctBody = (mode, word) => {
   if (mode === 'recognize') return { mode, answer: word.translation };
-  if (mode === 'recall') return { mode, answer: word.word };
+  if (mode === 'recall' || mode === 'cloze') return { mode, answer: word.word };
+  if (mode === 'build') return { mode, answer: word.examples[0] };
   return { mode: 'sentence', sentence: sentenceFor(word.word) };
 };
 
@@ -67,4 +68,13 @@ const makeDue = (wordId) =>
 const setStage = (wordId, stage) =>
   Word.updateOne({ _id: wordId }, { $set: { stage, nextReviewDate: new Date(Date.now() - 1000) } });
 
-module.exports = { finishTopicDay, reviewAllDue, answerDue, correctBody, sentenceFor, makeDue, setStage, fullWord };
+/**
+ * Erkin gap rejimini sinash uchun: yuqori daraja (5-bosqichdan gap) va 5-bosqich.
+ * Boshlovchi va o'rta darajada 4-5-bosqichlar — bo'sh joy va gap yig'ish.
+ */
+const useSentenceMode = async (api, wordId) => {
+  await api.patch('/api/auth/profile', { level: 'advanced' });
+  await setStage(wordId, 5);
+};
+
+module.exports = { finishTopicDay, reviewAllDue, answerDue, correctBody, sentenceFor, makeDue, setStage, useSentenceMode, fullWord };

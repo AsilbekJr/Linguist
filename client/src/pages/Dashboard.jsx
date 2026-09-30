@@ -5,7 +5,7 @@ import { motion } from 'motion/react';
 import {
   Flame, Snowflake, GraduationCap, BookOpen, BookHeart, Repeat2, Check, ArrowRight, Quote, Sparkles,
 } from 'lucide-react';
-import { useGetWordsQuery, useGetReviewDueQuery, useGetMeQuery } from '../features/api/apiSlice';
+import { useGetReviewDueQuery, useGetMeQuery } from '../features/api/apiSlice';
 import quotesData from '../data/quotes.json';
 import TodayHub from '../components/TodayHub/TodayHub';
 import { PRACTICE_NAV } from '../components/Layout/nav';
@@ -85,7 +85,9 @@ const Dashboard = () => {
   const { data: fetchedUser, isLoading: isLoadingUser } = useGetMeQuery();
   const user = fetchedUser || authUser;
 
-  const { data: words = [], isLoading: isLoadingWords } = useGetWordsQuery();
+  // Butun lug'at (/api/words — 400 so'zda ~180 KB) bu yerda YUKLANMAYDI: sonlar
+  // profilda keladi (totalWords, knownWords). Ilgari bosh sahifa faqat so'zlar
+  // sonini ko'rsatish uchun butun lug'atni kutardi.
   const { data: dueWords = [], isLoading: isLoadingDue } = useGetReviewDueQuery();
 
   const dailyQuote = useMemo(() => {
@@ -93,7 +95,8 @@ const Dashboard = () => {
     return quotesData[todayInt % quotesData.length];
   }, []);
 
-  if (isLoadingUser || isLoadingWords || isLoadingDue) return <DashboardSkeleton />;
+  // Profil (login paytida saqlangan yoki keshdagi) bo'lsa skelet ko'rsatilmaydi
+  if (!user && isLoadingUser) return <DashboardSkeleton />;
 
   const firstName = String(user?.name || '').trim().split(/\s+/)[0];
   const q = user?.dailyQuests || {};
@@ -103,7 +106,8 @@ const Dashboard = () => {
   const doneCount = Number(topicDone) + Number(reviewDone);
   const allDone = doneCount === 2;
   const streak = user?.currentStreak || 0;
-  const learnedCount = user?.knownWords ?? words.filter((w) => w.learned ?? w.mastered).length;
+  const learnedCount = user?.knownWords ?? 0;
+  const totalWords = user?.totalWords ?? 0;
   const course = user?.course;
   const recommended = RECOMMENDED_BY_GOAL[user?.onboarding?.goal];
 
@@ -161,9 +165,11 @@ const Dashboard = () => {
                 hint={
                   reviewDone
                     ? 'Bajarildi'
-                    : dueWords.length
-                      ? `${dueWords.length} ta so'z kutmoqda`
-                      : "Navbat bo'sh"
+                    : isLoadingDue
+                      ? 'Yuklanmoqda…'
+                      : dueWords.length
+                        ? `${dueWords.length} ta so'z kutmoqda`
+                        : "Navbat bo'sh"
                 }
                 onClick={scrollToReview}
               />
@@ -217,14 +223,14 @@ const Dashboard = () => {
         </StaggerItem>
         <StaggerItem>
           <Link to="/vocabulary" className="block rounded-[calc(var(--radius)+4px)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-            <StatTile icon={BookOpen} tone="primary" value={learnedCount} label={`bilgan so'z · ${words.length} lug'atda`} className="surface-interactive" />
+            <StatTile icon={BookOpen} tone="primary" value={learnedCount} label={`bilgan so'z · ${totalWords} lug'atda`} className="surface-interactive" />
           </Link>
         </StaggerItem>
       </Stagger>
 
       {/* ── Takrorlash ─────────────────────────────────────────────────── */}
       <div id="review" className="scroll-mt-24">
-        <TodayHub user={user} totalWords={words.length} />
+        <TodayHub user={user} totalWords={totalWords} />
       </div>
 
       {/* ── Qo'shimcha mashqlar ────────────────────────────────────────── */}

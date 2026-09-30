@@ -1,11 +1,10 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { useGetMeQuery, useGetWordsQuery } from '../features/api/apiSlice';
+import { useGetMeQuery } from '../features/api/apiSlice';
 import {
   Flame, Star, BookOpen, Trophy, Award, BarChart3, CheckCircle2, Target, Lock, PenLine, Library, CalendarCheck, ChevronRight, Settings as SettingsIcon,
 } from 'lucide-react';
-import { isLearned } from '../utils/wordStatus';
 import {
   AnimatedNumber, IconTile, PageHeader, PageSkeleton, ProgressRing, Stagger, StaggerItem, StatTile,
 } from '@/components/ui/primitives';
@@ -27,14 +26,15 @@ const PLAN_LABELS = { sprint: "Yengil (5 so'z/kun)", foundation: "Barqaror (7 so
 
 const Analytics = () => {
   const { data: user, isLoading: loadingUser } = useGetMeQuery();
-  const { data: words = [], isLoading: loadingWords } = useGetWordsQuery();
 
-  if (loadingUser || loadingWords) return <PageSkeleton cards={6} />;
+  if (loadingUser && !user) return <PageSkeleton cards={6} />;
 
-  const learned = words.filter(isLearned).length;
+  // Sonlar profilda keladi — butun lug'atni yuklash shart emas
+  const learned = user?.knownWords ?? 0;
+  const totalWords = user?.totalWords ?? 0;
   const course = user?.course;
   const earned = new Set(user?.badges || []);
-  const learnedPct = words.length ? Math.round((learned / words.length) * 100) : 0;
+  const learnedPct = totalWords ? Math.round((learned / totalWords) * 100) : 0;
   const cefr = user?.onboarding?.placedCefr;
 
   return (
@@ -62,7 +62,7 @@ const Analytics = () => {
           <div className="text-center sm:text-left">
             <p className="text-sm font-medium text-white/75">Bilgan so&apos;zlaringiz</p>
             <p className="text-4xl font-extrabold tabular">
-              <AnimatedNumber value={user?.knownWords ?? learned} />
+              <AnimatedNumber value={learned} />
             </p>
             {course && (
               <p className="mt-2 text-sm text-white/80">
@@ -84,7 +84,7 @@ const Analytics = () => {
       <Stagger className="grid grid-cols-2 gap-3 lg:grid-cols-3" delay={0.1}>
         <StaggerItem><StatTile icon={Flame} tone="streak" value={user?.currentStreak || 0} label="joriy streak" /></StaggerItem>
         <StaggerItem><StatTile icon={Trophy} tone="xp" value={user?.longestStreak || 0} label="eng uzun streak" /></StaggerItem>
-        <StaggerItem><StatTile icon={BookOpen} tone="primary" value={words.length} label="lug'atdagi so'zlar" /></StaggerItem>
+        <StaggerItem><StatTile icon={BookOpen} tone="primary" value={totalWords} label="lug'atdagi so'zlar" /></StaggerItem>
         <StaggerItem><StatTile icon={CheckCircle2} tone="success" value={learned} label={`yodlangan · ${learnedPct}%`} /></StaggerItem>
         <StaggerItem><StatTile icon={Target} tone="pink" value={course?.daysCompleted ?? 0} label="o'tilgan sahnalar" /></StaggerItem>
         <StaggerItem><StatTile icon={Star} tone="info" value={cefr || '—'} label="aniqlangan daraja (CEFR)" /></StaggerItem>

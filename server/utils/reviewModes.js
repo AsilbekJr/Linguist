@@ -7,19 +7,39 @@
  *
  *   bosqich 0-1  → recognize  — inglizcha so'z, 4 ta o'zbekcha variant
  *   bosqich 2-3  → recall     — o'zbekchasidan inglizcha so'zni yozish
- *   bosqich 4-6  → sentence   — so'z bilan gap tuzish (AI tekshiradi)
+ *   bosqich 4    → cloze      — misol gapdagi bo'sh joyga so'zni yozish (tarjimasiz)
+ *   bosqich 5-6  → build / sentence — darajaga qarab (pastda)
  *
- * 7 ta muvaffaqiyatli takrorlash = 2 tanib olish + 2 eslash + 3 gap.
+ * Ilgari "so'zni yozish"dan keyin darhol erkin gap tuzish kelardi — boshlovchi
+ * uchun bu sakrash juda keskin edi. Endi oraliq pog'onalar bor:
+ *   cloze — so'z KONTEKSTDAN eslanadi (o'zbekcha tarjima va harf ishorasi yo'q);
+ *   build — misol gapni aralashtirilgan so'z bo'laklaridan yig'ish: gap
+ *           tuzilishi mashq qilinadi, lekin bo'sh varaqdan yozish shart emas.
+ * Erkin gap (AI tekshiradi) boshlovchida umuman talab qilinmaydi.
+ *
  * Rejimni SERVER belgilaydi — mijoz o'ziga osonini tanlay olmaydi.
  */
 
-const MODES = Object.freeze({ RECOGNIZE: 'recognize', RECALL: 'recall', SENTENCE: 'sentence', TRANSLATE: 'translate' });
+const MODES = Object.freeze({
+  RECOGNIZE: 'recognize',
+  RECALL: 'recall',
+  CLOZE: 'cloze',
+  BUILD: 'build',
+  SENTENCE: 'sentence',
+  TRANSLATE: 'translate',
+});
 
-const modeForStage = (stage) => {
-  const s = Number(stage) || 0;
-  if (s <= 1) return MODES.RECOGNIZE;
-  if (s <= 3) return MODES.RECALL;
-  return MODES.SENTENCE;
+/** Bosqich (0-6) → rejim, darajaga qarab. 7-bosqich = yodlangan, takrorlanmaydi. */
+const LADDERS = Object.freeze({
+  beginner: ['recognize', 'recognize', 'recall', 'recall', 'cloze', 'build', 'build'],
+  intermediate: ['recognize', 'recognize', 'recall', 'recall', 'cloze', 'build', 'sentence'],
+  advanced: ['recognize', 'recognize', 'recall', 'recall', 'cloze', 'sentence', 'sentence'],
+});
+
+const modeForStage = (stage, level = 'beginner') => {
+  const ladder = LADDERS[level] || LADDERS.beginner;
+  const s = Math.min(Math.max(Number(stage) || 0, 0), ladder.length - 1);
+  return ladder[s];
 };
 
 /**
@@ -35,7 +55,65 @@ const modeForStage = (stage) => {
  * saqlanadi va so'z odatiy tartibda davom etadi (tanib olish → eslash → gap).
  */
 const hasTranslation = (w) => Boolean(String(w?.translation || '').trim());
-const modeForWord = (w, stage) => (hasTranslation(w) ? modeForStage(stage) : MODES.TRANSLATE);
+
+/** Misol gapda so'zning qaysi shakli turibdi ("journeys", "went" emas) */
+const escapeRe = (s) => String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+/**
+ * Faqat haqiqiy qo'shimchalar: -s/-es/-ed/-ing/-er/-est/-ly, y→ies/ied,
+ * e→ing/ed, undosh ikkilanishi (stop→stopped). Ilgari `so'z[a-z]*` edi va
+ * "car" so'zi "careful" ichida topilib, noto'g'ri yashirilardi.
+ */
+const findWordInSentence = (sentence, word) => {
+  if (!sentence || !word) return null;
+  const [head, ...rest] = String(word).trim().toLowerCase().split(/\s+/);
+  if (!head) return null;
+  // Iborada ("get by") qo'shimcha birinchi so'zga qo'shiladi: "gets by", "getting by"
+  const forms = [`${escapeRe(head)}(?:s|es|ed|d|ing|er|ers|est|ly)?`];
+  if (head.endsWith('y')) forms.push(`${escapeRe(head.slice(0, -1))}(?:ies|ied|ier|iest|ily)`);
+  if (head.endsWith('e')) forms.push(`${escapeRe(head.slice(0, -1))}(?:ing|ed)`);
+  if (/[^aeiou][aeiou][bdgklmnprt]$/.test(head)) forms.push(`${escapeRe(head)}${head.slice(-1)}(?:ing|ed|er)`);
+  const tail = rest.map((t) => `\\s+${escapeRe(t)}`).join('');
+  const m = String(sentence).match(new RegExp(`\\b(?:${forms.join('|')})${tail}\\b`, 'i'));
+  return m ? m[0] : null;
+};
+
+/** Gapda faqat topilgan shaklni yashirish */
+const maskForm = (sentence, word) => {
+  const form = findWordInSentence(sentence, word);
+  return form ? String(sentence).replace(form, '_____') : String(sentence || '');
+};
+
+const exampleOf = (w) => (w?.examples || []).find((e) => e && String(e).trim()) || '';
+
+/** Gap yig'ish uchun bo'laklar: tinish belgilarisiz so'zlar */
+const sentenceTokens = (sentence) =>
+  String(sentence || '')
+    .replace(/[“”"«»]/g, '')
+    .split(/\s+/)
+    .map((t) => t.replace(/^[^\w']+|[^\w']+$/g, ''))
+    .filter(Boolean);
+
+const BUILD_MIN = 3;
+const BUILD_MAX = 12;
+const canCloze = (w) => Boolean(findWordInSentence(exampleOf(w), w.word));
+const canBuild = (w) => {
+  const n = sentenceTokens(exampleOf(w)).length;
+  return canCloze(w) && n >= BUILD_MIN && n <= BUILD_MAX;
+};
+
+/**
+ * So'z uchun haqiqiy rejim: bosqich + daraja + so'zda nima borligi.
+ * Misol gapi yo'q (yoki gapda so'z topilmaydigan) so'z uchun cloze/build
+ * mumkin emas — bir pog'ona osonrog'iga tushadi.
+ */
+const modeForWord = (w, stage, level) => {
+  if (!hasTranslation(w)) return MODES.TRANSLATE;
+  const mode = modeForStage(stage, level);
+  if (mode === MODES.BUILD && !canBuild(w)) return canCloze(w) ? MODES.CLOZE : MODES.RECALL;
+  if (mode === MODES.CLOZE && !canCloze(w)) return MODES.RECALL;
+  return mode;
+};
 
 const normalizeAnswer = (s) =>
   String(s || '')
@@ -76,6 +154,26 @@ const checkRecall = (word, answer) => {
     return { isCorrect: true, nearMiss: true };
   }
   return { isCorrect: false, nearMiss: false };
+};
+
+/** Bo'sh joy: so'zning asosiy shakli ham, gapdagi shakli ham qabul qilinadi */
+const checkCloze = (w, answer) => {
+  const form = findWordInSentence(exampleOf(w), w.word);
+  const base = checkRecall(w.word, answer);
+  if (!form) return base;
+  const inSentence = checkRecall(form, answer);
+  // Aniq moslik (qaysi shakl bo'lsa ham) "deyarli to'g'ri"dan ustun
+  if (inSentence.isCorrect && !inSentence.nearMiss) return inSentence;
+  return base.isCorrect ? base : inSentence;
+};
+
+const tokenKey = (tokens) => tokens.map((t) => t.toLowerCase().replace(/[’`]/g, "'")).join(' ');
+
+/** Gap yig'ish: bo'laklar tartibi misol gap bilan bir xilmi (katta-kichik harf, tinish ahamiyatsiz) */
+const checkBuild = (w, answer) => {
+  const target = tokenKey(sentenceTokens(exampleOf(w)));
+  const given = tokenKey(sentenceTokens(answer));
+  return { isCorrect: Boolean(given) && given === target, nearMiss: false };
 };
 
 /** Tanib olish rejimi: tanlangan variant to'g'ri tarjimami */
@@ -149,6 +247,30 @@ const presentDueWord = (w, mode, options) => {
       examples: (w.examples || []).slice(0, 1),
     };
   }
+  if (mode === MODES.CLOZE) {
+    // Kontekstdan eslash: o'zbekcha so'z tarjimasi va harf ishorasi YO'Q,
+    // faqat gapning o'zbekchasi (ma'noni tushunish uchun) va so'z turkumi
+    const example = exampleOf(w);
+    return {
+      ...base,
+      exampleMasked: maskForm(example, w.word),
+      exampleUz: w.exampleUz,
+      hint: { length: String(findWordInSentence(example, w.word) || w.word).length },
+    };
+  }
+  if (mode === MODES.BUILD) {
+    const tokens = sentenceTokens(exampleOf(w));
+    let tiles = shuffle(tokens);
+    // Aralashtirish tasodifan asl tartibni qaytarsa — qayta
+    for (let i = 0; i < 5 && tokenKey(tiles) === tokenKey(tokens); i++) tiles = shuffle(tokens);
+    return {
+      ...base,
+      word: w.word,
+      translation: w.translation,
+      exampleUz: w.exampleUz,
+      tiles,
+    };
+  }
   if (mode === MODES.RECALL) {
     // So'zning o'zi ham, talaffuzi ham yashiriladi
     const example = (w.examples || [])[0];
@@ -183,6 +305,12 @@ module.exports = {
   editDistance,
   checkRecall,
   checkRecognize,
+  checkCloze,
+  checkBuild,
+  sentenceTokens,
+  findWordInSentence,
+  exampleOf,
+  LADDERS,
   buildOptions,
   maskWord,
   presentDueWord,
