@@ -78,6 +78,20 @@ const sendMail = async ({ to, subject, html, text }) => {
   }
 };
 
+/**
+ * HTML'ga qo'yiladigan har qanday foydalanuvchi matni ekranlanadi. Ism
+ * ro'yxatdan o'tishda erkin yoziladi: `<a href="...">` kiritilsa, bizning
+ * nomimizdan fishing havolali xat ketardi.
+ */
+const escapeHtml = (value) =>
+  String(value ?? '').replace(/[&<>"']/g, (ch) => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;',
+  })[ch]);
+
 const passwordResetEmail = (name, resetUrl) => ({
   subject: 'Linguist AI — parolni tiklash',
   text: `Salom, ${name}!
@@ -90,10 +104,10 @@ Agar bu so'rovni siz yubormagan bo'lsangiz, bu xatni e'tiborsiz qoldiring — pa
   html: `
     <div style="font-family:system-ui,-apple-system,sans-serif;max-width:520px;margin:0 auto;padding:24px;color:#111">
       <h2 style="margin:0 0 16px">Parolni tiklash</h2>
-      <p>Salom, <strong>${name}</strong>!</p>
+      <p>Salom, <strong>${escapeHtml(name)}</strong>!</p>
       <p>Parolingizni tiklash uchun quyidagi tugmani bosing:</p>
       <p style="margin:28px 0">
-        <a href="${resetUrl}"
+        <a href="${escapeHtml(resetUrl)}"
            style="background:#6d28d9;color:#fff;padding:12px 24px;border-radius:999px;
                   text-decoration:none;font-weight:700;display:inline-block">
           Parolni tiklash
@@ -105,7 +119,7 @@ Agar bu so'rovni siz yubormagan bo'lsangiz, bu xatni e'tiborsiz qoldiring — pa
         parolingiz o'zgarmaydi.
       </p>
       <hr style="border:none;border-top:1px solid #eee;margin:24px 0">
-      <p style="color:#999;font-size:12px">Havola ochilmasa, uni brauzerga nusxalang:<br>${resetUrl}</p>
+      <p style="color:#999;font-size:12px">Havola ochilmasa, uni brauzerga nusxalang:<br>${escapeHtml(resetUrl)}</p>
     </div>
   `,
 });
@@ -129,10 +143,10 @@ Davom etish: ${appUrl}
 Eslatmalarni o'chirish: ${unsubscribeUrl}`,
   html: `
     <div style="font-family:system-ui,-apple-system,sans-serif;max-width:520px;margin:0 auto;padding:24px;color:#111">
-      <p style="font-size:17px;line-height:1.5;margin:0 0 16px">${content.headline}</p>
-      <p style="color:#555;font-size:15px;margin:0 0 28px">${content.stepsLine}</p>
+      <p style="font-size:17px;line-height:1.5;margin:0 0 16px">${escapeHtml(content.headline)}</p>
+      <p style="color:#555;font-size:15px;margin:0 0 28px">${escapeHtml(content.stepsLine)}</p>
       <p style="margin:0 0 28px">
-        <a href="${appUrl}"
+        <a href="${escapeHtml(appUrl)}"
            style="background:#6d28d9;color:#fff;padding:12px 28px;border-radius:999px;
                   text-decoration:none;font-weight:700;display:inline-block">
           Davom etish
@@ -141,10 +155,10 @@ Eslatmalarni o'chirish: ${unsubscribeUrl}`,
       <hr style="border:none;border-top:1px solid #eee;margin:24px 0">
       <p style="color:#999;font-size:12px;margin:0">
         Bu kunlik eslatma.
-        <a href="${unsubscribeUrl}" style="color:#999">Eslatmalarni o'chirish</a>
+        <a href="${escapeHtml(unsubscribeUrl)}" style="color:#999">Eslatmalarni o'chirish</a>
       </p>
     </div>
   `,
 });
 
-module.exports = { sendMail, isConfigured, passwordResetEmail, dailyReminderEmail };
+module.exports = { sendMail, isConfigured, passwordResetEmail, dailyReminderEmail, escapeHtml };
