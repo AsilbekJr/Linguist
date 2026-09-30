@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import { toast } from 'react-hot-toast';
-import { Check, CheckCircle2, Library, Loader2, Plus, Volume2 } from 'lucide-react';
+import { BadgeCheck, Check, CheckCircle2, Library, Loader2, Plus, Volume2 } from 'lucide-react';
 import {
   useGetVocabTopicsQuery,
   useGetVocabTopicQuery,
   useAddVocabTopicWordsMutation,
+  useMarkVocabTopicKnownMutation,
   useGetMeQuery,
 } from '../features/api/apiSlice';
 import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogHeader } from './ui/dialog';
@@ -20,7 +21,8 @@ const EASE = [0.16, 1, 0.3, 1];
 const TopicWords = ({ topicId }) => {
   const { data: topic, isLoading, isError } = useGetVocabTopicQuery(topicId);
   const [addWords] = useAddVocabTopicWordsMutation();
-  // Qaysi so'z qo'shilmoqda; '*' — hammasi
+  const [markKnown] = useMarkVocabTopicKnownMutation();
+  // Qaysi so'z ustida amal bajarilmoqda; '*' — hammasi
   const [busy, setBusy] = useState(null);
 
   if (isLoading) {
@@ -37,6 +39,20 @@ const TopicWords = ({ topicId }) => {
   }
 
   const unsaved = topic.words.filter((w) => !w.saved).length;
+  const knownCount = topic.words.filter((w) => w.known).length;
+
+  /** "Bilaman": so'z yodlangan holda lug'atga tushadi — takrorlashda chiqmaydi */
+  const markAsKnown = async (word) => {
+    setBusy(`known:${word}`);
+    try {
+      await markKnown({ id: topicId, words: [word] }).unwrap();
+      toast.success(`"${word}" yodlanganlarga qo'shildi — takrorlashda chiqmaydi`);
+    } catch {
+      toast.error("Belgilab bo'lmadi. Qayta urinib ko'ring.");
+    } finally {
+      setBusy(null);
+    }
+  };
 
   const add = async (word) => {
     setBusy(word || '*');
@@ -57,6 +73,7 @@ const TopicWords = ({ topicId }) => {
         <p className="text-sm">
           <span className="font-bold tabular">{topic.words.length - unsaved}</span>
           <span className="text-muted-foreground">/{topic.words.length} ta so&apos;z lug&apos;atingizda</span>
+          {knownCount > 0 && <span className="text-success"> · {knownCount} tasini bilasiz</span>}
         </p>
         {unsaved > 0 ? (
           <Button size="sm" onClick={() => add()} disabled={Boolean(busy)}>
@@ -84,6 +101,11 @@ const TopicWords = ({ topicId }) => {
                 <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
                   <span className="text-lg font-extrabold tracking-tight">{w.word}</span>
                   <span className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">{w.partOfSpeech}</span>
+                  {w.known && (
+                    <span className="inline-flex items-center gap-1 text-xs font-semibold text-success">
+                      <BadgeCheck className="size-3.5" /> Yodlangan
+                    </span>
+                  )}
                 </div>
                 <p className="font-semibold text-primary">{w.translation}</p>
                 <p className="mt-1.5 text-sm italic">{w.example}</p>
@@ -109,6 +131,19 @@ const TopicWords = ({ topicId }) => {
                 >
                   {busy === w.word ? <Loader2 className="animate-spin" /> : w.saved ? <Check strokeWidth={3} /> : <Plus />}
                 </Button>
+                {!w.known && (
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    className="rounded-full text-success hover:bg-success/10 hover:text-success"
+                    disabled={Boolean(busy)}
+                    onClick={() => markAsKnown(w.word)}
+                    title="Bilaman — takrorlashda chiqmasin"
+                    aria-label={`"${w.word}" so'zini bilaman — yodlanganlarga qo'shish`}
+                  >
+                    {busy === `known:${w.word}` ? <Loader2 className="animate-spin" /> : <BadgeCheck />}
+                  </Button>
+                )}
               </div>
             </div>
           </motion.li>
@@ -238,7 +273,8 @@ const TopicLibrary = () => {
                   <span aria-hidden="true">{open.emoji}</span> {open.titleUz}
                 </DialogTitle>
                 <DialogDescription>
-                  Unit {open.unit} · {open.title}. Qo&apos;shilgan so&apos;zlar bugunoq takrorlashda chiqadi.
+                  Unit {open.unit} · {open.title}. <Plus className="inline size-3.5" /> — lug&apos;atga qo&apos;shish (bugunoq
+                  takrorlashda chiqadi), <BadgeCheck className="inline size-3.5 text-success" /> — allaqachon bilaman.
                 </DialogDescription>
               </DialogHeader>
               <TopicWords topicId={open.id} />

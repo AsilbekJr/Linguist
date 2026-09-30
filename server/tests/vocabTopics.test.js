@@ -108,6 +108,37 @@ test("tanlangan so'zlarni qo'shish; mavzuda yo'q so'z qabul qilinmaydi", async (
   assert.equal((await api.post('/api/vocab-topics/elementary-10/add', { words: [] })).status, 400);
 });
 
+test('"Bilaman": yangi so\'z yodlangan holda qo\'shiladi, bor so\'z yodlanganga o\'tadi; navbatga tushmaydi', async () => {
+  const api = makeClient();
+  await api.register();
+
+  // "bread" — avval oddiy qo'shilgan (navbatda), "rice" — lug'atda yo'q
+  await api.post('/api/vocab-topics/elementary-10/add', { words: ['bread'] });
+  const res = await api.post('/api/vocab-topics/elementary-10/known', { words: ['bread', 'rice'] });
+  assert.equal(res.status, 200, JSON.stringify(res.data));
+  assert.deepEqual(res.data, { added: 1, updated: 1 });
+
+  const topic = await api.get('/api/vocab-topics/elementary-10');
+  const byWord = Object.fromEntries(topic.data.words.map((w) => [w.word, w]));
+  assert.equal(byWord.bread.known, true);
+  assert.equal(byWord.rice.known, true);
+  assert.equal(byWord.rice.saved, true);
+
+  const due = await api.get('/api/review/due');
+  assert.ok(!due.data.some((w) => ['bread', 'rice'].includes(String(w.word || '').toLowerCase())), 'navbatga tushmaydi');
+  const words = await api.get('/api/words');
+  const rice = words.data.find((w) => w.word.toLowerCase() === 'rice');
+  assert.equal(rice.learned, true);
+  assert.equal(rice.markedKnown, true);
+  assert.equal(rice.translation.length > 0, true);
+  assert.equal((await api.get('/api/auth/me')).data.knownWords, 2);
+
+  // Takror — hech narsa o'zgarmaydi; so'zsiz yoki begona so'z — 400
+  assert.deepEqual((await api.post('/api/vocab-topics/elementary-10/known', { words: ['rice'] })).data, { added: 0, updated: 0 });
+  assert.equal((await api.post('/api/vocab-topics/elementary-10/known', {})).status, 400);
+  assert.equal((await api.post('/api/vocab-topics/elementary-10/known', { words: ['spaceship'] })).status, 400);
+});
+
 test('tokensiz kirib bo\'lmaydi', async () => {
   const anon = makeClient();
   assert.equal((await anon.get('/api/vocab-topics')).status, 401);
