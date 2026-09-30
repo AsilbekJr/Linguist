@@ -22,6 +22,9 @@ const ResetPassword = () => {
   const [confirm, setConfirm] = useState('');
   const [error, setError] = useState('');
   const [done, setDone] = useState(false);
+  // Qaysi hisob tiklangani: Gmail nuqta va `+teg`ni e'tiborsiz qoldiradi,
+  // shuning uchun bir qutiga bir nechta hisobning xati kelishi mumkin
+  const [account, setAccount] = useState('');
   const [resetPassword, { isLoading }] = useResetPasswordMutation();
 
   if (!token) {
@@ -53,19 +56,23 @@ const ResetPassword = () => {
     }
 
     try {
-      await resetPassword({ token, password }).unwrap();
+      const res = await resetPassword({ token, password }).unwrap();
+      const resetEmail = res?.account || '';
+      // Login'da aynan shu email oldindan yoziladi
+      const toLogin = () => navigate('/login', { replace: true, state: { email: resetEmail } });
       if (isAuthenticated) {
         // Server barcha sessiyalarni yopdi — shu qurilmada ham chiqamiz.
         // Chiqqach ilova boshqa route daraxtiga o'tadi va bu komponent qayta
         // yaratiladi, shuning uchun "tayyor" ekrani o'rniga darhol login'ga.
-        toast.success('Parol yangilandi. Endi yangi parol bilan kiring.');
+        toast.success(resetEmail ? `${resetEmail} paroli yangilandi` : 'Parol yangilandi');
         await clearLocalSession(dispatch);
-        navigate('/login', { replace: true });
+        toLogin();
         return;
       }
+      setAccount(resetEmail);
       setDone(true);
       toast.success('Parol yangilandi');
-      setTimeout(() => navigate('/login'), 2500);
+      setTimeout(toLogin, 4000);
     } catch (err) {
       setError(err?.data?.message || "Havola yaroqsiz yoki muddati tugagan. Yangi havola so'rang.");
     }
@@ -79,8 +86,15 @@ const ResetPassword = () => {
           title="Parol yangilandi"
           subtitle="Xavfsizlik uchun barcha qurilmalardagi sessiyalar yopildi. Endi yangi parol bilan kiring."
         />
+        {account && (
+          <p className="mb-5 rounded-2xl border border-border bg-muted/50 px-4 py-3 text-sm">
+            Hisob: <strong className="break-all">{account}</strong>
+          </p>
+        )}
         <Button asChild size="lg" className="w-full">
-          <Link to="/login">Kirish</Link>
+          <Link to="/login" replace state={{ email: account }}>
+            Kirish
+          </Link>
         </Button>
       </FadeIn>
     );

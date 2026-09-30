@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { Loader2, Mail, Lock, ArrowRight } from 'lucide-react';
 import { useLoginMutation } from '../../features/api/apiSlice';
@@ -24,7 +24,9 @@ const readAuthHint = () => {
 };
 
 const Login = ({ onSwitchToRegister, initialEmail = '', onAuthSuccess }) => {
-  const [email, setEmail] = useState(initialEmail);
+  const location = useLocation();
+  // Parol tiklangach aynan o'sha hisob emaili keladi (ResetPassword)
+  const [email, setEmail] = useState(initialEmail || location.state?.email || '');
   const [password, setPassword] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
   const [hint] = useState(readAuthHint);
