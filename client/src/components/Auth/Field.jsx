@@ -51,6 +51,12 @@ export const PasswordField = ({ label = 'Parol', icon: Icon, hint, className, ..
         <Input
           id={id}
           type={visible ? 'text' : 'password'}
+          // "Ko'rsatish" bosilganda maydon oddiy matnga aylanadi va mobil
+          // klaviatura birinchi harfni katta qilib, so'zni "tuzatib" yuborardi:
+          // odam "parol123" deb o'ylaydi, serverga "Parol123" ketadi
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck={false}
           className={cn('pr-12', Icon && 'pl-11')}
           aria-describedby={hint ? `${id}-hint` : undefined}
           {...props}
