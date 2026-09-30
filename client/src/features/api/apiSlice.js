@@ -26,6 +26,7 @@ const isPublicAuthRequest = (url) =>
     '/api/auth/logout',
     '/api/auth/forgot-password',
     '/api/auth/reset-password',
+    '/api/auth/verify-email',
   ].some((path) => url.includes(path));
 
 let refreshPromise = null;
@@ -376,6 +377,21 @@ export const apiSlice = createApi({
         body: { token, password },
       }),
     }),
+    verifyEmail: builder.mutation({
+      query: (token) => ({
+        url: '/api/auth/verify-email',
+        method: 'POST',
+        body: { token },
+      }),
+      // Banner yo'qolishi uchun profil qayta olinadi
+      invalidatesTags: ['User'],
+    }),
+    resendVerification: builder.mutation({
+      query: () => ({
+        url: '/api/auth/resend-verification',
+        method: 'POST',
+      }),
+    }),
     getMe: builder.query({
       query: () => '/api/auth/me',
       providesTags: ['User'],
@@ -515,6 +531,8 @@ export const {
   useRefreshTokenMutation,
   useLogoutSessionMutation,
   useRestoreSessionMutation,
+  useVerifyEmailMutation,
+  useResendVerificationMutation,
   useGetSubscriptionQuery,
   useCreateCheckoutSessionMutation,
   useCreatePortalSessionMutation,

@@ -186,6 +186,12 @@ const resetPasswordSchema = z.object({
   }),
 });
 
+const verifyEmailSchema = z.object({
+  body: z.object({
+    token: z.string().regex(/^[a-f0-9]{64}$/),
+  }),
+});
+
 const timezoneSchema = z.object({
   body: z.object({
     timezone: z.string().min(3).max(64),
@@ -255,6 +261,7 @@ module.exports = {
   timezoneSchema,
   forgotPasswordSchema,
   resetPasswordSchema,
+  verifyEmailSchema,
   onboardSchema,
   profileUpdateSchema,
   changePasswordSchema,

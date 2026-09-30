@@ -8,6 +8,7 @@ import InstallPrompt from '../InstallPrompt';
 import { SplashScreen } from '../brand/SplashScreen';
 import { MobileTopBar, MobileTabBar } from './MobileNav';
 import { useGetMeQuery } from '../../features/api/apiSlice';
+import EmailVerifyBanner from '../EmailVerifyBanner';
 
 /**
  * Ilova qobig'i.
@@ -65,6 +66,7 @@ const DashboardLayout = () => {
           id="main"
           className="mx-auto w-full max-w-6xl px-4 pb-[calc(env(safe-area-inset-bottom,0px)+6.5rem)] pt-5 sm:px-6 lg:px-10 lg:pb-12 lg:pt-10"
         >
+          <EmailVerifyBanner user={user} />
           <AnimatePresence mode="wait" initial={false}>
             <motion.div
               key={location.pathname}

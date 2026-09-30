@@ -17,6 +17,14 @@ router.get('/subscription', protect, async (req, res) => {
 router.post('/checkout', protect, validate(checkoutSchema), async (req, res) => {
   try {
     const { plan } = req.validated.body;
+    // To'lov tiklab bo'ladigan manzilga bog'lanishi kerak: begona email
+    // bilan ochilgan hisob pullik obunani yo'qotib qo'yishi mumkin
+    if (!req.user.emailVerified) {
+      return res.status(403).json({
+        message: "To'lovdan oldin emailingizni tasdiqlang — xat pochtangizga yuborilgan.",
+        code: 'EMAIL_NOT_VERIFIED',
+      });
+    }
     const session = await createCheckoutSession({
       user: req.user,
       plan,

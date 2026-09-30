@@ -81,7 +81,7 @@ const runReminders = async (now = new Date(), { dryRun = false } = {}) => {
     'onboarding.completed': true,
   })
     .select(
-      'name email timezone onboarding currentStreak lastStreakDay dailyQuests notifications telegram streakFreeze createdAt'
+      'name email emailVerified timezone onboarding currentStreak lastStreakDay dailyQuests notifications telegram streakFreeze createdAt'
     )
     .cursor();
 
@@ -128,6 +128,10 @@ const runReminders = async (now = new Date(), { dryRun = false } = {}) => {
           channel = 'telegram';
         } else if (pushResult.sent > 0) {
           channel = 'push';
+        } else if (!user.emailVerified) {
+          // Tasdiqlanmagan manzilga xat yubormaymiz: u begona odamniki bo'lishi
+          // mumkin va "spam" shikoyatlari Brevo'dagi obro'ni tushiradi
+          channel = 'none_unverified';
         } else {
           const token = await ensureUnsubscribeToken(user);
           await sendMail({
@@ -141,6 +145,15 @@ const runReminders = async (now = new Date(), { dryRun = false } = {}) => {
       } else {
         // Quruq yugurishda ham token yaratilishini tekshiramiz
         await ensureUnsubscribeToken(user);
+      }
+
+      // Hech bir kanal ishlamadi (email tasdiqlanmagan) — bu yuborish emas.
+      // `lastSentDay` yozilmaydi: Telegram yoki email keyinroq bugun
+      // ulansa, keyingi yugurishda eslatma baribir yetib boradi.
+      if (channel === 'none_unverified') {
+        stats.skipped++;
+        stats.reasons.email_unverified = (stats.reasons.email_unverified || 0) + 1;
+        continue;
       }
       stats.byChannel[channel] = (stats.byChannel[channel] || 0) + 1;
 

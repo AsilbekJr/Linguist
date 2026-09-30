@@ -35,6 +35,7 @@ const generateRefreshToken = () => crypto.randomBytes(40).toString('hex');
 const generateResetToken = () => crypto.randomBytes(32).toString('hex');
 
 const RESET_TOKEN_TTL_MS = 60 * 60 * 1000; // 1 soat
+const VERIFY_TOKEN_TTL_MS = 24 * 60 * 60 * 1000; // 24 soat — xat kechroq ochilishi mumkin
 
 const hashToken = (token) =>
   crypto.createHash('sha256').update(token).digest('hex');
@@ -89,6 +90,7 @@ module.exports = {
   generateRefreshToken,
   generateResetToken,
   RESET_TOKEN_TTL_MS,
+  VERIFY_TOKEN_TTL_MS,
   hashToken,
   verifyAccessToken,
   REFRESH_COOKIE,

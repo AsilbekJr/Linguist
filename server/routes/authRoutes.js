@@ -13,6 +13,7 @@ const {
   timezoneSchema,
   forgotPasswordSchema,
   resetPasswordSchema,
+  verifyEmailSchema,
 } = require('../middleware/validate');
 const {
   generateAccessToken,
@@ -33,6 +34,12 @@ const PlacementSession = require('../models/PlacementSession');
 const Challenge = require('../models/Challenge');
 const Session = require('../models/Session');
 const PasswordResetToken = require('../models/PasswordResetToken');
+const EmailVerificationToken = require('../models/EmailVerificationToken');
+const {
+  sendVerificationEmail,
+  verifyEmailToken,
+  markEmailVerified,
+} = require('../services/emailVerification');
 const TopicProgress = require('../models/TopicProgress');
 const { sendMail, passwordResetEmail } = require('../services/mailer');
 const { getStartDayForLevel } = require('../utils/topicHelpers');
@@ -69,6 +76,12 @@ router.post('/register', validate(authRegisterSchema), async (req, res) => {
     }
     const user = await User.create({ name, email, password });
     await sendAuthResponse(user, req, res, 201);
+
+    // Javobni kutdirmaymiz: pochta sekin yoki ishlamasa ham ro'yxatdan o'tish
+    // darhol tugaydi, xatni esa bannerdan qayta so'rash mumkin
+    sendVerificationEmail(user).catch((error) => {
+      console.error('Tasdiqlash xati yuborilmadi:', error.message);
+    });
   } catch (error) {
     console.error('Register error:', error);
     res.status(500).json({ message: 'Server error' });
@@ -264,7 +277,7 @@ router.delete('/account', protect, validate(deleteAccountSchema), async (req, re
     // To'lov hodisalari (BillingEvent) ataylab qoldiriladi: ular moliyaviy
     // hisobot uchun kerak va shaxsiy ma'lumot saqlamaydi.
     await Promise.all(
-      [Word, TopicProgress, Session, PasswordResetToken, PushSubscription, QuizSession, PlacementSession, Challenge].map(
+      [Word, TopicProgress, Session, PasswordResetToken, EmailVerificationToken, PushSubscription, QuizSession, PlacementSession, Challenge].map(
         (Model) => Model.deleteMany({ user: userId })
       )
     );
@@ -353,6 +366,8 @@ router.post('/reset-password', validate(resetPasswordSchema), async (req, res) =
     }
 
     user.password = password; // pre('save') hash qiladi
+    // Tiklash havolasi pochtaga keldi — demak email egasi shu odam
+    await markEmailVerified(user);
     await user.save();
 
     // Token bir martalik
@@ -374,6 +389,60 @@ router.post('/reset-password', validate(resetPasswordSchema), async (req, res) =
     });
   } catch (error) {
     console.error('Reset password error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @desc    Emailni tasdiqlash (xatdagi havola)
+// @route   POST /api/auth/verify-email
+// Login talab qilmaydi: xat ko'pincha telefonda ochiladi, ilova esa
+// kompyuterda ochiq bo'ladi.
+router.post('/verify-email', validate(verifyEmailSchema), async (req, res) => {
+  try {
+    const { user, alreadyVerified, error } = await verifyEmailToken(req.validated.body.token);
+    if (error) {
+      return res.status(400).json({
+        message: "Havola yaroqsiz yoki muddati tugagan. Ilovadan yangi havola so'rang.",
+        code: error,
+      });
+    }
+    res.json({
+      message: alreadyVerified ? 'Email allaqachon tasdiqlangan.' : 'Email tasdiqlandi.',
+      alreadyVerified: Boolean(alreadyVerified),
+      // Faqat tokenga (pochta qutisiga) ega odam ko'radi — qaysi hisob ekani aniq bo'lsin
+      account: user.email,
+    });
+  } catch (error) {
+    console.error('Verify email error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @desc    Tasdiqlash xatini qayta yuborish
+// @route   POST /api/auth/resend-verification
+router.post('/resend-verification', protect, async (req, res) => {
+  try {
+    const result = await sendVerificationEmail(req.user);
+    if (result.reason === 'ALREADY_VERIFIED') {
+      return res.json({ message: 'Email allaqachon tasdiqlangan.', alreadyVerified: true });
+    }
+    if (result.reason === 'COOLDOWN') {
+      res.set('Retry-After', String(result.retryAfterSec));
+      return res.status(429).json({
+        message: `Xat hozirgina yuborildi. ${result.retryAfterSec} soniyadan keyin qayta urinib ko'ring.`,
+        code: 'VERIFY_COOLDOWN',
+        retryAfterSec: result.retryAfterSec,
+      });
+    }
+    if (!result.sent) {
+      return res.status(503).json({
+        message: "Xatni hozir yuborib bo'lmadi. Birozdan keyin qayta urinib ko'ring.",
+        code: 'MAIL_FAILED',
+      });
+    }
+    res.json({ message: `Tasdiqlash xati ${req.user.email} manziliga yuborildi.` });
+  } catch (error) {
+    console.error('Resend verification error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });

@@ -36,7 +36,12 @@ almashtirilmasdi va logout access tokenni darhol bekor qilmasdi.
   - [x] Vercel `/api` proxy (`client/vercel.json`) — domen shart emas, proxy 120 s kutadi (Render sovuq starti sig'adi)
   - [x] **Deploy tartibi:** (1) Vercel'dan `VITE_API_URL`ni o'chirib client'ni deploy qilish → (2) Render'da `COOKIE_SAMESITE=lax`, `TRUST_PROXY_HOPS=4` → (3) `/health`dagi `clientIp` haqiqiy IP ekanini tekshirish. Bajarildi 2026-10-01: Chrome, Android, parol o'zgartirish tekshirildi
   - [ ] Keyinroq: Linguist uchun alohida domen (proxy o'rniga `app.` + `api.`)
-- [ ] **B. Hisob hayotiy sikli:** email tasdiqlash (shundan keyin register javobi umumiy bo'ladi), faol qurilmalar ro'yxati, yangi kirish/parol haqida xabar, hisob bo'yicha urinish cheklovi, HIBP parol tekshiruvi
+- [ ] **B. Hisob hayotiy sikli**
+  - [x] Email tasdiqlash (`feat/email-verification`): bloklamaydi — banner + "Qayta yuborish" (60 s oraliq); havola 24 soat, bir martalik, login'siz ishlaydi; parol tiklash ham tasdiqlaydi; yopiq: to'lov va email eslatmalar
+  - [ ] Faol qurilmalar ro'yxati (Session'da userAgent/ip/lastUsedAt allaqachon yoziladi)
+  - [ ] Yangi kirish / parol o'zgargani haqida xabar
+  - [ ] Hisob bo'yicha urinish cheklovi (IP'dan tashqari)
+  - [ ] HIBP parol tekshiruvi
 - [ ] **C. Ijtimoiy kirish:** Google (OIDC), Telegram Login Widget, hisoblarni bog'lash
 - [ ] **D. Ixtiyoriy:** TOTP 2FA, auth hodisalari jurnali, passkey
 
@@ -164,4 +169,6 @@ almashtirilmasdi va logout access tokenni darhol bekor qilmasdi.
 | 2026-09-29 | Vocabulary in Use mavzulari Telegram'dan keyin (4-band) | Foydalanuvchi qarori; kitob matni ko'chirilmaydi — faqat mavzu va so'zlar |
 | 2026-09-29 | Payme/Click eng oxirida | Foydalanuvchi qarori |
 | 2026-09-29 | Kontent birinchi o'rinda | 30 kunlik kontent — eng katta retention xavfi |
+| 2026-10-01 | Email tasdiqlash bloklamaydi | Ro'yxatdan o'tgan odam darhol o'qiy boshlashi kerak; faqat to'lov va email eslatmalar pochta egaligini talab qiladi |
+| 2026-10-01 | Register "email band" deb aniq aytishda davom etadi | Umumiy javob ro'yxatdan o'tishni bloklashni talab qiladi (avval xat, keyin kirish) — konversiyani tushiradi. Ro'yxat yig'ish rate limit bilan cheklangan |
 | 2026-09-29 | "100 kun" jadvali haqiqiy kun sonini ko'rsatadi (30) | 100 deb qotirilgan edi — yolg'on va'da |

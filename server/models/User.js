@@ -16,6 +16,16 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  /**
+   * Email egasi tasdiqladimi (xatdagi havola yoki parolni tiklash orqali).
+   * Tasdiqlanmagan hisob ilovadan to'liq foydalanadi — faqat to'lov va
+   * email eslatmalar yopiq: begona manzilga xat yuborish pochta obro'sini
+   * buzadi, to'lov esa hisobni tiklab bo'ladigan manzilga bog'lanishi kerak.
+   */
+  emailVerified: { type: Boolean, default: false },
+  emailVerifiedAt: { type: Date, default: null },
+  /** Qayta yuborishni cheklash uchun (spam bo'lmasin) */
+  emailVerificationSentAt: { type: Date, default: null },
   xp: {
     type: Number,
     default: 0,

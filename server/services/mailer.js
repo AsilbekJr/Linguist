@@ -87,12 +87,15 @@ const sendViaBrevo = async ({ to, subject, html, text }) => {
  */
 const sendMail = async ({ to, subject, html, text }) => {
   if (!isConfigured()) {
+    // Testlarda har ro'yxatdan o'tish xat chiqarardi — yuzlab bloklar test
+    // runner'ining stdout protokolini to'ldirib, natijani o'qishni qiyinlashtiradi
+    if (process.env.NODE_ENV === 'test') return { delivered: false, reason: 'NOT_CONFIGURED' };
     console.log('\n─── POCHTA (yuborilmadi — MAIL_PROVIDER sozlanmagan) ───');
     console.log(`Kimga: ${to}`);
     console.log(`Mavzu: ${subject}`);
     console.log(text || html);
     console.log('────────────────────────────────────────────────────────\n');
-    return { delivered: false };
+    return { delivered: false, reason: 'NOT_CONFIGURED' };
   }
 
   try {
@@ -101,7 +104,7 @@ const sendMail = async ({ to, subject, html, text }) => {
     return { delivered: true };
   } catch (error) {
     console.error('Pochta yuborishda xato:', error.message);
-    return { delivered: false };
+    return { delivered: false, reason: 'SEND_FAILED' };
   }
 };
 
@@ -151,6 +154,35 @@ Agar bu so'rovni siz yubormagan bo'lsangiz, bu xatni e'tiborsiz qoldiring — pa
   `,
 });
 
+const verifyEmailEmail = (name, verifyUrl) => ({
+  subject: 'Linguist AI — emailingizni tasdiqlang',
+  text: `Salom, ${name}!
+
+Linguist AI'ga xush kelibsiz. Emailingizni tasdiqlash uchun havolaga o'ting:
+${verifyUrl}
+
+Havola 24 soat amal qiladi.
+Agar siz ro'yxatdan o'tmagan bo'lsangiz, bu xatni e'tiborsiz qoldiring.`,
+  html: `
+    <div style="font-family:system-ui,-apple-system,sans-serif;max-width:520px;margin:0 auto;padding:24px;color:#111">
+      <h2 style="margin:0 0 16px">Emailingizni tasdiqlang</h2>
+      <p>Salom, <strong>${escapeHtml(name)}</strong>!</p>
+      <p>Linguist AI'ga xush kelibsiz. Bu email sizniki ekanini tasdiqlang — shunda parolni unutsangiz ham hisobingizni tiklay olasiz.</p>
+      <p style="margin:28px 0">
+        <a href="${escapeHtml(verifyUrl)}"
+           style="background:#6d28d9;color:#fff;padding:12px 24px;border-radius:999px;
+                  text-decoration:none;font-weight:700;display:inline-block">
+          Emailni tasdiqlash
+        </a>
+      </p>
+      <p style="color:#666;font-size:14px">Havola <strong>24 soat</strong> davomida amal qiladi.</p>
+      <p style="color:#666;font-size:14px">Agar siz ro'yxatdan o'tmagan bo'lsangiz, bu xatni e'tiborsiz qoldiring.</p>
+      <hr style="border:none;border-top:1px solid #eee;margin:24px 0">
+      <p style="color:#999;font-size:12px">Havola ochilmasa, uni brauzerga nusxalang:<br>${escapeHtml(verifyUrl)}</p>
+    </div>
+  `,
+});
+
 /**
  * Kunlik eslatma xati.
  *
@@ -188,4 +220,12 @@ Eslatmalarni o'chirish: ${unsubscribeUrl}`,
   `,
 });
 
-module.exports = { sendMail, isConfigured, passwordResetEmail, dailyReminderEmail, escapeHtml, parseFrom };
+module.exports = {
+  sendMail,
+  isConfigured,
+  passwordResetEmail,
+  verifyEmailEmail,
+  dailyReminderEmail,
+  escapeHtml,
+  parseFrom,
+};

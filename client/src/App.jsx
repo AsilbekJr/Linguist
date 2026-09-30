@@ -21,6 +21,7 @@ const TopicVocabulary = lazy(() => import("./pages/TopicVocabulary"));
 const Unsubscribe = lazy(() => import("./pages/Unsubscribe"));
 const ForgotPassword = lazy(() => import("./components/Auth/ForgotPassword"));
 const ResetPassword = lazy(() => import("./components/Auth/ResetPassword"));
+const VerifyEmail = lazy(() => import("./components/Auth/VerifyEmail"));
 const Listening = lazy(() => import("./pages/Listening"));
 const Pricing = lazy(() => import("./pages/Pricing"));
 const Analytics = lazy(() => import("./pages/Analytics"));
@@ -124,7 +125,11 @@ function App() {
   // Parolni tiklash havolasi tizimga kirgan brauzerda ham ochilishi kerak.
   // Ilgari u ichki route'larga tushib "/" ga yo'naltirilardi: URL'dagi token
   // yo'qolar, parol o'zgarmas, foydalanuvchi esa "yangiladim" deb o'ylardi.
-  if (isAuthenticated && location.pathname === "/reset-password") {
+  // Email tasdiqlash havolasi ham xuddi shunday — kirgan-kirmaganidan qat'i nazar
+  if (
+    location.pathname === "/verify-email" ||
+    (isAuthenticated && location.pathname === "/reset-password")
+  ) {
     return (
       <Routes>
         <Route element={<AuthLayout />}>
@@ -133,6 +138,14 @@ function App() {
             element={
               <Suspense fallback={<PageLoader />}>
                 <ResetPassword />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/verify-email"
+            element={
+              <Suspense fallback={<PageLoader />}>
+                <VerifyEmail />
               </Suspense>
             }
           />
