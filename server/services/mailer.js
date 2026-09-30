@@ -11,9 +11,35 @@
 const PROVIDER = (process.env.MAIL_PROVIDER || '').toLowerCase();
 const FROM = process.env.MAIL_FROM || 'Linguist AI <onboarding@resend.dev>';
 
+const EMAIL_RE = /[^\s<>"',;]+@[^\s<>"',;]+\.[^\s<>"',;]+/;
+
+/**
+ * `MAIL_FROM` ni nom va emailga ajratadi.
+ *
+ * Dashboard'ga qiymat turlicha yoziladi: qo'shtirnoq bilan, qavssiz,
+ * qavs ichida bo'sh joy bilan. Ilgari email faqat `<...>` ichidan olinardi
+ * va boshqa har qanday shaklda Brevo'ga butun satr ketib, "valid sender
+ * email required" xatosi chiqardi.
+ */
+const parseFrom = (raw) => {
+  const value = String(raw || '').trim().replace(/^["']|["']$/g, '').trim();
+  const email = (value.match(EMAIL_RE) || [null])[0];
+  const namePart = value.includes('<') ? value.slice(0, value.indexOf('<')) : '';
+  const name = namePart.replace(/["']/g, '').trim() || 'Linguist AI';
+  return { name, email };
+};
+
+const SENDER = parseFrom(FROM);
+if (PROVIDER && !SENDER.email) {
+  console.error(
+    `MAIL_FROM da email topilmadi: "${FROM}". To'g'ri shakl: Linguist AI <siz@gmail.com>`
+  );
+}
+
 const isConfigured = () =>
-  (PROVIDER === 'resend' && Boolean(process.env.RESEND_API_KEY)) ||
-  (PROVIDER === 'brevo' && Boolean(process.env.BREVO_API_KEY));
+  Boolean(SENDER?.email) &&
+  ((PROVIDER === 'resend' && Boolean(process.env.RESEND_API_KEY)) ||
+  (PROVIDER === 'brevo' && Boolean(process.env.BREVO_API_KEY)));
 
 const sendViaResend = async ({ to, subject, html, text }) => {
   const res = await fetch('https://api.resend.com/emails', {
@@ -22,7 +48,7 @@ const sendViaResend = async ({ to, subject, html, text }) => {
       Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ from: FROM, to: [to], subject, html, text }),
+    body: JSON.stringify({ from: `${SENDER.name} <${SENDER.email}>`, to: [to], subject, html, text }),
   });
   if (!res.ok) {
     const body = await res.text();
@@ -32,7 +58,6 @@ const sendViaResend = async ({ to, subject, html, text }) => {
 };
 
 const sendViaBrevo = async ({ to, subject, html, text }) => {
-  const [, fromEmail] = FROM.match(/<(.+)>/) || [null, FROM];
   const res = await fetch('https://api.brevo.com/v3/smtp/email', {
     method: 'POST',
     headers: {
@@ -40,7 +65,7 @@ const sendViaBrevo = async ({ to, subject, html, text }) => {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      sender: { email: fromEmail, name: 'Linguist AI' },
+      sender: { email: SENDER.email, name: SENDER.name },
       to: [{ email: to }],
       subject,
       htmlContent: html,
@@ -49,7 +74,9 @@ const sendViaBrevo = async ({ to, subject, html, text }) => {
   });
   if (!res.ok) {
     const body = await res.text();
-    throw new Error(`Brevo ${res.status}: ${body.slice(0, 200)}`);
+    // Jo'natuvchi logga yoziladi — "valid sender email required" ning sababi
+    // odatda aynan shu qiymatda bo'ladi (maxfiy emas)
+    throw new Error(`Brevo ${res.status} (sender=${SENDER.email}): ${body.slice(0, 200)}`);
   }
   return res.json();
 };
@@ -161,4 +188,4 @@ Eslatmalarni o'chirish: ${unsubscribeUrl}`,
   `,
 });
 
-module.exports = { sendMail, isConfigured, passwordResetEmail, dailyReminderEmail, escapeHtml };
+module.exports = { sendMail, isConfigured, passwordResetEmail, dailyReminderEmail, escapeHtml, parseFrom };
