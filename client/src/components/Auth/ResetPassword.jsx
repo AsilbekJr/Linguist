@@ -2,7 +2,9 @@ import React, { useState } from 'react';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { Loader2, CheckCircle2, AlertTriangle, Lock } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import { useDispatch, useSelector } from 'react-redux';
 import { useResetPasswordMutation } from '../../features/api/apiSlice';
+import { clearLocalSession } from '../../utils/authHelpers';
 import { Button } from '@/components/ui/button';
 import { FadeIn, IconTile } from '@/components/ui/primitives';
 import { AuthHeading, FormAlert, PasswordField } from './Field';
@@ -12,6 +14,8 @@ const MIN_LENGTH = 8;
 const ResetPassword = () => {
   const [params] = useSearchParams();
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const isAuthenticated = useSelector((state) => state.auth.isAuthenticated);
   const token = params.get('token');
 
   const [password, setPassword] = useState('');
@@ -50,6 +54,15 @@ const ResetPassword = () => {
 
     try {
       await resetPassword({ token, password }).unwrap();
+      if (isAuthenticated) {
+        // Server barcha sessiyalarni yopdi — shu qurilmada ham chiqamiz.
+        // Chiqqach ilova boshqa route daraxtiga o'tadi va bu komponent qayta
+        // yaratiladi, shuning uchun "tayyor" ekrani o'rniga darhol login'ga.
+        toast.success('Parol yangilandi. Endi yangi parol bilan kiring.');
+        await clearLocalSession(dispatch);
+        navigate('/login', { replace: true });
+        return;
+      }
       setDone(true);
       toast.success('Parol yangilandi');
       setTimeout(() => navigate('/login'), 2500);
