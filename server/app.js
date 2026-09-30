@@ -16,9 +16,10 @@ const createApp = ({ isProd = process.env.NODE_ENV === 'production', enableRateL
   const app = express();
 
   if (isProd) {
-    // Nechta proksi orqali kelinadi. Render — 1. So'rovlar Vercel proxy
-    // orqali o'tkazilsa (vercel.json rewrite) — 2, aks holda rate limit
-    // hamma foydalanuvchini bitta Vercel IP'si deb sanaydi.
+    // Nechta proksi orqali kelinadi. Vercel proxy (vercel.json rewrite) →
+    // Cloudflare → Render ichki = 4 (/health dagi forwardedFor bilan
+    // tekshirilgan). Noto'g'ri bo'lsa rate limit hamma foydalanuvchini
+    // bitta proksi IP'si deb sanaydi.
     app.set('trust proxy', Number(process.env.TRUST_PROXY_HOPS) || 1);
   }
 
