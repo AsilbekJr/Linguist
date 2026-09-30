@@ -1,5 +1,5 @@
 import React, { useState, useEffect, Suspense, lazy } from "react";
-import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
+import { Routes, Route, Navigate, useNavigate, useLocation } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { logout } from "./features/auth/authSlice";
 import {
@@ -39,6 +39,7 @@ function App() {
   const [loginPrefillEmail, setLoginPrefillEmail] = useState("");
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const {
     data: me,
@@ -117,6 +118,26 @@ function App() {
       <Suspense fallback={<PageLoader />}>
         <Unsubscribe />
       </Suspense>
+    );
+  }
+
+  // Parolni tiklash havolasi tizimga kirgan brauzerda ham ochilishi kerak.
+  // Ilgari u ichki route'larga tushib "/" ga yo'naltirilardi: URL'dagi token
+  // yo'qolar, parol o'zgarmas, foydalanuvchi esa "yangiladim" deb o'ylardi.
+  if (isAuthenticated && location.pathname === "/reset-password") {
+    return (
+      <Routes>
+        <Route element={<AuthLayout />}>
+          <Route
+            path="/reset-password"
+            element={
+              <Suspense fallback={<PageLoader />}>
+                <ResetPassword />
+              </Suspense>
+            }
+          />
+        </Route>
+      </Routes>
     );
   }
 
