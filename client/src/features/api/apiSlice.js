@@ -1,17 +1,7 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import { setCredentials, logout } from '../auth/authSlice';
 
-import { API_URL, API_URL_MISSING } from '../../lib/apiUrl';
-
-// Deploy qilingan build'da manzil yo'q bo'lsa sabab hech qayerda ko'rinmaydi —
-// shuning uchun buni baland ovozda aytamiz
-if (API_URL_MISSING) {
-  console.error(
-    '[Linguist] VITE_API_URL sozlanmagan. Vercel → Settings → Environment Variables ' +
-      "ga uni qo'shing va deploymentni qayta ishga tushiring. Aks holda hech qanday " +
-      "so'rov ishlamaydi."
-  );
-}
+import { API_URL } from '../../lib/apiUrl';
 
 const rawBaseQuery = fetchBaseQuery({
   baseUrl: API_URL,
@@ -27,67 +17,90 @@ const rawBaseQuery = fetchBaseQuery({
 
 const getRequestUrl = (args) => (typeof args === 'string' ? args : args?.url || '');
 
+/** Access token talab qilmaydigan so'rovlar — ular oldidan refresh qilinmaydi */
 const isPublicAuthRequest = (url) =>
-  ['/api/auth/login', '/api/auth/register', '/api/auth/refresh'].some((path) =>
-    url.includes(path)
-  );
+  [
+    '/api/auth/login',
+    '/api/auth/register',
+    '/api/auth/refresh',
+    '/api/auth/logout',
+    '/api/auth/forgot-password',
+    '/api/auth/reset-password',
+  ].some((path) => url.includes(path));
 
 let refreshPromise = null;
 
-const baseQueryWithReauth = async (args, api, extraOptions) => {
-  let result = await rawBaseQuery(args, api, extraOptions);
-  const url = getRequestUrl(args);
-
-  if (result.error?.status === 401 && !isPublicAuthRequest(url)) {
-    if (!refreshPromise) {
-      refreshPromise = rawBaseQuery(
-        { url: '/api/auth/refresh', method: 'POST' },
-        api,
-        extraOptions
-      ).finally(() => {
+/**
+ * Refresh cookie orqali yangi access token olish.
+ *
+ * Bir vaqtda faqat bitta so'rov ketadi: server har refresh'da cookie'ni
+ * almashtiradi (rotation), shuning uchun parallel so'rovlar bir-biriga
+ * xalaqit bermasin. Natija: `{ data }` — muvaffaqiyat, `{ error }` — yo'q.
+ */
+const refreshAccessToken = (api, extraOptions) => {
+  if (!refreshPromise) {
+    refreshPromise = rawBaseQuery({ url: '/api/auth/refresh', method: 'POST' }, api, extraOptions)
+      .then((refresh) => {
+        if (refresh.data?.token) {
+          api.dispatch(setCredentials({ user: refresh.data, token: refresh.data.token }));
+        } else if (refresh.error?.status === 401) {
+          /**
+           * Sessiyani uzaytirib bo'lmadi.
+           *
+           * `NO_REFRESH_COOKIE` — refresh cookie brauzerga umuman yetib
+           * bormagan. Frontend va backend turli saytlarda bo'lsa (vercel.app +
+           * onrender.com) bu cookie UCHINCHI TOMON hisoblanadi va brauzer
+           * (ayniqsa Safari) uni bloklaydi. Doimiy yechim — ikkalasini bitta
+           * sayt ostiga olib kelish (README → "Bitta domen").
+           */
+          if (refresh.error?.data?.code === 'NO_REFRESH_COOKIE') {
+            console.error(
+              '[Linguist] Refresh cookie yetib kelmadi. Frontend va backend turli ' +
+                "saytlarda bo'lgani uchun brauzer uni uchinchi tomon cookie sifatida " +
+                "bloklagan bo'lishi mumkin."
+            );
+            try {
+              sessionStorage.setItem('linguist_auth_hint', 'third_party_cookie');
+            } catch {
+              // shaxsiy rejim — muhim emas
+            }
+          }
+          api.dispatch(logout());
+        }
+        // Tarmoq xatosi (oflayn, server uyg'onmoqda) — chiqarib yubormaymiz:
+        // keyingi so'rov yana urinadi, kesh esa ko'rinib turadi
+        return refresh;
+      })
+      .finally(() => {
         refreshPromise = null;
       });
+  }
+  return refreshPromise;
+};
+
+/**
+ * Access token faqat xotirada turadi (localStorage'da emas — XSS bo'lsa
+ * o'g'irlab bo'lmasin). Sahifa qayta yuklanganda token yo'q, lekin
+ * `isAuthenticated` saqlangan: birinchi so'rov oldidan jimgina refresh
+ * qilinadi, UI esa shu vaqtda keshdan chizilib turadi.
+ */
+const baseQueryWithReauth = async (args, api, extraOptions) => {
+  const url = getRequestUrl(args);
+  const isPublic = isPublicAuthRequest(url);
+
+  if (!isPublic) {
+    const { token, isAuthenticated } = api.getState().auth;
+    if (!token && isAuthenticated) {
+      await refreshAccessToken(api, extraOptions);
     }
+  }
 
-    const refresh = await refreshPromise;
+  let result = await rawBaseQuery(args, api, extraOptions);
 
+  if (result.error?.status === 401 && !isPublic) {
+    const refresh = await refreshAccessToken(api, extraOptions);
     if (refresh.data?.token) {
-      api.dispatch(
-        setCredentials({
-          user: refresh.data,
-          token: refresh.data.token,
-        })
-      );
       result = await rawBaseQuery(args, api, extraOptions);
-    } else if (refresh.error?.status === 401) {
-      /**
-       * Sessiyani uzaytirib bo'lmadi.
-       *
-       * `NO_REFRESH_COOKIE` — refresh cookie brauzerga umuman yetib
-       * bormagan. Frontend (vercel.app) va backend (onrender.com) turli
-       * domenlarda bo'lgani uchun bu cookie UCHINCHI TOMON hisoblanadi va
-       * brauzer uni bloklashi mumkin. Natijada foydalanuvchi har 15
-       * daqiqada jimgina chiqarib yuboriladi va sababi hech qayerda
-       * ko'rinmaydi.
-       *
-       * Doimiy yechim — ikkalasini bitta domen ostiga olib kelish
-       * (masalan app.domen.uz va api.domen.uz). Hozircha kamida sababni
-       * ko'rsatamiz.
-       */
-      if (refresh.error?.data?.code === 'NO_REFRESH_COOKIE') {
-        console.error(
-          '[Linguist] Refresh cookie yetib kelmadi. Frontend va backend turli ' +
-            'domenlarda bo\'lgani uchun brauzer uni uchinchi tomon cookie sifatida ' +
-            'bloklagan bo\'lishi mumkin. Brauzer sozlamalarida shu sayt uchun ' +
-            'cookie\'larga ruxsat bering yoki ikkala xizmatni bitta domen ostiga oling.'
-        );
-        try {
-          sessionStorage.setItem('linguist_auth_hint', 'third_party_cookie');
-        } catch {
-          // shaxsiy rejim — muhim emas
-        }
-      }
-      api.dispatch(logout());
     }
   }
 
@@ -421,6 +434,13 @@ export const apiSlice = createApi({
         method: 'POST',
       }),
     }),
+    /** Ilova ochilganda sessiyani tiklash — natija `auth` holatiga yoziladi */
+    restoreSession: builder.mutation({
+      queryFn: async (_arg, api, extraOptions) => {
+        const refresh = await refreshAccessToken(api, extraOptions);
+        return refresh.data?.token ? { data: true } : { error: refresh.error || { status: 'CUSTOM_ERROR' } };
+      },
+    }),
     getSubscription: builder.query({
       query: () => '/api/billing/subscription',
       providesTags: ['Billing', 'User'],
@@ -494,6 +514,7 @@ export const {
   useSetTimezoneMutation,
   useRefreshTokenMutation,
   useLogoutSessionMutation,
+  useRestoreSessionMutation,
   useGetSubscriptionQuery,
   useCreateCheckoutSessionMutation,
   useCreatePortalSessionMutation,

@@ -22,11 +22,11 @@ const {
 } = require('../utils/tokens');
 const {
   createSession,
+  rotateSession,
   revokeSessionByCookie,
-  findValidSession,
   revokeAllSessionsForUser,
 } = require('../services/authSessionService');
-const { clearRefreshCookie } = require('../utils/tokens');
+const { clearRefreshCookie, REFRESH_COOKIE } = require('../utils/tokens');
 const PushSubscription = require('../models/PushSubscription');
 const QuizSession = require('../models/QuizSession');
 const PlacementSession = require('../models/PlacementSession');
@@ -44,9 +44,9 @@ const { buildUserProfile } = require('../utils/userProfile');
 
 const formatUser = buildUserProfile;
 
-const sendAuthResponse = async (user, res, status = 200) => {
-  const token = generateAccessToken(user._id);
-  await createSession(user._id, res);
+const sendAuthResponse = async (user, req, res, status = 200) => {
+  const session = await createSession(user._id, req, res);
+  const token = generateAccessToken(user._id, session._id);
   const profile = await formatUser(user);
   res.status(status).json({
     _id: user.id,
@@ -61,11 +61,14 @@ router.post('/register', validate(authRegisterSchema), async (req, res) => {
   try {
     const { name, email, password } = req.validated.body;
     const userExists = await User.findOne({ email });
+    // TODO(B bosqich): email tasdiqlash qo'shilgach bu javob umumiy bo'ladi
+    // ("pochtangizni tekshiring"), band email egasiga esa xat ketadi. Hozir
+    // buni yashirsak, odam ro'yxatdan o'tdim deb o'ylab qolardi.
     if (userExists) {
-      return res.status(400).json({ message: 'User already exists' });
+      return res.status(409).json({ message: 'User already exists', code: 'EMAIL_TAKEN' });
     }
     const user = await User.create({ name, email, password });
-    await sendAuthResponse(user, res, 201);
+    await sendAuthResponse(user, req, res, 201);
   } catch (error) {
     console.error('Register error:', error);
     res.status(500).json({ message: 'Server error' });
@@ -76,11 +79,18 @@ router.post('/login', validate(authLoginSchema), async (req, res) => {
   try {
     const { email, password } = req.validated.body;
     const user = await User.findOne({ email });
-    if (user && (await user.matchPassword(password))) {
-      await sendAuthResponse(user, res);
-    } else {
-      res.status(401).json({ message: 'Invalid credentials' });
+    const valid = user
+      ? await user.matchPassword(password)
+      : await User.fakePasswordCheck(password);
+    if (!valid) {
+      return res.status(401).json({ message: 'Invalid credentials' });
     }
+    // Eski (kuchsizroq) hash'ni ochiq parol qo'limizda bo'lgan yagona payt
+    if (user.needsRehash()) {
+      user.password = password;
+      await user.save();
+    }
+    await sendAuthResponse(user, req, res);
   } catch (error) {
     console.error('Login error:', error);
     res.status(500).json({ message: 'Server error' });
@@ -89,26 +99,28 @@ router.post('/login', validate(authLoginSchema), async (req, res) => {
 
 router.post('/refresh', async (req, res) => {
   try {
-    const refreshToken = req.cookies?.linguist_refresh;
+    const refreshToken = req.cookies?.[REFRESH_COOKIE];
     if (!refreshToken) {
       return res.status(401).json({
         message: 'Refresh cookie yo\'q. Qayta login qiling.',
         code: 'NO_REFRESH_COOKIE',
       });
     }
-    const session = await findValidSession(refreshToken);
-    if (!session) {
+    const { session, error } = await rotateSession(refreshToken, req, res);
+    if (error) {
+      clearRefreshCookie(res);
       return res.status(401).json({
         message: 'Sessiya tugagan. Qayta login qiling.',
-        code: 'INVALID_REFRESH',
+        code: error,
       });
     }
     const user = await User.findById(session.user).select('-password');
     if (!user) {
-      return res.status(401).json({ message: 'User not found' });
+      clearRefreshCookie(res);
+      return res.status(401).json({ message: 'User not found', code: 'INVALID_REFRESH' });
     }
 
-    const token = generateAccessToken(user._id);
+    const token = generateAccessToken(user._id, session._id);
     const profile = await formatUser(user);
     res.json({ token, ...profile });
   } catch (error) {
@@ -117,7 +129,9 @@ router.post('/refresh', async (req, res) => {
   }
 });
 
-router.post('/logout', protect, async (req, res) => {
+// Access token talab qilinmaydi: u muddati o'tgan bo'lsa ham chiqish
+// ishlashi kerak. Sessiya refresh cookie orqali topiladi.
+router.post('/logout', async (req, res) => {
   try {
     await revokeSessionByCookie(req, res);
     res.json({ message: 'Logged out' });
@@ -214,10 +228,13 @@ router.post('/change-password', protect, validate(changePasswordSchema), async (
 
     // Boshqa qurilmalardagi sessiyalar yopiladi (hisobni kimdir egallagan
     // bo'lsa, u chiqarib yuboriladi), joriy qurilma esa yangi sessiya oladi.
-    await revokeAllSessionsForUser(user._id);
-    await createSession(user._id, res);
+    await revokeAllSessionsForUser(user._id, 'password_change');
+    const session = await createSession(user._id, req, res);
 
-    res.json({ message: "Parol o'zgartirildi. Boshqa qurilmalardan chiqildi.", token: generateAccessToken(user._id) });
+    res.json({
+      message: "Parol o'zgartirildi. Boshqa qurilmalardan chiqildi.",
+      token: generateAccessToken(user._id, session._id),
+    });
   } catch (error) {
     console.error('Change password error:', error);
     res.status(500).json({ message: 'Server error' });
@@ -344,7 +361,8 @@ router.post('/reset-password', validate(resetPasswordSchema), async (req, res) =
 
     // Barcha ochiq sessiyalarni yopamiz: agar hisobni kimdir egallagan bo'lsa,
     // parol almashishi bilan uning refresh tokeni ham kuchini yo'qotsin.
-    await revokeAllSessionsForUser(user._id);
+    await revokeAllSessionsForUser(user._id, 'password_change');
+    clearRefreshCookie(res);
 
     res.json({ message: "Parol yangilandi. Endi yangi parol bilan kiring." });
   } catch (error) {

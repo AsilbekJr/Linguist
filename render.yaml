@@ -32,6 +32,13 @@ services:
         value: https://linguist-eight.vercel.app
       - key: CLIENT_URL
         value: https://linguist-eight.vercel.app
+      # Frontend /api ni Vercel proxy orqali yuborgach (VITE_API_URL o'chirilgach):
+      # COOKIE_SAMESITE=lax, TRUST_PROXY_HOPS=2. Undan OLDIN qo'yilsa cookie
+      # cross-site so'rovlarda yuborilmaydi va hamma chiqib ketadi.
+      - key: COOKIE_SAMESITE
+        sync: false
+      - key: TRUST_PROXY_HOPS
+        sync: false
       # Vercel preview URL'lari har branchda o'zgaradi. Bu shablon ularni
       # qo'lda qo'shmasdan qabul qilish imkonini beradi.
       #

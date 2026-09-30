@@ -124,16 +124,41 @@ const userSchema = new mongoose.Schema({
   },
 });
 
+/**
+ * bcrypt ish narxi. 12 — hozirgi tavsiya (~250 ms). Eski hisoblardagi
+ * 10-li hash'lar muvaffaqiyatli login paytida jimgina yangilanadi.
+ */
+const BCRYPT_ROUNDS = process.env.NODE_ENV === 'test' ? 4 : 12;
+
 userSchema.pre('save', async function () {
   if (!this.isModified('password')) {
     return;
   }
-  const salt = await bcrypt.genSalt(10);
+  const salt = await bcrypt.genSalt(BCRYPT_ROUNDS);
   this.password = await bcrypt.hash(this.password, salt);
 });
 
 userSchema.methods.matchPassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
+};
+
+/** Hash eski (kuchsizroq) parametrlar bilan yaratilganmi */
+userSchema.methods.needsRehash = function () {
+  try {
+    return bcrypt.getRounds(this.password) < BCRYPT_ROUNDS;
+  } catch {
+    return false;
+  }
+};
+
+/**
+ * Foydalanuvchi topilmaganda ham bcrypt bajariladi — aks holda javob
+ * tezligidan "bu email ro'yxatdan o'tganmi" ni bilib olish mumkin.
+ */
+const DUMMY_HASH = bcrypt.hashSync('linguist-timing-equalizer', BCRYPT_ROUNDS);
+userSchema.statics.fakePasswordCheck = async function (enteredPassword) {
+  await bcrypt.compare(String(enteredPassword || ''), DUMMY_HASH);
+  return false;
 };
 
 userSchema.methods.getEffectivePlan = function () {

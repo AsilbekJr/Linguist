@@ -39,7 +39,7 @@ const Register = ({ onSwitchToLogin, onUserExists, onAuthSuccess }) => {
     } catch (err) {
       console.error('Register Failed:', err);
       const message = err?.data?.message;
-      if (message === 'User already exists') {
+      if (err?.data?.code === 'EMAIL_TAKEN' || message === 'User already exists') {
         setErrorMsg("Bu email allaqachon ro'yxatdan o'tgan — kirish sahifasiga o'tkazdik.");
         onUserExists?.(email);
       } else if (err?.status === 400 && message === 'Validation failed') {

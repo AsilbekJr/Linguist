@@ -16,7 +16,10 @@ const createApp = ({ isProd = process.env.NODE_ENV === 'production', enableRateL
   const app = express();
 
   if (isProd) {
-    app.set('trust proxy', 1);
+    // Nechta proksi orqali kelinadi. Render — 1. So'rovlar Vercel proxy
+    // orqali o'tkazilsa (vercel.json rewrite) — 2, aks holda rate limit
+    // hamma foydalanuvchini bitta Vercel IP'si deb sanaydi.
+    app.set('trust proxy', Number(process.env.TRUST_PROXY_HOPS) || 1);
   }
 
   app.use(
@@ -138,6 +141,11 @@ const createApp = ({ isProd = process.env.NODE_ENV === 'production', enableRateL
       // Aynan shu ro'yxatga tushmagan origin CORS'da rad etiladi
       allowedOrigins: getAllowedOrigins(isProd),
       requestOrigin: req.headers.origin || null,
+      // TRUST_PROXY_HOPS to'g'rimi: `clientIp` sizning haqiqiy IP'ingiz
+      // bo'lishi kerak, Vercel yoki Render'niki emas. Faqat so'rovchining
+      // o'z ma'lumoti — boshqa hech kimniki qaytarilmaydi.
+      clientIp: req.ip || null,
+      forwardedFor: req.headers['x-forwarded-for'] || null,
     });
   });
   app.get('/', (req, res) => {

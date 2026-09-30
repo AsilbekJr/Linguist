@@ -21,6 +21,25 @@ Shuning uchun ustuvorlik: **kontent va asosiy kunlik tsikl**, yangi bo'limlar em
 
 ## Tartib
 
+### Auth: production darajasi
+Tahlil (2026-09-30): asos to'g'ri (qisqa access token, hash'langan refresh/reset
+tokenlar, umumiy forgot-javob), lekin token localStorage'da edi, refresh
+almashtirilmasdi va logout access tokenni darhol bekor qilmasdi.
+
+- [x] **A. Xavfsizlik asosi** (`feat/auth-hardening`)
+  - [x] Access token faqat xotirada; sahifa ochilganda refresh cookie orqali tiklanadi
+  - [x] Refresh rotation + qayta ishlatishni aniqlash (oila yopiladi), parallel so'rovlar uchun 20 s oraliq
+  - [x] JWT'da `sid`; `protect` sessiyani tekshiradi — logout/parol almashtirish tokenni darhol bekor qiladi
+  - [x] JWT: HS256, `iss`, `aud` qat'iy
+  - [x] Login javob vaqti tenglashtirildi; email trim + kichik harf; bcrypt 12 (eskilar login'da yangilanadi); parol ≤ 72 bayt
+  - [x] Logout access token talab qilmaydi; `COOKIE_SAMESITE`, `TRUST_PROXY_HOPS` sozlamalari
+  - [x] Vercel `/api` proxy (`client/vercel.json`) — domen shart emas, proxy 120 s kutadi (Render sovuq starti sig'adi)
+  - [ ] **Deploy tartibi:** (1) Vercel'dan `VITE_API_URL`ni o'chirib client'ni deploy qilish → (2) Render'da `COOKIE_SAMESITE=lax`, `TRUST_PROXY_HOPS=2` → (3) `/health`dagi `clientIp` haqiqiy IP ekanini tekshirish. Tartib buzilsa hamma chiqib ketadi
+  - [ ] Keyinroq: Linguist uchun alohida domen (proxy o'rniga `app.` + `api.`)
+- [ ] **B. Hisob hayotiy sikli:** email tasdiqlash (shundan keyin register javobi umumiy bo'ladi), faol qurilmalar ro'yxati, yangi kirish/parol haqida xabar, hisob bo'yicha urinish cheklovi, HIBP parol tekshiruvi
+- [ ] **C. Ijtimoiy kirish:** Google (OIDC), Telegram Login Widget, hisoblarni bog'lash
+- [ ] **D. Ixtiyoriy:** TOTP 2FA, auth hodisalari jurnali, passkey
+
 ### 1. Kontent: 30 → 90 kun (A1–B2) — asosan bajarildi
 - [x] Kontent yaratish usuli: AI qoralama → validator (`content:build`) → inson tahriri
 - [x] Mavzular rejasi (31–90-kunlar) — quyida
