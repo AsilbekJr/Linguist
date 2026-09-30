@@ -133,7 +133,8 @@ const createApp = ({ isProd = process.env.NODE_ENV === 'production', enableRateL
         mongo: Boolean(process.env.MONGO_URI),
         jwtSecret: Boolean(process.env.JWT_SECRET),
         gemini: Boolean(process.env.GEMINI_API_KEY),
-        mail: Boolean(process.env.RESEND_API_KEY || process.env.BREVO_API_KEY),
+        // Kalit + provayder + MAIL_FROM da haqiqiy email — uchalasi bo'lsagina true
+        mail: require('./services/mailer').isConfigured(),
         push: Boolean(process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY),
         cron: Boolean(process.env.CRON_SECRET),
         telegram: Boolean(process.env.TELEGRAM_BOT_TOKEN && process.env.TELEGRAM_BOT_USERNAME),
