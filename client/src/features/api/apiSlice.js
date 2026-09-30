@@ -303,6 +303,15 @@ export const apiSlice = createApi({
       }),
       invalidatesTags: (result, error, { id }) => ['VocabTopic', { type: 'VocabTopic', id }, 'Word', 'User'],
     }),
+    /** "Bilaman": kutubxona so'zlarini yodlangan holda lug'atga qo'shish/o'tkazish */
+    markVocabTopicKnown: builder.mutation({
+      query: ({ id, words }) => ({
+        url: `/api/vocab-topics/${id}/known`,
+        method: 'POST',
+        body: { words },
+      }),
+      invalidatesTags: (result, error, { id }) => ['VocabTopic', { type: 'VocabTopic', id }, 'Word', 'User'],
+    }),
     getTelegramStatus: builder.query({
       query: () => '/api/telegram/status',
       providesTags: ['Telegram'],
@@ -459,6 +468,7 @@ export const {
   useGetVocabTopicsQuery,
   useGetVocabTopicQuery,
   useAddVocabTopicWordsMutation,
+  useMarkVocabTopicKnownMutation,
   useGetTelegramStatusQuery,
   useCreateTelegramLinkMutation,
   useUnlinkTelegramMutation,
