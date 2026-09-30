@@ -186,11 +186,27 @@ test('bot bloklangan bo\'lsa ulanish uziladi va eslatma boshqa kanalga o\'tadi',
   blockChats.add('10010');
 
   const me = await s.api.get('/api/auth/me');
+  // Email zaxira kanali faqat tasdiqlangan manzilga ishlaydi
+  await User.updateOne({ email: me.data.email }, { emailVerified: true });
   await runReminders(AT_19_TASHKENT);
 
   const user = await User.findOne({ email: me.data.email }).lean();
   assert.equal(user.telegram?.chatId, undefined, 'bloklangan chat uzilishi kerak');
   assert.equal(user.notifications.email.lastSentDay, '2026-06-10', 'email orqali yuborilgan deb hisoblanadi');
+});
+
+test("email tasdiqlanmagan bo'lsa zaxira xat yuborilmaydi va yuborilgan deb sanalmaydi", async () => {
+  const s = await registerAndGetCode();
+  await webhook(s.api, startUpdate(10011, `/start ${s.code}`));
+  await prepareForReminder(10011);
+  blockChats.add('10011');
+
+  const me = await s.api.get('/api/auth/me');
+  const stats = await runReminders(AT_19_TASHKENT);
+
+  const user = await User.findOne({ email: me.data.email }).lean();
+  assert.equal(user.notifications.email.lastSentDay || '', '', 'yuborilmagan eslatma yuborilgan deb yozildi');
+  assert.ok(stats.reasons.email_unverified >= 1);
 });
 
 test('bot sozlanmagan bo\'lsa havola 503', async () => {

@@ -113,6 +113,9 @@ const createApp = ({ isProd = process.env.NODE_ENV === 'production', enableRateL
     app.use('/api/auth/refresh', makeAuthLimiter(60, 'REFRESH'));
     app.use('/api/auth/forgot-password', passwordResetLimiter);
     app.use('/api/auth/reset-password', passwordResetLimiter);
+    // Qayta yuborishning o'zida 60 s oraliq bor; bu esa IP bo'yicha umumiy chegara
+    app.use('/api/auth/resend-verification', passwordResetLimiter);
+    app.use('/api/auth/verify-email', makeAuthLimiter(30, 'VERIFY'));
   }
 
   /**
