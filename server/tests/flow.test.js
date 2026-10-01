@@ -232,6 +232,7 @@ test('sahna → takrorlash: navbat bo\'shaganda streak boshlanadi', async () => 
   const last = await reviewAllDue(api);
   assert.equal(last.status, 200);
   assert.equal(last.data.dailyStep.reviewCompleted, true, 'navbat bo\'shadi, qadam yopilmadi');
+  assert.equal(last.data.dailyStep.reviewSkipped, false, "haqiqatan takrorladi — \"o'tkazildi\" emas");
   assert.equal(last.data.dailyStep.streakUpdated, true, 'streak yangilanmadi');
   assert.equal(last.data.dailyStep.currentStreak, 1);
 
@@ -256,6 +257,10 @@ test('takrorlash → sahna tartibida ham streak oshadi', async () => {
   assert.equal(review.status, 200, JSON.stringify(review.data));
   assert.equal(review.data.reviewCompleted, true);
   assert.equal(review.data.streakUpdated, false, 'sahnasiz streak oshmasligi kerak');
+  // Takrorlanadigan so'z yo'q edi: qadam "o'tkazildi" — XP va "bajarildi" xabari yo'q
+  assert.equal(review.data.reviewSkipped, true);
+  assert.equal(review.data.xpAwarded, 0, 'hech narsa takrorlamay XP berildi');
+  assert.equal(review.data.message, null, '"Qadam bajarildi!" xabari chiqmasligi kerak');
 
   const finish = await finishTopicDay(api);
   assert.equal(finish.status, 200, JSON.stringify(finish.data));

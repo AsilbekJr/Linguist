@@ -384,7 +384,9 @@ const TopicVocabulary = () => {
   }
 
   if (step === 'done' || topicData.topicQuestCompleted) {
-    const reviewDone = user?.dailyQuests?.reviewCompleted;
+    // Navbat bo'sh bo'lgani uchun yopilgan qadam hisobga olinmaydi — yangi
+    // so'zlar endi navbatda, ularni takrorlashga undaymiz
+    const reviewDone = user?.dailyQuests?.reviewCompleted && !user?.dailyQuests?.reviewSkipped;
     return (
       <div className="mx-auto max-w-xl space-y-4">
       <motion.div

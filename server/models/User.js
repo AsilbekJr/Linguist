@@ -100,6 +100,12 @@ const userSchema = new mongoose.Schema({
   dailyQuests: {
     date: { type: String, default: '' },
     reviewCompleted: { type: Boolean, default: false },
+    /**
+     * Takrorlash qadami yopildi, lekin takrorlanadigan so'z bo'lmagan
+     * (masalan yangi foydalanuvchi). Streak uchun qadam bajarilgan hisoblanadi,
+     * lekin XP berilmaydi va UI "Bajarildi" emas, "so'z yo'q" deb ko'rsatadi.
+     */
+    reviewSkipped: { type: Boolean, default: false },
     topicCompleted: { type: Boolean, default: false },
     /**
      * Tinglash mashqi. Kunlik rejaning 3 qadamiga KIRMAYDI va streak'ni

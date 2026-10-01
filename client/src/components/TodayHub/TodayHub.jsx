@@ -54,6 +54,8 @@ const TodayHub = ({ user, totalWords = 0 }) => {
   // UTC sana olinardi va Toshkentda 00:00–05:00 oralig'ida belgi noto'g'ri edi.
   const quests = user?.dailyQuests || {};
   const reviewDoneToday = Boolean(user?.today) && quests.date === user.today && quests.reviewCompleted;
+  // Qadam yopilgan, lekin hech narsa takrorlanmagan (navbat bo'sh edi) — "bajarildi" deb ko'rsatilmaydi
+  const reviewedToday = reviewDoneToday && !quests.reviewSkipped;
 
   /** Server qaytargan kunlik reja natijasi — xabar va bayram */
   const handleDailyStep = (step) => {
@@ -162,7 +164,7 @@ const TodayHub = ({ user, totalWords = 0 }) => {
           <h2 id="review-title" className="text-xl font-extrabold sm:text-2xl">Takrorlash</h2>
           <p className="text-sm text-muted-foreground">Tanib oling, eslang, gapda ishlating — so&apos;z o&apos;rganilgan sari topshiriq qiyinlashadi</p>
         </div>
-        {reviewDoneToday ? (
+        {reviewedToday ? (
           <Badge variant="success" className="hidden sm:inline-flex">
             <CheckCircle2 /> Bugun bajarildi
           </Badge>
@@ -187,7 +189,7 @@ const TodayHub = ({ user, totalWords = 0 }) => {
               exit={{ opacity: 0 }}
               transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
             >
-              {reviewDoneToday && (
+              {reviewedToday && (
                 <p className="mb-3 rounded-xl bg-success/8 px-3 py-2 text-xs font-medium text-success">
                   Bugungi reja bajarilgan — bular qo&apos;shimcha takrorlash.
                 </p>
