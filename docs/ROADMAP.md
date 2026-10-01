@@ -29,7 +29,7 @@ Kunlik reja: **Sahna → Suhbat → Takrorlash**. Suhbatsiz streak oshmaydi.
 - [x] Yodlangan iboralar Suhbatga ulangan: "Yordam" ularni birinchi taklif qiladi, AI qahramon ularni ishlatishga imkon yaratadi
 - [x] **Ibora kartalari** (`feat/phrase-cards`): sahna yakunlanganda kalit gaplar `Phrase` bo'lib ertangi takrorlashga tushadi (ertaga → 3 → 7 → 14 → 30 kun → yodlangan; kuniga ≤ 5). Karta: o'zbekcha ma'no (+ ixtiyoriy birinchi harflar) → butun gap ovoz bilan; baho serverda (`utils/phraseMatch.js`). "Takrorlash" qadami iboralar ham tugaganda yopiladi
 - [ ] Tuzatishlar takrorlash navbatiga (so'z kartasida "Suhbatda shunday dedingiz…")
-- [ ] **"Bugun" sahifasi:** bitta "Davom etish" tugmasi, "Bugungi suhbat" kartasi, "Kechagi suhbatdan", hafta tasmasi, CEFR gacha masofa; iqtibos va maqsad-tavsiya bloki olib tashlanadi
+- [x] **"Bugun" sahifasi** (`feat/today-redesign`): bitta katta tugma doim keyingi qadamni ochadi (Sahna → Suhbat → Takrorlash), qadamlarda daqiqalar; "Bugungi suhbat" kartasi (qahramon, vaziyat, so'zlar); "Oxirgi suhbatdan" — 2 ta tuzatish eshitish bilan; hafta tasmasi (serverda `activity.planDays/frozenDays`, profil `week`); CEFR gacha sahnalar soni. Iqtibos (`quotes.json`), maqsad-tavsiya va alohida streak/muzlatish plitkalari olib tashlandi
 - [ ] **Tozalash:** Mavzular kutubxonasi yashiriladi (3813 so'z — kursning 91+ kunlari uchun xom ashyo); Gap tahlili menyudan olinib, xatolar yonida "Tahlil" tugmasi bo'ladi; Tinglash "Bugun"ga qo'shimcha mashq; onboarding maqsadi Suhbatga ulanadi
 - [ ] **Ovoz kundaligi:** har suhbatdan eng yaxshi gap qurilmada (IndexedDB) saqlanadi; 7/30-kunda "1-kun va bugun"
 

@@ -89,6 +89,15 @@ const userSchema = new mongoose.Schema({
     linkCodeHash: { type: String, index: true, sparse: true },
     linkCodeExpires: { type: Date, default: null },
   },
+  /**
+   * Faollik tarixi ('YYYY-MM-DD', foydalanuvchi zonasida) — "Bugun" sahifasidagi
+   * hafta tasmasi uchun. Ilgari faqat streak SONI saqlanardi va qaysi kun
+   * bajarilganini, qaysi biri muzlatilganini bilib bo'lmasdi. Oxirgi 60 kun.
+   */
+  activity: {
+    planDays: { type: [String], default: [] },
+    frozenDays: { type: [String], default: [] },
+  },
   /** Streak muzlatish: kun o'tkazib yuborilsa streak saqlanadi */
   streakFreeze: {
     available: { type: Number, default: 2 },
