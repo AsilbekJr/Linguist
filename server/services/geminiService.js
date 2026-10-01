@@ -317,11 +317,17 @@ const conversationFeedbackSchema = {
 /** Talaba matni promptga xom qo'yilmaydi: uzunlik cheklanadi, qo'shtirnoq yumshatiladi */
 const quoteUser = (text) => String(text || '').slice(0, 300).replace(/"/g, "'");
 
-const sceneBrief = ({ topic, situationUz, partnerName, cefr, targetWords }) => `Sahna: ${topic}.
+const sceneBrief = ({ topic, situationUz, partnerName, cefr, targetWords, phrases = [] }) => `Sahna: ${topic}.
 Vaziyat (talabaga shunday tushuntirilgan): ${situationUz}
 Siz o'ynaydigan rol: ${partnerName}. Talaba esa sahnaning ikkinchi ishtirokchisi.
 Talaba darajasi: CEFR ${cefr || 'A2'}. Faqat shu darajadagi so'z va grammatikadan foydalaning.
-Talaba bugun o'rgangan so'zlar: ${targetWords.map((w) => w.word).join(', ')}.`;
+Talaba bugun o'rgangan so'zlar: ${targetWords.map((w) => w.word).join(', ')}.${
+  phrases.length
+    ? `
+Talaba bugun yodlagan iboralar (ularni aytib bermang, lekin ishlatishga imkon yarating):
+${phrases.map((p) => `- ${p}`).join('\n')}`
+    : ''
+}`;
 
 const PARTNER_RULES = `Qoidalar:
 - Siz o'qituvchi EMASSIZ, sahnadagi qahramonsiz. Xatolarni tuzatmang va izoh bermang — buni suhbat oxirida boshqa tizim qiladi.

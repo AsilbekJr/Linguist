@@ -4,7 +4,7 @@ const Conversation = require('../models/Conversation');
 const { protect } = require('../middleware/authMiddleware');
 const { validate, speakTurnSchema } = require('../middleware/validate');
 const { resolveDailyContext } = require('../utils/dailyContext');
-const { pickDailySessionWords } = require('../utils/topicHelpers');
+const { pickDailySessionWords, pickKeyLines } = require('../utils/topicHelpers');
 const { completeDailyStep, dailyStepMessage, isPlanComplete } = require('../utils/gamification');
 const { buildUserProfile } = require('../utils/userProfile');
 const { containsWord } = require('../content/schema');
@@ -69,12 +69,26 @@ const usesWord = (text, word) => {
   return containsWord(text, w);
 };
 
+const { loadTopicsData } = require('../utils/dailyContext');
+
+/** Talaba sahnada yodlagan iboralar (o'z rolidagi kalit gaplar) */
+const memorizedPhrases = (conv) => {
+  const topic = loadTopicsData().find((t) => t.day === conv.contentDay);
+  if (!topic) return [];
+  const { partner } = splitRoles(topic.dialogue);
+  return pickKeyLines(topic.dialogue || [], conv.targetWords)
+    .filter((l) => l.speaker !== partner)
+    .map((l) => l.en);
+};
+
 const brief = (conv) => ({
   topic: conv.topicUz,
   situationUz: conv.situationUz,
   partnerName: conv.partner.name,
   cefr: conv.cefr,
   targetWords: conv.targetWords,
+  // Qahramon shu iboralarni ishlatishga imkon beradigan savollar bersin
+  phrases: memorizedPhrases(conv),
 });
 
 const userTurnCount = (conv) => conv.turns.filter((t) => t.role === 'user').length;
@@ -319,12 +333,15 @@ router.post('/:id/hint', protect, async (req, res) => {
     if (!conv) return undefined;
     const { ctx } = await loadToday(req.user);
     const topic = ctx.topicsList.find((t) => t.day === conv.contentDay) || ctx.baseTopic;
-    const { learnerLines } = splitRoles(topic?.dialogue || []);
+    const { learnerLines, partner } = splitRoles(topic?.dialogue || []);
     const unused = conv.targetWords.filter((w) => !w.used);
-    const line = learnerLines.length ? learnerLines[userTurnCount(conv) % learnerLines.length] : null;
+    // Avval sahnada YODLANGAN iboralar (talaba roli) — ularni ishlatish eng oson
+    const memorized = pickKeyLines(topic?.dialogue || [], conv.targetWords).filter((l) => l.speaker !== partner);
+    const pool = memorized.length ? memorized : learnerLines;
+    const line = pool.length ? pool[userTurnCount(conv) % pool.length] : null;
     res.json({
       // Sahnadagi tayyor ibora — tuzilishni ko'rsatadi, so'zma-so'z aytish shart emas
-      example: line ? { text: line.en, textUz: line.uz || '' } : null,
+      example: line ? { text: line.en, textUz: line.uz || '', memorized: memorized.length > 0 } : null,
       // Hali ishlatilmagan bugungi so'zlar
       words: unused.slice(0, 3).map((w) => ({ word: w.word, translation: w.translation })),
     });
