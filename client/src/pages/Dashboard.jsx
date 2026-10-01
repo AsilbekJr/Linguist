@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/primitives';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { getDailyPlan } from '../utils/dailyPlan';
 
 const WEEKDAYS = ['yakshanba', 'dushanba', 'seshanba', 'chorshanba', 'payshanba', 'juma', 'shanba'];
 const MONTHS = ['yanvar', 'fevral', 'mart', 'aprel', 'may', 'iyun', 'iyul', 'avgust', 'sentabr', 'oktabr', 'noyabr', 'dekabr'];
@@ -100,17 +101,8 @@ const Dashboard = () => {
   if (!user && isLoadingUser) return <DashboardSkeleton />;
 
   const firstName = String(user?.name || '').trim().split(/\s+/)[0];
-  const q = user?.dailyQuests || {};
-  const isToday = Boolean(user?.today) && q.date === user.today;
-  const topicDone = Boolean(isToday && q.topicCompleted);
-  // Qadam yopilgan (streak uchun) va haqiqatan takrorlangan — ikki xil narsa:
-  // navbati bo'sh yangi foydalanuvchida qadam "o'tkazildi", lekin u "Bajarildi"
-  // deb ko'rinmasligi kerak
-  const reviewSatisfied = Boolean(isToday && q.reviewCompleted);
-  const reviewSkipped = Boolean(reviewSatisfied && q.reviewSkipped);
-  const reviewDone = reviewSatisfied && !reviewSkipped;
-  const doneCount = Number(topicDone) + Number(reviewSatisfied);
-  const allDone = doneCount === 2;
+  const { topicDone, reviewDone, reviewSkipped, done: doneCount, total: planTotal, allDone } =
+    getDailyPlan(user);
   const streak = user?.currentStreak || 0;
   const learnedCount = user?.knownWords ?? 0;
   const totalWords = user?.totalWords ?? 0;
@@ -151,8 +143,10 @@ const Dashboard = () => {
             <p className="mt-2 max-w-md text-[15px] text-white/80">
               {allDone
                 ? "Bugungi reja bajarildi — ajoyib! Qo'shimcha mashqlar bilan davom etishingiz mumkin."
-                : doneCount === 1
-                  ? 'Yana bitta qadam — va streak saqlanadi.'
+                : planTotal - doneCount === 1
+                  ? planTotal === 1
+                    ? 'Bugun bitta qadam: yangi sahna. Taxminan 10 daqiqa.'
+                    : 'Yana bitta qadam — va streak saqlanadi.'
                   : 'Ikki qadam: yangi sahna va takrorlash. Taxminan 15 daqiqa.'}
             </p>
 
@@ -185,8 +179,8 @@ const Dashboard = () => {
           </div>
 
           <div className="hidden flex-col items-center gap-2 md:flex">
-            <ProgressRing value={doneCount} max={2} size={148} stroke={12} gradientId="hero-ring">
-              <span className="text-4xl font-extrabold tabular">{doneCount}/2</span>
+            <ProgressRing value={doneCount} max={planTotal} size={148} stroke={12} gradientId="hero-ring">
+              <span className="text-4xl font-extrabold tabular">{doneCount}/{planTotal}</span>
               <span className="text-xs font-medium text-white/75">qadam</span>
             </ProgressRing>
           </div>
