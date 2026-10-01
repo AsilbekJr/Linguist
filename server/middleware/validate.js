@@ -66,6 +66,15 @@ const wordCreateSchema = z.object({
 
 const objectId = z.string().regex(/^[a-f\d]{24}$/i, 'Invalid id');
 
+/** Ibora kartasi: aytilgan (yoki yozilgan) butun gap */
+const phraseCheckSchema = z.object({
+  params: z.object({ id: objectId }),
+  body: z.object({
+    answer: z.string().trim().min(1).max(400),
+    source: z.enum(['text', 'voice']).optional(),
+  }),
+});
+
 const reviewCheckSchema = z.object({
   params: z.object({ id: objectId }),
   body: z
@@ -289,5 +298,6 @@ module.exports = {
   deleteAccountSchema,
   googleAuthSchema,
   speakTurnSchema,
+  phraseCheckSchema,
   checkoutSchema,
 };

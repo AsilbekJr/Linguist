@@ -12,6 +12,7 @@ const { getSavedWordList, invalidateUserWords } = require('../utils/userWordsCac
 const { completeDailyStep, dailyStepMessage } = require('../utils/gamification');
 const { buildUserProfile } = require('../utils/userProfile');
 const { initialState } = require('../utils/srs');
+const { addScenePhrases } = require('../services/phrases');
 const {
   resolveTopicDay,
   pickDailySessionWords,
@@ -338,6 +339,9 @@ router.post('/finish', protect, validate(topicFinishSchema), async (req, res) =>
         { $set: { nextReviewDate: getTopicReviewDate() } }
       );
     }
+
+    // "Yod olish" gaplari ertangi takrorlashga — ibora kartasi bo'lib qaytadi
+    await addScenePhrases(req.user, pickKeyLines(ctx.baseTopic.dialogue || [], dailyWords), ctx.contentDay);
 
     const step = completeDailyStep(req.user, 'topic', ctx.todayKey);
 

@@ -8,8 +8,9 @@ import { IconTile, Skeleton } from '@/components/ui/primitives';
 import { fireConfetti } from '../../utils/celebration';
 import { track, EVENTS } from '../../lib/analytics';
 import { toast } from 'react-hot-toast';
-import { useGetReviewDueQuery, useCompleteReviewDayMutation } from '../../features/api/apiSlice';
+import { useGetReviewDueQuery, useCompleteReviewDayMutation, useGetPhrasesDueQuery } from '../../features/api/apiSlice';
 import ReviewRunner from './ReviewRunner';
+import PhraseReview from './PhraseReview';
 
 /**
  * "Bugun" — kunlik takrorlashning O'ZI.
@@ -22,6 +23,15 @@ import ReviewRunner from './ReviewRunner';
 const TodayHub = ({ user, totalWords = 0 }) => {
   const { data: dueWords = [], isLoading, isFetching, refetch } = useGetReviewDueQuery();
   const [completeReviewDay] = useCompleteReviewDayMutation();
+  // Sahnada yodlangan iboralar — so'zlardan oldin. Sessiya boshida muzlatiladi:
+  // javobdan keyin ro'yxat qayta yuklansa ham karta ko'z oldidan yo'qolmasin
+  const { data: duePhrases = [], isFetching: phrasesFetching, refetch: refetchPhrases } = useGetPhrasesDueQuery();
+  const [phraseSession, setPhraseSession] = useState(null);
+  const [phrasesDone, setPhrasesDone] = useState(false);
+  useEffect(() => {
+    if (!phraseSession && !phrasesDone && !phrasesFetching && duePhrases.length > 0) setPhraseSession(duePhrases);
+  }, [duePhrases, phraseSession, phrasesDone, phrasesFetching]);
+  const phrasesActive = Boolean(phraseSession?.length) && !phrasesDone;
 
   const [finished, setFinished] = useState(false);
   const celebratedRef = useRef(false);
@@ -80,6 +90,8 @@ const TodayHub = ({ user, totalWords = 0 }) => {
   const closingDayRef = useRef(false);
   useEffect(() => {
     if (isLoading || isFetching || session || dueWords.length > 0) return;
+    // Ibora kartalari ham takrorlash qadamining bir qismi
+    if (phrasesActive || phrasesFetching || duePhrases.length > 0) return;
     if (!user?.today || reviewDoneToday || closingDayRef.current) return;
     closingDayRef.current = true;
     completeReviewDay()
@@ -90,7 +102,7 @@ const TodayHub = ({ user, totalWords = 0 }) => {
         closingDayRef.current = false;
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isLoading, isFetching, session, dueWords.length, user?.today, reviewDoneToday]);
+  }, [isLoading, isFetching, session, dueWords.length, user?.today, reviewDoneToday, phrasesActive, phrasesFetching, duePhrases.length]);
 
   const handleChecked = (wordId, result) => {
     reviewedIdsRef.current.add(wordId);
@@ -105,7 +117,8 @@ const TodayHub = ({ user, totalWords = 0 }) => {
     refetch();
   };
 
-  const remaining = session?.length ?? dueWords.length;
+  const remaining =
+    (session?.length ?? dueWords.length) + (phrasesDone ? 0 : phraseSession?.length ?? duePhrases.length);
 
   /** Navbat bo'sh — bu yaxshi holat, uni muvaffaqiyat sifatida ko'rsatamiz */
   const emptyState = (
@@ -169,7 +182,7 @@ const TodayHub = ({ user, totalWords = 0 }) => {
             <CheckCircle2 /> Bugun bajarildi
           </Badge>
         ) : remaining > 0 ? (
-          <Badge variant="soft" className="tabular">{remaining} ta so&apos;z</Badge>
+          <Badge variant="soft" className="tabular">{remaining} ta karta</Badge>
         ) : null}
       </header>
 
@@ -180,6 +193,24 @@ const TodayHub = ({ user, totalWords = 0 }) => {
               <Skeleton className="h-2 w-full rounded-full" />
               <Skeleton className="h-40 rounded-2xl" />
               <Skeleton className="h-12 rounded-xl" />
+            </motion.div>
+          ) : phrasesActive ? (
+            <motion.div
+              key="phrases"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+            >
+              <PhraseReview
+                phrases={phraseSession}
+                onChecked={(_id, res) => handleDailyStep(res?.dailyStep)}
+                onFinished={() => {
+                  setPhrasesDone(true);
+                  refetch();
+                  refetchPhrases();
+                }}
+              />
             </motion.div>
           ) : session?.length ? (
             <motion.div

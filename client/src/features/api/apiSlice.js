@@ -146,6 +146,16 @@ export const apiSlice = createApi({
       }),
       invalidatesTags: ['Word'],
     }),
+    /** Sahnada yodlangan iboralar — o'zbekcha ma'nodan butun gapni aytish */
+    getPhrasesDue: builder.query({
+      query: () => '/api/review/phrases/due',
+      providesTags: ['Word'],
+      keepUnusedDataFor: 60,
+    }),
+    checkPhrase: builder.mutation({
+      query: ({ id, answer, source }) => ({ url: `/api/review/phrases/${id}/check`, method: 'POST', body: { answer, source } }),
+      invalidatesTags: ['Word', 'User'],
+    }),
     getReviewDue: builder.query({
       query: () => '/api/review/due',
       providesTags: ['Word'],
@@ -553,6 +563,8 @@ export const {
   useFinishTopicDayMutation,
   useOnboardUserMutation,
   useCompleteReviewDayMutation,
+  useGetPhrasesDueQuery,
+  useCheckPhraseMutation,
   useUpdateProfileMutation,
   useChangePasswordMutation,
   useDeleteAccountMutation,

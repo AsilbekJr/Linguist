@@ -6,7 +6,7 @@ import { motion } from 'motion/react';
 import {
   Flame, Snowflake, GraduationCap, BookOpen, BookHeart, Repeat2, Check, ArrowRight, Quote, Sparkles, MessagesSquare,
 } from 'lucide-react';
-import { useGetReviewDueQuery, useGetMeQuery } from '../features/api/apiSlice';
+import { useGetReviewDueQuery, useGetMeQuery, useGetPhrasesDueQuery } from '../features/api/apiSlice';
 import quotesData from '../data/quotes.json';
 import TodayHub from '../components/TodayHub/TodayHub';
 import { PRACTICE_NAV } from '../components/Layout/nav';
@@ -91,6 +91,8 @@ const Dashboard = () => {
   // profilda keladi (totalWords, knownWords). Ilgari bosh sahifa faqat so'zlar
   // sonini ko'rsatish uchun butun lug'atni kutardi.
   const { data: dueWords = [], isLoading: isLoadingDue } = useGetReviewDueQuery();
+  const { data: duePhrases = [] } = useGetPhrasesDueQuery();
+  const dueCards = dueWords.length + duePhrases.length;
 
   const dailyQuote = useMemo(() => {
     const todayInt = Math.floor(Date.now() / 86400000);
@@ -173,12 +175,12 @@ const Dashboard = () => {
                 hint={
                   reviewDone
                     ? 'Bajarildi'
-                    : reviewSkipped && !dueWords.length
+                    : reviewSkipped && !dueCards
                       ? "Bugun takrorlanadigan so'z yo'q"
                       : isLoadingDue
                       ? 'Yuklanmoqda…'
-                      : dueWords.length
-                        ? `${dueWords.length} ta so'z kutmoqda`
+                      : dueCards
+                        ? `${dueCards} ta karta kutmoqda`
                         : "Navbat bo'sh"
                 }
                 onClick={scrollToReview}
