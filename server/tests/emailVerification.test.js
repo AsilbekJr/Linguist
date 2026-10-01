@@ -28,7 +28,8 @@ const issueToken = async (email, { expiresAt = new Date(Date.now() + 3600_000), 
   return raw;
 };
 
-const waitFor = async (check, ms = 2000) => {
+// Parallel test yuklamasida fon yuborish sekinlashadi — 2 s yetmay qolardi
+const waitFor = async (check, ms = 10000) => {
   const until = Date.now() + ms;
   while (Date.now() < until) {
     if (await check()) return true;

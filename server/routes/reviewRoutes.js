@@ -65,6 +65,7 @@ const rollDailyQuestsAtomic = (userId, todayKey) =>
         dailyQuests: {
           date: todayKey,
           reviewCompleted: false,
+          reviewSkipped: false,
           topicCompleted: false,
           listeningCompleted: false,
           reviewedCount: 0,
@@ -82,15 +83,21 @@ const rollDailyQuestsAtomic = (userId, todayKey) =>
  * hujjat, uni saqlash parallel so'rovlar yozgan AI hisoblagichi va
  * `reviewedCount` ni eski qiymat bilan bosib yuborardi.
  */
-const claimReviewStep = async (userId, todayKey) => {
+const claimReviewStep = async (userId, todayKey, { skipped = false } = {}) => {
+  // Takrorlanmagan qadam uchun XP yo'q: ilgari yangi foydalanuvchi hech narsa
+  // qilmay "Qadam bajarildi!" va XP olardi
+  const stepXp = skipped ? 0 : QUEST_STEP_XP;
   const claimed = await User.findOneAndUpdate(
     { _id: userId, 'dailyQuests.date': todayKey, 'dailyQuests.reviewCompleted': { $ne: true } },
-    { $set: { 'dailyQuests.reviewCompleted': true }, $inc: { xp: QUEST_STEP_XP } },
+    {
+      $set: { 'dailyQuests.reviewCompleted': true, 'dailyQuests.reviewSkipped': skipped },
+      $inc: { xp: stepXp },
+    },
     { new: true }
   );
   if (!claimed) return null;
 
-  const step = { xpAwarded: QUEST_STEP_XP, streakUpdated: false, streakFrozen: false };
+  const step = { xpAwarded: stepXp, streakUpdated: false, streakFrozen: false };
   if (claimed.dailyQuests.topicCompleted) {
     const streak = advanceStreak(claimed, todayKey);
     if (streak.changed) {
@@ -106,6 +113,7 @@ const claimReviewStep = async (userId, todayKey) => {
 
 const dailyStepPayload = (user, step) => ({
   reviewCompleted: Boolean(user.dailyQuests?.reviewCompleted),
+  reviewSkipped: Boolean(user.dailyQuests?.reviewSkipped),
   reviewedCount: user.dailyQuests?.reviewedCount || 0,
   planCompleted: Boolean(user.dailyQuests?.reviewCompleted && user.dailyQuests?.topicCompleted),
   xpAwarded: step?.xpAwarded || 0,
@@ -124,7 +132,8 @@ const recordReview = async (userDoc, now) => {
   await rollDailyQuestsAtomic(userDoc._id, todayKey);
   let user = await User.findOneAndUpdate(
     { _id: userDoc._id },
-    { $inc: { 'dailyQuests.reviewedCount': 1 } },
+    // Haqiqatan takrorladi — "so'z yo'q edi" belgisi endi to'g'ri emas
+    { $inc: { 'dailyQuests.reviewedCount': 1 }, $set: { 'dailyQuests.reviewSkipped': false } },
     { new: true }
   );
 
@@ -512,7 +521,9 @@ router.post('/complete-day', protect, async (req, res) => {
           remaining,
         });
       }
-      const claim = await claimReviewStep(user._id, todayKey);
+      // Bugun birorta ham so'z takrorlanmagan — qadam "o'tkazildi", bajarilmadi
+      const skipped = (user.dailyQuests.reviewedCount || 0) === 0;
+      const claim = await claimReviewStep(user._id, todayKey, { skipped });
       if (claim) ({ user, step } = claim);
     }
 

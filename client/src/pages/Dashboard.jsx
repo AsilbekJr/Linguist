@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { toast } from 'react-hot-toast';
 import { useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
 import { motion } from 'motion/react';
@@ -102,8 +103,13 @@ const Dashboard = () => {
   const q = user?.dailyQuests || {};
   const isToday = Boolean(user?.today) && q.date === user.today;
   const topicDone = Boolean(isToday && q.topicCompleted);
-  const reviewDone = Boolean(isToday && q.reviewCompleted);
-  const doneCount = Number(topicDone) + Number(reviewDone);
+  // Qadam yopilgan (streak uchun) va haqiqatan takrorlangan — ikki xil narsa:
+  // navbati bo'sh yangi foydalanuvchida qadam "o'tkazildi", lekin u "Bajarildi"
+  // deb ko'rinmasligi kerak
+  const reviewSatisfied = Boolean(isToday && q.reviewCompleted);
+  const reviewSkipped = Boolean(reviewSatisfied && q.reviewSkipped);
+  const reviewDone = reviewSatisfied && !reviewSkipped;
+  const doneCount = Number(topicDone) + Number(reviewSatisfied);
   const allDone = doneCount === 2;
   const streak = user?.currentStreak || 0;
   const learnedCount = user?.knownWords ?? 0;
@@ -165,7 +171,9 @@ const Dashboard = () => {
                 hint={
                   reviewDone
                     ? 'Bajarildi'
-                    : isLoadingDue
+                    : reviewSkipped && !dueWords.length
+                      ? "Bugun takrorlanadigan so'z yo'q"
+                      : isLoadingDue
                       ? 'Yuklanmoqda…'
                       : dueWords.length
                         ? `${dueWords.length} ta so'z kutmoqda`
@@ -191,13 +199,26 @@ const Dashboard = () => {
           <StatTile icon={Flame} tone="streak" value={streak} label="kunlik streak" />
         </StaggerItem>
         <StaggerItem>
-          <StatTile
-            icon={Snowflake}
-            tone="info"
-            value={user?.streakFreezesLeft ?? 0}
-            label="muzlatish qoldi"
-            hint="Bir kun o'tkazib yuborsangiz, streak avtomatik saqlanadi. Har oy 2 ta beriladi."
-          />
+          {/* Tushuntirish faqat `title` da edi — telefonda hech qachon ko'rinmasdi */}
+          <button
+            type="button"
+            className="block w-full rounded-2xl text-left"
+            onClick={() =>
+              toast(
+                "Streak muzlatish: bir kun o'tkazib yuborsangiz, ketma-ketlik uzilmaydi — bitta muzlatish avtomatik sarflanadi. Har oy boshida 2 taga tiklanadi.",
+                { icon: '🧊', duration: 6000 }
+              )
+            }
+            aria-label="Streak muzlatish nima?"
+          >
+            <StatTile
+              icon={Snowflake}
+              tone="info"
+              value={user?.streakFreezesLeft ?? 0}
+              label="streak muzlatish"
+              hint="Bir kun o'tkazib yuborsangiz, streak avtomatik saqlanadi. Har oy 2 ta beriladi."
+            />
+          </button>
         </StaggerItem>
         <StaggerItem>
           <div className="surface flex items-center gap-3 p-4">

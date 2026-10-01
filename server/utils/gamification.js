@@ -125,6 +125,7 @@ const rollDailyQuests = (user, todayKey) => {
   user.dailyQuests = {
     date: todayKey,
     reviewCompleted: false,
+    reviewSkipped: false,
     topicCompleted: false,
     listeningCompleted: false,
     reviewedCount: 0,
