@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import Logo from './brand/Logo';
 import UserMenu from './Layout/UserMenu';
 import { PRIMARY_NAV, PRACTICE_NAV, ACCOUNT_NAV } from './Layout/nav';
+import { getDailyPlan } from '../utils/dailyPlan';
 
 /**
  * Desktop sidebar (lg+). Telefon va planshetda o'rniga pastki tab-bar ishlaydi
@@ -57,11 +58,7 @@ const NavGroup = ({ title, items }) => (
 /** Streak — motivatsiyaning asosiy dvigateli, doim ko'z oldida tursin */
 const StreakCard = ({ user }) => {
   const streak = user?.currentStreak || 0;
-  const today = user?.today;
-  const q = user?.dailyQuests || {};
-  const isToday = today && q.date === today;
-  const steps = [isToday && q.topicCompleted, isToday && q.reviewCompleted];
-  const done = steps.filter(Boolean).length;
+  const { steps, done, total } = getDailyPlan(user);
 
   return (
     <div className="surface noise overflow-hidden p-4">
@@ -90,14 +87,14 @@ const StreakCard = ({ user }) => {
       </div>
       <div className="mt-3.5 flex items-center gap-2">
         <div className="flex flex-1 gap-1.5">
-          {steps.map((s, i) => (
+          {steps.map((s) => (
             <span
-              key={i}
-              className={cn('h-1.5 flex-1 rounded-full transition-colors duration-500', s ? 'bg-success' : 'bg-muted')}
+              key={s.key}
+              className={cn('h-1.5 flex-1 rounded-full transition-colors duration-500', s.done ? 'bg-success' : 'bg-muted')}
             />
           ))}
         </div>
-        <span className="text-[11px] font-semibold text-muted-foreground tabular">{done}/2 bugun</span>
+        <span className="text-[11px] font-semibold text-muted-foreground tabular">{done}/{total} bugun</span>
       </div>
     </div>
   );
