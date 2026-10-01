@@ -30,7 +30,7 @@ Kunlik reja: **Sahna → Suhbat → Takrorlash**. Suhbatsiz streak oshmaydi.
 - [x] **Ibora kartalari** (`feat/phrase-cards`): sahna yakunlanganda kalit gaplar `Phrase` bo'lib ertangi takrorlashga tushadi (ertaga → 3 → 7 → 14 → 30 kun → yodlangan; kuniga ≤ 5). Karta: o'zbekcha ma'no (+ ixtiyoriy birinchi harflar) → butun gap ovoz bilan; baho serverda (`utils/phraseMatch.js`). "Takrorlash" qadami iboralar ham tugaganda yopiladi
 - [ ] Tuzatishlar takrorlash navbatiga (so'z kartasida "Suhbatda shunday dedingiz…")
 - [x] **"Bugun" sahifasi** (`feat/today-redesign`): bitta katta tugma doim keyingi qadamni ochadi (Sahna → Suhbat → Takrorlash), qadamlarda daqiqalar; "Bugungi suhbat" kartasi (qahramon, vaziyat, so'zlar); "Oxirgi suhbatdan" — 2 ta tuzatish eshitish bilan; hafta tasmasi (serverda `activity.planDays/frozenDays`, profil `week`); CEFR gacha sahnalar soni. Iqtibos (`quotes.json`), maqsad-tavsiya va alohida streak/muzlatish plitkalari olib tashlandi
-- [ ] **Tozalash:** Mavzular kutubxonasi yashiriladi (3813 so'z — kursning 91+ kunlari uchun xom ashyo); Gap tahlili menyudan olinib, xatolar yonida "Tahlil" tugmasi bo'ladi; Tinglash "Bugun"ga qo'shimcha mashq; onboarding maqsadi Suhbatga ulanadi
+- [x] **Tozalash** (`chore/cleanup`): Mavzular kutubxonasi client'dan olindi (server kontenti va `/api/vocab-topics` 91+ kunlar uchun saqlanadi); Gap tahlili menyudan olindi — takrorlashda "Gapimni tushuntir", Suhbat natijasida "Gapni tahlil qilish" (`/analysis?s=`); "Mashqlar" → "Ko'proq" (Tinglash bonus mashq); onboarding maqsadi Suhbat qahramoni uslubini belgilaydi (`GOAL_STYLE`); Landing yangi oqimga moslandi
 - [ ] **Ovoz kundaligi:** har suhbatdan eng yaxshi gap qurilmada (IndexedDB) saqlanadi; 7/30-kunda "1-kun va bugun"
 
 ### Auth: production darajasi

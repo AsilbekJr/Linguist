@@ -277,7 +277,7 @@ const Dashboard = () => {
       {/* ── Qo'shimcha mashqlar ────────────────────────────────────────── */}
       <section aria-labelledby="practice-title">
         <div className="mb-4">
-          <h2 id="practice-title" className="text-xl font-extrabold">Qo&apos;shimcha mashqlar</h2>
+          <h2 id="practice-title" className="text-xl font-extrabold">Bonus mashq</h2>
           <p className="text-sm text-muted-foreground">Kunlik rejaga kirmaydi — streak&apos;ni to&apos;smaydi.</p>
         </div>
         <Stagger className="grid grid-cols-1 gap-3 sm:grid-cols-2" gap={0.05}>

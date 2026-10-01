@@ -1,4 +1,5 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { AnimatePresence, motion } from 'motion/react';
 import { ScanText, Loader2, Send, Shuffle, AlertTriangle, ArrowUpRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -51,6 +52,18 @@ const SentenceAnalysis = () => {
       setError(err?.data?.message || "Tahlil hozir ishlamayapti. Keyinroq urinib ko'ring.");
     }
   };
+
+  // Kontekstdan ochilganda (Suhbat natijasidagi "Tahlil") gap tayyor keladi
+  const [params] = useSearchParams();
+  const initial = params.get('s');
+  const startedRef = useRef(false);
+  useEffect(() => {
+    if (initial && !startedRef.current) {
+      startedRef.current = true;
+      run(initial.slice(0, 300));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initial]);
 
   const pickRandom = () => {
     if (!suggestions.length) return;

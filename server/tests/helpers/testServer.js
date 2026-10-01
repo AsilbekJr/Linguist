@@ -27,7 +27,10 @@ const start = async () => {
 const stop = async () => {
   if (server) await new Promise((r) => server.close(r));
   await mongoose.disconnect();
-  if (mongod) await mongod.stop();
+  // Tozalash aniq va majburiy: Windows'da fayl hali qulflangan bo'lsa sukut
+  // bo'yicha tozalash jimgina o'tib ketardi va %TEMP%\mongo-mem-* papkalari
+  // (har biri ~300 MB) diskni to'ldirardi
+  if (mongod) await mongod.stop({ doCleanup: true, force: true });
 };
 
 /** Kichik fetch o'rovi — cookie'ni saqlaydi va tokenni qo'shadi */

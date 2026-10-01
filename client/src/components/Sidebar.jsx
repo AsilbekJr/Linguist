@@ -114,7 +114,7 @@ const Sidebar = ({ user }) => (
 
     <nav className="no-scrollbar flex-1 overflow-y-auto px-3 pb-4 pt-3" aria-label="Asosiy menyu">
       <NavGroup items={PRIMARY_NAV} />
-      <NavGroup title="Mashqlar" items={PRACTICE_NAV} />
+      <NavGroup title="Qo'shimcha" items={PRACTICE_NAV} />
       <NavGroup title="Hisob" items={ACCOUNT_NAV} />
     </nav>
 

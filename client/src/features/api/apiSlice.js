@@ -116,7 +116,7 @@ export const apiSlice = createApi({
   refetchOnFocus: false,
   refetchOnReconnect: true,
   baseQuery: baseQueryWithReauth,
-  tagTypes: ['Word', 'Topic', 'User', 'Billing', 'Listening', 'Notifications', 'Push', 'Telegram', 'VocabTopic', 'Speak'],
+  tagTypes: ['Word', 'Topic', 'User', 'Billing', 'Listening', 'Notifications', 'Push', 'Telegram', 'Speak'],
   endpoints: (builder) => ({
     getWords: builder.query({
       query: () => '/api/words',
@@ -310,32 +310,6 @@ export const apiSlice = createApi({
     }),
     sendTestPush: builder.mutation({
       query: () => ({ url: '/api/push/test', method: 'POST' }),
-    }),
-    getVocabTopics: builder.query({
-      query: () => '/api/vocab-topics',
-      providesTags: ['VocabTopic'],
-    }),
-    getVocabTopic: builder.query({
-      query: (id) => `/api/vocab-topics/${id}`,
-      providesTags: (result, error, id) => [{ type: 'VocabTopic', id }],
-    }),
-    // words berilmasa — mavzudagi hamma so'z qo'shiladi
-    addVocabTopicWords: builder.mutation({
-      query: ({ id, words }) => ({
-        url: `/api/vocab-topics/${id}/add`,
-        method: 'POST',
-        body: words ? { words } : {},
-      }),
-      invalidatesTags: (result, error, { id }) => ['VocabTopic', { type: 'VocabTopic', id }, 'Word', 'User'],
-    }),
-    /** "Bilaman": kutubxona so'zlarini yodlangan holda lug'atga qo'shish/o'tkazish */
-    markVocabTopicKnown: builder.mutation({
-      query: ({ id, words }) => ({
-        url: `/api/vocab-topics/${id}/known`,
-        method: 'POST',
-        body: { words },
-      }),
-      invalidatesTags: (result, error, { id }) => ['VocabTopic', { type: 'VocabTopic', id }, 'Word', 'User'],
     }),
     getTelegramStatus: builder.query({
       query: () => '/api/telegram/status',
@@ -540,10 +514,6 @@ export const {
   useSubscribePushMutation,
   useUnsubscribePushMutation,
   useSendTestPushMutation,
-  useGetVocabTopicsQuery,
-  useGetVocabTopicQuery,
-  useAddVocabTopicWordsMutation,
-  useMarkVocabTopicKnownMutation,
   useGetTelegramStatusQuery,
   useCreateTelegramLinkMutation,
   useUnlinkTelegramMutation,

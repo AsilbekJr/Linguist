@@ -185,6 +185,8 @@ test('AI rejimi: maqsadlar belgilanadi; AI uzilsa sahna dialogiga o\'tadi', asyn
     assert.equal(conv.mode, 'ai');
     // Qahramon talaba sahnada yodlagan iboralarni biladi
     assert.ok(openedWith.phrases.length > 0, 'yodlangan iboralar promptga berilmadi');
+    // Onboarding maqsadi qahramon uslubiga yetib boradi
+    assert.equal(openedWith.goal, 'speaking');
     assert.equal(conv.goals.length, 2);
 
     const t1 = await api.post(`/api/speak/${conv.id}/turn`, { text: 'how much it cost' });

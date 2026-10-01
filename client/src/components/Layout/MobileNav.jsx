@@ -15,7 +15,7 @@ import { PRIMARY_NAV, PRACTICE_NAV, PRACTICE_PATHS, titleForPath } from './nav';
  *
  * Ilgari telefonda faqat hamburger menyu bor edi — har bir o'tish uchun ikki
  * bosish, menyu esa bosh barmoq yetmaydigan yuqori chap burchakda. Endi asosiy
- * bo'limlar pastki tab-barda, ikkinchi darajalilari "Mashqlar" varag'ida.
+ * bo'limlar pastki tab-barda, ikkinchi darajalilari "Ko'proq" varag'ida.
  */
 
 export const MobileTopBar = ({ user }) => {
@@ -111,7 +111,7 @@ export const MobileTabBar = () => {
             aria-haspopup="dialog"
             aria-expanded={practiceOpen}
           >
-            <TabInner isActive={practiceActive} icon={LayoutGrid} label="Mashqlar" />
+            <TabInner isActive={practiceActive} icon={LayoutGrid} label="Ko'proq" />
           </button>
         </div>
       </nav>
@@ -119,8 +119,8 @@ export const MobileTabBar = () => {
       <Sheet open={practiceOpen} onOpenChange={setPracticeOpen}>
         <SheetContent side="bottom" className="px-4">
           <SheetHeader className="px-1">
-            <SheetTitle>Mashqlar</SheetTitle>
-            <SheetDescription>Kunlik rejaga qo&apos;shimcha — o&apos;zingizga mosini tanlang.</SheetDescription>
+            <SheetTitle>Ko&apos;proq</SheetTitle>
+            <SheetDescription>Bonus mashq, natijalar va sozlamalar.</SheetDescription>
           </SheetHeader>
           <div className="mt-2 grid gap-2">
             {PRACTICE_NAV.map((item) => (

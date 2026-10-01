@@ -4,7 +4,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import { toast } from 'react-hot-toast';
 import {
   Mic, Square, Send, Volume2, VolumeX, Languages, Lightbulb, Check, Lock, Loader2,
-  MessagesSquare, Sparkles, Target, ArrowRight, Keyboard, Timer, RotateCcw,
+  MessagesSquare, Sparkles, Target, ArrowRight, Keyboard, Timer, RotateCcw, ScanText,
 } from 'lucide-react';
 import {
   useGetSpeakTodayQuery,
@@ -309,6 +309,13 @@ const Result = ({ conv, onAgain, canStartNew }) => {
                 </button>
               </div>
               {c.explanationUz && <p className="text-sm text-muted-foreground">{c.explanationUz}</p>}
+              {/* Gap tahlili endi menyuda emas — xato ko'rsatilgan joyda ochiladi */}
+              <Link
+                to={`/analysis?s=${encodeURIComponent(c.better)}`}
+                className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
+              >
+                <ScanText className="size-3.5" /> Gapni tahlil qilish
+              </Link>
             </div>
           ))}
         </div>

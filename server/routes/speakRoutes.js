@@ -89,6 +89,7 @@ const brief = (conv) => ({
   targetWords: conv.targetWords,
   // Qahramon shu iboralarni ishlatishga imkon beradigan savollar bersin
   phrases: memorizedPhrases(conv),
+  goal: conv.learnerGoal,
 });
 
 const userTurnCount = (conv) => conv.turns.filter((t) => t.role === 'user').length;
@@ -226,6 +227,7 @@ router.post('/start', protect, async (req, res) => {
       situationUz: preview.situationUz,
       cefr: ctx.baseTopic.cefr || '',
       targetWords: preview.targetWords,
+      learnerGoal: req.user.onboarding?.goal || 'general',
       mode: 'scripted',
     });
 
