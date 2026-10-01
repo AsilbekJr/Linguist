@@ -38,6 +38,7 @@ const Challenge = require('../models/Challenge');
 const Session = require('../models/Session');
 const PasswordResetToken = require('../models/PasswordResetToken');
 const EmailVerificationToken = require('../models/EmailVerificationToken');
+const Conversation = require('../models/Conversation');
 const {
   sendVerificationEmail,
   verifyEmailToken,
@@ -292,7 +293,7 @@ router.delete('/account', protect, validate(deleteAccountSchema), async (req, re
     // To'lov hodisalari (BillingEvent) ataylab qoldiriladi: ular moliyaviy
     // hisobot uchun kerak va shaxsiy ma'lumot saqlamaydi.
     await Promise.all(
-      [Word, TopicProgress, Session, PasswordResetToken, EmailVerificationToken, PushSubscription, QuizSession, PlacementSession, Challenge].map(
+      [Word, TopicProgress, Session, PasswordResetToken, EmailVerificationToken, Conversation, PushSubscription, QuizSession, PlacementSession, Challenge].map(
         (Model) => Model.deleteMany({ user: userId })
       )
     );

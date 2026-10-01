@@ -1,7 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { start, stop, makeClient } = require('./helpers/testServer');
-const { finishTopicDay, reviewAllDue, setStage } = require('./helpers/dailyFlow');
+const { finishTopicDay, finishSpeakDay, reviewAllDue, setStage } = require('./helpers/dailyFlow');
 
 /**
  * To'liq kunlik oqim: kunlik sahna → mini-test → so'z saqlash → yakunlash → takrorlash.
@@ -229,6 +229,10 @@ test('sahna → takrorlash: navbat bo\'shaganda streak boshlanadi', async () => 
   // Sahna so'zlari endi navbatda — takrorlash hali qilinmagan
   assert.equal(finish.data.streakUpdated, false);
 
+  const speak = await finishSpeakDay(api);
+  assert.equal(speak.status, 200, JSON.stringify(speak.data));
+  assert.equal(speak.data.dailyStep.streakUpdated, false, 'takrorlashsiz streak oshmasligi kerak');
+
   const last = await reviewAllDue(api);
   assert.equal(last.status, 200);
   assert.equal(last.data.dailyStep.reviewCompleted, true, 'navbat bo\'shadi, qadam yopilmadi');
@@ -264,8 +268,13 @@ test('takrorlash → sahna tartibida ham streak oshadi', async () => {
 
   const finish = await finishTopicDay(api);
   assert.equal(finish.status, 200, JSON.stringify(finish.data));
-  assert.equal(finish.data.streakUpdated, true, 'sahna tugaganda streak oshmadi');
-  assert.equal(finish.data.user.currentStreak, 1);
+  assert.equal(finish.data.streakUpdated, false, 'suhbatsiz streak oshmasligi kerak');
+
+  // Oxirgi qadam — Suhbat; streak shu yerda oshadi
+  const speak = await finishSpeakDay(api);
+  assert.equal(speak.status, 200, JSON.stringify(speak.data));
+  assert.equal(speak.data.dailyStep.streakUpdated, true, 'reja tugaganda streak oshmadi');
+  assert.equal(speak.data.dailyStep.currentStreak, 1);
 });
 
 test('kunlik reja qadamlarini mijoz o\'zi yopa olmaydi', async () => {

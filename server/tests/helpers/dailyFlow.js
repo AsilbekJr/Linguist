@@ -77,4 +77,19 @@ const useSentenceMode = async (api, wordId) => {
   await setStage(wordId, 5);
 };
 
-module.exports = { finishTopicDay, reviewAllDue, answerDue, correctBody, sentenceFor, makeDue, setStage, useSentenceMode, fullWord };
+/**
+ * Suhbatni haqiqiy yo'l bilan bajarish: boshlash → kamida MIN replika → yakunlash.
+ * Testlarda AI yo'q — qahramon sahna dialogi bo'yicha javob beradi.
+ */
+const finishSpeakDay = async (api, lines = []) => {
+  const start = await api.post('/api/speak/start');
+  if (start.status >= 400) return start;
+  const conv = start.data.conversation;
+  const say = lines.length ? lines : ['Hello, I need some help please.', 'Yes, that sounds good.', 'How much is it?', 'Thank you very much.'];
+  for (let i = conv.userTurns; i < conv.minTurns; i++) {
+    await api.post(`/api/speak/${conv.id}/turn`, { text: say[i % say.length], via: 'text' });
+  }
+  return api.post(`/api/speak/${conv.id}/finish`);
+};
+
+module.exports = { finishSpeakDay, finishTopicDay, reviewAllDue, answerDue, correctBody, sentenceFor, makeDue, setStage, useSentenceMode, fullWord };

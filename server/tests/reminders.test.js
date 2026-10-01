@@ -51,6 +51,7 @@ test("kunlik reja tugagan bo'lsa yuborilmaydi", () => {
       date: '2026-06-10',
       reviewCompleted: true,
       topicCompleted: true,
+      speakCompleted: true,
     },
   });
   const res = shouldSendReminder(user, AT_19_TASHKENT);
@@ -149,6 +150,6 @@ test('qolgan qadamlar aniq sanab o\'tiladi', () => {
       },
     })
   );
-  assert.deepEqual(content.remaining, ['Takrorlash']);
+  assert.deepEqual(content.remaining, ['Suhbat', 'Takrorlash']);
   assert.ok(!content.stepsLine.includes('Kunlik sahna'), 'bajarilgan qadam sanalmasligi kerak');
 });

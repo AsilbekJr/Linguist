@@ -1,7 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { start, stop, makeClient } = require('./helpers/testServer');
-const { finishTopicDay, reviewAllDue } = require('./helpers/dailyFlow');
+const { finishSpeakDay, finishTopicDay, reviewAllDue } = require('./helpers/dailyFlow');
 
 test.before(async () => {
   await start();
@@ -103,8 +103,9 @@ test('tinglash mashqi kunlik rejani va streak\'ni BLOKLAMAYDI', async () => {
   const api = makeClient();
   await api.register();
 
-  // Tinglashga tegmasdan kunlik rejani bajaramiz
+  // Tinglashga tegmasdan kunlik rejani bajaramiz: Sahna → Suhbat → Takrorlash
   await finishTopicDay(api);
+  await finishSpeakDay(api);
   const last = await reviewAllDue(api);
 
   assert.equal(

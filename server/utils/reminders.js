@@ -1,4 +1,5 @@
 const { userDayKey, dayKey, daysBetween } = require('./dayKey');
+const { isPlanComplete } = require('./gamification');
 
 /**
  * Kunlik eslatmalar.
@@ -81,8 +82,7 @@ const shouldSendReminder = (user, now = new Date()) => {
   // Bugungi reja allaqachon bajarilgan bo'lsa eslatma faqat bezovta qiladi
   const quests = user.dailyQuests || {};
   const isToday = quests.date === todayKey;
-  const allDone =
-    isToday && quests.reviewCompleted && quests.topicCompleted;
+  const allDone = isToday && isPlanComplete(quests);
   if (allDone) {
     return { send: false, reason: SKIP.PLAN_DONE, todayKey };
   }
@@ -104,6 +104,7 @@ const buildReminderContent = (user, { dueCount = 0 } = {}) => {
 
   const remaining = [];
   if (!quests.topicCompleted) remaining.push('Kunlik sahna');
+  if (!quests.speakCompleted) remaining.push('Suhbat');
   if (!quests.reviewCompleted) remaining.push('Takrorlash');
 
   let subject;
