@@ -137,7 +137,12 @@ test("yordam: sahnadan ibora va hali ishlatilmagan so'zlar", async () => {
   const hint = await api.post(`/api/speak/${conv.id}/hint`);
   assert.equal(hint.status, 200);
   assert.ok(hint.data.example?.text);
+  assert.equal(hint.data.example.memorized, true, "sahnada yodlangan ibora birinchi taklif qilinishi kerak");
   assert.ok(hint.data.words.length > 0);
+
+  // Xuddi shu ibora sahna paketida "Yod olish" uchun berilgan
+  const topic = await api.get('/api/topics/current');
+  assert.ok(topic.data.keyLines.some((l) => l.en === hint.data.example.text));
 });
 
 test('streak faqat Sahna + Suhbat + Takrorlash bajarilganda oshadi', async () => {
@@ -157,7 +162,8 @@ test('AI rejimi: maqsadlar belgilanadi; AI uzilsa sahna dialogiga o\'tadi', asyn
   const saved = { ...gemini };
   let replies = 0;
   gemini.isGeminiReady = () => true;
-  gemini.openConversation = async () => ({
+  let openedWith = null;
+  gemini.openConversation = async (brief) => (openedWith = brief) && ({
     status: 'ok',
     opening: 'Hi! What can I do for you?',
     openingUz: 'Salom! Sizga nima kerak?',
@@ -177,6 +183,8 @@ test('AI rejimi: maqsadlar belgilanadi; AI uzilsa sahna dialogiga o\'tadi', asyn
     const api = await newUserWithScene();
     const conv = (await api.post('/api/speak/start')).data.conversation;
     assert.equal(conv.mode, 'ai');
+    // Qahramon talaba sahnada yodlagan iboralarni biladi
+    assert.ok(openedWith.phrases.length > 0, 'yodlangan iboralar promptga berilmadi');
     assert.equal(conv.goals.length, 2);
 
     const t1 = await api.post(`/api/speak/${conv.id}/turn`, { text: 'how much it cost' });

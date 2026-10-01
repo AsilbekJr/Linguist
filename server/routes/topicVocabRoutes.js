@@ -15,6 +15,7 @@ const { initialState } = require('../utils/srs');
 const {
   resolveTopicDay,
   pickDailySessionWords,
+  pickKeyLines,
   getScenarioMeta,
   buildBacklog,
   getTopicReviewDate,
@@ -83,6 +84,8 @@ router.get('/current', protect, async (req, res) => {
       grammarFocus: ctx.baseTopic.grammarFocus,
       // Dialog — kunning asosiy kontenti. So'zlar aynan shu suhbatdan chiqadi.
       dialogue: ctx.baseTopic.dialogue || [],
+      // "Yod olish" qadamining gaplari (bugungi so'zlar bor qatorlar)
+      keyLines: pickKeyLines(ctx.baseTopic.dialogue || [], dailyWords),
       words: dailyWords,
       wordTarget: ctx.wordTarget,
       requiredCount,

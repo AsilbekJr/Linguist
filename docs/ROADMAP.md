@@ -25,6 +25,9 @@ Shuning uchun ustuvorlik: **kontent va asosiy kunlik tsikl**, yangi bo'limlar em
 Kunlik reja: **Sahna → Suhbat → Takrorlash**. Suhbatsiz streak oshmaydi.
 
 - [x] **Suhbat** (`feat/speak`): bugungi sahna qahramoni bilan ovozli rolli o'yin; bugungi so'zni aytganda belgi yonadi (server `containsWord` bilan aniqlaydi); AI rejimi (Gemini) + ssenariy rejimi (AI yo'q/uzilsa — sahna dialogi, majburiy qadam bloklanmaydi); yakunda 0-3 tuzatish; bepul — kuniga 1 suhbat, Pro — 20
+- [x] **Yod olish** (`feat/memorize`): sahnaning gapirish qadami — kunning 3-5 kalit gapi (bugungi so'zlar bor qatorlar, serverda `pickKeyLines`) bosqichma-bosqich yashiriladi: 1 to'liq → 2 bo'shliqlar → 3 birinchi harflar → 4 faqat ma'nosi. 1-2-davralar majburiy, 3-4 ixtiyoriy; o'tolmagan gap davra oxirida qaytadi. Eski "rol bilan yoddan aytish" (DialoguePractice) olib tashlandi
+- [x] Yodlangan iboralar Suhbatga ulangan: "Yordam" ularni birinchi taklif qiladi, AI qahramon ularni ishlatishga imkon yaratadi
+- [ ] Ibora kartasi takrorlashda (o'zbekcha ma'no → butun gapni ovoz bilan)
 - [ ] Tuzatishlar takrorlash navbatiga (so'z kartasida "Suhbatda shunday dedingiz…")
 - [ ] **"Bugun" sahifasi:** bitta "Davom etish" tugmasi, "Bugungi suhbat" kartasi, "Kechagi suhbatdan", hafta tasmasi, CEFR gacha masofa; iqtibos va maqsad-tavsiya bloki olib tashlanadi
 - [ ] **Tozalash:** Mavzular kutubxonasi yashiriladi (3813 so'z — kursning 91+ kunlari uchun xom ashyo); Gap tahlili menyudan olinib, xatolar yonida "Tahlil" tugmasi bo'ladi; Tinglash "Bugun"ga qo'shimcha mashq; onboarding maqsadi Suhbatga ulanadi

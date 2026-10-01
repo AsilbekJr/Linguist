@@ -114,7 +114,53 @@ const buildDistractorPool = (topicsList, excludeWords = []) => {
   return [...pool];
 };
 
+/** Bitta so'z yoki ibora gapda bormi (`look after`, `don't` — oddiy kirish) */
+const lineHasWord = (text, word) => {
+  const w = String(word || '').trim().toLowerCase();
+  if (!w) return false;
+  if (/[\s'-]/.test(w)) return String(text).toLowerCase().includes(w);
+  // Lazy require: content/schema og'ir — faqat kerak bo'lganda yuklanadi
+  return require('../content/schema').containsWord(text, w);
+};
+
+/**
+ * "Yod olish" uchun kunning kalit gaplari.
+ *
+ * Bugungi so'zlar bor dialog qatorlari — so'z yolg'iz emas, gap ichida
+ * (ohangi va grammatikasi bilan) yodlanadi. Kamroq bo'lsa, talabaning o'z
+ * rolidagi qatorlar bilan to'ldiriladi. Sahna va Suhbat ("Yordam") bir xil
+ * ro'yxatga tayanadi, shuning uchun tanlov serverda.
+ *
+ * @returns {Array<{index:number, speaker:string, en:string, uz:string, words:string[]}>}
+ */
+const pickKeyLines = (dialogue = [], words = [], max = 5) => {
+  const lines = dialogue.map((l, index) => ({
+    index,
+    speaker: l.speaker,
+    en: l.en,
+    uz: l.uz || '',
+    words: words.map((w) => w.word).filter((w) => lineHasWord(l.en, w)),
+  }));
+  // Juda qisqa ("Yes.") yoki juda uzun qatorlar yodlash uchun yaramaydi
+  const usable = lines.filter((l) => {
+    const n = String(l.en).split(/\s+/).length;
+    return n >= 3 && n <= 16;
+  });
+  const withWords = usable.filter((l) => l.words.length > 0).sort((a, b) => b.words.length - a.words.length);
+  const picked = withWords.slice(0, max);
+  if (picked.length < 3) {
+    const learner = dialogue[0]?.speaker;
+    for (const l of usable) {
+      if (picked.length >= Math.min(3, max)) break;
+      if (!picked.includes(l) && l.speaker === learner) picked.push(l);
+    }
+  }
+  // Dialogdagi tartibda — voqea ketma-ketligi saqlansin
+  return picked.sort((a, b) => a.index - b.index);
+};
+
 module.exports = {
+  pickKeyLines,
   getDailyWordTarget,
   LEVEL_TO_CEFR,
   getStartDayForLevel,

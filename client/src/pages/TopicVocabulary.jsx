@@ -40,7 +40,7 @@ import { toast } from 'react-hot-toast';
 import { playTTSAudio } from '../utils/audio';
 import { fireConfetti } from '../utils/celebration';
 import { track, EVENTS } from '../lib/analytics';
-import DialoguePractice from '../components/DialoguePractice';
+import Memorize from '../components/Memorize';
 import ActiveWords from '../components/ActiveWords';
 
 const EASE = [0.16, 1, 0.3, 1];
@@ -188,12 +188,12 @@ const TopicQuiz = ({ quiz, onPass, onBack, submitQuiz, isSubmitting }) => {
   );
 };
 
-/** O'rganish → mini-test → gapirish (shadowing) → sizning so'zlaringiz → yakunlash */
+/** O'rganish → mini-test → yod olish → sizning so'zlaringiz → yakunlash */
 const Stepper = ({ current, quizPassed, hasDialogue, shadowDone, hasActive, activeDone }) => {
   const steps = [
     { key: 'learn', label: "O'rganish", done: quizPassed || current !== 'learn' },
     { key: 'quiz', label: 'Mini-test', done: quizPassed },
-    ...(hasDialogue ? [{ key: 'shadow', label: 'Gapirish', done: shadowDone }] : []),
+    ...(hasDialogue ? [{ key: 'shadow', label: 'Yod olish', done: shadowDone }] : []),
     ...(hasActive ? [{ key: 'active', label: "So'zlaringiz", done: activeDone }] : []),
     { key: 'finish', label: 'Yakunlash', done: false },
   ];
@@ -239,9 +239,9 @@ const TopicVocabulary = () => {
   const [quiz, setQuiz] = useState(null);
   const [shadowDone, setShadowDone] = useState(false);
   const [activeDone, setActiveDone] = useState(false);
-  // Ixtiyoriy yakuniy qadam: dialogni yoddan aytish
-  const [recallOpen, setRecallOpen] = useState(false);
-  const [recallResult, setRecallResult] = useState(null);
+  // Ixtiyoriy: yakunlangach kalit gaplarni yoddan aytish (3-4-davralar)
+  const [memoOpen, setMemoOpen] = useState(false);
+  const [memoResult, setMemoResult] = useState(null);
   const healRef = useRef(false);
 
   // Test o'tilgani SERVERDAN keladi. Ilgari bu sessionStorage'da edi.
@@ -254,7 +254,15 @@ const TopicVocabulary = () => {
 
   // Dialogda birinchi gapiruvchi chapda, qolganlari o'ngda — chat kabi
   const firstSpeaker = topicData?.dialogue?.[0]?.speaker;
-  const hasDialogue = (topicData?.dialogue?.length || 0) > 0;
+  // "Yod olish" gaplari serverdan (bugungi so'zlar bor qatorlar). Eski keshda
+  // bo'lmasa — dialogning o'rtacha uzunlikdagi qatorlari
+  const keyLines = useMemo(() => {
+    if (topicData?.keyLines?.length) return topicData.keyLines;
+    return (topicData?.dialogue || [])
+      .filter((l) => l.en.split(/\s+/).length >= 3 && l.en.split(/\s+/).length <= 16)
+      .slice(0, 4);
+  }, [topicData?.keyLines, topicData?.dialogue]);
+  const memoTargets = useMemo(() => (topicData?.words || []).map((w) => w.word), [topicData?.words]);
 
   // "Sizning so'zlaringiz": lug'atdagi so'zlar shu mavzu gaplarida (2+ bo'lsa)
   const { data: activeData } = useGetActiveWordsQuery(undefined, {
@@ -264,7 +272,8 @@ const TopicVocabulary = () => {
   const hasActive = activeItems.length > 0;
 
   // Mini-testdan keyingi bajarilmagan ixtiyoriy qadam
-  const pendingStep = hasDialogue && !shadowDone ? 'shadow' : hasActive && !activeDone ? 'active' : null;
+  const hasMemorize = keyLines.length > 0;
+  const pendingStep = hasMemorize && !shadowDone ? 'shadow' : hasActive && !activeDone ? 'active' : null;
 
   const applyUserUpdate = useCallback(
     (profile) => {
@@ -357,7 +366,7 @@ const TopicVocabulary = () => {
     );
   }
 
-  if (recallOpen && hasDialogue) {
+  if (memoOpen && keyLines.length) {
     return (
       <motion.section
         initial={{ opacity: 0, y: 12 }}
@@ -365,18 +374,18 @@ const TopicVocabulary = () => {
         transition={{ duration: 0.35, ease: EASE }}
         className="surface mx-auto max-w-2xl p-5 sm:p-8"
       >
-        <Button variant="ghost" size="sm" className="-ml-2 mb-3" onClick={() => setRecallOpen(false)}>
+        <Button variant="ghost" size="sm" className="-ml-2 mb-3" onClick={() => setMemoOpen(false)}>
           <ChevronLeft /> Orqaga
         </Button>
-        <DialoguePractice
-          dialogue={topicData.dialogue}
-          mode="recall"
-          doneLabel="Tugatish"
+        <Memorize
+          lines={keyLines}
+          targets={memoTargets}
+          startRound={3}
           onDone={(res) => {
-            setRecallResult(res);
-            setRecallOpen(false);
-            track(EVENTS.DIALOGUE_RECALLED, { day: topicData?.day, average: res.average });
-            if (res.average != null && res.average >= 80) fireConfetti(1200);
+            setMemoResult(res);
+            setMemoOpen(false);
+            track(EVENTS.MEMORIZE_FINISHED, { day: topicData?.day, round: res.round, passed: res.passed, total: res.total });
+            if (res.passed === res.total) fireConfetti(1200);
           }}
         />
       </motion.section>
@@ -428,23 +437,23 @@ const TopicVocabulary = () => {
         </Button>
       </motion.div>
 
-      {/* Ixtiyoriy: dialogni yoddan aytish — kunlik rejaga kirmaydi */}
-      {hasDialogue && (
+      {/* Ixtiyoriy: kalit gaplarni yoddan aytish — kunlik rejaga kirmaydi */}
+      {keyLines.length > 0 && (
         <motion.button
           type="button"
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.25, duration: 0.4, ease: EASE }}
-          onClick={() => setRecallOpen(true)}
+          onClick={() => setMemoOpen(true)}
           className="surface-interactive flex w-full items-center gap-4 p-5 text-left"
         >
           <IconTile icon={Brain} tone="streak" />
           <span className="min-w-0 flex-1">
-            <span className="block font-bold">Qo&apos;shimcha: dialogni yoddan ayting</span>
+            <span className="block font-bold">Qo&apos;shimcha: gaplarni yoddan ayting</span>
             <span className="block text-sm text-muted-foreground">
-              {recallResult?.average != null
-                ? `Oxirgi natija: ${recallResult.average}% · yana urinib ko'ring`
-                : "Rol tanlang va o'z qatorlaringizni inglizcha yoddan ayting"}
+              {memoResult
+                ? `Oxirgi natija: ${memoResult.passed}/${memoResult.total} · yana urinib ko'ring`
+                : `Bugungi ${keyLines.length} ta kalit gap — faqat birinchi harflar, keyin yoddan`}
             </span>
           </span>
           <ArrowRight className="size-5 shrink-0 text-muted-foreground" />
@@ -476,7 +485,7 @@ const TopicVocabulary = () => {
         <Stepper
           current={progressStep}
           quizPassed={quizPassed}
-          hasDialogue={hasDialogue}
+          hasDialogue={hasMemorize}
           shadowDone={shadowDone}
           hasActive={hasActive}
           activeDone={activeDone}
@@ -498,7 +507,7 @@ const TopicVocabulary = () => {
               {[
                 { icon: MessagesSquare, text: 'Dialogni o\'qing va tinglang' },
                 { icon: Sparkles, text: 'Mini-testdan o\'ting' },
-                ...(hasDialogue ? [{ icon: Mic, text: 'Dialogni eshitib takrorlang' }] : []),
+                ...(hasMemorize ? [{ icon: Mic, text: "Kalit gaplarni yod oling — ovoz chiqarib" }] : []),
                 ...(hasActive ? [{ icon: PenLine, text: "Lug'atingizdagi so'zlarni gapda ishlating" }] : []),
                 { icon: BookCheck, text: "So'zlar lug'atga o'zi qo'shiladi" },
               ].map((s, i) => (
@@ -701,7 +710,7 @@ const TopicVocabulary = () => {
                 )}
                 {quizPassed && pendingStep && (
                   <Button size="lg" variant="brand" onClick={() => setStep(pendingStep)}>
-                    {pendingStep === 'shadow' ? <>Gapirish <Mic /></> : <>So&apos;zlaringiz <PenLine /></>}
+                    {pendingStep === 'shadow' ? <>Yod olish <Mic /></> : <>So&apos;zlaringiz <PenLine /></>}
                   </Button>
                 )}
                 {quizPassed && !pendingStep && (
@@ -736,7 +745,7 @@ const TopicVocabulary = () => {
           </motion.section>
         )}
 
-        {step === 'shadow' && hasDialogue && (
+        {step === 'shadow' && hasMemorize && (
           <motion.section
             key="shadow"
             initial={{ opacity: 0, y: 12 }}
@@ -749,18 +758,21 @@ const TopicVocabulary = () => {
               <Button variant="ghost" size="sm" className="-ml-2" onClick={() => setStep('learn')}>
                 <ChevronLeft /> So&apos;zlar
               </Button>
-              {/* Gapirish majburiy emas: shovqinli joy, mikrofon yo'q va h.k. */}
-              <Button variant="ghost" size="sm" onClick={handleFinishDay} disabled={isFinishing}>
-                O&apos;tkazib yuborib yakunlash
-              </Button>
             </div>
-            <DialoguePractice
-              dialogue={topicData.dialogue}
-              mode="shadow"
-              doneLabel={hasActive && !activeDone ? 'Davom etish' : 'Yakunlash'}
+            {/* Yod olish: 1-2-davralar majburiy, 3-4 (yoddan) — ixtiyoriy */}
+            <Memorize
+              lines={keyLines}
+              targets={memoTargets}
+              onMandatoryDone={(res) => {
+                setShadowDone(true);
+                track(EVENTS.MEMORIZE_FINISHED, { day: topicData?.day, round: res.round, passed: res.passed, total: res.total });
+                if (hasActive && !activeDone) setStep('active');
+                else handleFinishDay();
+              }}
               onDone={(res) => {
                 setShadowDone(true);
-                track(EVENTS.DIALOGUE_SHADOWED, { day: topicData?.day, average: res.average });
+                track(EVENTS.MEMORIZE_FINISHED, { day: topicData?.day, round: res.round, passed: res.passed, total: res.total });
+                if (res.passed === res.total) fireConfetti(1200);
                 if (hasActive && !activeDone) setStep('active');
                 else handleFinishDay();
               }}
