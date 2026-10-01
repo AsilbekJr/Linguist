@@ -35,6 +35,9 @@ services:
       # Frontend /api ni Vercel proxy orqali yuborgach (VITE_API_URL o'chirilgach):
       # COOKIE_SAMESITE=lax, TRUST_PROXY_HOPS=4 (Vercel → Cloudflare → Render). Undan OLDIN qo'yilsa cookie
       # cross-site so'rovlarda yuborilmaydi va hamma chiqib ketadi.
+      # Google orqali kirish — client'dagi VITE_GOOGLE_CLIENT_ID bilan bir xil
+      - key: GOOGLE_CLIENT_ID
+        sync: false
       - key: COOKIE_SAMESITE
         sync: false
       - key: TRUST_PROXY_HOPS

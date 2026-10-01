@@ -177,6 +177,9 @@ const AppearanceSection = () => {
 const SecuritySection = () => {
   const dispatch = useDispatch();
   const user = useSelector((s) => s.auth.user);
+  const { data: me } = useGetMeQuery();
+  // Google orqali ochilgan hisobda parol yo'q — birinchi parol joriy parolsiz o'rnatiladi
+  const settingFirst = me?.hasPassword === false;
   const [current, setCurrent] = useState('');
   const [next, setNext] = useState('');
   const [changePassword, { isLoading }] = useChangePasswordMutation();
@@ -188,7 +191,9 @@ const SecuritySection = () => {
       return;
     }
     try {
-      const res = await changePassword({ currentPassword: current, newPassword: next }).unwrap();
+      const res = await changePassword(
+        settingFirst ? { newPassword: next } : { currentPassword: current, newPassword: next }
+      ).unwrap();
       // Joriy qurilma yangi token bilan qoladi — boshqa qurilmalar chiqarildi
       dispatch(setCredentials({ user, token: res.token }));
       setCurrent('');
@@ -200,11 +205,22 @@ const SecuritySection = () => {
   };
 
   return (
-    <Section icon={ShieldCheck} tone="success" title="Xavfsizlik" description="Parol o'zgargach, boshqa barcha qurilmalardan chiqiladi.">
+    <Section
+      icon={ShieldCheck}
+      tone="success"
+      title="Xavfsizlik"
+      description={
+        settingFirst
+          ? "Siz Google orqali kirgansiz. Parol o'rnatsangiz, email va parol bilan ham kira olasiz."
+          : "Parol o'zgargach, boshqa barcha qurilmalardan chiqiladi."
+      }
+    >
       <form onSubmit={submit} className="space-y-4">
-        <PasswordField label="Joriy parol" icon={Lock} value={current} onChange={(e) => setCurrent(e.target.value)} autoComplete="current-password" required />
+        {!settingFirst && (
+          <PasswordField label="Joriy parol" icon={Lock} value={current} onChange={(e) => setCurrent(e.target.value)} autoComplete="current-password" required />
+        )}
         <PasswordField
-          label="Yangi parol"
+          label={settingFirst ? 'Parol' : 'Yangi parol'}
           icon={Lock}
           value={next}
           onChange={(e) => setNext(e.target.value)}
@@ -212,8 +228,8 @@ const SecuritySection = () => {
           hint="Kamida 8 ta belgi"
           required
         />
-        <Button type="submit" size="lg" disabled={isLoading || !current || !next}>
-          {isLoading ? <Loader2 className="animate-spin" /> : "Parolni o'zgartirish"}
+        <Button type="submit" size="lg" disabled={isLoading || (!settingFirst && !current) || !next}>
+          {isLoading ? <Loader2 className="animate-spin" /> : settingFirst ? "Parol o'rnatish" : "Parolni o'zgartirish"}
         </Button>
       </form>
     </Section>
@@ -222,6 +238,9 @@ const SecuritySection = () => {
 
 const AccountSection = () => {
   const dispatch = useDispatch();
+  const { data: me } = useGetMeQuery();
+  // Parolsiz (Google) hisob o'chirishni emailni yozib tasdiqlaydi
+  const noPassword = me?.hasPassword === false;
   const [open, setOpen] = useState(false);
   const [password, setPassword] = useState('');
   const [deleteAccount, { isLoading }] = useDeleteAccountMutation();
@@ -229,7 +248,7 @@ const AccountSection = () => {
   const confirmDelete = async (e) => {
     e.preventDefault();
     try {
-      await deleteAccount(password).unwrap();
+      await deleteAccount(noPassword ? { confirmEmail: password } : { password }).unwrap();
       setOpen(false);
       toast.success("Hisobingiz o'chirildi. Xayr!");
       await clearLocalSession(dispatch);
@@ -265,16 +284,23 @@ const AccountSection = () => {
             <DialogHeader>
               <DialogTitle>Hisob butunlay o&apos;chirilsinmi?</DialogTitle>
               <DialogDescription>
-                Barcha so&apos;zlar, takrorlash tarixi, streak va sozlamalar o&apos;chiriladi. Tasdiqlash uchun parolingizni kiriting.
+                Barcha so&apos;zlar, takrorlash tarixi, streak va sozlamalar o&apos;chiriladi.{' '}
+                {noPassword ? (
+                  <>
+                    Tasdiqlash uchun emailingizni yozing: <strong className="break-all">{me?.email}</strong>
+                  </>
+                ) : (
+                  'Tasdiqlash uchun parolingizni kiriting.'
+                )}
               </DialogDescription>
             </DialogHeader>
             <Input
-              type="password"
+              type={noPassword ? 'email' : 'password'}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Parolingiz"
-              autoComplete="current-password"
-              aria-label="Parol"
+              placeholder={noPassword ? 'Emailingiz' : 'Parolingiz'}
+              autoComplete={noPassword ? 'off' : 'current-password'}
+              aria-label={noPassword ? 'Email' : 'Parol'}
               autoFocus
             />
             <DialogFooter>

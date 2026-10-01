@@ -14,7 +14,10 @@ const {
   forgotPasswordSchema,
   resetPasswordSchema,
   verifyEmailSchema,
+  googleAuthSchema,
 } = require('../middleware/validate');
+// Modul obyekti orqali — testlar Google tekshiruvini almashtira olsin
+const googleAuth = require('../services/googleAuth');
 const {
   generateAccessToken,
   generateResetToken,
@@ -229,10 +232,13 @@ router.post('/change-password', protect, validate(changePasswordSchema), async (
   try {
     const { currentPassword, newPassword } = req.validated.body;
     const user = await User.findById(req.user._id);
-    if (!user || !(await user.matchPassword(currentPassword))) {
+    if (!user) return res.status(401).json({ message: 'User not found' });
+    // Google orqali ochilgan hisob: birinchi parol joriy parolsiz o'rnatiladi
+    const settingFirstPassword = !user.password;
+    if (!settingFirstPassword && !(currentPassword && (await user.matchPassword(currentPassword)))) {
       return res.status(400).json({ message: "Joriy parol noto'g'ri.", code: 'WRONG_PASSWORD' });
     }
-    if (currentPassword === newPassword) {
+    if (!settingFirstPassword && currentPassword === newPassword) {
       return res.status(400).json({ message: 'Yangi parol eskisidan farq qilishi kerak.', code: 'SAME_PASSWORD' });
     }
 
@@ -245,7 +251,9 @@ router.post('/change-password', protect, validate(changePasswordSchema), async (
     const session = await createSession(user._id, req, res);
 
     res.json({
-      message: "Parol o'zgartirildi. Boshqa qurilmalardan chiqildi.",
+      message: settingFirstPassword
+        ? "Parol o'rnatildi. Endi email va parol bilan ham kira olasiz."
+        : "Parol o'zgartirildi. Boshqa qurilmalardan chiqildi.",
       token: generateAccessToken(user._id, session._id),
     });
   } catch (error) {
@@ -259,8 +267,15 @@ router.post('/change-password', protect, validate(changePasswordSchema), async (
 router.delete('/account', protect, validate(deleteAccountSchema), async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
-    if (!user || !(await user.matchPassword(req.validated.body.password))) {
-      return res.status(400).json({ message: "Parol noto'g'ri.", code: 'WRONG_PASSWORD' });
+    const { password, confirmEmail } = req.validated.body;
+    if (!user) return res.status(401).json({ message: 'User not found' });
+    if (user.password) {
+      if (!password || !(await user.matchPassword(password))) {
+        return res.status(400).json({ message: "Parol noto'g'ri.", code: 'WRONG_PASSWORD' });
+      }
+    } else if (confirmEmail !== user.email) {
+      // Parolsiz (Google) hisob — tasodifan o'chirmaslik uchun emailni yozdiramiz
+      return res.status(400).json({ message: "Email mos kelmadi.", code: 'WRONG_CONFIRM_EMAIL' });
     }
 
     // Faol pullik obuna bo'lsa, avval uni bekor qilish kerak — aks holda
@@ -389,6 +404,67 @@ router.post('/reset-password', validate(resetPasswordSchema), async (req, res) =
     });
   } catch (error) {
     console.error('Reset password error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @desc    Google orqali kirish / ro'yxatdan o'tish
+// @route   POST /api/auth/google
+router.post('/google', validate(googleAuthSchema), async (req, res) => {
+  if (!googleAuth.isGoogleConfigured()) {
+    return res.status(503).json({ message: 'Google orqali kirish sozlanmagan.', code: 'GOOGLE_NOT_CONFIGURED' });
+  }
+  try {
+    const google = await googleAuth.verifyGoogleCredential(req.validated.body.credential);
+    if (google.error) {
+      return res.status(401).json({
+        message:
+          google.error === 'GOOGLE_EMAIL_NOT_VERIFIED'
+            ? 'Google hisobingizdagi email tasdiqlanmagan.'
+            : "Google orqali kirib bo'lmadi. Qayta urinib ko'ring.",
+        code: google.error,
+      });
+    }
+
+    let created = false;
+    let user = await User.findOne({ googleId: google.googleId });
+
+    if (!user) {
+      user = await User.findOne({ email: google.email });
+      if (user) {
+        /**
+         * Mavjud hisobga bog'lash.
+         *
+         * Hisob emaili tasdiqlanmagan bo'lsa, uni boshqa odam ochgan bo'lishi
+         * mumkin ("oldindan egallash"): hujumchi sizning gmail'ingiz bilan
+         * parol qo'yib ro'yxatdan o'tadi, siz Google bilan kirasiz, u esa
+         * o'z paroli bilan kirishda davom etadi. Shuning uchun bunday holatda
+         * eski parol o'chiriladi va barcha sessiyalar yopiladi. Haqiqiy egasi
+         * keyin Sozlamalar'da o'z parolini o'rnatadi.
+         */
+        if (!user.emailVerified) {
+          user.password = undefined;
+          await revokeAllSessionsForUser(user._id, 'revoked');
+          await markEmailVerified(user);
+        }
+        user.googleId = google.googleId;
+        await user.save();
+      } else {
+        user = await User.create({
+          name: google.name.length >= 2 ? google.name : google.email.split('@')[0],
+          email: google.email,
+          googleId: google.googleId,
+          hasPassword: false,
+          emailVerified: true,
+          emailVerifiedAt: new Date(),
+        });
+        created = true;
+      }
+    }
+
+    await sendAuthResponse(user, req, res, created ? 201 : 200);
+  } catch (error) {
+    console.error('Google auth error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });

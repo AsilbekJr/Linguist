@@ -219,16 +219,28 @@ const profileUpdateSchema = z.object({
     .refine((b) => Object.keys(b).length > 0, { message: 'Hech narsa yuborilmadi' }),
 });
 
+/** Google hisobida parol yo'q — birinchi parol joriy parolsiz o'rnatiladi */
 const changePasswordSchema = z.object({
   body: z.object({
-    currentPassword: z.string().min(1).max(128),
+    currentPassword: z.string().min(1).max(128).optional(),
     newPassword: newPasswordField,
   }),
 });
 
+/** Parolli hisob — parol bilan, Google hisobi — emailni yozib tasdiqlanadi */
 const deleteAccountSchema = z.object({
+  body: z
+    .object({
+      password: z.string().min(1).max(128).optional(),
+      confirmEmail: z.string().trim().toLowerCase().max(254).optional(),
+    })
+    .refine((b) => b.password || b.confirmEmail, { message: 'password yoki confirmEmail kerak' }),
+});
+
+const googleAuthSchema = z.object({
   body: z.object({
-    password: z.string().min(1).max(128),
+    // Google ID token (JWT) — odatda ~1–1.5 KB
+    credential: z.string().min(20).max(4096),
   }),
 });
 
@@ -266,5 +278,6 @@ module.exports = {
   profileUpdateSchema,
   changePasswordSchema,
   deleteAccountSchema,
+  googleAuthSchema,
   checkoutSchema,
 };
