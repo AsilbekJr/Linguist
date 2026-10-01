@@ -8,6 +8,7 @@ import { FadeIn } from '@/components/ui/primitives';
 import { cn } from '@/lib/utils';
 import { getApiErrorMessage } from '../../utils/apiErrors';
 import { AuthHeading, Field, FormAlert, PasswordField } from './Field';
+import GoogleButton from './GoogleButton';
 
 const MIN_PASSWORD = 8;
 
@@ -56,6 +57,8 @@ const Register = ({ onSwitchToLogin, onUserExists, onAuthSuccess }) => {
 
       <div className="space-y-4">
         {errorMsg && <FormAlert>{errorMsg}</FormAlert>}
+
+        <GoogleButton text="signup_with" onSuccess={() => onAuthSuccess?.()} onError={setErrorMsg} />
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <Field

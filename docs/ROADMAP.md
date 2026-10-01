@@ -42,7 +42,9 @@ almashtirilmasdi va logout access tokenni darhol bekor qilmasdi.
   - [ ] Yangi kirish / parol o'zgargani haqida xabar
   - [ ] Hisob bo'yicha urinish cheklovi (IP'dan tashqari)
   - [ ] HIBP parol tekshiruvi
-- [ ] **C. Ijtimoiy kirish:** Google (OIDC), Telegram Login Widget, hisoblarni bog'lash
+- [ ] **C. Ijtimoiy kirish**
+  - [x] Google (`feat/google-signin`): ID token serverda `aud` bilan tekshiriladi; yangi hisob parolsiz va tasdiqlangan; mavjud hisobga bog'lash — tasdiqlanmagan bo'lsa begona parol va sessiyalar o'chiriladi (oldindan egallashdan himoya); Google hisobi Sozlamalar'da parol o'rnata oladi, o'chirish emailni yozib tasdiqlanadi
+  - [ ] Telegram Login Widget
 - [ ] **D. Ixtiyoriy:** TOTP 2FA, auth hodisalari jurnali, passkey
 
 ### 1. Kontent: 30 → 90 kun (A1–B2) — asosan bajarildi

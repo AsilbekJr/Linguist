@@ -27,6 +27,7 @@ const isPublicAuthRequest = (url) =>
     '/api/auth/forgot-password',
     '/api/auth/reset-password',
     '/api/auth/verify-email',
+    '/api/auth/google',
   ].some((path) => url.includes(path));
 
 let refreshPromise = null;
@@ -414,9 +415,15 @@ export const apiSlice = createApi({
     /** Boshqa qurilmalardagi sessiyalar yopiladi; javobda joriy qurilma uchun yangi token */
     changePassword: builder.mutation({
       query: (body) => ({ url: '/api/auth/change-password', method: 'POST', body }),
+      // Google hisobida birinchi parol o'rnatilgach `hasPassword` o'zgaradi
+      invalidatesTags: ['User'],
     }),
+    /** `{ password }` — parolli hisob, `{ confirmEmail }` — Google (parolsiz) hisob */
     deleteAccount: builder.mutation({
-      query: (password) => ({ url: '/api/auth/account', method: 'DELETE', body: { password } }),
+      query: (body) => ({ url: '/api/auth/account', method: 'DELETE', body }),
+    }),
+    googleLogin: builder.mutation({
+      query: (credential) => ({ url: '/api/auth/google', method: 'POST', body: { credential } }),
     }),
     /**
      * Navbat bo'sh kunda "takrorlash" qadamini yopish. Server navbatni o'zi
@@ -532,6 +539,7 @@ export const {
   useLogoutSessionMutation,
   useRestoreSessionMutation,
   useVerifyEmailMutation,
+  useGoogleLoginMutation,
   useResendVerificationMutation,
   useGetSubscriptionQuery,
   useCreateCheckoutSessionMutation,

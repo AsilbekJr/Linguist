@@ -12,10 +12,20 @@ const userSchema = new mongoose.Schema({
     unique: true,
     lowercase: true,
   },
+  /** Google orqali ochilgan hisobda parol bo'lmasligi mumkin */
   password: {
     type: String,
-    required: true,
+    required: function () {
+      return !this.googleId;
+    },
   },
+  /**
+   * Parol o'rnatilganmi. Alohida maydon, chunki `protect` foydalanuvchini
+   * parolsiz (`-password`) yuklaydi — profilda buni hash'dan bilib bo'lmaydi.
+   */
+  hasPassword: { type: Boolean, default: true },
+  /** Google hisobi (`sub`) — email o'zgarsa ham shu bo'yicha topiladi */
+  googleId: { type: String, index: { unique: true, sparse: true } },
   /**
    * Email egasi tasdiqladimi (xatdagi havola yoki parolni tiklash orqali).
    * Tasdiqlanmagan hisob ilovadan to'liq foydalanadi — faqat to'lov va
@@ -150,11 +160,18 @@ userSchema.pre('save', async function () {
   if (!this.isModified('password')) {
     return;
   }
+  if (!this.password) {
+    this.hasPassword = false;
+    return;
+  }
+  this.hasPassword = true;
   const salt = await bcrypt.genSalt(BCRYPT_ROUNDS);
   this.password = await bcrypt.hash(this.password, salt);
 });
 
 userSchema.methods.matchPassword = async function (enteredPassword) {
+  // Parolsiz (Google) hisob: vaqt farqi bo'lmasin — soxta tekshiruv
+  if (!this.password) return this.constructor.fakePasswordCheck(enteredPassword);
   return await bcrypt.compare(enteredPassword, this.password);
 };
 

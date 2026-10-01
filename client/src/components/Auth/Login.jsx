@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { FadeIn } from '@/components/ui/primitives';
 import { getApiErrorMessage } from '../../utils/apiErrors';
 import { AuthHeading, Field, FormAlert, PasswordField } from './Field';
+import GoogleButton from './GoogleButton';
 
 /**
  * Sessiya uchinchi tomon cookie bloklangani uchun uzilgan bo'lsa, foydalanuvchi
@@ -68,6 +69,8 @@ const Login = ({ onSwitchToRegister, initialEmail = '', onAuthSuccess }) => {
           </FormAlert>
         )}
         {errorMsg && <FormAlert>{errorMsg}</FormAlert>}
+
+        <GoogleButton text="signin_with" onSuccess={() => onAuthSuccess?.()} onError={setErrorMsg} />
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <Field

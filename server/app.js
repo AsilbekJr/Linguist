@@ -116,6 +116,7 @@ const createApp = ({ isProd = process.env.NODE_ENV === 'production', enableRateL
     // Qayta yuborishning o'zida 60 s oraliq bor; bu esa IP bo'yicha umumiy chegara
     app.use('/api/auth/resend-verification', passwordResetLimiter);
     app.use('/api/auth/verify-email', makeAuthLimiter(30, 'VERIFY'));
+    app.use('/api/auth/google', makeAuthLimiter(30, 'GOOGLE'));
   }
 
   /**
@@ -135,6 +136,7 @@ const createApp = ({ isProd = process.env.NODE_ENV === 'production', enableRateL
       config: {
         mongo: Boolean(process.env.MONGO_URI),
         jwtSecret: Boolean(process.env.JWT_SECRET),
+        google: Boolean(process.env.GOOGLE_CLIENT_ID),
         gemini: Boolean(process.env.GEMINI_API_KEY),
         // Kalit + provayder + MAIL_FROM da haqiqiy email — uchalasi bo'lsagina true
         mail: require('./services/mailer').isConfigured(),
