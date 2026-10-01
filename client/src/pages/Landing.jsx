@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'motion/react';
 import {
-  ArrowRight, Gauge, BookHeart, PenLine, Repeat2, Mic, Headphones, ScanText, Flame, Snowflake,
+  ArrowRight, Gauge, BookHeart, PenLine, Repeat2, Mic, Headphones, MessagesSquare, Flame, Snowflake,
   WifiOff, CheckCircle2, Volume2, Sparkles, ChevronDown, Star, Send,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -120,18 +120,18 @@ const PhoneMock = () => (
 );
 
 const STEPS = [
-  { icon: Gauge, tone: 'info', title: 'Darajani aniqlang', text: "2 daqiqalik moslashuvchan test. Kurs bilganingizdan boshlanadi — oddiy narsalarni qayta o'qimaysiz." },
-  { icon: BookHeart, tone: 'primary', title: 'Har kuni bitta sahna', text: "Hayotiy dialog, o'zbekcha tarjima, grammatika izohi va 3–7 ta yangi so'z. So'ng qisqa mini-test." },
-  { icon: PenLine, tone: 'success', title: "So'zni o'z gapingizda ishlating", text: "Takrorlashda tanlash yo'q — so'z bilan gap tuzasiz. Yozib ham, aytib ham bo'ladi. Bu haqiqiy bilimni ko'rsatadi." },
+  { icon: BookHeart, tone: 'primary', title: 'Sahna', text: "Hayotiy dialog, o'zbekcha tarjima va 3–7 ta yangi so'z. Kunning kalit gaplarini qo'shiq matni kabi yod olasiz — har davrada matn kamayadi." },
+  { icon: MessagesSquare, tone: 'pink', title: 'Suhbat', text: "Sahna qahramoni bilan ovozli suhbat: dorixonada — farmatsevt, aeroportda — xodim. Bugungi so'zni aytishingiz bilan u yonadi." },
+  { icon: Repeat2, tone: 'success', title: 'Takrorlash', text: "So'z va iboralar unutilay deganda qaytadi: tanib olishdan boshlab o'z gapingizni tuzishgacha." },
 ];
 
 const FEATURES = [
-  { icon: Repeat2, tone: 'primary', title: 'Aqlli takrorlash', text: "So'z unutilay deganda qaytadi. 7 muvaffaqiyatli takrorlashdan keyin yodlangan hisoblanadi." },
-  { icon: Sparkles, tone: 'pink', title: 'AI izohlar', text: "Gapingizdagi xatoni o'zbek tilida tushuntiradi va to'g'ri variantni ko'rsatadi." },
-  { icon: Headphones, tone: 'teal', title: 'Tinglab yozish', text: "Dialogni eshitib yozasiz — qaysi so'z tushib qolgani rangli ko'rsatiladi." },
-  { icon: ScanText, tone: 'info', title: 'Gap tahlili', text: "Har so'zning turkumi va gapdagi vazifasi: ega, kesim, to'ldiruvchi…" },
-  { icon: Mic, tone: 'streak', title: 'Gapirish mashqi', text: "Kun dialogini eshitib takrorlang, keyin rol tanlab yoddan ayting — ovozingiz hech qayerga yuborilmaydi." },
+  { icon: Gauge, tone: 'info', title: 'Darajani aniqlang', text: "2 daqiqalik moslashuvchan test. Kurs bilganingizdan boshlanadi — oddiy narsalarni qayta o'qimaysiz." },
+  { icon: Sparkles, tone: 'pink', title: 'AI izohlar', text: "Suhbat va gaplaringizdagi xatoni o'zbek tilida tushuntiradi, to'g'ri variantni ovoz bilan eshittiradi." },
+  { icon: Mic, tone: 'streak', title: 'Ovoz bilan', text: "Yod olish, suhbat va ibora kartalari — hammasi ovoz chiqarib. Ovozingiz hech qayerga yuborilmaydi." },
+  { icon: Headphones, tone: 'teal', title: 'Tinglab yozish', text: "Bonus mashq: dialogni eshitib yozasiz — qaysi so'z tushib qolgani rangli ko'rsatiladi." },
   { icon: Snowflake, tone: 'info', title: 'Streak muzlatish', text: "Bir kun o'tkazib yuborsangiz, streak saqlanadi. Har oy 2 ta beriladi." },
+  { icon: PenLine, tone: 'success', title: "O'z gapingiz", text: "Takrorlashning yuqori bosqichida so'z bilan o'zingiz gap tuzasiz — bu haqiqiy bilimni ko'rsatadi." },
 ];
 
 const STAGES = [1, 2, 4, 7, 14, 30];

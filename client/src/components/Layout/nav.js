@@ -13,10 +13,18 @@ export const PRIMARY_NAV = [
   { to: '/vocabulary', label: "Lug'at", icon: BookOpen },
 ];
 
+/**
+ * Kunlik rejadan tashqari bonus mashq. "Gap tahlili" bu yerdan olib
+ * tashlandi: umumiy AI vosita edi va kunlik tsiklga bog'lanmagan edi.
+ * Endi u xato ko'rsatilgan joyda ochiladi (takrorlashda "Gapimni tushuntir",
+ * Suhbat natijasida "Tahlil") — sahifa havola orqali ishlayveradi.
+ */
 export const PRACTICE_NAV = [
-  { to: '/listening', label: 'Tinglash', hint: 'Dialogni eshitib yozish', icon: Headphones, tone: 'teal' },
-  { to: '/analysis', label: 'Gap tahlili', hint: "Ega, kesim, so'z turkumlari", icon: ScanText, tone: 'info' },
+  { to: '/listening', label: 'Tinglash', hint: 'Bugungi dialogni eshitib yozish', icon: Headphones, tone: 'teal' },
 ];
+
+/** Menyuda yo'q, lekin sarlavhasi kerak bo'lgan sahifalar */
+const HIDDEN_TITLES = [{ to: '/analysis', label: 'Gap tahlili', icon: ScanText }];
 
 export const ACCOUNT_NAV = [
   { to: '/analytics', label: 'Natijalar', icon: BarChart3 },
@@ -28,7 +36,7 @@ export const PRACTICE_PATHS = PRACTICE_NAV.map((i) => i.to);
 
 /** Sahifa sarlavhasi (mobil top bar uchun) */
 export const titleForPath = (pathname) => {
-  const all = [...PRIMARY_NAV, ...PRACTICE_NAV, ...ACCOUNT_NAV];
+  const all = [...PRIMARY_NAV, ...PRACTICE_NAV, ...ACCOUNT_NAV, ...HIDDEN_TITLES];
   const match = all.find((i) => (i.end ? pathname === i.to : pathname.startsWith(i.to)));
   return match?.label || '';
 };

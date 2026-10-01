@@ -1,8 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { AnimatePresence } from 'motion/react';
-import { useSearchParams } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
-import { BookOpen, Search, Plus, X, Clock, Flame, CheckCircle2, Layers, SearchX, Library } from 'lucide-react';
+import { BookOpen, Search, Plus, X, Clock, Flame, CheckCircle2, Layers, SearchX } from 'lucide-react';
 import {
   useGetWordsQuery,
   useAddWordMutation,
@@ -13,7 +12,6 @@ import {
 } from '../features/api/apiSlice';
 import WordForm from '../components/WordForm';
 import WordCard from '../components/WordCard';
-import TopicLibrary from '../components/TopicLibrary';
 import ConfirmDialog from '../components/ui/confirm-dialog';
 import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogHeader } from '../components/ui/dialog';
 import { Button } from '../components/ui/button';
@@ -21,12 +19,6 @@ import { EmptyState, PageHeader, Segmented, Skeleton } from '../components/ui/pr
 import { isDue, isLearned } from '../utils/wordStatus';
 
 const PAGE_SIZE = 24;
-
-/** Lug'at ikki ko'rinishda: o'z so'zlari va mavzular kutubxonasi */
-const VIEWS = [
-  { value: 'mine', label: "Mening so'zlarim", icon: BookOpen },
-  { value: 'topics', label: 'Mavzular', icon: Library },
-];
 
 const FILTERS = [
   { value: 'all', label: 'Hammasi', icon: Layers },
@@ -66,10 +58,6 @@ const Vocabulary = () => {
   const [markWordKnownMutation] = useMarkWordKnownMutation();
   const [refreshWordMutation] = useRefreshWordMutation();
 
-  // Ko'rinish URL'da — havola orqali to'g'ridan-to'g'ri mavzularni ochish mumkin
-  const [searchParams, setSearchParams] = useSearchParams();
-  const view = searchParams.get('view') === 'topics' ? 'topics' : 'mine';
-  const setView = (v) => setSearchParams(v === 'topics' ? { view: 'topics' } : {}, { replace: true });
   const [filter, setFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [limit, setLimit] = useState(PAGE_SIZE);
@@ -203,18 +191,10 @@ const Vocabulary = () => {
         }
       />
 
-      <Segmented
-        ariaLabel="Lug'at ko'rinishi"
-        layoutId="vocab-view"
-        value={view}
-        onChange={setView}
-        options={VIEWS}
-        className="mb-5"
-      />
-
-      {view === 'topics' ? (
-        <TopicLibrary />
-      ) : (
+      {/* "Mavzular" kutubxonasi (250 mavzu, 3813 so'z) olib tashlandi: kursning
+          o'zidan 4 baravar katta parallel dastur edi va "Hammasini qo'shish"
+          takrorlash navbatini to'ldirib "kuniga 15 daqiqa"ni buzardi. Kontent
+          serverda saqlanadi — kursning 91+ kunlari uchun xom ashyo. */}
         <>
           {/* Qidiruv va filtrlar */}
           <div className="glass sticky top-[calc(env(safe-area-inset-top,0px)+3.5rem)] z-30 -mx-4 mb-6 space-y-3 px-4 py-3 sm:-mx-6 sm:px-6 lg:static lg:mx-0 lg:bg-transparent lg:p-0 lg:backdrop-blur-none">
@@ -316,7 +296,6 @@ const Vocabulary = () => {
             </>
           )}
         </>
-      )}
 
       {/* So'z qo'shish */}
       <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>

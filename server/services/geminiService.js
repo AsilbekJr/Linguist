@@ -317,7 +317,23 @@ const conversationFeedbackSchema = {
 /** Talaba matni promptga xom qo'yilmaydi: uzunlik cheklanadi, qo'shtirnoq yumshatiladi */
 const quoteUser = (text) => String(text || '').slice(0, 300).replace(/"/g, "'");
 
-const sceneBrief = ({ topic, situationUz, partnerName, cefr, targetWords, phrases = [] }) => `Sahna: ${topic}.
+/**
+ * Onboarding maqsadi qahramon uslubini belgilaydi. Ilgari maqsad faqat bosh
+ * sahifadagi tavsiyaga ta'sir qilardi (va "gapirish" maqsadiga Tinglashni
+ * tavsiya qilardi) — ya'ni amalda hech narsani o'zgartirmasdi.
+ */
+const GOAL_STYLE = {
+  speaking:
+    "Talabaning maqsadi — erkin gapirish. Ochiq savollar bering (nega? qanday? batafsilroq aytib bering), qisqa \"yes/no\" javob bilan qoniqmang.",
+  vocabulary:
+    "Talabaning maqsadi — so'z boyligi. Bugungi so'zlarni ishlatishni talab qiladigan vaziyatlarni ko'proq yarating.",
+  general: '',
+};
+
+const sceneBrief = ({ topic, situationUz, partnerName, cefr, targetWords, phrases = [], goal }) => `Sahna: ${topic}.${
+  GOAL_STYLE[goal] ? `
+${GOAL_STYLE[goal]}` : ''
+}
 Vaziyat (talabaga shunday tushuntirilgan): ${situationUz}
 Siz o'ynaydigan rol: ${partnerName}. Talaba esa sahnaning ikkinchi ishtirokchisi.
 Talaba darajasi: CEFR ${cefr || 'A2'}. Faqat shu darajadagi so'z va grammatikadan foydalaning.

@@ -41,6 +41,8 @@ const conversationSchema = new mongoose.Schema({
   topicUz: { type: String, default: '' },
   situationUz: { type: String, default: '' },
   cefr: { type: String, default: '' },
+  /** Onboarding maqsadi (speaking | vocabulary | general) — qahramon uslubini belgilaydi */
+  learnerGoal: { type: String, default: 'general' },
 
   /** Bugungi so'zlar — foydalanuvchi ularni gapida ishlatishi kerak */
   targetWords: [

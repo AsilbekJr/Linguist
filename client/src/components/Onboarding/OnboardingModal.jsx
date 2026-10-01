@@ -20,9 +20,10 @@ const LEVELS = [
 ];
 
 const GOALS = [
-  { id: 'speaking', title: "So'zlashuv", icon: Mic, tone: 'pink', text: 'Gapirishda erkinlik va talaffuz.' },
-  { id: 'vocabulary', title: "So'z boyligi", icon: BookOpen, tone: 'primary', text: "Yangi so'zlarni mustahkam yodlash." },
-  { id: 'general', title: 'Umumiy', icon: Compass, tone: 'teal', text: "Barcha ko'nikmalarni birga o'stirish." },
+  // Maqsad Suhbatdagi qahramon uslubini belgilaydi (server: GOAL_STYLE)
+  { id: 'speaking', title: "So'zlashuv", icon: Mic, tone: 'pink', text: 'Suhbatdosh sizni uzunroq, erkinroq gapirishga undaydi.' },
+  { id: 'vocabulary', title: "So'z boyligi", icon: BookOpen, tone: 'primary', text: "Suhbatda yangi so'zlarni ishlatishga ko'proq vaziyat." },
+  { id: 'general', title: 'Umumiy', icon: Compass, tone: 'teal', text: "Muvozanatli: gapirish ham, so'zlar ham." },
 ];
 
 const PLANS = [
