@@ -1,4 +1,47 @@
-const { userDayKey, daysBetween } = require('./dayKey');
+const { userDayKey, daysBetween, shiftDayKey } = require('./dayKey');
+
+const ACTIVITY_KEEP = 60;
+
+/** Faollik kunini yozish (takrorlanmasdan, oxirgi 60 tasi) */
+const recordActivityDay = (user, field, key) => {
+  const list = [...(user.activity?.[field] || [])];
+  if (list.includes(key)) return;
+  list.push(key);
+  const trimmed = list.slice(-ACTIVITY_KEEP);
+  if (typeof user.set === 'function') user.set(`activity.${field}`, trimmed);
+  else user.activity = { ...(user.activity || {}), [field]: trimmed };
+};
+
+const WEEKDAYS_UZ = ['Ya', 'Du', 'Se', 'Ch', 'Pa', 'Ju', 'Sh'];
+
+/**
+ * Oxirgi 7 kun: har biri `done` | `frozen` | `today` | `missed` | `none`.
+ *
+ * Tarix yozila boshlashidan oldingi foydalanuvchilar uchun streak oynasidan
+ * taxmin qilinadi (lastStreakDay va undan oldingi currentStreak kun).
+ */
+const buildWeek = (user, todayKey) => {
+  const planDays = new Set(user.activity?.planDays || []);
+  const frozenDays = new Set(user.activity?.frozenDays || []);
+  const legacy = planDays.size === 0 && (user.currentStreak || 0) > 0 && user.lastStreakDay;
+  const legacyStart = legacy ? shiftDayKey(user.lastStreakDay, -((user.currentStreak || 1) - 1)) : null;
+  const createdKey = user.createdAt ? userDayKey(user, new Date(user.createdAt)) : null;
+
+  const days = [];
+  for (let i = 6; i >= 0; i--) {
+    const key = shiftDayKey(todayKey, -i);
+    let status;
+    if (planDays.has(key)) status = 'done';
+    else if (frozenDays.has(key)) status = 'frozen';
+    else if (legacy && daysBetween(legacyStart, key) >= 0 && daysBetween(key, user.lastStreakDay) >= 0) status = 'done';
+    else if (key === todayKey) status = 'today';
+    else if (createdKey && daysBetween(createdKey, key) < 0) status = 'none';
+    else status = 'missed';
+    const weekday = WEEKDAYS_UZ[new Date(`${key}T12:00:00Z`).getUTCDay()];
+    days.push({ day: key, weekday, status });
+  }
+  return days;
+};
 
 const XP_PER_LEVEL = 200;
 const QUEST_STEP_XP = 15;
@@ -101,6 +144,8 @@ const advanceStreak = (user, todayKey) => {
       // Roppa-rosa bitta kun o'tkazib yuborildi — muzlatish ishlatamiz
       user.streakFreeze.available -= 1;
       user.streakFreeze.lastUsedDay = todayKey;
+      recordActivityDay(user, 'frozenDays', shiftDayKey(todayKey, -1));
+      recordActivityDay(user, 'planDays', todayKey);
       user.currentStreak += 1;
       user.lastStreakDay = todayKey;
       user.lastActiveDate = new Date();
@@ -113,6 +158,7 @@ const advanceStreak = (user, todayKey) => {
 
   user.lastStreakDay = todayKey;
   user.lastActiveDate = new Date();
+  recordActivityDay(user, 'planDays', todayKey);
   if (user.currentStreak > user.longestStreak) {
     user.longestStreak = user.currentStreak;
   }
@@ -225,6 +271,8 @@ const enrichUserProfile = (user, { totalWords = 0, knownWords = 0, course = null
   obj.course = course;
   obj.today = today;
   obj.streakFreezesLeft = obj.streakFreeze?.available ?? 0;
+  obj.week = buildWeek(user, today);
+  delete obj.activity;
 
   return obj;
 };
@@ -242,6 +290,7 @@ module.exports = {
   rollDailyQuests,
   completeDailyStep,
   isPlanComplete,
+  buildWeek,
   dailyStepMessage,
   grantMonthlyFreezes,
   enrichUserProfile,

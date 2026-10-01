@@ -146,9 +146,19 @@ const dailyLimitFor = (user) => DAILY_LIMIT[user.getEffectivePlan?.() || 'free']
 router.get('/today', protect, async (req, res) => {
   try {
     const { ctx, quests, sceneDone } = await loadToday(req.user);
-    const [latest, startedToday] = await Promise.all([
+    const [latest, startedToday, previous] = await Promise.all([
       Conversation.findOne({ user: req.user._id, dayKey: ctx.todayKey }).sort({ createdAt: -1 }),
       Conversation.countDocuments({ user: req.user._id, dayKey: ctx.todayKey }),
+      // "Kechagi suhbatdan": oxirgi tugallangan (bugungidan oldingi) suhbat xatolari
+      Conversation.findOne({
+        user: req.user._id,
+        dayKey: { $lt: ctx.todayKey },
+        status: 'completed',
+        'feedback.corrections.0': { $exists: true },
+      })
+        .sort({ completedAt: -1 })
+        .select('partner topicUz dayKey feedback.corrections')
+        .lean(),
     ]);
     const limit = dailyLimitFor(req.user);
     res.json({
@@ -160,6 +170,14 @@ router.get('/today', protect, async (req, res) => {
       dailyLimit: limit,
       canStartNew: sceneDone && startedToday < limit,
       plan: req.user.getEffectivePlan?.() || 'free',
+      recent: previous
+        ? {
+            partner: previous.partner,
+            topicUz: previous.topicUz,
+            dayKey: previous.dayKey,
+            corrections: previous.feedback.corrections.slice(0, 2),
+          }
+        : null,
     });
   } catch (error) {
     console.error('Speak today error:', error);

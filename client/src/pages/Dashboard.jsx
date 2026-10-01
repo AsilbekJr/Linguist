@@ -1,19 +1,18 @@
-import React, { useMemo } from 'react';
-import { toast } from 'react-hot-toast';
+import React from 'react';
 import { useSelector } from 'react-redux';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
 import {
-  Flame, Snowflake, GraduationCap, BookOpen, BookHeart, Repeat2, Check, ArrowRight, Quote, Sparkles, MessagesSquare,
+  GraduationCap, BookOpen, BookHeart, Repeat2, Check, ArrowRight, MessagesSquare, PartyPopper,
 } from 'lucide-react';
-import { useGetReviewDueQuery, useGetMeQuery, useGetPhrasesDueQuery } from '../features/api/apiSlice';
-import quotesData from '../data/quotes.json';
-import TodayHub from '../components/TodayHub/TodayHub';
-import { PRACTICE_NAV } from '../components/Layout/nav';
 import {
-  IconTile, ProgressBar, ProgressRing, Skeleton, Stagger, StaggerItem, StatTile,
-} from '@/components/ui/primitives';
-import { Badge } from '@/components/ui/badge';
+  useGetReviewDueQuery, useGetMeQuery, useGetPhrasesDueQuery, useGetSpeakTodayQuery,
+} from '../features/api/apiSlice';
+import TodayHub from '../components/TodayHub/TodayHub';
+import { SpeakCard, WeekStrip, YesterdayCard } from '../components/TodayHub/TodayCards';
+import { PRACTICE_NAV } from '../components/Layout/nav';
+import { IconTile, ProgressBar, ProgressRing, Skeleton, Stagger, StaggerItem, StatTile } from '@/components/ui/primitives';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { getDailyPlan } from '../utils/dailyPlan';
 
@@ -33,11 +32,7 @@ const greeting = (h = new Date().getHours()) => {
   return 'Xayrli tun';
 };
 
-/** Foydalanuvchi maqsadiga ko'ra tavsiya qilinadigan mashq */
-// Gapirish endi kunlik sahnaning o'zida — qo'shimcha mashqlardan eng yaqini tinglash
-const RECOMMENDED_BY_GOAL = { speaking: '/listening', vocabulary: '/listening', general: '/analysis' };
-
-const PlanStep = ({ done, icon, title, hint, to, onClick }) => {
+const PlanStep = ({ done, icon, title, hint, minutes, to, onClick, active }) => {
   const Comp = to ? Link : 'button';
   return (
     <Comp
@@ -46,7 +41,7 @@ const PlanStep = ({ done, icon, title, hint, to, onClick }) => {
       type={to ? undefined : 'button'}
       className={cn(
         'group flex w-full items-center gap-3 rounded-2xl p-3 text-left transition-colors',
-        done ? 'bg-white/10' : 'bg-white/12 hover:bg-white/20'
+        done ? 'bg-white/10' : active ? 'bg-white/22 ring-2 ring-white/60' : 'bg-white/12 hover:bg-white/20'
       )}
     >
       <span
@@ -64,40 +59,47 @@ const PlanStep = ({ done, icon, title, hint, to, onClick }) => {
         )}
       </span>
       <span className="min-w-0 flex-1">
-        <span className={cn('block font-bold text-white', done && 'opacity-80')}>{title}</span>
+        <span className={cn('flex items-baseline justify-between gap-2 font-bold text-white', done && 'opacity-80')}>
+          {title}
+          {!done && minutes && <span className="text-[11px] font-semibold text-white/60">~{minutes} daq</span>}
+        </span>
         <span className="block truncate text-xs text-white/70">{hint}</span>
       </span>
-      {!done && <ArrowRight className="size-4 shrink-0 text-white/70 transition-transform group-hover:translate-x-0.5" />}
     </Comp>
   );
 };
 
 const DashboardSkeleton = () => (
   <div className="space-y-6" aria-busy="true" aria-label="Yuklanmoqda">
-    <Skeleton className="h-64 rounded-3xl sm:h-56" />
-    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-      {[0, 1, 2, 3].map((i) => <Skeleton key={i} className="h-[76px] rounded-2xl" />)}
+    <Skeleton className="h-72 rounded-3xl sm:h-64" />
+    <div className="grid gap-3 lg:grid-cols-2">
+      <Skeleton className="h-40 rounded-2xl" />
+      <Skeleton className="h-40 rounded-2xl" />
     </div>
     <Skeleton className="h-80 rounded-3xl" />
   </div>
 );
 
+/**
+ * "Bugun" — kunlik rejaning boshqaruv paneli.
+ *
+ * Asosiy g'oya: odam nima qilishni o'ylab o'tirmasin. Bitta katta tugma doim
+ * KEYINGI qadamni ochadi (Sahna → Suhbat → Takrorlash). Ilgari sahifada
+ * iqtibos, maqsad bo'yicha tavsiya va alohida streak/muzlatish plitkalari
+ * bor edi — ular joy egallardi, lekin keyingi harakatni aytmasdi.
+ */
 const Dashboard = () => {
+  const navigate = useNavigate();
   const authUser = useSelector((state) => state.auth.user);
   const { data: fetchedUser, isLoading: isLoadingUser } = useGetMeQuery();
   const user = fetchedUser || authUser;
 
   // Butun lug'at (/api/words — 400 so'zda ~180 KB) bu yerda YUKLANMAYDI: sonlar
-  // profilda keladi (totalWords, knownWords). Ilgari bosh sahifa faqat so'zlar
-  // sonini ko'rsatish uchun butun lug'atni kutardi.
+  // profilda keladi (totalWords, knownWords).
   const { data: dueWords = [], isLoading: isLoadingDue } = useGetReviewDueQuery();
   const { data: duePhrases = [] } = useGetPhrasesDueQuery();
+  const { data: speak } = useGetSpeakTodayQuery();
   const dueCards = dueWords.length + duePhrases.length;
-
-  const dailyQuote = useMemo(() => {
-    const todayInt = Math.floor(Date.now() / 86400000);
-    return quotesData[todayInt % quotesData.length];
-  }, []);
 
   // Profil (login paytida saqlangan yoki keshdagi) bo'lsa skelet ko'rsatilmaydi
   if (!user && isLoadingUser) return <DashboardSkeleton />;
@@ -105,19 +107,27 @@ const Dashboard = () => {
   const firstName = String(user?.name || '').trim().split(/\s+/)[0];
   const { topicDone, speakDone, reviewDone, reviewSkipped, done: doneCount, total: planTotal, allDone } =
     getDailyPlan(user);
-  const stepsLeft = planTotal - doneCount;
-  const streak = user?.currentStreak || 0;
   const learnedCount = user?.knownWords ?? 0;
   const totalWords = user?.totalWords ?? 0;
   const course = user?.course;
-  const recommended = RECOMMENDED_BY_GOAL[user?.onboarding?.goal];
+  const topicName = speak?.preview?.topicUz;
+  const partnerName = speak?.preview?.partner?.name;
 
   const scrollToReview = () =>
     document.getElementById('review')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
+  // Keyingi qadam — tartib bilan: Sahna → Suhbat → Takrorlash
+  const next = !topicDone
+    ? { key: 'topic', label: topicName ? `Sahnani boshlash: ${topicName}` : 'Sahnani boshlash', run: () => navigate('/topic') }
+    : !speakDone
+      ? { key: 'speak', label: partnerName ? `${partnerName} bilan suhbat` : 'Suhbatga o\'tish', run: () => navigate('/speak') }
+      : !reviewDone && !reviewSkipped && dueCards > 0
+        ? { key: 'review', label: `Takrorlash · ${dueCards} ta karta`, run: scrollToReview }
+        : null;
+
   return (
     <div className="space-y-6 sm:space-y-8">
-      {/* ── Hero: bugungi reja ─────────────────────────────────────────── */}
+      {/* ── Hero: bugungi reja va bitta "keyingi qadam" ─────────────────── */}
       <motion.section
         initial={{ opacity: 0, y: 16, scale: 0.99 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -125,7 +135,6 @@ const Dashboard = () => {
         className="hero-mesh noise relative overflow-hidden rounded-[1.75rem] p-5 text-white shadow-[0_24px_60px_-24px_color-mix(in_oklch,var(--primary)_75%,transparent)] sm:p-8"
         aria-labelledby="today-title"
       >
-        {/* Dekor: suzuvchi doiralar */}
         <div className="pointer-events-none absolute -right-16 -top-16 size-56 rounded-full bg-white/10 blur-2xl" />
         <div className="pointer-events-none absolute -bottom-20 left-1/3 size-64 rounded-full bg-fuchsia-400/20 blur-3xl" />
 
@@ -145,47 +154,63 @@ const Dashboard = () => {
             </h1>
             <p className="mt-2 max-w-md text-[15px] text-white/80">
               {allDone
-                ? "Bugungi reja bajarildi — ajoyib! Qo'shimcha mashqlar bilan davom etishingiz mumkin."
-                : stepsLeft === 1
-                  ? 'Yana bitta qadam — va streak saqlanadi.'
-                  : doneCount === 0
-                    ? `Sahna → suhbat${planTotal === 3 ? ' → takrorlash' : ''}. Taxminan ${planTotal === 3 ? 15 : 10} daqiqa.`
-                    : `Yana ${stepsLeft} qadam qoldi.`}
+                ? "Bugungi reja bajarildi — ajoyib! Ertaga yangi sahna va yangi suhbatdosh."
+                : `${doneCount}/${planTotal} qadam · taxminan ${planTotal === 3 ? 15 : 12} daqiqa`}
             </p>
 
             <div className={cn('mt-5 grid gap-2', reviewSkipped ? 'sm:grid-cols-2' : 'sm:grid-cols-3')}>
               <PlanStep
                 done={topicDone}
+                active={next?.key === 'topic'}
                 icon={BookHeart}
-                title="Kunlik sahna"
-                hint={topicDone ? 'Bajarildi' : 'Dialog, yangi so\'zlar, mini-test'}
+                title="Sahna"
+                minutes={7}
+                hint={topicDone ? 'Bajarildi' : topicName || "Dialog, so'zlar, yod olish"}
                 to="/topic"
               />
               <PlanStep
                 done={speakDone}
+                active={next?.key === 'speak'}
                 icon={MessagesSquare}
                 title="Suhbat"
-                hint={speakDone ? 'Bajarildi' : topicDone ? 'Qahramon sizni kutyapti' : 'Sahnadan keyin ochiladi'}
+                minutes={5}
+                hint={speakDone ? 'Bajarildi' : topicDone ? `${partnerName || 'Qahramon'} kutyapti` : 'Sahnadan keyin'}
                 to="/speak"
               />
-              <PlanStep
-                done={reviewDone}
-                icon={Repeat2}
-                title="Takrorlash"
-                hint={
-                  reviewDone
-                    ? 'Bajarildi'
-                    : reviewSkipped && !dueCards
-                      ? "Bugun takrorlanadigan so'z yo'q"
+              {!reviewSkipped && (
+                <PlanStep
+                  done={reviewDone}
+                  active={next?.key === 'review'}
+                  icon={Repeat2}
+                  title="Takrorlash"
+                  minutes={5}
+                  hint={
+                    reviewDone
+                      ? 'Bajarildi'
                       : isLoadingDue
-                      ? 'Yuklanmoqda…'
-                      : dueCards
-                        ? `${dueCards} ta karta kutmoqda`
-                        : "Navbat bo'sh"
-                }
-                onClick={scrollToReview}
-              />
+                        ? 'Yuklanmoqda…'
+                        : dueCards
+                          ? `${dueCards} ta karta kutmoqda`
+                          : "Navbat bo'sh"
+                  }
+                  onClick={scrollToReview}
+                />
+              )}
             </div>
+
+            {next ? (
+              <Button
+                size="xl"
+                onClick={next.run}
+                className="mt-5 w-full bg-white text-primary shadow-lg hover:bg-white/90 sm:w-auto"
+              >
+                <span className="truncate">{next.label}</span> <ArrowRight />
+              </Button>
+            ) : allDone ? (
+              <p className="mt-5 inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-2 text-sm font-semibold">
+                <PartyPopper className="size-4" /> Streak saqlandi — qo&apos;shimcha mashqlar pastda
+              </p>
+            ) : null}
           </div>
 
           <div className="hidden flex-col items-center gap-2 md:flex">
@@ -197,35 +222,21 @@ const Dashboard = () => {
         </div>
       </motion.section>
 
-      {/* ── Statistika ─────────────────────────────────────────────────── */}
-      <Stagger className="grid grid-cols-2 gap-3 lg:grid-cols-4" delay={0.15}>
+      {/* ── Bugungi suhbat va oxirgi suhbat xatolari ───────────────────── */}
+      {(speak?.preview || speak?.recent) && (
+        <div className={cn('grid gap-3', speak?.recent && speak?.preview && 'lg:grid-cols-2')}>
+          <SpeakCard speak={speak} />
+          <YesterdayCard recent={speak?.recent} />
+        </div>
+      )}
+
+      {/* ── Hafta, daraja, lug'at ──────────────────────────────────────── */}
+      <Stagger className="grid gap-3 lg:grid-cols-[1.4fr_1fr_1fr]" delay={0.15}>
         <StaggerItem>
-          <StatTile icon={Flame} tone="streak" value={streak} label="kunlik streak" />
+          <WeekStrip week={user?.week || []} streak={user?.currentStreak || 0} freezes={user?.streakFreezesLeft ?? 0} />
         </StaggerItem>
         <StaggerItem>
-          {/* Tushuntirish faqat `title` da edi — telefonda hech qachon ko'rinmasdi */}
-          <button
-            type="button"
-            className="block w-full rounded-2xl text-left"
-            onClick={() =>
-              toast(
-                "Streak muzlatish: bir kun o'tkazib yuborsangiz, ketma-ketlik uzilmaydi — bitta muzlatish avtomatik sarflanadi. Har oy boshida 2 taga tiklanadi.",
-                { icon: '🧊', duration: 6000 }
-              )
-            }
-            aria-label="Streak muzlatish nima?"
-          >
-            <StatTile
-              icon={Snowflake}
-              tone="info"
-              value={user?.streakFreezesLeft ?? 0}
-              label="streak muzlatish"
-              hint="Bir kun o'tkazib yuborsangiz, streak avtomatik saqlanadi. Har oy 2 ta beriladi."
-            />
-          </button>
-        </StaggerItem>
-        <StaggerItem>
-          <div className="surface flex items-center gap-3 p-4">
+          <div className="surface flex h-full items-center gap-3 p-4">
             <IconTile icon={GraduationCap} tone="xp" />
             <div className="min-w-0 flex-1">
               <div className="flex items-baseline justify-between gap-2">
@@ -243,12 +254,17 @@ const Dashboard = () => {
                 className="mt-2 h-1.5"
                 label={`${course?.cefr || ''} darajasidagi sahnalar`}
               />
+              {course?.nextCefr && !course.finished && (
+                <p className="mt-1.5 text-xs text-muted-foreground">
+                  {course.nextCefr} gacha {course.total - course.done} ta sahna
+                </p>
+              )}
             </div>
           </div>
         </StaggerItem>
         <StaggerItem>
-          <Link to="/vocabulary" className="block rounded-[calc(var(--radius)+4px)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-            <StatTile icon={BookOpen} tone="primary" value={learnedCount} label={`bilgan so'z · ${totalWords} lug'atda`} className="surface-interactive" />
+          <Link to="/vocabulary" className="block h-full rounded-[calc(var(--radius)+4px)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+            <StatTile icon={BookOpen} tone="primary" value={learnedCount} label={`bilgan so'z · ${totalWords} lug'atda`} className="surface-interactive h-full" />
           </Link>
         </StaggerItem>
       </Stagger>
@@ -260,55 +276,28 @@ const Dashboard = () => {
 
       {/* ── Qo'shimcha mashqlar ────────────────────────────────────────── */}
       <section aria-labelledby="practice-title">
-        <div className="mb-4 flex items-end justify-between">
-          <div>
-            <h2 id="practice-title" className="text-xl font-extrabold">Qo&apos;shimcha mashqlar</h2>
-            <p className="text-sm text-muted-foreground">Kunlik rejaga kirmaydi — streak'ni to&apos;smaydi.</p>
-          </div>
+        <div className="mb-4">
+          <h2 id="practice-title" className="text-xl font-extrabold">Qo&apos;shimcha mashqlar</h2>
+          <p className="text-sm text-muted-foreground">Kunlik rejaga kirmaydi — streak&apos;ni to&apos;smaydi.</p>
         </div>
-        <Stagger className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4" gap={0.05}>
+        <Stagger className="grid grid-cols-1 gap-3 sm:grid-cols-2" gap={0.05}>
           {PRACTICE_NAV.map((item) => (
             <StaggerItem key={item.to}>
               <Link
                 to={item.to}
-                className="surface-interactive group flex h-full items-center gap-3 p-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring xl:flex-col xl:items-start"
+                className="surface-interactive group flex h-full items-center gap-3 p-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
                 <IconTile icon={item.icon} tone={item.tone} />
                 <span className="min-w-0 flex-1">
-                  <span className="flex items-center gap-2">
-                    <span className="font-bold">{item.label}</span>
-                    {recommended === item.to && (
-                      <Badge variant="soft">
-                        <Sparkles /> Siz uchun
-                      </Badge>
-                    )}
-                  </span>
+                  <span className="font-bold">{item.label}</span>
                   <span className="mt-0.5 block text-xs text-muted-foreground">{item.hint}</span>
                 </span>
-                <ArrowRight className="size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 xl:hidden" />
+                <ArrowRight className="size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
               </Link>
             </StaggerItem>
           ))}
         </Stagger>
       </section>
-
-      {/* ── Kun iqtibosi ───────────────────────────────────────────────── */}
-      {dailyQuote && (
-        <motion.figure
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true, margin: '-40px' }}
-          transition={{ duration: 0.6 }}
-          className="surface relative overflow-hidden p-6 sm:p-8"
-        >
-          <Quote className="absolute -right-3 -top-3 size-20 rotate-180 text-primary/10" aria-hidden="true" />
-          <blockquote className="relative text-lg font-semibold italic leading-relaxed sm:text-xl">
-            &ldquo;{dailyQuote.text}&rdquo;
-          </blockquote>
-          <p className="relative mt-2 text-sm text-muted-foreground">{dailyQuote.translation}</p>
-          <figcaption className="relative mt-4 text-sm font-bold text-primary">— {dailyQuote.author}</figcaption>
-        </motion.figure>
-      )}
     </div>
   );
 };
