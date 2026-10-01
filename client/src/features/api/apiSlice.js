@@ -116,7 +116,7 @@ export const apiSlice = createApi({
   refetchOnFocus: false,
   refetchOnReconnect: true,
   baseQuery: baseQueryWithReauth,
-  tagTypes: ['Word', 'Topic', 'User', 'Billing', 'Listening', 'Notifications', 'Push', 'Telegram', 'VocabTopic'],
+  tagTypes: ['Word', 'Topic', 'User', 'Billing', 'Listening', 'Notifications', 'Push', 'Telegram', 'VocabTopic', 'Speak'],
   endpoints: (builder) => ({
     getWords: builder.query({
       query: () => '/api/words',
@@ -422,6 +422,28 @@ export const apiSlice = createApi({
     deleteAccount: builder.mutation({
       query: (body) => ({ url: '/api/auth/account', method: 'DELETE', body }),
     }),
+    // ─── Suhbat ───────────────────────────────────────────────────────────
+    getSpeakToday: builder.query({
+      query: () => '/api/speak/today',
+      providesTags: ['Speak'],
+      keepUnusedDataFor: 60,
+    }),
+    startSpeak: builder.mutation({
+      query: () => ({ url: '/api/speak/start', method: 'POST' }),
+      invalidatesTags: ['Speak'],
+    }),
+    // Replika natijasi to'g'ridan-to'g'ri komponent holatiga yoziladi — har
+    // gapdan keyin butun holatni qayta yuklash kechikish beradi
+    speakTurn: builder.mutation({
+      query: ({ id, text, via, seconds }) => ({ url: `/api/speak/${id}/turn`, method: 'POST', body: { text, via, seconds } }),
+    }),
+    speakHint: builder.mutation({
+      query: (id) => ({ url: `/api/speak/${id}/hint`, method: 'POST' }),
+    }),
+    finishSpeak: builder.mutation({
+      query: (id) => ({ url: `/api/speak/${id}/finish`, method: 'POST' }),
+      invalidatesTags: ['Speak', 'User', 'Word'],
+    }),
     googleLogin: builder.mutation({
       query: (credential) => ({ url: '/api/auth/google', method: 'POST', body: { credential } }),
     }),
@@ -540,6 +562,11 @@ export const {
   useRestoreSessionMutation,
   useVerifyEmailMutation,
   useGoogleLoginMutation,
+  useGetSpeakTodayQuery,
+  useStartSpeakMutation,
+  useSpeakTurnMutation,
+  useSpeakHintMutation,
+  useFinishSpeakMutation,
   useResendVerificationMutation,
   useGetSubscriptionQuery,
   useCreateCheckoutSessionMutation,

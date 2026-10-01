@@ -198,3 +198,15 @@ test('AI rejimi: maqsadlar belgilanadi; AI uzilsa sahna dialogiga o\'tadi', asyn
     Object.assign(gemini, saved);
   }
 });
+
+test("ssenariy dialogi tugasa qahramon xayrlashuvni takrorlamaydi — suhbat davom etadi", async () => {
+  const api = await newUserWithScene();
+  const conv = (await api.post('/api/speak/start')).data.conversation;
+  let last = null;
+  for (let i = 0; i < conv.minTurns; i++) {
+    last = (await api.post(`/api/speak/${conv.id}/turn`, { text: `Sentence number ${i}.` })).data.conversation;
+  }
+  const partnerLines = last.turns.filter((t) => t.role === 'partner').map((t) => t.text);
+  const farewells = partnerLines.filter((t) => t.startsWith('Thank you for talking'));
+  assert.equal(farewells.length, 0, `kerakli javoblar soniga yetguncha xayrlashdi: ${partnerLines.join(' | ')}`);
+});

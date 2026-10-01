@@ -37,6 +37,19 @@ const SCRIPT_END = {
   textUz: "Suhbat uchun rahmat! Kuningiz yaxshi o'tsin.",
 };
 
+/**
+ * Sahna dialogi qisqa (1-kunda qahramonning 3-4 qatori). Qatorlar tugab,
+ * talaba hali kerakli sondagi javobni bermagan bo'lsa — qahramon suhbatni
+ * davom ettiruvchi umumiy savollar beradi. Ilgari u xayrlashuv gapini
+ * qayta-qayta takrorlardi.
+ */
+const SCRIPT_FOLLOW_UPS = [
+  { text: 'That is interesting! Can you tell me more?', textUz: "Qiziq ekan! Batafsilroq aytib bera olasizmi?" },
+  { text: 'Why do you think so?', textUz: "Nega shunday deb o'ylaysiz?" },
+  { text: 'And what about you? What do you usually do?', textUz: 'Sizchi? Odatda nima qilasiz?' },
+  { text: 'Is there anything else you want to ask me?', textUz: "Mendan yana nimadir so'ramoqchimisiz?" },
+];
+
 /** Sahna dialogi: birinchi gapiruvchi — talaba roli, undan boshqasi — qahramon */
 const splitRoles = (dialogue = []) => {
   const learner = dialogue[0]?.speaker || '';
@@ -225,9 +238,15 @@ const loadOwnConversation = async (req, res) => {
 /** Ssenariy rejimida qahramonning keyingi qatori */
 const nextScriptedLine = (conv, dialogue) => {
   const { partnerLines } = splitRoles(dialogue);
-  const line = partnerLines[conv.scriptIndex];
+  const index = conv.scriptIndex;
   conv.scriptIndex += 1;
-  return line ? { text: line.en, textUz: line.uz || '' } : SCRIPT_END;
+  const line = partnerLines[index];
+  if (line) return { text: line.en, textUz: line.uz || '' };
+  // Dialog tugadi: talaba hali yetarli gapirmagan bo'lsa — suhbat davom etadi
+  if (userTurnCount(conv) < MIN_USER_TURNS + 2) {
+    return SCRIPT_FOLLOW_UPS[(index - partnerLines.length) % SCRIPT_FOLLOW_UPS.length];
+  }
+  return SCRIPT_END;
 };
 
 // @desc    Foydalanuvchi replikasi → qahramon javobi

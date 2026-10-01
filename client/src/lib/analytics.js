@@ -129,6 +129,8 @@ export const EVENTS = {
   LISTENING_FINISHED: 'listening_finished',
   PRACTICE_FINISHED: 'practice_finished',
   DAILY_PLAN_COMPLETED: 'daily_plan_completed',
+  SPEAK_STARTED: 'speak_started',
+  SPEAK_FINISHED: 'speak_finished',
   AI_UNAVAILABLE: 'ai_unavailable',
   QUOTA_EXCEEDED: 'quota_exceeded',
   UPGRADE_CLICKED: 'upgrade_clicked',

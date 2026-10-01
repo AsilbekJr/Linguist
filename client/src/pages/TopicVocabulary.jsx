@@ -387,6 +387,7 @@ const TopicVocabulary = () => {
     // Navbat bo'sh bo'lgani uchun yopilgan qadam hisobga olinmaydi — yangi
     // so'zlar endi navbatda, ularni takrorlashga undaymiz
     const reviewDone = user?.dailyQuests?.reviewCompleted && !user?.dailyQuests?.reviewSkipped;
+    const speakDone = Boolean(user?.dailyQuests?.speakCompleted);
     return (
       <div className="mx-auto max-w-xl space-y-4">
       <motion.div
@@ -410,13 +411,19 @@ const TopicVocabulary = () => {
           </p>
         )}
         <p className="mx-auto mt-2 max-w-sm text-white/80">
-          {reviewDone
-            ? "Bugungi reja to'liq bajarildi. Ertaga yangi sahna ochiladi."
-            : "Keyingi qadam: “Bugun” sahifasida yangi so'zlarni takrorlash."}
+          {!speakDone
+            ? "Keyingi qadam: sahna qahramoni bilan suhbat — bugungi so'zlarni jonli vaziyatda ishlating."
+            : reviewDone
+              ? "Bugungi reja to'liq bajarildi. Ertaga yangi sahna ochiladi."
+              : "Keyingi qadam: “Bugun” sahifasida yangi so'zlarni takrorlash."}
         </p>
-        {/* Takrorlash endi "Bugun" sahifasining o'zida — alohida /review sahifasi yo'q */}
-        <Button size="xl" className="mt-8 w-full bg-white text-primary shadow-lg hover:bg-white/90 sm:w-auto" onClick={() => navigate('/')}>
-          {reviewDone ? 'Bosh sahifaga qaytish' : "Takrorlashga o'tish"}
+        {/* Reja tartibi: Sahna → Suhbat → Takrorlash */}
+        <Button
+          size="xl"
+          className="mt-8 w-full bg-white text-primary shadow-lg hover:bg-white/90 sm:w-auto"
+          onClick={() => navigate(!speakDone ? '/speak' : '/')}
+        >
+          {!speakDone ? "Suhbatga o'tish" : reviewDone ? 'Bosh sahifaga qaytish' : "Takrorlashga o'tish"}
           <ArrowRight />
         </Button>
       </motion.div>
