@@ -1,5 +1,5 @@
 import {
-  Home, BookOpen, BookHeart, Headphones, ScanText, BarChart3, CreditCard, Settings, MessagesSquare,
+  Home, BookOpen, BookHeart, Headphones, ScanText, BarChart3, CreditCard, Settings, MessagesSquare, AudioLines,
 } from 'lucide-react';
 
 /**
@@ -21,6 +21,7 @@ export const PRIMARY_NAV = [
  */
 export const PRACTICE_NAV = [
   { to: '/listening', label: 'Tinglash', hint: 'Bugungi dialogni eshitib yozish', icon: Headphones, tone: 'teal' },
+  { to: '/diary', label: 'Ovoz kundaligi', hint: "O'sishingizni o'z qulog'ingiz bilan eshiting", icon: AudioLines, tone: 'pink' },
 ];
 
 /** Menyuda yo'q, lekin sarlavhasi kerak bo'lgan sahifalar */

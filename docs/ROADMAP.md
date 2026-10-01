@@ -31,7 +31,7 @@ Kunlik reja: **Sahna → Suhbat → Takrorlash**. Suhbatsiz streak oshmaydi.
 - [ ] Tuzatishlar takrorlash navbatiga (so'z kartasida "Suhbatda shunday dedingiz…")
 - [x] **"Bugun" sahifasi** (`feat/today-redesign`): bitta katta tugma doim keyingi qadamni ochadi (Sahna → Suhbat → Takrorlash), qadamlarda daqiqalar; "Bugungi suhbat" kartasi (qahramon, vaziyat, so'zlar); "Oxirgi suhbatdan" — 2 ta tuzatish eshitish bilan; hafta tasmasi (serverda `activity.planDays/frozenDays`, profil `week`); CEFR gacha sahnalar soni. Iqtibos (`quotes.json`), maqsad-tavsiya va alohida streak/muzlatish plitkalari olib tashlandi
 - [x] **Tozalash** (`chore/cleanup`): Mavzular kutubxonasi client'dan olindi (server kontenti va `/api/vocab-topics` 91+ kunlar uchun saqlanadi); Gap tahlili menyudan olindi — takrorlashda "Gapimni tushuntir", Suhbat natijasida "Gapni tahlil qilish" (`/analysis?s=`); "Mashqlar" → "Ko'proq" (Tinglash bonus mashq); onboarding maqsadi Suhbat qahramoni uslubini belgilaydi (`GOAL_STYLE`); Landing yangi oqimga moslandi
-- [ ] **Ovoz kundaligi:** har suhbatdan eng yaxshi gap qurilmada (IndexedDB) saqlanadi; 7/30-kunda "1-kun va bugun"
+- [x] **Ovoz kundaligi** (`feat/voice-diary`): "Mening hikoyam" — har 7 kunda bir xil savollar bo'yicha ≤45 s; "1-kun va bugun" — birinchi va oxirgi hikoya yonma-yon; Suhbatdan keyin ixtiyoriy kunlik ibora (≤12 s, oxirgi 60 tasi). Faqat qurilmada (IndexedDB, `lib/voiceDiary.js`), serverga hech narsa ketmaydi, har yozuvni yuklab olish mumkin. Yozish nutqni tanish bilan bir vaqtda emas (Android'da mikrofon talashadi)
 
 ### Auth: production darajasi
 Tahlil (2026-09-30): asos to'g'ri (qisqa access token, hash'langan refresh/reset

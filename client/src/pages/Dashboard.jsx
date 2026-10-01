@@ -15,6 +15,8 @@ import { IconTile, ProgressBar, ProgressRing, Skeleton, Stagger, StaggerItem, St
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { getDailyPlan } from '../utils/dailyPlan';
+import { useDiaryEntries } from '../hooks/useDiaryEntries';
+import { isStoryDue, storiesOf } from '../utils/diaryLogic';
 
 const WEEKDAYS = ['yakshanba', 'dushanba', 'seshanba', 'chorshanba', 'payshanba', 'juma', 'shanba'];
 const MONTHS = ['yanvar', 'fevral', 'mart', 'aprel', 'may', 'iyun', 'iyul', 'avgust', 'sentabr', 'oktabr', 'noyabr', 'dekabr'];
@@ -99,6 +101,7 @@ const Dashboard = () => {
   const { data: dueWords = [], isLoading: isLoadingDue } = useGetReviewDueQuery();
   const { data: duePhrases = [] } = useGetPhrasesDueQuery();
   const { data: speak } = useGetSpeakTodayQuery();
+  const { entries: diary } = useDiaryEntries();
   const dueCards = dueWords.length + duePhrases.length;
 
   // Profil (login paytida saqlangan yoki keshdagi) bo'lsa skelet ko'rsatilmaydi
@@ -280,6 +283,24 @@ const Dashboard = () => {
           <h2 id="practice-title" className="text-xl font-extrabold">Bonus mashq</h2>
           <p className="text-sm text-muted-foreground">Kunlik rejaga kirmaydi — streak&apos;ni to&apos;smaydi.</p>
         </div>
+        {/* Ovoz kundaligi: hikoya vaqti kelganda eslatamiz (har 7 kunda) */}
+        {diary && user?.today && isStoryDue(diary, user.today) && (
+          <Link
+            to="/diary"
+            className="surface-interactive mb-3 flex items-center gap-3 border-pink-500/25 p-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <span className="text-2xl" aria-hidden="true">🎙️</span>
+            <span className="min-w-0 flex-1">
+              <span className="block font-bold">
+                {storiesOf(diary).length ? "7 kun o'tdi — yangi hikoya vaqti" : "Ovoz kundaligini boshlang"}
+              </span>
+              <span className="block text-xs text-muted-foreground">
+                30 soniya o&apos;zingiz haqingizda. Bir oydan keyin 1-kundagi ovozingiz bilan solishtirasiz.
+              </span>
+            </span>
+            <ArrowRight className="size-4 shrink-0 text-muted-foreground" />
+          </Link>
+        )}
         <Stagger className="grid grid-cols-1 gap-3 sm:grid-cols-2" gap={0.05}>
           {PRACTICE_NAV.map((item) => (
             <StaggerItem key={item.to}>
