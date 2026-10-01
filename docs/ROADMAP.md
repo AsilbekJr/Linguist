@@ -21,6 +21,15 @@ Shuning uchun ustuvorlik: **kontent va asosiy kunlik tsikl**, yangi bo'limlar em
 
 ## Tartib
 
+### Gapirish va mahsulot yaxlitligi (2026-10-01)
+Kunlik reja: **Sahna → Suhbat → Takrorlash**. Suhbatsiz streak oshmaydi.
+
+- [x] **Suhbat** (`feat/speak`): bugungi sahna qahramoni bilan ovozli rolli o'yin; bugungi so'zni aytganda belgi yonadi (server `containsWord` bilan aniqlaydi); AI rejimi (Gemini) + ssenariy rejimi (AI yo'q/uzilsa — sahna dialogi, majburiy qadam bloklanmaydi); yakunda 0-3 tuzatish; bepul — kuniga 1 suhbat, Pro — 20
+- [ ] Tuzatishlar takrorlash navbatiga (so'z kartasida "Suhbatda shunday dedingiz…")
+- [ ] **"Bugun" sahifasi:** bitta "Davom etish" tugmasi, "Bugungi suhbat" kartasi, "Kechagi suhbatdan", hafta tasmasi, CEFR gacha masofa; iqtibos va maqsad-tavsiya bloki olib tashlanadi
+- [ ] **Tozalash:** Mavzular kutubxonasi yashiriladi (3813 so'z — kursning 91+ kunlari uchun xom ashyo); Gap tahlili menyudan olinib, xatolar yonida "Tahlil" tugmasi bo'ladi; Tinglash "Bugun"ga qo'shimcha mashq; onboarding maqsadi Suhbatga ulanadi
+- [ ] **Ovoz kundaligi:** har suhbatdan eng yaxshi gap qurilmada (IndexedDB) saqlanadi; 7/30-kunda "1-kun va bugun"
+
 ### Auth: production darajasi
 Tahlil (2026-09-30): asos to'g'ri (qisqa access token, hash'langan refresh/reset
 tokenlar, umumiy forgot-javob), lekin token localStorage'da edi, refresh
@@ -171,6 +180,9 @@ almashtirilmasdi va logout access tokenni darhol bekor qilmasdi.
 | 2026-09-29 | Vocabulary in Use mavzulari Telegram'dan keyin (4-band) | Foydalanuvchi qarori; kitob matni ko'chirilmaydi — faqat mavzu va so'zlar |
 | 2026-09-29 | Payme/Click eng oxirida | Foydalanuvchi qarori |
 | 2026-09-29 | Kontent birinchi o'rinda | 30 kunlik kontent — eng katta retention xavfi |
+| 2026-10-01 | Suhbat — rejaning majburiy qadami | Foydalanuvchi qarori: har kun gapirishga majbur qilish. AI ishlamasa ssenariy rejimi — qadam hech qachon tashqi xizmat tufayli bloklanmaydi |
+| 2026-10-01 | Bepul tarifda kuniga 1 suhbat | Foydalanuvchi qarori: kunlik reja uchun yetadi, AI xarajati nazoratda, Pro'ga aniq qiymat |
+| 2026-10-01 | Mavzular kutubxonasi yashiriladi, kontent saqlanadi | Foydalanuvchi qarori: kursdan 4 baravar katta parallel dastur "kuniga 15 daqiqa"ni buzardi |
 | 2026-10-01 | Email tasdiqlash bloklamaydi | Ro'yxatdan o'tgan odam darhol o'qiy boshlashi kerak; faqat to'lov va email eslatmalar pochta egaligini talab qiladi |
 | 2026-10-01 | Register "email band" deb aniq aytishda davom etadi | Umumiy javob ro'yxatdan o'tishni bloklashni talab qiladi (avval xat, keyin kirish) — konversiyani tushiradi. Ro'yxat yig'ish rate limit bilan cheklangan |
 | 2026-09-29 | "100 kun" jadvali haqiqiy kun sonini ko'rsatadi (30) | 100 deb qotirilgan edi — yolg'on va'da |

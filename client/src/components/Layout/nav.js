@@ -1,5 +1,5 @@
 import {
-  Home, BookOpen, BookHeart, Headphones, ScanText, BarChart3, CreditCard, Settings,
+  Home, BookOpen, BookHeart, Headphones, ScanText, BarChart3, CreditCard, Settings, MessagesSquare,
 } from 'lucide-react';
 
 /**
@@ -9,6 +9,7 @@ import {
 export const PRIMARY_NAV = [
   { to: '/', label: 'Bugun', icon: Home, end: true },
   { to: '/topic', label: 'Kunlik sahna', short: 'Sahna', icon: BookHeart },
+  { to: '/speak', label: 'Suhbat', icon: MessagesSquare },
   { to: '/vocabulary', label: "Lug'at", icon: BookOpen },
 ];
 

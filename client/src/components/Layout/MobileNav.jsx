@@ -92,7 +92,7 @@ const TabInner = ({ isActive, icon: Icon, label }) => (
 export const MobileTabBar = () => {
   const { pathname } = useLocation();
   const [practiceOpen, setPracticeOpen] = useState(false);
-  const practiceActive = PRACTICE_PATHS.some((p) => pathname.startsWith(p));
+  const practiceActive = [...PRACTICE_PATHS, '/analytics', '/settings', '/pricing'].some((p) => pathname.startsWith(p));
 
   return (
     <>
@@ -113,7 +113,6 @@ export const MobileTabBar = () => {
           >
             <TabInner isActive={practiceActive} icon={LayoutGrid} label="Mashqlar" />
           </button>
-          <TabLink to="/analytics" icon={BarChart3} label="Natijalar" />
         </div>
       </nav>
 
@@ -144,7 +143,15 @@ export const MobileTabBar = () => {
                 <ChevronRight className="size-4 text-muted-foreground" />
               </Link>
             ))}
-            <div className="mt-1 grid grid-cols-2 gap-2">
+            {/* Pastki menyuda Suhbatga joy kerak edi — Natijalar shu yerga ko'chdi */}
+            <div className="mt-1 grid grid-cols-3 gap-2">
+              <Link
+                to="/analytics"
+                onClick={() => setPracticeOpen(false)}
+                className="flex items-center justify-center gap-2 rounded-2xl bg-muted/60 p-3 text-sm font-semibold hover:bg-accent"
+              >
+                <BarChart3 className="size-4" /> Natijalar
+              </Link>
               <Link
                 to="/settings"
                 onClick={() => setPracticeOpen(false)}

@@ -15,6 +15,7 @@ const {
   dailyStepMessage,
   QUEST_STEP_XP,
   DAILY_BONUS_XP,
+  isPlanComplete,
 } = require('../utils/gamification');
 const { checkSentenceLocally } = require('../utils/sentenceCheck');
 const { invalidateUserWords } = require('../utils/userWordsCache');
@@ -67,6 +68,7 @@ const rollDailyQuestsAtomic = (userId, todayKey) =>
           reviewCompleted: false,
           reviewSkipped: false,
           topicCompleted: false,
+          speakCompleted: false,
           listeningCompleted: false,
           reviewedCount: 0,
         },
@@ -98,7 +100,7 @@ const claimReviewStep = async (userId, todayKey, { skipped = false } = {}) => {
   if (!claimed) return null;
 
   const step = { xpAwarded: stepXp, streakUpdated: false, streakFrozen: false };
-  if (claimed.dailyQuests.topicCompleted) {
+  if (isPlanComplete(claimed.dailyQuests)) {
     const streak = advanceStreak(claimed, todayKey);
     if (streak.changed) {
       claimed.xp += DAILY_BONUS_XP;
@@ -115,7 +117,7 @@ const dailyStepPayload = (user, step) => ({
   reviewCompleted: Boolean(user.dailyQuests?.reviewCompleted),
   reviewSkipped: Boolean(user.dailyQuests?.reviewSkipped),
   reviewedCount: user.dailyQuests?.reviewedCount || 0,
-  planCompleted: Boolean(user.dailyQuests?.reviewCompleted && user.dailyQuests?.topicCompleted),
+  planCompleted: isPlanComplete(user.dailyQuests),
   xpAwarded: step?.xpAwarded || 0,
   streakUpdated: Boolean(step?.streakUpdated),
   streakFrozen: Boolean(step?.streakFrozen),

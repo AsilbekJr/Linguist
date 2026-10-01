@@ -27,6 +27,7 @@ const Pricing = lazy(() => import("./pages/Pricing"));
 const Analytics = lazy(() => import("./pages/Analytics"));
 const Landing = lazy(() => import("./pages/Landing"));
 const Settings = lazy(() => import("./pages/Settings"));
+const Speak = lazy(() => import("./pages/Speak"));
 const SentenceAnalysis = lazy(() => import("./pages/SentenceAnalysis"));
 
 // Lazy sahifa yuklanguncha — spinner o'rniga sahifa shaklidagi skelet:
@@ -239,6 +240,14 @@ function App() {
           element={
             <Suspense fallback={<PageLoader />}>
               <TopicVocabulary />
+            </Suspense>
+          }
+        />
+        <Route
+          path="speak"
+          element={
+            <Suspense fallback={<PageLoader />}>
+              <Speak />
             </Suspense>
           }
         />

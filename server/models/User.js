@@ -117,6 +117,8 @@ const userSchema = new mongoose.Schema({
      */
     reviewSkipped: { type: Boolean, default: false },
     topicCompleted: { type: Boolean, default: false },
+    /** Suhbat — bugungi sahna qahramoni bilan gapirish. Rejaning majburiy qadami */
+    speakCompleted: { type: Boolean, default: false },
     /**
      * Tinglash mashqi. Kunlik rejaning 3 qadamiga KIRMAYDI va streak'ni
      * bloklamaydi — bu ixtiyoriy qo'shimcha. Aks holda kunlik yuk oshib,

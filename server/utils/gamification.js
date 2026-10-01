@@ -127,13 +127,23 @@ const rollDailyQuests = (user, todayKey) => {
     reviewCompleted: false,
     reviewSkipped: false,
     topicCompleted: false,
+    speakCompleted: false,
     listeningCompleted: false,
     reviewedCount: 0,
   };
   return true;
 };
 
-const DAILY_STEP_KEYS = { review: 'reviewCompleted', topic: 'topicCompleted' };
+const DAILY_STEP_KEYS = { review: 'reviewCompleted', topic: 'topicCompleted', speak: 'speakCompleted' };
+
+/**
+ * Kunlik reja to'liq bajarilganmi: Sahna → Suhbat → Takrorlash.
+ * Streak, eslatma, Telegram va nishonlar shu BITTA ta'rifdan foydalanadi —
+ * ilgari shart har joyda qo'lda yozilgan edi va yangi qadam qo'shilganda
+ * biror joy unutilib qolardi.
+ */
+const isPlanComplete = (quests) =>
+  Boolean(quests?.topicCompleted && quests?.speakCompleted && quests?.reviewCompleted);
 
 /**
  * Kunlik rejaning bitta qadamini belgilaydi va ikkalasi tugagan bo'lsa
@@ -162,7 +172,7 @@ const completeDailyStep = (user, step, todayKey) => {
   }
 
   let streak = { changed: false, streakFrozen: false };
-  if (user.dailyQuests.reviewCompleted && user.dailyQuests.topicCompleted) {
+  if (isPlanComplete(user.dailyQuests)) {
     streak = advanceStreak(user, todayKey);
     if (streak.changed) {
       user.xp += DAILY_BONUS_XP;
@@ -175,7 +185,7 @@ const completeDailyStep = (user, step, todayKey) => {
     xpAwarded,
     streakUpdated: streak.changed,
     streakFrozen: streak.streakFrozen,
-    planCompleted: Boolean(user.dailyQuests.reviewCompleted && user.dailyQuests.topicCompleted),
+    planCompleted: isPlanComplete(user.dailyQuests),
   };
 };
 
@@ -197,7 +207,7 @@ const enrichUserProfile = (user, { totalWords = 0, knownWords = 0, course = null
   const quests = obj.dailyQuests || {};
   const isToday = quests.date === today;
   const allQuestsDoneToday =
-    isToday && quests.reviewCompleted && quests.topicCompleted;
+    isToday && isPlanComplete(quests);
 
   obj.level = computeLevelFromXp(obj.xp);
   obj.xpProgress = xpProgressInLevel(obj.xp);
@@ -231,6 +241,7 @@ module.exports = {
   advanceStreak,
   rollDailyQuests,
   completeDailyStep,
+  isPlanComplete,
   dailyStepMessage,
   grantMonthlyFreezes,
   enrichUserProfile,

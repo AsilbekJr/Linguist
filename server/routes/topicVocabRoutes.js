@@ -1,22 +1,18 @@
 const express = require('express');
 const router = express.Router();
 const crypto = require('crypto');
-const fs = require('fs');
-const path = require('path');
 const TopicProgress = require('../models/TopicProgress');
+const { loadTopicsData, resolveDailyContext } = require('../utils/dailyContext');
 const QuizSession = require('../models/QuizSession');
 const Word = require('../models/Word');
 const { buildActiveItems } = require('../utils/activeWords');
 const { protect } = require('../middleware/authMiddleware');
 const { validate, topicQuizSubmitSchema, topicFinishSchema } = require('../middleware/validate');
-const { topicsCache } = require('../utils/cache');
 const { getSavedWordList, invalidateUserWords } = require('../utils/userWordsCache');
-const { userDayKey } = require('../utils/dayKey');
 const { completeDailyStep, dailyStepMessage } = require('../utils/gamification');
 const { buildUserProfile } = require('../utils/userProfile');
 const { initialState } = require('../utils/srs');
 const {
-  getDailyWordTarget,
   resolveTopicDay,
   pickDailySessionWords,
   getScenarioMeta,
@@ -25,20 +21,7 @@ const {
   buildDistractorPool,
 } = require('../utils/topicHelpers');
 
-const topicsDataPath = path.join(__dirname, '../data/topics.json');
 const QUIZ_PASS_PERCENT = 80;
-
-const loadTopicsData = () => {
-  const stat = fs.statSync(topicsDataPath);
-  if (topicsCache.data && topicsCache.mtime === stat.mtimeMs) {
-    return topicsCache.data;
-  }
-  const data = JSON.parse(fs.readFileSync(topicsDataPath, 'utf8'));
-  topicsCache.data = data;
-  topicsCache.mtime = stat.mtimeMs;
-  topicsCache.loadedAt = Date.now();
-  return data;
-};
 
 const shuffle = (arr) => {
   // Fisher–Yates. Ilgari `sort(() => Math.random() - 0.5)` ishlatilardi —
@@ -56,41 +39,6 @@ const loadSavedWords = (userId) =>
     const rows = await Word.find({ user: userId }).select('word -_id').lean();
     return rows.map((w) => w.word.toLowerCase());
   });
-
-/** Foydalanuvchining bugungi kontekstini bir joyda hisoblash */
-const resolveDailyContext = async (user) => {
-  let progress = await TopicProgress.findOne({ user: user._id });
-  if (!progress) {
-    progress = await TopicProgress.create({ user: user._id, currentDay: 1, history: [] });
-  }
-
-  const topicsList = loadTopicsData();
-  const learnerLevel = user.onboarding?.level || 'beginner';
-  const wordTarget = getDailyWordTarget(user.onboarding);
-  const todayKey = userDayKey(user);
-
-  const latest = progress.history.length ? progress.history[progress.history.length - 1] : null;
-  const isCompleteForToday = latest
-    ? userDayKey(user, new Date(latest.completedAt)) === todayKey
-    : false;
-
-  const logicalDay = isCompleteForToday ? Math.max(1, progress.currentDay - 1) : progress.currentDay;
-  const contentDay = resolveTopicDay(logicalDay, topicsList);
-  const baseTopic = topicsList.find((t) => t.day === contentDay);
-
-  return {
-    progress,
-    topicsList,
-    learnerLevel,
-    wordTarget,
-    todayKey,
-    isCompleteForToday,
-    logicalDay,
-    contentDay,
-    baseTopic,
-    isFinished: progress.currentDay > topicsList.length,
-  };
-};
 
 // @desc    Bugungi kun paketi
 // @route   GET /api/topics/current

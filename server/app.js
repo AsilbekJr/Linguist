@@ -170,6 +170,7 @@ const createApp = ({ isProd = process.env.NODE_ENV === 'production', enableRateL
   app.use('/api/topics', require('./routes/topicVocabRoutes'));
   app.use('/api/vocab-topics', require('./routes/vocabTopicRoutes'));
   app.use('/api/auth', require('./routes/authRoutes'));
+  app.use('/api/speak', require('./routes/speakRoutes'));
   app.use('/api/billing', require('./routes/billingRoutes'));
 
   app.use((req, res) => {

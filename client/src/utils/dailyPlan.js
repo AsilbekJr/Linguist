@@ -1,5 +1,6 @@
 /**
  * Bugungi reja — bitta joyda hisoblanadi (bosh sahifa halqasi, sidebar).
+ * Tartib: Sahna → Suhbat → Takrorlash (server `isPlanComplete` bilan bir xil).
  *
  * Takrorlanadigan so'z bo'lmagan kun (`reviewSkipped`, masalan yangi
  * foydalanuvchi) takrorlash rejaga KIRMAYDI. Ilgari u "bajarilgan" deb
@@ -14,13 +15,19 @@ export const getDailyPlan = (user) => {
   const reviewSkipped = Boolean(reviewClosed && q.reviewSkipped);
   const reviewDone = reviewClosed && !reviewSkipped;
 
-  const steps = [{ key: 'topic', done: topicDone }];
+  // Sahna → Suhbat → Takrorlash
+  const speakDone = Boolean(isToday && q.speakCompleted);
+  const steps = [
+    { key: 'topic', done: topicDone },
+    { key: 'speak', done: speakDone },
+  ];
   if (!reviewSkipped) steps.push({ key: 'review', done: reviewDone });
 
   const done = steps.filter((s) => s.done).length;
   return {
     steps,
     topicDone,
+    speakDone,
     reviewDone,
     reviewSkipped,
     done,

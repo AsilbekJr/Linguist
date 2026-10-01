@@ -119,6 +119,7 @@ test('reja bajarilgan foydalanuvchiga yuborilmaydi', async () => {
       date: '2026-06-10',
       reviewCompleted: true,
       topicCompleted: true,
+      speakCompleted: true,
     },
   });
 

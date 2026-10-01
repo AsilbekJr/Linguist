@@ -4,7 +4,7 @@ import { useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
 import { motion } from 'motion/react';
 import {
-  Flame, Snowflake, GraduationCap, BookOpen, BookHeart, Repeat2, Check, ArrowRight, Quote, Sparkles,
+  Flame, Snowflake, GraduationCap, BookOpen, BookHeart, Repeat2, Check, ArrowRight, Quote, Sparkles, MessagesSquare,
 } from 'lucide-react';
 import { useGetReviewDueQuery, useGetMeQuery } from '../features/api/apiSlice';
 import quotesData from '../data/quotes.json';
@@ -101,8 +101,9 @@ const Dashboard = () => {
   if (!user && isLoadingUser) return <DashboardSkeleton />;
 
   const firstName = String(user?.name || '').trim().split(/\s+/)[0];
-  const { topicDone, reviewDone, reviewSkipped, done: doneCount, total: planTotal, allDone } =
+  const { topicDone, speakDone, reviewDone, reviewSkipped, done: doneCount, total: planTotal, allDone } =
     getDailyPlan(user);
+  const stepsLeft = planTotal - doneCount;
   const streak = user?.currentStreak || 0;
   const learnedCount = user?.knownWords ?? 0;
   const totalWords = user?.totalWords ?? 0;
@@ -143,20 +144,27 @@ const Dashboard = () => {
             <p className="mt-2 max-w-md text-[15px] text-white/80">
               {allDone
                 ? "Bugungi reja bajarildi — ajoyib! Qo'shimcha mashqlar bilan davom etishingiz mumkin."
-                : planTotal - doneCount === 1
-                  ? planTotal === 1
-                    ? 'Bugun bitta qadam: yangi sahna. Taxminan 10 daqiqa.'
-                    : 'Yana bitta qadam — va streak saqlanadi.'
-                  : 'Ikki qadam: yangi sahna va takrorlash. Taxminan 15 daqiqa.'}
+                : stepsLeft === 1
+                  ? 'Yana bitta qadam — va streak saqlanadi.'
+                  : doneCount === 0
+                    ? `Sahna → suhbat${planTotal === 3 ? ' → takrorlash' : ''}. Taxminan ${planTotal === 3 ? 15 : 10} daqiqa.`
+                    : `Yana ${stepsLeft} qadam qoldi.`}
             </p>
 
-            <div className="mt-5 grid gap-2 sm:grid-cols-2">
+            <div className={cn('mt-5 grid gap-2', reviewSkipped ? 'sm:grid-cols-2' : 'sm:grid-cols-3')}>
               <PlanStep
                 done={topicDone}
                 icon={BookHeart}
                 title="Kunlik sahna"
                 hint={topicDone ? 'Bajarildi' : 'Dialog, yangi so\'zlar, mini-test'}
                 to="/topic"
+              />
+              <PlanStep
+                done={speakDone}
+                icon={MessagesSquare}
+                title="Suhbat"
+                hint={speakDone ? 'Bajarildi' : topicDone ? 'Qahramon sizni kutyapti' : 'Sahnadan keyin ochiladi'}
+                to="/speak"
               />
               <PlanStep
                 done={reviewDone}

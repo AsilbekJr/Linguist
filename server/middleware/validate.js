@@ -237,6 +237,15 @@ const deleteAccountSchema = z.object({
     .refine((b) => b.password || b.confirmEmail, { message: 'password yoki confirmEmail kerak' }),
 });
 
+/** Suhbat replikasi — nutqdan olingan matn (yoki mikrofon yo'q brauzerda yozilgan) */
+const speakTurnSchema = z.object({
+  body: z.object({
+    text: z.string().trim().min(1).max(300),
+    via: z.enum(['voice', 'text']).default('text'),
+    seconds: z.number().min(0).max(600).optional(),
+  }),
+});
+
 const googleAuthSchema = z.object({
   body: z.object({
     // Google ID token (JWT) — odatda ~1–1.5 KB
@@ -279,5 +288,6 @@ module.exports = {
   changePasswordSchema,
   deleteAccountSchema,
   googleAuthSchema,
+  speakTurnSchema,
   checkoutSchema,
 };

@@ -1,6 +1,7 @@
 const User = require('../models/User');
 const Word = require('../models/Word');
 const { userDayKey } = require('../utils/dayKey');
+const { isPlanComplete } = require('../utils/gamification');
 const { sendMessage, hashCode, escapeHtml, callApi } = require('./telegramService');
 
 /**
@@ -93,10 +94,11 @@ const todayStatus = async (chatId) => {
   const lines = [
     `<b>Bugungi reja</b>`,
     `${mark(quests.topicCompleted)} Kunlik sahna`,
+    `${mark(quests.speakCompleted)} Suhbat`,
     `${mark(quests.reviewCompleted)} Takrorlash${dueCount ? ` — ${dueCount} ta so'z` : ''}`,
   ];
   if (user.currentStreak > 0) lines.push('', `🔥 Ketma-ketlik: ${user.currentStreak} kun`);
-  if (quests.topicCompleted && quests.reviewCompleted) lines.push('', 'Bugun hammasi bajarildi. Barakalla!');
+  if (isPlanComplete(quests)) lines.push('', 'Bugun hammasi bajarildi. Barakalla!');
 
   await sendMessage(chatId, lines.join('\n'), openButton('Davom etish'));
 };
