@@ -3,13 +3,16 @@ const router = express.Router();
 const Word = require('../models/Word');
 const { checkSentence } = require('../services/geminiService');
 const { protect } = require('../middleware/authMiddleware');
-const { validate, reviewCheckSchema, reviewTranslationSchema } = require('../middleware/validate');
+const { validate, reviewCheckSchema, reviewTranslationSchema, phraseCheckSchema } = require('../middleware/validate');
 const { lookupTranslation } = require('../utils/localTranslations');
 const { trackAiUsageSoft } = require('../middleware/usageQuota');
 const { applySchedule, restartLearning, markKnown, stageInterval, readStage, MAX_STAGE } = require('../utils/srs');
 const mongoose = require('mongoose');
 const { userDayKey } = require('../utils/dayKey');
 const User = require('../models/User');
+const Phrase = require('../models/Phrase');
+const phrases = require('../services/phrases');
+const { matchPhrase } = require('../utils/phraseMatch');
 const {
   advanceStreak,
   dailyStepMessage,
@@ -141,7 +144,8 @@ const recordReview = async (userDoc, now) => {
 
   let step = null;
   if (!user.dailyQuests.reviewCompleted) {
-    const remaining = await Word.countDocuments(dueFilter(user._id, now));
+    // Ibora kartalari ham "Takrorlash" qadamining bir qismi
+    const remaining = (await Word.countDocuments(dueFilter(user._id, now))) + (await phrases.countDue(user._id, now));
     if (remaining === 0 || user.dailyQuests.reviewedCount >= DAILY_REVIEW_GOAL) {
       const claim = await claimReviewStep(user._id, todayKey);
       if (claim) ({ user, step } = claim);
@@ -236,6 +240,46 @@ router.get('/due', protect, async (req, res) => {
     res.json(await presentWords(req.user, dueWords));
   } catch (error) {
     console.error('Fetch Due Words Error:', error);
+    res.status(500).json({ message: 'Server Error' });
+  }
+});
+
+// @desc    Bugungi ibora kartalari (sahnada yodlangan gaplar)
+// @route   GET /api/review/phrases/due
+// Javob oshkor qilinmaydi: faqat o'zbekcha ma'nosi va birinchi harflar
+router.get('/phrases/due', protect, async (req, res) => {
+  try {
+    const list = await phrases.listDue(req.user._id, new Date());
+    res.json(list.map(phrases.presentPhrase));
+  } catch (error) {
+    console.error('Phrases due error:', error);
+    res.status(500).json({ message: 'Server Error' });
+  }
+});
+
+// @desc    Ibora kartasini tekshirish: o'zbekcha ma'nodan butun gapni aytish
+// @route   POST /api/review/phrases/:id/check
+router.post('/phrases/:id/check', protect, validate(phraseCheckSchema), async (req, res) => {
+  try {
+    const doc = await Phrase.findOne({ _id: req.validated.params.id, user: req.user._id });
+    if (!doc) return res.status(404).json({ message: 'Ibora topilmadi.' });
+
+    const now = new Date();
+    const match = matchPhrase(doc.text, req.validated.body.answer);
+    const isCorrect = match.percent >= phrases.PASS_PERCENT;
+    const common = { status: 'ok', isCorrect, percent: match.percent, words: match.words, text: doc.text, textUz: doc.textUz };
+
+    // Muddati kelmagan — mashq: tekshiriladi, jadval o'zgarmaydi
+    if (doc.learned || doc.nextReviewDate > now) {
+      return res.json({ ...common, practice: true, stage: doc.stage });
+    }
+
+    const next = phrases.applyPhraseSchedule(doc, isCorrect, now, req.user.timezone);
+    await doc.save();
+    const dailyStep = await recordReview(req.user, now);
+    res.json({ ...common, practice: false, ...next, maxStage: phrases.LEARNED_STAGE, dailyStep });
+  } catch (error) {
+    console.error('Phrase check error:', error);
     res.status(500).json({ message: 'Server Error' });
   }
 });
@@ -515,10 +559,10 @@ router.post('/complete-day', protect, async (req, res) => {
 
     let step = null;
     if (!user.dailyQuests.reviewCompleted) {
-      const remaining = await Word.countDocuments(dueFilter(user._id, now));
+      const remaining = (await Word.countDocuments(dueFilter(user._id, now))) + (await phrases.countDue(user._id, now));
       if (remaining > 0 && (user.dailyQuests.reviewedCount || 0) < DAILY_REVIEW_GOAL) {
         return res.status(409).json({
-          message: `Navbatda hali ${remaining} ta so'z bor.`,
+          message: `Navbatda hali ${remaining} ta karta bor.`,
           code: 'REVIEW_PENDING',
           remaining,
         });
