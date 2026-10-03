@@ -12,7 +12,10 @@ import {
   useSpeakTurnMutation,
   useSpeakHintMutation,
   useFinishSpeakMutation,
+  useGetMeQuery,
 } from '../features/api/apiSlice';
+import { RecordCard } from '../components/VoiceDiary/DiaryParts';
+import { PHRASE_MAX_SECONDS } from '../utils/diaryLogic';
 import { useSpeechInput } from '../hooks/useSpeechInput';
 import { playTTSAudio } from '../utils/audio';
 import { burstAt, fireConfetti } from '../utils/celebration';
@@ -246,6 +249,10 @@ const Intro = ({ preview, onStart, starting, canStart, limitMessage, micSupporte
 
 const Result = ({ conv, onAgain, canStartNew }) => {
   const navigate = useNavigate();
+  const { data: me } = useGetMeQuery();
+  const [diarySaved, setDiarySaved] = useState(false);
+  // Ovoz kundaligi uchun: tuzatilgan gap — uni to'g'ri aytib yozib qo'yish
+  const diaryLine = conv.feedback?.corrections?.[0]?.better || '';
   const goalsDone = conv.goals.filter((g) => g.done).length;
   const minutes = Math.floor(conv.spokenSeconds / 60);
   const seconds = conv.spokenSeconds % 60;
@@ -318,6 +325,29 @@ const Result = ({ conv, onAgain, canStartNew }) => {
               </Link>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Ovoz kundaligi: bugungi gap qurilmada saqlanadi (ixtiyoriy) */}
+      {me?.today && !diarySaved && (
+        <div className="surface space-y-2 p-5">
+          <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-primary">
+            <Mic className="size-3.5" /> Ovoz kundaligi · ixtiyoriy
+          </p>
+          <p className="text-sm text-muted-foreground">
+            {diaryLine
+              ? "To'g'ri variantni ovoz chiqarib yozib qo'ying — keyinroq o'zingizni eshitasiz:"
+              : "Bugun suhbatda aytgan eng yaxshi gapingizni yozib qo'ying:"}
+          </p>
+          {diaryLine && <p className="font-semibold">{diaryLine}</p>}
+          <RecordCard
+            compact
+            kind="phrase"
+            dayKey={me.today}
+            maxSeconds={PHRASE_MAX_SECONDS}
+            text={diaryLine}
+            onSaved={() => setDiarySaved(true)}
+          />
         </div>
       )}
 

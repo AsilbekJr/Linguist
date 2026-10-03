@@ -28,6 +28,7 @@ const Analytics = lazy(() => import("./pages/Analytics"));
 const Landing = lazy(() => import("./pages/Landing"));
 const Settings = lazy(() => import("./pages/Settings"));
 const Speak = lazy(() => import("./pages/Speak"));
+const VoiceDiary = lazy(() => import("./pages/VoiceDiary"));
 const SentenceAnalysis = lazy(() => import("./pages/SentenceAnalysis"));
 
 // Lazy sahifa yuklanguncha — spinner o'rniga sahifa shaklidagi skelet:
@@ -240,6 +241,14 @@ function App() {
           element={
             <Suspense fallback={<PageLoader />}>
               <TopicVocabulary />
+            </Suspense>
+          }
+        />
+        <Route
+          path="diary"
+          element={
+            <Suspense fallback={<PageLoader />}>
+              <VoiceDiary />
             </Suspense>
           }
         />
