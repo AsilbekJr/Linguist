@@ -384,7 +384,7 @@ const ReviewRunner = ({ words, onChecked, onFinished }) => {
   // Eslash va bo'sh joy — ikkalasida ham bitta so'z yoziladi
   const submitRecall = () => {
     const value = typed.trim();
-    if (value) send({ mode: mode === 'cloze' ? 'cloze' : 'recall', answer: value });
+    if (value) send({ mode: mode === 'cloze' ? 'cloze' : 'recall', answer: value, source: voiceText === value ? 'voice' : 'text' });
   };
 
   const submitBuild = () => {
@@ -426,7 +426,8 @@ const ReviewRunner = ({ words, onChecked, onFinished }) => {
   const speech = useSpeechInput({
     lang: 'en-US',
     onResult: (text) => {
-      setSentence(text);
+      if (mode === 'recall' || mode === 'cloze') setTyped(text);
+      else setSentence(text);
       setVoiceText(text);
     },
   });
@@ -604,7 +605,7 @@ const ReviewRunner = ({ words, onChecked, onFinished }) => {
                 value={typed}
                 onChange={(e) => setTyped(e.target.value)}
                 placeholder="inglizcha so'z"
-                disabled={isChecking}
+                disabled={isChecking || speech.listening}
                 autoComplete="off"
                 autoCapitalize="none"
                 autoCorrect="off"
@@ -612,10 +613,13 @@ const ReviewRunner = ({ words, onChecked, onFinished }) => {
                 enterKeyHint="send"
                 className="h-11 min-w-0 flex-1 bg-transparent px-3 text-lg outline-none placeholder:text-muted-foreground/70"
               />
-              <Button type="submit" size="icon" className="shrink-0 rounded-xl" disabled={isChecking || !typed.trim()} aria-label="Tekshirish">
+              {speech.supported && <Button type="button" size="icon" variant={speech.listening ? 'destructive' : 'ghost'} onClick={speech.toggle} disabled={isChecking} aria-label="So'zni aytish">{speech.listening ? <MicOff /> : <Mic />}</Button>}
+              <Button type="submit" size="icon" className="shrink-0 rounded-xl" disabled={isChecking || !typed.trim() || speech.listening} aria-label="Tekshirish">
                 {isChecking ? <Loader2 className="animate-spin" /> : <Send />}
               </Button>
             </div>
+            {speech.interim && <p className="text-sm text-muted-foreground">{speech.interim}</p>}
+            {speech.error && <p role="alert" className="text-sm text-destructive">{speech.error}</p>}
           </motion.form>
         )}
 

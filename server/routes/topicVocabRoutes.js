@@ -46,7 +46,9 @@ const loadSavedWords = (userId) =>
 // @route   GET /api/topics/current
 router.get('/current', protect, async (req, res) => {
   try {
-    const ctx = await resolveDailyContext(req.user);
+    const [ctx, savedLower] = await Promise.all([
+      resolveDailyContext(req.user), loadSavedWords(req.user._id),
+    ]);
 
     if (ctx.isFinished) {
       return res.json({
@@ -59,7 +61,6 @@ router.get('/current', protect, async (req, res) => {
       return res.status(404).json({ error: 'Topic not found for the current day.' });
     }
 
-    const savedLower = await loadSavedWords(req.user._id);
     const { dailyWords, savedCount, requiredCount, totalToday, unsavedRemaining } =
       pickDailySessionWords(ctx.baseTopic.words || [], savedLower, ctx.wordTarget);
     const scenario = getScenarioMeta(ctx.contentDay);
@@ -74,6 +75,7 @@ router.get('/current', protect, async (req, res) => {
     }).lean();
 
     res.json({
+      dayKey: ctx.todayKey,
       day: ctx.logicalDay,
       contentDay: ctx.contentDay,
       topic: ctx.baseTopic.topic,
@@ -87,7 +89,7 @@ router.get('/current', protect, async (req, res) => {
       dialogue: ctx.baseTopic.dialogue || [],
       // "Yod olish" qadamining gaplari (bugungi so'zlar bor qatorlar)
       keyLines: pickKeyLines(ctx.baseTopic.dialogue || [], dailyWords),
-      words: dailyWords,
+      words: dailyWords.map(word => ({ ...word, saved: savedLower.includes(word.word.toLowerCase()) })),
       wordTarget: ctx.wordTarget,
       requiredCount,
       packSavedCount: savedCount,

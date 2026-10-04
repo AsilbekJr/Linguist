@@ -1,3 +1,6 @@
+import { useSearchParams } from 'react-router-dom';
+import TopicLibrary from '../components/TopicLibrary';
+import PhraseLibrary from '../components/PhraseLibrary';
 import React, { useMemo, useState } from 'react';
 import { AnimatePresence } from 'motion/react';
 import { toast } from 'react-hot-toast';
@@ -18,6 +21,7 @@ import { Button } from '../components/ui/button';
 import { EmptyState, PageHeader, Segmented, Skeleton } from '../components/ui/primitives';
 import { isDue, isLearned } from '../utils/wordStatus';
 
+const VIEWS = [{ value: 'mine', label: "Mening lug'atim", icon: BookOpen }, { value: 'phrases', label: 'Gaplar' }, { value: 'topics', label: 'Mavzular', icon: Layers }];
 const PAGE_SIZE = 24;
 
 const FILTERS = [
@@ -51,6 +55,9 @@ const EMPTY_COPY = {
 };
 
 const Vocabulary = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const view = ['topics', 'phrases'].includes(searchParams.get('view')) ? searchParams.get('view') : 'mine';
+  const setView = (value) => setSearchParams(value === 'mine' ? {} : { view: value }, { replace: true });
   const { data: words = [], isLoading } = useGetWordsQuery();
   const [addWordMutation] = useAddWordMutation();
   const [deleteWordMutation, { isLoading: isDeleting }] = useDeleteWordMutation();
@@ -75,13 +82,14 @@ const Vocabulary = () => {
         manualDefinition: manualData.manualDefinition,
         manualExamples: manualData.manualExample ? [manualData.manualExample] : [],
         manualTranslation: manualData.manualTranslation,
+        manualExampleUz: manualData.manualExampleUz,
       };
       await addWordMutation(payload).unwrap();
       setIsAddModalOpen(false);
       toast.success(`"${newWord.trim()}" lug'atga qo'shildi — takrorlash navbatida`);
     } catch (err) {
       const errorData = err.data || err;
-      const known = ['DUPLICATE', 'INVALID', 'QUOTA_EXCEEDED', 'ENRICHMENT_FAILED'];
+      const known = ['DUPLICATE', 'INVALID', 'INVALID_EXAMPLE', 'QUOTA_EXCEEDED', 'ENRICHMENT_FAILED'];
       if (known.includes(errorData.type)) {
         throw errorData;
       }
@@ -191,10 +199,8 @@ const Vocabulary = () => {
         }
       />
 
-      {/* "Mavzular" kutubxonasi (250 mavzu, 3813 so'z) olib tashlandi: kursning
-          o'zidan 4 baravar katta parallel dastur edi va "Hammasini qo'shish"
-          takrorlash navbatini to'ldirib "kuniga 15 daqiqa"ni buzardi. Kontent
-          serverda saqlanadi — kursning 91+ kunlari uchun xom ashyo. */}
+      <Segmented ariaLabel="Lug'at ko'rinishi" layoutId="vocab-view" value={view} onChange={setView} options={VIEWS} className="mb-5" />
+      {view === 'topics' ? <TopicLibrary /> : view === 'phrases' ? <PhraseLibrary words={words} wordId={searchParams.get('word') || ''} /> : (
         <>
           {/* Qidiruv va filtrlar */}
           <div className="glass sticky top-[calc(env(safe-area-inset-top,0px)+3.5rem)] z-30 -mx-4 mb-6 space-y-3 px-4 py-3 sm:-mx-6 sm:px-6 lg:static lg:mx-0 lg:bg-transparent lg:p-0 lg:backdrop-blur-none">
@@ -279,6 +285,7 @@ const Vocabulary = () => {
                       onRelearn={handleRelearn}
                       onMarkKnown={handleMarkKnown}
                       onRefresh={handleRefresh}
+                      onOpenPhrases={word => setSearchParams({ view: 'phrases', word: word._id })}
                       isRelearning={relearningId === word._id}
                       isMarkingKnown={markingKnownId === word._id}
                       isRefreshing={refreshingId === word._id}
@@ -296,6 +303,7 @@ const Vocabulary = () => {
             </>
           )}
         </>
+      )}
 
       {/* So'z qo'shish */}
       <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
@@ -303,7 +311,7 @@ const Vocabulary = () => {
           <DialogHeader>
             <DialogTitle>Yangi so&apos;z qo&apos;shish</DialogTitle>
             <DialogDescription>
-              Inglizcha so&apos;zni yozing — tarjima, ta&apos;rif va darajangizga mos misol avtomatik topiladi.
+              O&apos;zbekcha yoki inglizcha yozing, yoki mikrofon orqali ayting. Tarjima va misol gapni lug&apos;atingizga saqlang.
             </DialogDescription>
           </DialogHeader>
           <WordForm onAddWord={handleAddWord} existingWords={words} />

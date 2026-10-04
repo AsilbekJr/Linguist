@@ -58,6 +58,7 @@ const wordCreateSchema = z.object({
     fromTopic: z.boolean().optional(),
     manualDefinition: z.string().max(2000).optional(),
     manualTranslation: z.string().max(500).optional(),
+    manualExampleUz: z.string().max(500).optional(),
     manualExamples: z.array(z.string()).optional(),
     partOfSpeech: z.string().max(50).optional(),
     synonyms: z.array(z.string()).optional(),
@@ -65,6 +66,25 @@ const wordCreateSchema = z.object({
 });
 
 const objectId = z.string().regex(/^[a-f\d]{24}$/i, 'Invalid id');
+
+const wordPreviewSchema = z.object({
+  body: z.object({ text: z.string().trim().min(1).max(80), language: z.literal('uz') }),
+});
+
+const phraseCreateSchema = z.object({
+  body: z.object({
+    text: z.string().trim().min(3).max(400),
+    textUz: z.string().trim().min(1).max(500),
+    wordId: objectId.optional(),
+  }),
+});
+
+const phraseTranslateSchema = z.object({
+  body: z.object({
+    text: z.string().trim().min(1).max(500),
+    sourceLanguage: z.enum(['en', 'uz']),
+  }).refine(body => body.sourceLanguage !== 'en' || body.text.length <= 400, { message: 'English sentence is too long', path: ['text'] }),
+});
 
 /** Ibora kartasi: aytilgan (yoki yozilgan) butun gap */
 const phraseCheckSchema = z.object({
@@ -276,6 +296,9 @@ module.exports = {
   authRegisterSchema,
   authLoginSchema,
   wordCreateSchema,
+  wordPreviewSchema,
+  phraseCreateSchema,
+  phraseTranslateSchema,
   reviewCheckSchema,
   reviewTranslationSchema,
   sentenceAnalyzeSchema,

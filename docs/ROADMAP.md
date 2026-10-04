@@ -3,7 +3,21 @@
 > Ish shu tartibda bajariladi. Har bosqich tugagach bu yerda belgilanadi.
 > Tartibni o'zgartirishdan oldin sababini "Qarorlar jurnali"ga yozing.
 
-Oxirgi yangilanish: 2026-09-29
+Oxirgi yangilanish: 2026-10-04
+
+## Sahna tezligi va so'z-gap takrorlashi (2026-10-04)
+
+- [x] Kunlik sahna kodi va ma'lumotlari oldindan yuklanadi; sahna ochilishida butun lug'at so'ralmaydi. Profil kech kelsa boshlangan mashq qayta ochilmaydi.
+- [x] O'zbekcha yozilgan yoki aytilgan so'z: tarjima variantini ko'rish → tahrirlash → tasdiqlab saqlash. Xizmat ishlamasa tarjima va misolni qo'lda kiritish mumkin.
+- [x] Lug'atdagi tarjimali misollar alohida gap kartalariga bog'lanadi. Lug'at → Gaplar bo'limida ularni eshitish, yangi gap qo'shish va muddati kelgan gaplarni takrorlash mumkin.
+- [x] So'zlarni eslash va gaplarni takrorlashda yozuv hamda ovoz mavjud; tanilgan matn yuborishdan oldin tahrirlanadi. So'z va gap jadvali alohida saqlanadi, keyingi gaplar navbati davom etadi.
+
+## Boshlovchi oqimi va tiklangan lug'at (2026-10-03)
+
+- [x] Sahna ichida: so'zlarni o'rganish → dialog → mini-test → yod olish → suhbat. Boshlash uchun shaxsiy lug'at talab qilinmaydi.
+- [x] Kalendar: sana raqamlari, qisman faollik va to'liq reja alohida; profil qayta ochilganda, fokusda va mahalliy kun almashganda yangilanadi. Yangi kun uchun sahifa sessiyasi qayta boshlanadi.
+- [x] Mavzular kutubxonasi Lug'atga qaytarildi (250 mavzu, 3813 so'z). So'zlar tanlab qo'shiladi; barcha so'zlarni bir bosishda qo'shish UI'dan olib tashlandi.
+- [x] Takrorlash va tinglash faolligi kunlar tarixida saqlanadi; lug'at o'zgarsa mavzularning saqlangan holati yangilanadi.
 
 ## Asosiy tashxis
 
@@ -27,7 +41,7 @@ Kunlik reja: **Sahna → Suhbat → Takrorlash**. Suhbatsiz streak oshmaydi.
 - [x] **Suhbat** (`feat/speak`): bugungi sahna qahramoni bilan ovozli rolli o'yin; bugungi so'zni aytganda belgi yonadi (server `containsWord` bilan aniqlaydi); AI rejimi (Gemini) + ssenariy rejimi (AI yo'q/uzilsa — sahna dialogi, majburiy qadam bloklanmaydi); yakunda 0-3 tuzatish; bepul — kuniga 1 suhbat, Pro — 20
 - [x] **Yod olish** (`feat/memorize`): sahnaning gapirish qadami — kunning 3-5 kalit gapi (bugungi so'zlar bor qatorlar, serverda `pickKeyLines`) bosqichma-bosqich yashiriladi: 1 to'liq → 2 bo'shliqlar → 3 birinchi harflar → 4 faqat ma'nosi. 1-2-davralar majburiy, 3-4 ixtiyoriy; o'tolmagan gap davra oxirida qaytadi. Eski "rol bilan yoddan aytish" (DialoguePractice) olib tashlandi
 - [x] Yodlangan iboralar Suhbatga ulangan: "Yordam" ularni birinchi taklif qiladi, AI qahramon ularni ishlatishga imkon yaratadi
-- [x] **Ibora kartalari** (`feat/phrase-cards`): sahna yakunlanganda kalit gaplar `Phrase` bo'lib ertangi takrorlashga tushadi (ertaga → 3 → 7 → 14 → 30 kun → yodlangan; kuniga ≤ 5). Karta: o'zbekcha ma'no (+ ixtiyoriy birinchi harflar) → butun gap ovoz bilan; baho serverda (`utils/phraseMatch.js`). "Takrorlash" qadami iboralar ham tugaganda yopiladi
+- [x] **Ibora kartalari** (`feat/phrase-cards`): sahna yakunlanganda kalit gaplar `Phrase` bo'lib ertangi takrorlashga tushadi (ertaga → 3 → 7 → 14 → 30 kun → yodlangan; bir navbatda ≤ 5, keyingi navbat davom etadi). Karta: o'zbekcha ma'no (+ ixtiyoriy birinchi harflar) → butun gap ovoz yoki yozuv bilan; baho serverda (`utils/phraseMatch.js`). "Takrorlash" qadami iboralar ham tugaganda yopiladi
 - [ ] Tuzatishlar takrorlash navbatiga (so'z kartasida "Suhbatda shunday dedingiz…")
 - [x] **"Bugun" sahifasi** (`feat/today-redesign`): bitta katta tugma doim keyingi qadamni ochadi (Sahna → Suhbat → Takrorlash), qadamlarda daqiqalar; "Bugungi suhbat" kartasi (qahramon, vaziyat, so'zlar); "Oxirgi suhbatdan" — 2 ta tuzatish eshitish bilan; hafta tasmasi (serverda `activity.planDays/frozenDays`, profil `week`); CEFR gacha sahnalar soni. Iqtibos (`quotes.json`), maqsad-tavsiya va alohida streak/muzlatish plitkalari olib tashlandi
 - [x] **Tozalash** (`chore/cleanup`): Mavzular kutubxonasi client'dan olindi (server kontenti va `/api/vocab-topics` 91+ kunlar uchun saqlanadi); Gap tahlili menyudan olindi — takrorlashda "Gapimni tushuntir", Suhbat natijasida "Gapni tahlil qilish" (`/analysis?s=`); "Mashqlar" → "Ko'proq" (Tinglash bonus mashq); onboarding maqsadi Suhbat qahramoni uslubini belgilaydi (`GOAL_STYLE`); Landing yangi oqimga moslandi
@@ -189,3 +203,5 @@ almashtirilmasdi va logout access tokenni darhol bekor qilmasdi.
 | 2026-10-01 | Email tasdiqlash bloklamaydi | Ro'yxatdan o'tgan odam darhol o'qiy boshlashi kerak; faqat to'lov va email eslatmalar pochta egaligini talab qiladi |
 | 2026-10-01 | Register "email band" deb aniq aytishda davom etadi | Umumiy javob ro'yxatdan o'tishni bloklashni talab qiladi (avval xat, keyin kirish) — konversiyani tushiradi. Ro'yxat yig'ish rate limit bilan cheklangan |
 | 2026-09-29 | "100 kun" jadvali haqiqiy kun sonini ko'rsatadi (30) | 100 deb qotirilgan edi — yolg'on va'da |
+
+| 2026-10-03 | Mavzuli lug'atni qayta ochish, tanlab qo'shish | Foydalanuvchi talabi; kunlik kurs asosiy yo'l bo'lib qoladi |

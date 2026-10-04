@@ -74,7 +74,17 @@ const findWordInSentence = (sentence, word) => {
   if (head.endsWith('e')) forms.push(`${escapeRe(head.slice(0, -1))}(?:ing|ed)`);
   if (/[^aeiou][aeiou][bdgklmnprt]$/.test(head)) forms.push(`${escapeRe(head)}${head.slice(-1)}(?:ing|ed|er)`);
   const tail = rest.map((t) => `\\s+${escapeRe(t)}`).join('');
-  const m = String(sentence).match(new RegExp(`\\b(?:${forms.join('|')})${tail}\\b`, 'i'));
+  const patterns = [`(?:${forms.join('|')})${tail}`];
+  // Noun phrases pluralize their last token (private schools, contact lenses);
+  // phrasal verbs keep the first-token forms above (gets by, looking after).
+  if (rest.length) {
+    const last = rest[rest.length - 1];
+    const plural = [`${escapeRe(last)}(?:s|es)?`];
+    if (last.endsWith('y')) plural.push(`${escapeRe(last.slice(0, -1))}ies`);
+    const prefix = [head, ...rest.slice(0, -1)].map(escapeRe).join('\\s+');
+    patterns.push(`${prefix}\\s+(?:${plural.join('|')})`);
+  }
+  const m = String(sentence).match(new RegExp(`\\b(?:${patterns.join('|')})\\b`, 'i'));
   return m ? m[0] : null;
 };
 

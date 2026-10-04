@@ -32,7 +32,7 @@ const isIncomplete = (word) => !hasDefinition(word) && usableExamples(word).leng
 
 // forwardRef: Vocabulary'dagi AnimatePresence (popLayout) chiqib ketayotgan
 // kartani o'lchashi uchun DOM elementiga yetishi kerak
-const WordCard = React.forwardRef(({ word, onDelete, onRelearn, onMarkKnown, onRefresh, isRelearning = false, isMarkingKnown = false, isRefreshing = false }, ref) => {
+const WordCard = React.forwardRef(({ word, onDelete, onRelearn, onMarkKnown, onRefresh, onOpenPhrases, isRelearning = false, isMarkingKnown = false, isRefreshing = false }, ref) => {
   const stage = word.stage ?? word.reviewStage ?? 0;
   const learned = word.learned ?? word.mastered;
   const incomplete = isIncomplete(word);
@@ -124,6 +124,7 @@ const WordCard = React.forwardRef(({ word, onDelete, onRelearn, onMarkKnown, onR
       </div>
 
       {/* Amallar — hover ortiga yashirilmaydi: telefonda hover yo'q */}
+      {onOpenPhrases && <Button variant="outline" size="sm" className="mt-3" onClick={() => onOpenPhrases(word)}>Gaplar bilan takrorlash</Button>}
       <div className="mt-4 flex items-center justify-between gap-2 border-t border-border pt-3">
         {learned && onRelearn ? (
           <div className="flex min-w-0 items-center gap-2">

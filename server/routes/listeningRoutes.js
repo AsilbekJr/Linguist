@@ -9,7 +9,7 @@ const { topicsCache } = require('../utils/cache');
 const { userDayKey } = require('../utils/dayKey');
 const { resolveTopicDay } = require('../utils/topicHelpers');
 const { scoreDictation, dictationFeedback } = require('../utils/dictation');
-const { rollDailyQuests } = require('../utils/gamification');
+const { rollDailyQuests, recordActivityDay } = require('../utils/gamification');
 const { buildUserProfile } = require('../utils/userProfile');
 
 const topicsDataPath = path.join(__dirname, '../data/topics.json');
@@ -129,6 +129,7 @@ router.post('/complete', protect, async (req, res) => {
       req.user.xp += xpAwarded;
       req.user.dailyQuests.listeningCompleted = true;
     }
+    recordActivityDay(req.user, 'studyDays', todayKey);
     await req.user.save();
 
     const profile = await buildUserProfile(req.user);

@@ -17,6 +17,10 @@ test("so'z faqat haqiqiy shakllarda topiladi — 'car' 'careful' ichida emas", (
   assert.equal(findWordInSentence('I stopped.', 'stop'), 'stopped');
   assert.equal(findWordInSentence('We are making tea.', 'make'), 'making');
   assert.equal(findWordInSentence('He gets by somehow.', 'get by'), 'gets by');
+  assert.equal(findWordInSentence('Private schools are expensive.', 'private school'), 'Private schools');
+  assert.equal(findWordInSentence('She wears contact lenses.', 'contact lens'), 'contact lenses');
+  assert.equal(findWordInSentence('The schoolhouse is private.', 'private school'), null);
+  assert.equal(findWordInSentence('Take private schooling seriously.', 'private school'), null);
   assert.equal(findWordInSentence('My grandmother cooks.', 'mother'), null);
 });
 

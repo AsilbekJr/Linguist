@@ -2,7 +2,12 @@ const express = require('express');
 const router = express.Router();
 const Word = require('../models/Word');
 const { protect } = require('../middleware/authMiddleware');
-const { validate, wordCreateSchema } = require('../middleware/validate');
+const { validate, wordCreateSchema, wordPreviewSchema } = require('../middleware/validate');
+const { lookupUzbekEntries } = require('../utils/localTranslations');
+const gemini = require('../services/geminiService');
+const { reserveAiCall, refundAiCall } = require('../middleware/usageQuota');
+const { addWordPhrases } = require('../services/phrases');
+const { findWordInSentence } = require('../utils/reviewModes');
 const { enrichWord } = require('../utils/wordEnrichment');
 const { initialState } = require('../utils/srs');
 const { invalidateUserWords } = require('../utils/userWordsCache');
@@ -25,6 +30,30 @@ router.get('/', protect, async (req, res) => {
 
 // @desc    Add a word
 // @route   POST /api/words
+router.post('/preview', protect, validate(wordPreviewSchema), async (req, res) => {
+    let reserved = false;
+    try {
+        const { text } = req.validated.body;
+        const local = lookupUzbekEntries(text);
+        if (local.length) return res.json({ options: local });
+        if (!gemini.isGeminiReady()) return res.status(503).json({ message: "Tarjima xizmati hozir ishlamayapti. Inglizcha tarjimani qo'lda kiriting." });
+        const quota = await reserveAiCall(req.user);
+        if (!quota.ok) return res.status(402).json({ message: "Kunlik tarjima limiti tugadi. Qo'lda kiritishingiz mumkin." });
+        reserved = true;
+        const result = await gemini.translateUzbekWord(text, req.user.onboarding?.level || 'beginner');
+        if (result.status !== 'ok') {
+            await refundAiCall(req.user);
+            reserved = false;
+            return res.status(503).json({ message: "Tarjimani topib bo'lmadi. Matn saqlandi — qayta urining yoki qo'lda kiriting." });
+        }
+        res.json({ options: [result.data] });
+    } catch (error) {
+        if (reserved) await refundAiCall(req.user);
+        console.error('Word preview error:', error);
+        res.status(500).json({ message: "Tarjimani yuklab bo'lmadi." });
+    }
+});
+
 router.post('/', protect, validate(wordCreateSchema), async (req, res) => {
     try {
         const body = req.validated.body;
@@ -32,6 +61,13 @@ router.post('/', protect, validate(wordCreateSchema), async (req, res) => {
 
         // Title Case Convention (e.g., "apple" -> "Apple")
         word = word.trim().charAt(0).toUpperCase() + word.trim().slice(1).toLowerCase();
+
+        if (body.manualExampleUz !== undefined) {
+            const example = String(body.manualExamples?.[0] || '').trim();
+            if (!body.manualExampleUz.trim() || example.length > 400 || example.split(/\s+/).length < 3 || !findWordInSentence(example, word)) {
+                return res.status(400).json({ type: 'INVALID_EXAMPLE', message: "Misol gapda shu inglizcha so'z qatnashsin va kamida uchta so'z bo'lsin. Gap tarjimasini ham kiriting." });
+            }
+        }
 
         const existingWord = await Word.findOne({ word, user: req.user._id });
         if (existingWord) {
@@ -48,6 +84,7 @@ router.post('/', protect, validate(wordCreateSchema), async (req, res) => {
                 definition: body.manualDefinition,
                 translation: body.manualTranslation,
                 examples: body.manualExamples,
+                exampleUz: body.manualExampleUz,
             },
         });
 
@@ -94,6 +131,9 @@ router.post('/', protect, validate(wordCreateSchema), async (req, res) => {
         });
 
         invalidateUserWords(req.user._id);
+        await addWordPhrases(req.user, [newWord]);
+        newWord.sentenceSyncVersion = 1;
+        await newWord.save();
         res.status(201).json(newWord);
 
     } catch (error) {
@@ -136,6 +176,7 @@ router.post('/:id/refresh', protect, async (req, res) => {
         wordDoc.translation = info.translation || wordDoc.translation;
         if (info.examples.length) wordDoc.examples = info.examples;
         if (info.exampleUz) wordDoc.exampleUz = info.exampleUz;
+        wordDoc.sentenceSyncVersion = 0;
         if (info.synonyms.length) wordDoc.synonyms = info.synonyms;
 
         await wordDoc.save();

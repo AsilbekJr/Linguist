@@ -27,6 +27,7 @@ const wordSchema = new mongoose.Schema({
      * o'quvchi gapni tushunmasa, u shunchaki inglizcha matn bo'lib qoladi.
      */
     exampleUz: String,
+    sentenceSyncVersion: { type: Number, default: 0 },
     collocations: [String],
     imageUrl: String,
     /** CEFR darajasi — kontent bazasidan keladi */

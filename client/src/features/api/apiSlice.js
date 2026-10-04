@@ -113,10 +113,10 @@ export const apiSlice = createApi({
   reducerPath: 'api',
   keepUnusedDataFor: 180,
   refetchOnMountOrArgChange: 60,
-  refetchOnFocus: false,
+  refetchOnFocus: true,
   refetchOnReconnect: true,
   baseQuery: baseQueryWithReauth,
-  tagTypes: ['Word', 'Topic', 'User', 'Billing', 'Listening', 'Notifications', 'Push', 'Telegram', 'Speak'],
+  tagTypes: ['Word', 'Topic', 'User', 'Billing', 'Listening', 'Notifications', 'Push', 'Telegram', 'VocabTopic', 'Speak'],
   endpoints: (builder) => ({
     getWords: builder.query({
       query: () => '/api/words',
@@ -130,6 +130,20 @@ export const apiSlice = createApi({
         body: initialWord,
       }),
       invalidatesTags: ['Word', 'Topic', 'User'],
+    }),
+    previewWord: builder.mutation({
+      query: (body) => ({ url: '/api/words/preview', method: 'POST', body }),
+    }),
+    getPhrases: builder.query({
+      query: () => '/api/review/phrases',
+      providesTags: ['Word'],
+    }),
+    addPhrase: builder.mutation({
+      query: (body) => ({ url: '/api/review/phrases', method: 'POST', body }),
+      invalidatesTags: ['Word', 'User'],
+    }),
+    translatePhrase: builder.mutation({
+      query: (body) => ({ url: '/api/review/phrases/translate', method: 'POST', body }),
     }),
     deleteWord: builder.mutation({
       query: (id) => ({
@@ -168,7 +182,7 @@ export const apiSlice = createApi({
       query: ({ id, mode = 'sentence', answer, sentence, source }) => ({
         url: `/api/review/${id}/check`,
         method: 'POST',
-        body: mode === 'sentence' ? { mode, sentence, source } : { mode, answer },
+        body: mode === 'sentence' ? { mode, sentence, source } : { mode, answer, source },
       }),
       invalidatesTags: ['Word', 'User'],
     }),
@@ -337,6 +351,32 @@ export const apiSlice = createApi({
         body: { token },
       }),
     }),
+    getVocabTopics: builder.query({
+      query: () => '/api/vocab-topics',
+      providesTags: ['VocabTopic', 'Word'],
+    }),
+    getVocabTopic: builder.query({
+      query: (id) => `/api/vocab-topics/${id}`,
+      providesTags: (result, error, id) => [{ type: 'VocabTopic', id }, 'Word'],
+    }),
+    // words berilmasa — mavzudagi hamma so'z qo'shiladi
+    addVocabTopicWords: builder.mutation({
+      query: ({ id, words }) => ({
+        url: `/api/vocab-topics/${id}/add`,
+        method: 'POST',
+        body: words ? { words } : {},
+      }),
+      invalidatesTags: (result, error, { id }) => ['VocabTopic', { type: 'VocabTopic', id }, 'Word', 'User'],
+    }),
+    /** "Bilaman": kutubxona so'zlarini yodlangan holda lug'atga qo'shish/o'tkazish */
+    markVocabTopicKnown: builder.mutation({
+      query: ({ id, words }) => ({
+        url: `/api/vocab-topics/${id}/known`,
+        method: 'POST',
+        body: { words },
+      }),
+      invalidatesTags: (result, error, { id }) => ['VocabTopic', { type: 'VocabTopic', id }, 'Word', 'User'],
+    }),
     startPlacement: builder.mutation({
       query: () => ({ url: '/api/placement/start', method: 'POST' }),
     }),
@@ -379,6 +419,7 @@ export const apiSlice = createApi({
     }),
     getMe: builder.query({
       query: () => '/api/auth/me',
+      refetchOnMountOrArgChange: true,
       providesTags: ['User'],
       keepUnusedDataFor: 300,
     }),
@@ -409,7 +450,7 @@ export const apiSlice = createApi({
     // ─── Suhbat ───────────────────────────────────────────────────────────
     getSpeakToday: builder.query({
       query: () => '/api/speak/today',
-      providesTags: ['Speak'],
+      providesTags: ['Speak', 'Topic'],
       keepUnusedDataFor: 60,
     }),
     startSpeak: builder.mutation({
@@ -450,6 +491,7 @@ export const apiSlice = createApi({
         method: 'POST',
         body: { timezone },
       }),
+      invalidatesTags: ['User', 'Topic', 'Word', 'Speak', 'Listening'],
     }),
     refreshToken: builder.mutation({
       query: () => ({
@@ -492,6 +534,14 @@ export const apiSlice = createApi({
 });
 
 export const {
+  usePreviewWordMutation,
+  useGetPhrasesQuery,
+  useAddPhraseMutation,
+  useTranslatePhraseMutation,
+  useGetVocabTopicsQuery,
+  useGetVocabTopicQuery,
+  useAddVocabTopicWordsMutation,
+  useMarkVocabTopicKnownMutation,
   useGetWordsQuery,
   useAddWordMutation,
   useDeleteWordMutation,

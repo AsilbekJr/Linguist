@@ -14,6 +14,8 @@ const phraseSchema = new mongoose.Schema({
   key: { type: String, required: true },
   text: { type: String, required: true },
   textUz: { type: String, default: '' },
+  wordIds: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Word' }],
+  wordLabels: [String],
   contentDay: { type: Number, default: null },
   stage: { type: Number, default: 0 },
   lapses: { type: Number, default: 0 },

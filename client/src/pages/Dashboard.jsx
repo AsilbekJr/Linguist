@@ -274,7 +274,7 @@ const Dashboard = () => {
 
       {/* ── Takrorlash ─────────────────────────────────────────────────── */}
       <div id="review" className="scroll-mt-24">
-        <TodayHub user={user} totalWords={totalWords} />
+        <TodayHub key={user?.today || 'today'} user={user} totalWords={totalWords} />
       </div>
 
       {/* ── Qo'shimcha mashqlar ────────────────────────────────────────── */}
