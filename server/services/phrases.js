@@ -1,4 +1,6 @@
 const Phrase = require('../models/Phrase');
+const Word = require('../models/Word');
+const { findWordInSentence } = require('../utils/reviewModes');
 const { dueDateAfter } = require('../utils/srs');
 
 /**
@@ -9,7 +11,7 @@ const { dueDateAfter } = require('../utils/srs');
  */
 const INTERVALS = [1, 3, 7, 14, 30];
 const LEARNED_STAGE = INTERVALS.length;
-/** Bir kunda ko'pi bilan — "kuniga 15 daqiqa" saqlansin */
+/** Small batches keep each review session manageable; the client loads the next. */
 const DAILY_PHRASE_LIMIT = 5;
 /** Aytilgan gap shuncha foiz mos kelsa — to'g'ri */
 const PASS_PERCENT = 80;
@@ -45,6 +47,33 @@ const addScenePhrases = async (user, keyLines, contentDay, now = new Date()) => 
   return res.upsertedCount || 0;
 };
 
+/** Add the translated example once; revisiting the library never resets SRS. */
+const addWordPhrases = async (user, words, now = new Date()) => {
+  const ops = [];
+  for (const word of words) {
+    const text = String(word.examples?.[0] || '').trim();
+    const textUz = String(word.exampleUz || '').trim();
+    if (word.markedKnown || !textUz || text.split(/\s+/).length < 3 || !findWordInSentence(text, word.word)) continue;
+    ops.push({ updateOne: {
+      filter: { user: user._id, key: phraseKey(text) },
+      update: {
+        $setOnInsert: { user: user._id, key: phraseKey(text), text, textUz, nextReviewDate: dueDateAfter(now, 1, user.timezone) },
+        $addToSet: { wordIds: word._id, wordLabels: word.word },
+      }, upsert: true,
+    } });
+  }
+  if (ops.length) await Phrase.bulkWrite(ops, { ordered: false });
+};
+
+/** One-time upgrade for saved vocabulary, including library and scene imports. */
+const syncWordPhrases = async (user) => {
+  const words = await Word.find({ user: user._id, sentenceSyncVersion: { $ne: 1 }, markedKnown: { $ne: true } })
+    .select('word examples exampleUz markedKnown').lean();
+  if (!words.length) return;
+  await addWordPhrases(user, words);
+  await Word.updateMany({ user: user._id, _id: { $in: words.map(word => word._id) } }, { $set: { sentenceSyncVersion: 1 } });
+};
+
 const countDue = (userId, now = new Date()) => Phrase.countDocuments(dueFilter(userId, now));
 
 const listDue = (userId, now = new Date()) =>
@@ -55,6 +84,7 @@ const presentPhrase = (p) => ({
   _id: p._id,
   kind: 'phrase',
   textUz: p.textUz,
+  sourceWord: (p.wordLabels || []).join(', '),
   hint: p.text
     .split(/\s+/)
     .map((w) => {
@@ -85,6 +115,8 @@ const applyPhraseSchedule = (doc, isCorrect, now, tz) => {
 
 module.exports = {
   addScenePhrases,
+  addWordPhrases,
+  syncWordPhrases,
   countDue,
   listDue,
   presentPhrase,

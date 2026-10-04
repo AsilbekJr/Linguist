@@ -12,7 +12,8 @@
         "icons": "node scripts/generate-icons.js",
         "wordlist:fetch": "node scripts/fetch-wordlist.js",
         "prebuild": "node scripts/generate-icons.js && node scripts/check-pwa.js",
-        "check:pwa": "node scripts/check-pwa.js"
+        "check:pwa": "node scripts/check-pwa.js",
+        "test:e2e": "playwright test"
     },
     "dependencies": {
         "@fontsource-variable/plus-jakarta-sans": "^5.3.0",

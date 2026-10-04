@@ -1,3 +1,4 @@
+import { setupListeners } from '@reduxjs/toolkit/query';
 import { configureStore, combineReducers } from '@reduxjs/toolkit';
 import {
   persistStore,
@@ -14,27 +15,11 @@ import storage from 'redux-persist/lib/storage';
 import { apiSlice } from '../features/api/apiSlice';
 import uiReducer from '../features/ui/uiSlice';
 import authReducer from '../features/auth/authSlice';
-
-const PERSISTED_QUERIES = new Set([
-  'getMe',
-  'getCurrentTopic',
-  'getReviewDue',
-  'getSubscription',
-]);
+import { sanitizePersistedApi } from './persistedApi';
 
 const apiTransform = createTransform(
-  (inboundState) => {
-    if (!inboundState?.queries) return inboundState;
-    const queries = {};
-    for (const [key, value] of Object.entries(inboundState.queries)) {
-      const endpoint = key.split('(')[0];
-      if (PERSISTED_QUERIES.has(endpoint)) {
-        queries[key] = value;
-      }
-    }
-    return { ...inboundState, queries, mutations: {} };
-  },
-  (outboundState) => outboundState,
+  sanitizePersistedApi,
+  sanitizePersistedApi,
   { whitelist: [apiSlice.reducerPath] }
 );
 
@@ -70,5 +55,7 @@ export const store = configureStore({
       },
     }).concat(apiSlice.middleware),
 });
+
+setupListeners(store.dispatch);
 
 export const persistor = persistStore(store);

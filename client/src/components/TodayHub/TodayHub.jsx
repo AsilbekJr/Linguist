@@ -27,11 +27,13 @@ const TodayHub = ({ user, totalWords = 0 }) => {
   // javobdan keyin ro'yxat qayta yuklansa ham karta ko'z oldidan yo'qolmasin
   const { data: duePhrases = [], isFetching: phrasesFetching, refetch: refetchPhrases } = useGetPhrasesDueQuery();
   const [phraseSession, setPhraseSession] = useState(null);
-  const [phrasesDone, setPhrasesDone] = useState(false);
+  const reviewedPhraseIdsRef = useRef(new Set());
   useEffect(() => {
-    if (!phraseSession && !phrasesDone && !phrasesFetching && duePhrases.length > 0) setPhraseSession(duePhrases);
-  }, [duePhrases, phraseSession, phrasesDone, phrasesFetching]);
-  const phrasesActive = Boolean(phraseSession?.length) && !phrasesDone;
+    if (phraseSession || phrasesFetching) return;
+    const fresh = duePhrases.filter(phrase => !reviewedPhraseIdsRef.current.has(phrase._id));
+    if (fresh.length) setPhraseSession(fresh);
+  }, [duePhrases, phraseSession, phrasesFetching]);
+  const phrasesActive = Boolean(phraseSession?.length);
 
   const [finished, setFinished] = useState(false);
   const celebratedRef = useRef(false);
@@ -118,7 +120,7 @@ const TodayHub = ({ user, totalWords = 0 }) => {
   };
 
   const remaining =
-    (session?.length ?? dueWords.length) + (phrasesDone ? 0 : phraseSession?.length ?? duePhrases.length);
+    (session?.length ?? dueWords.length) + (phraseSession?.length ?? duePhrases.filter(phrase => !reviewedPhraseIdsRef.current.has(phrase._id)).length);
 
   /** Navbat bo'sh — bu yaxshi holat, uni muvaffaqiyat sifatida ko'rsatamiz */
   const emptyState = (
@@ -196,7 +198,7 @@ const TodayHub = ({ user, totalWords = 0 }) => {
             </motion.div>
           ) : phrasesActive ? (
             <motion.div
-              key="phrases"
+              key={`phrases:${phraseSession[0]._id}`}
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
@@ -204,9 +206,12 @@ const TodayHub = ({ user, totalWords = 0 }) => {
             >
               <PhraseReview
                 phrases={phraseSession}
-                onChecked={(_id, res) => handleDailyStep(res?.dailyStep)}
+                onChecked={(id, res) => {
+                  reviewedPhraseIdsRef.current.add(id);
+                  handleDailyStep(res?.dailyStep);
+                }}
                 onFinished={() => {
-                  setPhrasesDone(true);
+                  setPhraseSession(null);
                   refetch();
                   refetchPhrases();
                 }}

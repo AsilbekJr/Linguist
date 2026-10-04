@@ -4,6 +4,8 @@ dist
 .DS_Store
 .vscode
 coverage
+client/test-results/
+client/playwright-report/
 build
 server/server_error.log
 server/models.json

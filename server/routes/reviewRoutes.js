@@ -3,9 +3,10 @@ const router = express.Router();
 const Word = require('../models/Word');
 const { checkSentence } = require('../services/geminiService');
 const { protect } = require('../middleware/authMiddleware');
-const { validate, reviewCheckSchema, reviewTranslationSchema, phraseCheckSchema } = require('../middleware/validate');
-const { lookupTranslation } = require('../utils/localTranslations');
-const { trackAiUsageSoft } = require('../middleware/usageQuota');
+const { validate, reviewCheckSchema, reviewTranslationSchema, phraseCheckSchema, phraseCreateSchema, phraseTranslateSchema } = require('../middleware/validate');
+const { lookupTranslation, lookupPhraseTranslation } = require('../utils/localTranslations');
+const gemini = require('../services/geminiService');
+const { trackAiUsageSoft, reserveAiCall, refundAiCall } = require('../middleware/usageQuota');
 const { applySchedule, restartLearning, markKnown, stageInterval, readStage, MAX_STAGE } = require('../utils/srs');
 const mongoose = require('mongoose');
 const { userDayKey } = require('../utils/dayKey');
@@ -34,6 +35,7 @@ const {
   buildOptions,
   presentDueWord,
   revealWord,
+  findWordInSentence,
 } = require('../utils/reviewModes');
 
 const DUE_LIMIT = 20;
@@ -138,7 +140,11 @@ const recordReview = async (userDoc, now) => {
   let user = await User.findOneAndUpdate(
     { _id: userDoc._id },
     // Haqiqatan takrorladi — "so'z yo'q edi" belgisi endi to'g'ri emas
-    { $inc: { 'dailyQuests.reviewedCount': 1 }, $set: { 'dailyQuests.reviewSkipped': false } },
+    {
+      $inc: { 'dailyQuests.reviewedCount': 1 },
+      $set: { 'dailyQuests.reviewSkipped': false },
+      $addToSet: { 'activity.studyDays': todayKey },
+    },
     { new: true }
   );
 
@@ -245,10 +251,64 @@ router.get('/due', protect, async (req, res) => {
 });
 
 // @desc    Bugungi ibora kartalari (sahnada yodlangan gaplar)
+router.get('/phrases', protect, async (req, res) => {
+  try {
+    await phrases.syncWordPhrases(req.user);
+    res.json(await Phrase.find({ user: req.user._id }).sort({ createdAt: -1 }).lean());
+  } catch (error) {
+    console.error('Phrase library error:', error);
+    res.status(500).json({ message: "Gaplarni yuklab bo'lmadi." });
+  }
+});
+
+router.post('/phrases/translate', protect, validate(phraseTranslateSchema), async (req, res) => {
+  let reserved = false;
+  try {
+    const { text, sourceLanguage } = req.validated.body;
+    const local = lookupPhraseTranslation(text, sourceLanguage);
+    if (local) return res.json({ translation: local });
+    if (!gemini.isGeminiReady()) return res.status(503).json({ message: "Tarjima xizmati hozir ishlamayapti. Gap saqlanmagan — tarjimani qo'lda kiritishingiz mumkin." });
+    const quota = await reserveAiCall(req.user);
+    if (!quota.ok) return res.status(402).json({ message: "Kunlik tarjima limiti tugadi. Tarjimani qo'lda kiriting." });
+    reserved = true;
+    const result = await gemini.translatePhrase(text, sourceLanguage);
+    if (result.status !== 'ok') {
+      await refundAiCall(req.user);
+      reserved = false;
+      return res.status(503).json({ message: "Gapni tarjima qilib bo'lmadi. Qayta urinib ko'ring yoki tarjimani qo'lda kiriting." });
+    }
+    res.json({ translation: result.translation });
+  } catch (error) {
+    if (reserved) await refundAiCall(req.user).catch(() => {});
+    console.error('Phrase translation error:', error);
+    res.status(500).json({ message: "Tarjimani yuklab bo'lmadi." });
+  }
+});
+
+router.post('/phrases', protect, validate(phraseCreateSchema), async (req, res) => {
+  try {
+    const { text, textUz, wordId } = req.validated.body;
+    if (text.split(/\s+/).length < 3) return res.status(400).json({ message: 'Kamida uchta so‘zli gap yozing.' });
+    const word = wordId ? await Word.findOne({ _id: wordId, user: req.user._id }) : null;
+    if (wordId && !word) return res.status(404).json({ message: "So'z topilmadi." });
+    if (word && !findWordInSentence(text, word.word)) return res.status(400).json({ message: `Gapda "${word.word}" so'zi qatnashishi kerak.` });
+    const key = phrases.phraseKey(text);
+    const result = await Phrase.updateOne({ user: req.user._id, key }, {
+      $setOnInsert: { user: req.user._id, key, text, textUz, nextReviewDate: new Date() },
+      ...(word ? { $addToSet: { wordIds: word._id, wordLabels: word.word } } : {}),
+    }, { upsert: true });
+    res.status(result.upsertedCount ? 201 : 200).json(await Phrase.findOne({ user: req.user._id, key }).lean());
+  } catch (error) {
+    console.error('Phrase create error:', error);
+    res.status(500).json({ message: "Gapni saqlab bo'lmadi." });
+  }
+});
+
 // @route   GET /api/review/phrases/due
 // Javob oshkor qilinmaydi: faqat o'zbekcha ma'nosi va birinchi harflar
 router.get('/phrases/due', protect, async (req, res) => {
   try {
+    await phrases.syncWordPhrases(req.user);
     const list = await phrases.listDue(req.user._id, new Date());
     res.json(list.map(phrases.presentPhrase));
   } catch (error) {

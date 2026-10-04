@@ -134,7 +134,10 @@ const resolveDefinition = async (word, { allowRemote = true } = {}) => {
  */
 const enrichWord = async (word, { learnerLevel = 'beginner', manual = {}, skipAI = false } = {}) => {
   const resolved = await resolveDefinition(word, { allowRemote: !skipAI });
-  if (resolved.status === 'not_found') return { status: 'not_found' };
+  // A confirmed bilingual draft may be a phrasal expression absent from the
+  // external dictionary. Preserve the user's translation and paired example.
+  const confirmedDraft = skipAI && manual.translation?.trim() && manual.examples?.length && manual.exampleUz?.trim();
+  if (resolved.status === 'not_found' && !confirmedDraft) return { status: 'not_found' };
 
   const base = resolved.status === 'ok' ? resolved.data : {};
 
@@ -150,6 +153,7 @@ const enrichWord = async (word, { learnerLevel = 'beginner', manual = {}, skipAI
   if (!examples.length && local?.example) examples = [local.example];
   if (manual.examples?.length) examples = [...manual.examples, ...examples];
   let exampleUz = !manual.examples?.length && local?.example && examples[0] === local.example ? local.exampleUz : '';
+  if (manual.examples?.length && manual.exampleUz) exampleUz = manual.exampleUz;
   let definition = manual.definition || (curated ? local.definition : base.definition) || '';
 
   // Tarjima yoki misol yetishmasa AI to'ldiradi. Lug'atdagi misol ko'pincha

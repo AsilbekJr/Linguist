@@ -19,12 +19,13 @@ const EASE = [0.16, 1, 0.3, 1];
  * gapning ohangi va tuzilishi bilan — yodlangan narsa nutqda ishlatiladigan
  * tayyor ibora bo'lib qoladi. Baho serverda (jadvalga ta'sir qiladi).
  */
-const PhraseReview = ({ phrases, onChecked, onFinished }) => {
+const PhraseReview = ({ phrases, onChecked, onFinished, finishLabel = "So'zlarga o'tish" }) => {
   const [index, setIndex] = useState(0);
   const [result, setResult] = useState(null);
   const [showHint, setShowHint] = useState(false);
   const [typing, setTyping] = useState(false);
   const [typed, setTyped] = useState('');
+  const [voiceText, setVoiceText] = useState('');
   const [checkPhrase, { isLoading }] = useCheckPhraseMutation();
 
   const card = phrases[index];
@@ -41,13 +42,14 @@ const PhraseReview = ({ phrases, onChecked, onFinished }) => {
     }
   };
 
-  const speech = useSpeechInput({ lang: 'en-US', onResult: (text) => send(text, 'voice') });
+  const speech = useSpeechInput({ lang: 'en-US', onResult: text => { setTyped(text); setVoiceText(text); setTyping(true); } });
 
   const next = () => {
     speech.stop();
     setResult(null);
     setShowHint(false);
     setTyped('');
+    setVoiceText('');
     if (index + 1 >= phrases.length) onFinished?.();
     else setIndex((i) => i + 1);
   };
@@ -75,7 +77,7 @@ const PhraseReview = ({ phrases, onChecked, onFinished }) => {
           className="rounded-3xl border border-primary/20 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent p-5 sm:p-6"
         >
           <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-primary">
-            <Quote className="size-3.5" /> Sahnadan ibora · inglizcha ayting
+            <Quote className="size-3.5" /> {card.sourceWord ? `“${card.sourceWord}” qatnashgan gap` : 'Saqlangan gap'} · eslang
           </p>
           <p className="mt-3 text-xl font-extrabold leading-snug">{card.textUz}</p>
 
@@ -123,7 +125,7 @@ const PhraseReview = ({ phrases, onChecked, onFinished }) => {
             </div>
             <div className="flex justify-end">
               <Button size="lg" onClick={next}>
-                {index + 1 >= phrases.length ? "So'zlarga o'tish" : 'Keyingi'} <ArrowRight />
+                {index + 1 >= phrases.length ? finishLabel : 'Keyingi'} <ArrowRight />
               </Button>
             </div>
           </>
@@ -134,7 +136,7 @@ const PhraseReview = ({ phrases, onChecked, onFinished }) => {
                 className="flex gap-2"
                 onSubmit={(e) => {
                   e.preventDefault();
-                  send(typed, 'text');
+                  send(typed, voiceText && typed.trim() === voiceText.trim() ? 'voice' : 'text');
                 }}
               >
                 <input
@@ -147,7 +149,7 @@ const PhraseReview = ({ phrases, onChecked, onFinished }) => {
                   className="h-12 min-w-0 flex-1 rounded-2xl border border-input bg-background px-4 text-base outline-none focus-visible:ring-4 focus-visible:ring-ring/20"
                   aria-label="Inglizcha gap"
                 />
-                <Button type="submit" size="lg" disabled={!typed.trim() || isLoading}>
+                <Button type="submit" size="lg" disabled={!typed.trim() || isLoading || speech.listening} aria-label="Gapni tekshirish">
                   {isLoading ? <Loader2 className="animate-spin" /> : <Check />}
                 </Button>
               </form>
@@ -175,7 +177,7 @@ const PhraseReview = ({ phrases, onChecked, onFinished }) => {
                   variant={typing ? 'soft' : 'ghost'}
                   size="icon"
                   className="ml-auto"
-                  onClick={() => setTyping((v) => !v)}
+                  onClick={() => { speech.stop(); setTyping((v) => !v); }}
                   aria-label="Yozib javob berish"
                   aria-pressed={typing}
                 >
@@ -186,6 +188,8 @@ const PhraseReview = ({ phrases, onChecked, onFinished }) => {
             {speech.listening && speech.interim && (
               <p className="text-sm italic text-muted-foreground">&ldquo;{speech.interim}&rdquo;</p>
             )}
+            {speech.error && <p role="alert" className="text-sm text-destructive">{speech.error}</p>}
+            {voiceText && <p className="text-xs text-muted-foreground">Tanilgan matnni tekshiring, kerak bo&apos;lsa tuzating va yuboring.</p>}
           </>
         )}
       </div>

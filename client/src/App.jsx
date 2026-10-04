@@ -17,7 +17,8 @@ import { PageSkeleton } from "./components/ui/primitives";
 import { identify } from "./lib/analytics";
 
 const Vocabulary = lazy(() => import("./pages/Vocabulary"));
-const TopicVocabulary = lazy(() => import("./pages/TopicVocabulary"));
+const loadTopicPage = () => import("./pages/TopicVocabulary");
+const TopicVocabulary = lazy(loadTopicPage);
 const Unsubscribe = lazy(() => import("./pages/Unsubscribe"));
 const ForgotPassword = lazy(() => import("./components/Auth/ForgotPassword"));
 const ResetPassword = lazy(() => import("./components/Auth/ResetPassword"));
@@ -99,6 +100,7 @@ function App() {
 
   useEffect(() => {
     if (!isAuthenticated) return;
+    loadTopicPage().catch(() => {});
     dispatch(
       apiSlice.util.prefetch("getCurrentTopic", undefined, { force: false }),
     );

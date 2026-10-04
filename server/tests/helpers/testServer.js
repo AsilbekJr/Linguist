@@ -13,7 +13,9 @@ let server;
 let baseUrl;
 
 const start = async () => {
-  mongod = await MongoMemoryServer.create();
+  mongod = await MongoMemoryServer.create({
+    instance: { args: process.platform === 'win32' ? [] : ['--nounixsocket'] },
+  });
   await mongoose.connect(mongod.getUri());
 
   const app = createApp({ isProd: false, enableRateLimit: false });

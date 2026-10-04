@@ -95,6 +95,7 @@ const userSchema = new mongoose.Schema({
    * bajarilganini, qaysi biri muzlatilganini bilib bo'lmasdi. Oxirgi 60 kun.
    */
   activity: {
+    studyDays: { type: [String], default: [] },
     planDays: { type: [String], default: [] },
     frozenDays: { type: [String], default: [] },
   },

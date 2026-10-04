@@ -49,6 +49,7 @@ export const WeekStrip = ({ week = [], streak = 0, freezes = 0 }) => (
           <span
             className={cn(
               'inline-flex size-9 items-center justify-center rounded-full text-xs font-bold transition-colors',
+              d.status === 'active' && 'bg-primary/15 text-primary ring-1 ring-primary/30',
               d.status === 'done' && 'bg-streak text-white',
               d.status === 'frozen' && 'bg-info/15 text-info',
               d.status === 'today' && 'border-2 border-dashed border-primary text-primary',
@@ -56,19 +57,20 @@ export const WeekStrip = ({ week = [], streak = 0, freezes = 0 }) => (
               d.status === 'none' && 'bg-muted/40 text-muted-foreground/40'
             )}
             title={
-              { done: 'Reja bajarilgan', frozen: 'Muzlatish ishlatilgan', today: 'Bugun', missed: "O'tkazib yuborilgan", none: '' }[
+              { active: 'Mashq qilingan · reja hali tugamagan', done: 'Reja bajarilgan', frozen: 'Muzlatish ishlatilgan', today: 'Bugun', missed: "O'tkazib yuborilgan", none: '' }[
                 d.status
               ]
             }
           >
-            {d.status === 'done' ? <Check className="size-4" strokeWidth={3} /> : d.status === 'frozen' ? <Snowflake className="size-4" /> : null}
+            {d.status === 'done' ? <Check className="size-4" strokeWidth={3} /> : d.status === 'frozen' ? <Snowflake className="size-4" /> : Number(d.day.slice(-2))}
           </span>
-          <span className={cn('text-[11px] font-semibold', d.status === 'today' ? 'text-primary' : 'text-muted-foreground')}>
+          <span className={cn('text-[11px] font-semibold', d.status === 'today' || d.status === 'active' ? 'text-primary' : 'text-muted-foreground')}>
             {d.weekday}
           </span>
         </li>
       ))}
     </ol>
+    <p className="mt-3 text-[11px] text-muted-foreground">Rangli sana — mashq qilingan · ✓ — kunlik reja bajarilgan</p>
   </div>
 );
 

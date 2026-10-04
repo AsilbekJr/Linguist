@@ -54,4 +54,28 @@ const lookupEntry = (word) => {
 /** @returns {string} tarjima yoki '' */
 const lookupTranslation = (word) => lookupEntry(word)?.translation || '';
 
-module.exports = { lookupTranslation, lookupEntry };
+const normalizeUzbek = (text) => String(text || '').trim().toLowerCase().replace(/[‘’ʻʼ`]/g, "'").replace(/\s+/g, ' ');
+
+const lookupUzbekEntries = (text) => {
+  if (!cache) cache = build();
+  const key = normalizeUzbek(text);
+  if (!key) return [];
+  return [...cache.entries()]
+    .filter(([, entry]) => normalizeUzbek(entry.translation) === key || entry.translation.split(/[,;]/).some(part => normalizeUzbek(part) === key))
+    .map(([word, entry]) => ({ word, ...entry }))
+    .filter(entry => entry.example && entry.exampleUz)
+    .slice(0, 6);
+};
+
+const lookupPhraseTranslation = (text, sourceLanguage) => {
+  if (!cache) cache = build();
+  const key = normalizeUzbek(text);
+  const source = sourceLanguage === 'uz' ? 'exampleUz' : 'example';
+  const target = sourceLanguage === 'uz' ? 'example' : 'exampleUz';
+  for (const entry of cache.values()) {
+    if (entry[source] && entry[target] && normalizeUzbek(entry[source]) === key) return entry[target];
+  }
+  return '';
+};
+
+module.exports = { lookupTranslation, lookupEntry, lookupUzbekEntries, lookupPhraseTranslation };

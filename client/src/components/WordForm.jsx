@@ -2,10 +2,13 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Loader2, Plus, AlertTriangle, Sparkles, CornerDownLeft } from "lucide-react";
+import { Loader2, Plus, AlertTriangle, Sparkles, CornerDownLeft, Mic, MicOff } from "lucide-react";
+import { Segmented } from './ui/primitives';
+import UzbekWordForm from './UzbekWordForm';
+import { useSpeechInput } from '../hooks/useSpeechInput';
 import { suggestWords, preloadWordlist } from '@/utils/wordSuggest';
 
-const WordForm = ({ onAddWord, existingWords = [] }) => {
+const EnglishWordForm = ({ onAddWord, existingWords = [] }) => {
   const [word, setWord] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -26,6 +29,7 @@ const WordForm = ({ onAddWord, existingWords = [] }) => {
   const inputRef = useRef(null);
   /** Sekin kelgan eski javob yangisini bosib ketmasligi uchun */
   const requestRef = useRef(0);
+  const speech = useSpeechInput({ lang: 'en-US', onResult: value => { setWord(value); setError(null); setDismissed(false); } });
 
   // Foydalanuvchida allaqachon bor so'zlarni taklif qilmaymiz — bosilsa
   // serverdan DUPLICATE xatosi kelardi
@@ -225,6 +229,10 @@ const WordForm = ({ onAddWord, existingWords = [] }) => {
         </AnimatePresence>
       </div>
 
+      {speech.supported && <Button type="button" variant={speech.listening ? 'destructive' : 'outline'} onClick={speech.toggle} disabled={loading}>{speech.listening ? <MicOff /> : <Mic />} Inglizcha aytish</Button>}
+      {speech.interim && <p className="text-sm text-muted-foreground">{speech.interim}</p>}
+      {speech.error && <p role="alert" className="text-sm text-destructive">{speech.error}</p>}
+
       <AnimatePresence initial={false}>
         {error && (
           <motion.div
@@ -303,6 +311,14 @@ const WordForm = ({ onAddWord, existingWords = [] }) => {
       )}
     </form>
   );
+};
+
+const WordForm = props => {
+  const [language, setLanguage] = useState('en');
+  return <div className="space-y-4">
+    <Segmented ariaLabel="Kiritish tili" layoutId="word-input-language" value={language} onChange={setLanguage} options={[{ value: 'en', label: 'Inglizcha' }, { value: 'uz', label: "O'zbekcha" }]} />
+    {language === 'uz' ? <UzbekWordForm {...props} /> : <EnglishWordForm {...props} />}
+  </div>;
 };
 
 export default WordForm;

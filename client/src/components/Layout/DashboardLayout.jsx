@@ -1,13 +1,14 @@
 import React, { useEffect } from 'react';
 import { useLocation, useOutlet } from 'react-router-dom';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { AnimatePresence, motion } from 'motion/react';
 import Sidebar from '../Sidebar';
 import OnboardingModal from '../Onboarding/OnboardingModal';
 import InstallPrompt from '../InstallPrompt';
 import { SplashScreen } from '../brand/SplashScreen';
 import { MobileTopBar, MobileTabBar } from './MobileNav';
-import { useGetMeQuery } from '../../features/api/apiSlice';
+import { apiSlice, useGetMeQuery } from '../../features/api/apiSlice';
+import { watchDayChange } from '../../utils/dayRefresh';
 import EmailVerifyBanner from '../EmailVerifyBanner';
 
 /**
@@ -20,6 +21,7 @@ import EmailVerifyBanner from '../EmailVerifyBanner';
  * YANGI sahifani ko'rsatib qo'yardi.
  */
 const DashboardLayout = () => {
+  const dispatch = useDispatch();
   const authUser = useSelector((state) => state.auth.user);
   const token = useSelector((state) => state.auth.token);
   const location = useLocation();
@@ -28,6 +30,14 @@ const DashboardLayout = () => {
   const { data: fullUser, isLoading } = useGetMeQuery(undefined, { skip: !token });
   const user = fullUser || authUser;
   const isOnboardingComplete = user?.onboarding?.completed === true;
+
+  useEffect(() => {
+    if (!token || !user?.today) return;
+    return watchDayChange({
+      timezone: user.timezone, today: user.today,
+      refresh: () => dispatch(apiSlice.util.invalidateTags(['User', 'Topic', 'Word', 'Speak', 'Listening'])),
+    });
+  }, [dispatch, token, user?.timezone, user?.today]);
 
   // Yangi sahifa tepadan boshlansin
   useEffect(() => {

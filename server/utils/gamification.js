@@ -22,6 +22,9 @@ const WEEKDAYS_UZ = ['Ya', 'Du', 'Se', 'Ch', 'Pa', 'Ju', 'Sh'];
  */
 const buildWeek = (user, todayKey) => {
   const planDays = new Set(user.activity?.planDays || []);
+  const studyDays = new Set(user.activity?.studyDays || []);
+  const q = user.dailyQuests || {};
+  if (q.date === todayKey && (q.topicCompleted || q.speakCompleted || q.listeningCompleted || q.reviewedCount > 0)) studyDays.add(todayKey);
   const frozenDays = new Set(user.activity?.frozenDays || []);
   const legacy = planDays.size === 0 && (user.currentStreak || 0) > 0 && user.lastStreakDay;
   const legacyStart = legacy ? shiftDayKey(user.lastStreakDay, -((user.currentStreak || 1) - 1)) : null;
@@ -34,6 +37,7 @@ const buildWeek = (user, todayKey) => {
     if (planDays.has(key)) status = 'done';
     else if (frozenDays.has(key)) status = 'frozen';
     else if (legacy && daysBetween(legacyStart, key) >= 0 && daysBetween(key, user.lastStreakDay) >= 0) status = 'done';
+    else if (studyDays.has(key)) status = 'active';
     else if (key === todayKey) status = 'today';
     else if (createdKey && daysBetween(createdKey, key) < 0) status = 'none';
     else status = 'missed';
@@ -208,6 +212,7 @@ const completeDailyStep = (user, step, todayKey) => {
   if (!key) throw new Error(`Noma'lum qadam: ${step}`);
 
   rollDailyQuests(user, todayKey);
+  if (step !== 'review' || !user.dailyQuests.reviewSkipped) recordActivityDay(user, 'studyDays', todayKey);
 
   let xpAwarded = 0;
   const stepNewlyCompleted = !user.dailyQuests[key];
@@ -291,6 +296,7 @@ module.exports = {
   completeDailyStep,
   isPlanComplete,
   buildWeek,
+  recordActivityDay,
   dailyStepMessage,
   grantMonthlyFreezes,
   enrichUserProfile,
