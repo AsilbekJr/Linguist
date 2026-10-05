@@ -1,16 +1,18 @@
-import React, { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AnimatePresence, motion } from 'motion/react';
-import { BookOpen, BookHeart, PartyPopper, Plus, Repeat2, CheckCircle2 } from 'lucide-react';
+import { BookOpen, BookHeart, PartyPopper, Plus, Repeat2, CheckCircle2, WifiOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { IconTile, Skeleton } from '@/components/ui/primitives';
+import { EmptyState, IconTile, Skeleton } from '@/components/ui/primitives';
 import { fireConfetti } from '../../utils/celebration';
 import { track, EVENTS } from '../../lib/analytics';
 import { toast } from 'react-hot-toast';
 import { useGetReviewDueQuery, useCompleteReviewDayMutation, useGetPhrasesDueQuery } from '../../features/api/apiSlice';
 import ReviewRunner from './ReviewRunner';
 import PhraseReview from './PhraseReview';
+
+const EMPTY_QUEUE = [];
 
 /**
  * "Bugun" — kunlik takrorlashning O'ZI.
@@ -21,11 +23,11 @@ import PhraseReview from './PhraseReview';
  * Endi navbat shu yerda ochiladi.
  */
 const TodayHub = ({ user, totalWords = 0 }) => {
-  const { data: dueWords = [], isLoading, isFetching, refetch } = useGetReviewDueQuery();
+  const { data: dueWords = EMPTY_QUEUE, isLoading, isFetching, isError, refetch } = useGetReviewDueQuery();
   const [completeReviewDay] = useCompleteReviewDayMutation();
   // Sahnada yodlangan iboralar — so'zlardan oldin. Sessiya boshida muzlatiladi:
   // javobdan keyin ro'yxat qayta yuklansa ham karta ko'z oldidan yo'qolmasin
-  const { data: duePhrases = [], isFetching: phrasesFetching, refetch: refetchPhrases } = useGetPhrasesDueQuery();
+  const { data: duePhrases = EMPTY_QUEUE, isLoading: phrasesLoading, isFetching: phrasesFetching, isError: phrasesError, refetch: refetchPhrases } = useGetPhrasesDueQuery();
   const [phraseSession, setPhraseSession] = useState(null);
   const reviewedPhraseIdsRef = useRef(new Set());
   useEffect(() => {
@@ -70,7 +72,7 @@ const TodayHub = ({ user, totalWords = 0 }) => {
   const reviewedToday = reviewDoneToday && !quests.reviewSkipped;
 
   /** Server qaytargan kunlik reja natijasi — xabar va bayram */
-  const handleDailyStep = (step) => {
+  const handleDailyStep = useCallback((step) => {
     if (!step) return;
     if (step.message) toast.success(step.message);
     if (step.planCompleted && step.streakUpdated && !celebratedRef.current) {
@@ -82,7 +84,7 @@ const TodayHub = ({ user, totalWords = 0 }) => {
         totalWords,
       });
     }
-  };
+  }, [user?.level, totalWords]);
 
   /**
    * Navbat bo'sh kun: takrorlash qadamini yopamiz. Busiz takrorlaydigan so'zi
@@ -91,7 +93,7 @@ const TodayHub = ({ user, totalWords = 0 }) => {
    */
   const closingDayRef = useRef(false);
   useEffect(() => {
-    if (isLoading || isFetching || session || dueWords.length > 0) return;
+    if (isLoading || isFetching || isError || phrasesError || session || dueWords.length > 0) return;
     // Ibora kartalari ham takrorlash qadamining bir qismi
     if (phrasesActive || phrasesFetching || duePhrases.length > 0) return;
     if (!user?.today || reviewDoneToday || closingDayRef.current) return;
@@ -103,21 +105,31 @@ const TodayHub = ({ user, totalWords = 0 }) => {
         // 409 — navbatda so'z paydo bo'lgan; keyingi yuklanishda qayta uriniladi
         closingDayRef.current = false;
       });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isLoading, isFetching, session, dueWords.length, user?.today, reviewDoneToday, phrasesActive, phrasesFetching, duePhrases.length]);
+  }, [isLoading, isFetching, isError, phrasesError, session, dueWords.length, user?.today, reviewDoneToday, phrasesActive, phrasesFetching, duePhrases.length, completeReviewDay, handleDailyStep]);
 
-  const handleChecked = (wordId, result) => {
+  const handleChecked = useCallback((wordId, result) => {
     reviewedIdsRef.current.add(wordId);
     handleDailyStep(result?.dailyStep);
-  };
+  }, [handleDailyStep]);
 
   // Navbat tugadi — qadamni server /check ichida allaqachon belgilagan
-  const handleFinished = () => {
+  const handleFinished = useCallback(() => {
     setFinished(true);
     setSession(null);
     // Xato qilingan yoki sahnadan qo'shilgan so'zlar navbatga tushgan bo'lishi mumkin
     refetch();
-  };
+  }, [refetch]);
+
+  const handlePhraseChecked = useCallback((id, result) => {
+    reviewedPhraseIdsRef.current.add(id);
+    handleDailyStep(result?.dailyStep);
+  }, [handleDailyStep]);
+
+  const handlePhrasesFinished = useCallback(() => {
+    setPhraseSession(null);
+    refetch();
+    refetchPhrases();
+  }, [refetch, refetchPhrases]);
 
   const remaining =
     (session?.length ?? dueWords.length) + (phraseSession?.length ?? duePhrases.filter(phrase => !reviewedPhraseIdsRef.current.has(phrase._id)).length);
@@ -190,12 +202,16 @@ const TodayHub = ({ user, totalWords = 0 }) => {
 
       <div className="relative">
         <AnimatePresence mode="wait" initial={false}>
-          {isLoading ? (
+          {(isLoading || phrasesLoading) && !session && !phrasesActive ? (
             <motion.div key="loading" exit={{ opacity: 0 }} className="space-y-4" aria-busy="true">
               <Skeleton className="h-2 w-full rounded-full" />
               <Skeleton className="h-40 rounded-2xl" />
               <Skeleton className="h-12 rounded-xl" />
             </motion.div>
+          ) : (isError || phrasesError) && !session && !phrasesActive ? (
+            <EmptyState icon={WifiOff} tone="warning" title="Takrorlashni yuklab bo'lmadi" description="Internet aloqasini tekshiring. Navbat yuklangach davom etishingiz mumkin.">
+              <Button disabled={isFetching || phrasesFetching} onClick={() => { refetch(); refetchPhrases(); }}>Qayta urinish</Button>
+            </EmptyState>
           ) : phrasesActive ? (
             <motion.div
               key={`phrases:${phraseSession[0]._id}`}
@@ -206,15 +222,8 @@ const TodayHub = ({ user, totalWords = 0 }) => {
             >
               <PhraseReview
                 phrases={phraseSession}
-                onChecked={(id, res) => {
-                  reviewedPhraseIdsRef.current.add(id);
-                  handleDailyStep(res?.dailyStep);
-                }}
-                onFinished={() => {
-                  setPhraseSession(null);
-                  refetch();
-                  refetchPhrases();
-                }}
+                onChecked={handlePhraseChecked}
+                onFinished={handlePhrasesFinished}
               />
             </motion.div>
           ) : session?.length ? (

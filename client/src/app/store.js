@@ -13,7 +13,6 @@ import {
 } from 'redux-persist';
 import storage from 'redux-persist/lib/storage';
 import { apiSlice } from '../features/api/apiSlice';
-import uiReducer from '../features/ui/uiSlice';
 import authReducer from '../features/auth/authSlice';
 import { sanitizePersistedApi } from './persistedApi';
 
@@ -33,7 +32,6 @@ const authTransform = createTransform(stripToken, stripToken, { whitelist: ['aut
 
 const rootReducer = combineReducers({
   [apiSlice.reducerPath]: apiSlice.reducer,
-  ui: uiReducer,
   auth: authReducer,
 });
 

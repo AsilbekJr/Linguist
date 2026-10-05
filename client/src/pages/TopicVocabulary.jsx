@@ -188,30 +188,32 @@ const TopicQuiz = ({ quiz, onPass, onBack, submitQuiz, isSubmitting }) => {
 };
 
 /** So'zlar → dialog → mini-test → yod olish → sizning so'zlaringiz → yakunlash */
-const Stepper = ({ current, quizPassed, hasDialogue, shadowDone, hasActive, activeDone }) => {
+const Stepper = ({ current, quizPassed, hasDialogue, hasMemorize, shadowDone, hasActive, activeDone }) => {
   const steps = [
-    { key: 'learn', label: "So'zlar", done: quizPassed || current !== 'learn' },
+    { key: 'learn', label: "So'zlar", done: quizPassed },
     ...(hasDialogue ? [{ key: 'dialog', label: 'Dialog', done: quizPassed }] : []),
     { key: 'quiz', label: 'Mini-test', done: quizPassed },
-    ...(hasDialogue ? [{ key: 'shadow', label: 'Yod olish', done: shadowDone }] : []),
+    ...(hasMemorize ? [{ key: 'shadow', label: 'Yod olish', done: shadowDone }] : []),
     ...(hasActive ? [{ key: 'active', label: "So'zlaringiz", done: activeDone }] : []),
     { key: 'finish', label: 'Yakunlash', done: false },
   ];
+  const currentIndex = Math.max(0, steps.findIndex(s => s.key === current));
   return (
+    <div className="space-y-2">
     <ol className="flex items-center gap-2" aria-label="Sahna qadamlari">
       {steps.map((s, i) => {
         const active = s.key === current;
         return (
-          <li key={s.key} className="flex flex-1 items-center gap-2">
+          <li key={s.key} aria-current={active ? 'step' : undefined} aria-label={s.label} className="flex flex-1 items-center gap-2">
             <span
               className={cn(
                 'inline-flex size-7 shrink-0 items-center justify-center rounded-full text-xs font-bold transition-colors',
-                s.done ? 'bg-success text-success-foreground' : active ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
+                active ? 'bg-primary text-primary-foreground' : s.done || i < currentIndex ? 'bg-success text-success-foreground' : 'bg-muted text-muted-foreground'
               )}
             >
-              {s.done ? <Check className="size-4" strokeWidth={3} /> : i + 1}
+              {!active && (s.done || i < currentIndex) ? <Check className="size-4" strokeWidth={3} /> : i + 1}
             </span>
-            <span className={cn('hidden text-sm font-semibold sm:inline', active ? 'text-foreground' : 'text-muted-foreground')}>
+            <span className={cn('sr-only text-sm font-semibold sm:not-sr-only', active ? 'text-foreground' : 'text-muted-foreground')}>
               {s.label}
             </span>
             {i < steps.length - 1 && <span className="h-px flex-1 bg-border" />}
@@ -219,6 +221,8 @@ const Stepper = ({ current, quizPassed, hasDialogue, shadowDone, hasActive, acti
         );
       })}
     </ol>
+    <p className="text-xs text-muted-foreground">{currentIndex + 1}/{steps.length} qadam · {steps[currentIndex].label}</p>
+    </div>
   );
 };
 
@@ -459,7 +463,7 @@ const TopicLesson = ({ topicData }) => {
     );
   }
 
-  const progressStep = ['dialog', 'quiz', 'shadow', 'active'].includes(step) ? step : quizPassed ? 'finish' : 'learn';
+  const progressStep = step === 'intro' ? (quizPassed ? pendingStep || 'finish' : 'learn') : step;
 
   return (
     <div className="mx-auto max-w-3xl">
@@ -481,7 +485,8 @@ const TopicLesson = ({ topicData }) => {
         <Stepper
           current={progressStep}
           quizPassed={quizPassed}
-          hasDialogue={hasMemorize}
+          hasDialogue={Boolean(topicData.dialogue?.length)}
+          hasMemorize={hasMemorize}
           shadowDone={shadowDone}
           hasActive={hasActive}
           activeDone={activeDone}

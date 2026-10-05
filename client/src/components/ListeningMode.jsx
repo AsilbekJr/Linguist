@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { AnimatePresence, motion } from 'motion/react';
 import {
@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/input';
 import { EmptyState, PageHeader, PageSkeleton, ProgressBar } from '@/components/ui/primitives';
 import { cn } from '@/lib/utils';
-import { playTTSAudio } from '../utils/audio';
+import { playTTSAudio, stopTTSAudio } from '../utils/audio';
 import { fireConfetti } from '../utils/celebration';
 import { track, EVENTS } from '../lib/analytics';
 
@@ -38,7 +38,7 @@ const TOKEN_TITLES = { missing: "Bu so'z yozilmagan", extra: "Ortiqcha so'z", co
  * ochmaydi, shuning uchun "aldash" faqat aldayotgan odamga zarar.
  */
 const ListeningMode = () => {
-  const { data: session, isLoading } = useGetListeningSessionQuery();
+  const { data: session, isLoading, isError, refetch } = useGetListeningSessionQuery();
   const [checkDictation, { isLoading: isChecking }] = useCheckDictationMutation();
   const [completeListening] = useCompleteListeningMutation();
 
@@ -50,20 +50,27 @@ const ListeningMode = () => {
   const [finished, setFinished] = useState(false);
   const [playing, setPlaying] = useState(null);
   const inputRef = useRef(null);
+  const playbackTimerRef = useRef(null);
 
   const lines = session?.lines || [];
   const line = lines[index];
+
+  useEffect(() => {
+    const timer = setTimeout(() => inputRef.current?.focus({ preventScroll: true }), 300);
+    return () => { clearTimeout(timer); clearTimeout(playbackTimerRef.current); stopTTSAudio(); };
+  }, [index]);
 
   const speak = (rate, key) => {
     if (!line) return;
     setPlaying(key);
     playTTSAudio(line.en, 'en-GB', rate);
     // speechSynthesis tugaganini ishonchli bildirmaydi — taxminiy davomiylik
-    setTimeout(() => setPlaying(null), Math.max(1500, line.en.length * 70 / rate));
+    clearTimeout(playbackTimerRef.current);
+    playbackTimerRef.current = setTimeout(() => setPlaying(null), Math.max(1500, line.en.length * 70 / rate));
   };
 
   const handleCheck = async () => {
-    if (!typed.trim() || !line) return;
+    if (!typed.trim() || !line || isChecking) return;
     try {
       const res = await checkDictation({ lineIndex: line.index, typed }).unwrap();
       setResult(res);
@@ -77,10 +84,12 @@ const ListeningMode = () => {
     setResult(null);
     setTyped('');
     setRevealed(false);
+    clearTimeout(playbackTimerRef.current);
+    stopTTSAudio();
+    setPlaying(null);
 
     if (index < lines.length - 1) {
       setIndex((i) => i + 1);
-      setTimeout(() => inputRef.current?.focus(), 300);
       return;
     }
 
@@ -100,6 +109,8 @@ const ListeningMode = () => {
   };
 
   if (isLoading) return <PageSkeleton cards={1} />;
+
+  if (!session && isError) return <EmptyState icon={Headphones} tone="warning" title="Tinglashni yuklab bo'lmadi" description="Internet aloqasini tekshirib, qayta urinib ko'ring."><Button onClick={refetch}>Qayta urinish</Button></EmptyState>;
 
   if (!lines.length) {
     return (
@@ -205,6 +216,7 @@ const ListeningMode = () => {
                 ref={inputRef}
                 rows={3}
                 value={typed}
+                disabled={isChecking}
                 onChange={(e) => setTyped(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && !e.shiftKey) {

@@ -65,6 +65,7 @@ const Memorize = ({ lines = [], targets = [], startRound = 1, onMandatoryDone, o
 
   const item = queue[pos];
   const line = item ? lines[item.i] : null;
+  const lineText = line?.en;
   const meta = ROUNDS[round - 1];
   const parts = useMemo(() => (line ? maskLine(line.en, round, targets) : []), [line, round, targets]);
 
@@ -75,13 +76,13 @@ const Memorize = ({ lines = [], targets = [], startRound = 1, onMandatoryDone, o
 
   // 1-davrada gap o'zi eshittiriladi; keyingi davralarda — faqat so'ralsa (javobni ochib qo'ymasin)
   useEffect(() => {
-    if (line && round === 1 && !summary) playTTSAudio(line.en, 'en-GB', 0.9);
-  }, [line, round, summary]);
+    if (lineText && round === 1 && !summary) return playTTSAudio(lineText, 'en-GB', 0.9);
+  }, [lineText, round, summary]);
 
   const passed = attempt && attempt.match.percent >= PASS_PERCENT;
 
   const resetLine = () => {
-    speech.stop();
+    speech.cancel();
     setAttempt(null);
     setPeek(false);
     setTyped('');

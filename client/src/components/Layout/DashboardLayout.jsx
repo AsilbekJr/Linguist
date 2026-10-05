@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react';
-import { useLocation, useOutlet } from 'react-router-dom';
+import { useEffect } from 'react';
+import { Link, useLocation, useOutlet } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { AnimatePresence, motion } from 'motion/react';
 import Sidebar from '../Sidebar';
@@ -10,6 +10,9 @@ import { MobileTopBar, MobileTabBar } from './MobileNav';
 import { apiSlice, useGetMeQuery } from '../../features/api/apiSlice';
 import { watchDayChange } from '../../utils/dayRefresh';
 import EmailVerifyBanner from '../EmailVerifyBanner';
+import { stopTTSAudio } from '../../utils/audio';
+import { titleForPath } from './nav';
+import { ChevronRight } from 'lucide-react';
 
 /**
  * Ilova qobig'i.
@@ -42,6 +45,7 @@ const DashboardLayout = () => {
   // Yangi sahifa tepadan boshlansin
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'instant' });
+    return stopTTSAudio;
   }, [location.pathname]);
 
   // Login paytida saqlangan profil bo'lsa kutmaymiz: sahifa darhol chiziladi,
@@ -68,15 +72,24 @@ const DashboardLayout = () => {
 
   return (
     <div className="app-backdrop min-h-dvh bg-background text-foreground">
+      <a href="#main" className="sr-only z-50 rounded-xl bg-card px-4 py-3 font-bold focus:not-sr-only focus:fixed focus:left-4 focus:top-4">Asosiy mazmunga o'tish</a>
       <Sidebar user={user} />
       <MobileTopBar user={user} />
 
       <div className="lg:pl-[272px]">
         <main
           id="main"
+          tabIndex={-1}
           className="mx-auto w-full max-w-6xl px-4 pb-[calc(env(safe-area-inset-bottom,0px)+6.5rem)] pt-5 sm:px-6 lg:px-10 lg:pb-12 lg:pt-10"
         >
           <EmailVerifyBanner user={user} />
+          {location.pathname !== '/' && (
+            <nav aria-label="Sahifa yo‘li" className="mb-5 flex items-center gap-2 text-sm">
+              <Link to="/" className="rounded font-semibold text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Bugun</Link>
+              <ChevronRight aria-hidden="true" className="size-4 text-muted-foreground" />
+              <span aria-current="page" className="font-semibold text-muted-foreground">{titleForPath(location.pathname)}</span>
+            </nav>
+          )}
           <AnimatePresence mode="wait" initial={false}>
             <motion.div
               key={location.pathname}

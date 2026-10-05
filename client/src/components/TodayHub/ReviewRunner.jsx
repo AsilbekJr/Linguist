@@ -842,4 +842,4 @@ const ReviewRunner = ({ words, onChecked, onFinished }) => {
   );
 };
 
-export default ReviewRunner;
+export default React.memo(ReviewRunner);

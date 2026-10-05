@@ -98,11 +98,17 @@ const Dashboard = () => {
 
   // Butun lug'at (/api/words — 400 so'zda ~180 KB) bu yerda YUKLANMAYDI: sonlar
   // profilda keladi (totalWords, knownWords).
-  const { data: dueWords = [], isLoading: isLoadingDue } = useGetReviewDueQuery();
-  const { data: duePhrases = [] } = useGetPhrasesDueQuery();
+  const { count: dueWordCount, isLoading: wordsLoading, isError: wordsError } = useGetReviewDueQuery(undefined, {
+    selectFromResult: ({ data, isLoading, isError }) => ({ count: data?.length ?? 0, isLoading, isError }),
+  });
+  const { count: duePhraseCount, isLoading: phrasesLoading, isError: phrasesError } = useGetPhrasesDueQuery(undefined, {
+    selectFromResult: ({ data, isLoading, isError }) => ({ count: data?.length ?? 0, isLoading, isError }),
+  });
   const { data: speak } = useGetSpeakTodayQuery();
   const { entries: diary } = useDiaryEntries();
-  const dueCards = dueWords.length + duePhrases.length;
+  const dueCards = dueWordCount + duePhraseCount;
+  const isLoadingDue = wordsLoading || phrasesLoading;
+  const reviewError = wordsError || phrasesError;
 
   // Profil (login paytida saqlangan yoki keshdagi) bo'lsa skelet ko'rsatilmaydi
   if (!user && isLoadingUser) return <DashboardSkeleton />;
@@ -124,8 +130,8 @@ const Dashboard = () => {
     ? { key: 'topic', label: topicName ? `Sahnani boshlash: ${topicName}` : 'Sahnani boshlash', run: () => navigate('/topic') }
     : !speakDone
       ? { key: 'speak', label: partnerName ? `${partnerName} bilan suhbat` : 'Suhbatga o\'tish', run: () => navigate('/speak') }
-      : !reviewDone && !reviewSkipped && dueCards > 0
-        ? { key: 'review', label: `Takrorlash · ${dueCards} ta karta`, run: scrollToReview }
+      : !reviewDone && !reviewSkipped && (dueCards > 0 || reviewError || isLoadingDue)
+        ? { key: 'review', label: reviewError ? 'Takrorlashni qayta yuklash' : isLoadingDue ? 'Takrorlashni ochish' : `Takrorlash · ${dueCards} ta karta`, run: scrollToReview }
         : null;
 
   return (
@@ -190,7 +196,9 @@ const Dashboard = () => {
                   hint={
                     reviewDone
                       ? 'Bajarildi'
-                      : isLoadingDue
+                      : reviewError
+                        ? "Qayta yuklash kerak"
+                        : isLoadingDue
                         ? 'Yuklanmoqda…'
                         : dueCards
                           ? `${dueCards} ta karta kutmoqda`

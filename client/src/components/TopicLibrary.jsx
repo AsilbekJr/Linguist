@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { motion } from 'motion/react';
 import { toast } from 'react-hot-toast';
 import { BadgeCheck, Check, CheckCircle2, Library, Loader2, Plus, Volume2 } from 'lucide-react';
@@ -19,7 +19,7 @@ const EASE = [0.16, 1, 0.3, 1];
 
 /** Bitta mavzuning so'zlari — qo'shish shu yerda */
 const TopicWords = ({ topicId }) => {
-  const { data: topic, isLoading, isError } = useGetVocabTopicQuery(topicId);
+  const { data: topic, isLoading, isError, refetch } = useGetVocabTopicQuery(topicId);
   const [addWords] = useAddVocabTopicWordsMutation();
   const [markKnown] = useMarkVocabTopicKnownMutation();
   // Qaysi so'z ustida amal bajarilmoqda; '*' — hammasi
@@ -35,7 +35,7 @@ const TopicWords = ({ topicId }) => {
     );
   }
   if (isError || !topic) {
-    return <p className="text-sm text-destructive">Mavzuni yuklab bo&apos;lmadi. Qayta urinib ko&apos;ring.</p>;
+    return <EmptyState icon={Library} tone="warning" title="Mavzuni yuklab bo'lmadi"><Button onClick={refetch}>Qayta urinish</Button></EmptyState>;
   }
 
   const unsaved = topic.words.filter((w) => !w.saved).length;

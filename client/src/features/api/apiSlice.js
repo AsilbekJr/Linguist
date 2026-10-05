@@ -116,7 +116,7 @@ export const apiSlice = createApi({
   refetchOnFocus: true,
   refetchOnReconnect: true,
   baseQuery: baseQueryWithReauth,
-  tagTypes: ['Word', 'Topic', 'User', 'Billing', 'Listening', 'Notifications', 'Push', 'Telegram', 'VocabTopic', 'Speak'],
+  tagTypes: ['Word', 'Phrase', 'Topic', 'User', 'Billing', 'Listening', 'Notifications', 'Push', 'Telegram', 'VocabTopic', 'Speak'],
   endpoints: (builder) => ({
     getWords: builder.query({
       query: () => '/api/words',
@@ -136,11 +136,11 @@ export const apiSlice = createApi({
     }),
     getPhrases: builder.query({
       query: () => '/api/review/phrases',
-      providesTags: ['Word'],
+      providesTags: ['Word', 'Phrase'],
     }),
     addPhrase: builder.mutation({
       query: (body) => ({ url: '/api/review/phrases', method: 'POST', body }),
-      invalidatesTags: ['Word', 'User'],
+      invalidatesTags: ['Phrase', 'User'],
     }),
     translatePhrase: builder.mutation({
       query: (body) => ({ url: '/api/review/phrases/translate', method: 'POST', body }),
@@ -163,12 +163,12 @@ export const apiSlice = createApi({
     /** Sahnada yodlangan iboralar — o'zbekcha ma'nodan butun gapni aytish */
     getPhrasesDue: builder.query({
       query: () => '/api/review/phrases/due',
-      providesTags: ['Word'],
+      providesTags: ['Word', 'Phrase'],
       keepUnusedDataFor: 60,
     }),
     checkPhrase: builder.mutation({
       query: ({ id, answer, source }) => ({ url: `/api/review/phrases/${id}/check`, method: 'POST', body: { answer, source } }),
-      invalidatesTags: ['Word', 'User'],
+      invalidatesTags: ['Phrase', 'User'],
     }),
     getReviewDue: builder.query({
       query: () => '/api/review/due',
@@ -223,11 +223,6 @@ export const apiSlice = createApi({
       }),
       invalidatesTags: ['User'],
     }),
-    getReviewStats: builder.query({
-      query: () => '/api/review/stats',
-      providesTags: ['Word'],
-      keepUnusedDataFor: 60,
-    }),
     getListeningSession: builder.query({
       query: () => '/api/listening/session',
       providesTags: ['Listening'],
@@ -256,11 +251,6 @@ export const apiSlice = createApi({
     getActiveWords: builder.query({
       query: () => '/api/topics/active-words',
       providesTags: ['Topic'],
-    }),
-    getTopicBacklog: builder.query({
-      query: () => '/api/topics/backlog',
-      providesTags: ['Topic'],
-      keepUnusedDataFor: 120,
     }),
     /**
      * Mini-testni boshlash. Savollar SERVERDA yaratiladi va to'g'ri javob
@@ -384,10 +374,6 @@ export const apiSlice = createApi({
       query: (body) => ({ url: '/api/placement/answer', method: 'POST', body }),
       invalidatesTags: (result) => (result?.done ? ['User', 'Topic', 'Listening'] : []),
     }),
-    getPlacementResult: builder.query({
-      query: () => '/api/placement/result',
-      providesTags: ['User'],
-    }),
     forgotPassword: builder.mutation({
       query: (email) => ({
         url: '/api/auth/forgot-password',
@@ -493,12 +479,6 @@ export const apiSlice = createApi({
       }),
       invalidatesTags: ['User', 'Topic', 'Word', 'Speak', 'Listening'],
     }),
-    refreshToken: builder.mutation({
-      query: () => ({
-        url: '/api/auth/refresh',
-        method: 'POST',
-      }),
-    }),
     logoutSession: builder.mutation({
       query: () => ({
         url: '/api/auth/logout',
@@ -551,7 +531,6 @@ export const {
   useRelearnWordMutation,
   useMarkWordKnownMutation,
   useAnalyzeSentenceMutation,
-  useGetReviewStatsQuery,
   useGetListeningSessionQuery,
   useCheckDictationMutation,
   useCompleteListeningMutation,
@@ -572,12 +551,10 @@ export const {
   useUnsubscribeMutation,
   useStartPlacementMutation,
   useAnswerPlacementMutation,
-  useGetPlacementResultQuery,
   useGetMeQuery,
   useGetReviewDueQuery,
   useGetCurrentTopicQuery,
   useGetActiveWordsQuery,
-  useGetTopicBacklogQuery,
   useStartTopicQuizMutation,
   useSubmitTopicQuizMutation,
   useFinishTopicDayMutation,
@@ -589,7 +566,6 @@ export const {
   useChangePasswordMutation,
   useDeleteAccountMutation,
   useSetTimezoneMutation,
-  useRefreshTokenMutation,
   useLogoutSessionMutation,
   useRestoreSessionMutation,
   useVerifyEmailMutation,

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, Suspense, lazy } from "react";
+import { useState, useEffect, Suspense, lazy } from "react";
 import { Routes, Route, Navigate, useNavigate, useLocation } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { logout } from "./features/auth/authSlice";
@@ -52,6 +52,12 @@ function App() {
   } = useGetMeQuery(undefined, { skip: !token });
   const [setTimezone] = useSetTimezoneMutation();
   const [restoreSession] = useRestoreSessionMutation();
+  const userId = me?._id;
+  const userLevel = me?.onboarding?.level;
+  const userGoal = me?.onboarding?.goal;
+  const userPlan = me?.subscription?.plan;
+  const userStreak = me?.currentStreak;
+  const userTimezone = me?.timezone;
 
   // Access token faqat xotirada: sahifa qayta ochilganda uni refresh cookie
   // orqali tiklaymiz. Shu vaqtda UI saqlangan keshdan chiziladi, so'rovlar
@@ -71,14 +77,14 @@ function App() {
   // Anonim ID'ni haqiqiy foydalanuvchiga bog'lash — busiz funnel
   // ro'yxatdan o'tish nuqtasida uzilib qoladi
   useEffect(() => {
-    if (!me?._id) return;
-    identify(me._id, {
-      level: me.onboarding?.level,
-      goal: me.onboarding?.goal,
-      plan: me.subscription?.plan,
-      streak: me.currentStreak,
+    if (!userId) return;
+    identify(userId, {
+      level: userLevel,
+      goal: userGoal,
+      plan: userPlan,
+      streak: userStreak,
     });
-  }, [me]);
+  }, [userId, userLevel, userGoal, userPlan, userStreak]);
 
   /**
    * Brauzer zonasini serverga yuboramiz.
@@ -87,16 +93,16 @@ function App() {
    * yozilardi va foydalanuvchi streak'ini bekorga yo'qotardi.
    */
   useEffect(() => {
-    if (!isAuthenticated || !me) return;
+    if (!isAuthenticated || !userId) return;
     const browserZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    if (browserZone && browserZone !== me.timezone) {
+    if (browserZone && browserZone !== userTimezone) {
       setTimezone(browserZone)
         .unwrap()
         .catch(() => {
           // muhim emas — server default zonaga qaytadi
         });
     }
-  }, [isAuthenticated, me, setTimezone]);
+  }, [isAuthenticated, userId, userTimezone, setTimezone]);
 
   useEffect(() => {
     if (!isAuthenticated) return;

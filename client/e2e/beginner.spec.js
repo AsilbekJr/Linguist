@@ -26,6 +26,133 @@ async function setup(page) {
     await route.fulfill({ json: data });
   });
 }
+
+test('microphone stays available after speaking and on the next phrase', async ({ page }) => {
+  await setup(page);
+  await page.addInitScript(() => {
+    window.SpeechRecognition = class {
+      start() {
+        setTimeout(() => {
+          this.onresult?.({ resultIndex: 0, results: [Object.assign([{ transcript: 'I eat an apple.' }], { isFinal: true })] });
+          this.onend?.();
+        }, 0);
+      }
+      stop() { this.onend?.(); }
+      abort() {}
+    };
+  });
+  await page.route(url => url.pathname === '/api/review/phrases/due', route => route.fulfill({ json: [
+    { _id: 'phrase1', textUz: 'Men olma yeyman.', hint: 'I e a a', stage: 0 },
+    { _id: 'phrase2', textUz: 'Men suv ichaman.', hint: 'I d w', stage: 0 },
+  ] }));
+  await page.route(url => url.pathname === '/api/review/phrases/phrase1/check', route => route.fulfill({ json: {
+    isCorrect: true, percent: 100, text: 'I eat an apple.', words: [{ text: 'I eat an apple.', hit: true }], intervalDays: 1,
+  } }));
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Aytish', exact: true }).click();
+  await expect(page.getByRole('textbox', { name: 'Inglizcha gap' })).toHaveValue('I eat an apple.');
+  await expect(page.getByRole('button', { name: 'Aytish', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Gapni tekshirish' }).click();
+  await page.getByRole('button', { name: 'Keyingi', exact: true }).click();
+  await expect(page.getByText('Men suv ichaman.', { exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Aytish', exact: true })).toBeVisible();
+});
+
+test('checking a phrase does not reload unchanged word reviews', async ({ page }) => {
+  await setup(page);
+  let wordRequests = 0;
+  await page.route(url => url.pathname === '/api/review/due', route => {
+    wordRequests++;
+    return route.fulfill({ json: [] });
+  });
+  await page.route(url => url.pathname === '/api/review/phrases/due', route => route.fulfill({ json: [
+    { _id: 'phrase1', textUz: 'Men olma yeyman.', hint: 'I e a a', stage: 0 },
+  ] }));
+  await page.route(url => url.pathname === '/api/review/phrases/phrase1/check', route => route.fulfill({ json: {
+    isCorrect: true, percent: 100, text: 'I eat an apple.', words: [{ text: 'I eat an apple.', hit: true }], intervalDays: 1,
+  } }));
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Yozib javob berish' }).click();
+  await page.getByRole('textbox', { name: 'Inglizcha gap' }).fill('I eat an apple.');
+  const before = wordRequests;
+  const refreshed = page.waitForResponse(response => new URL(response.url()).pathname === '/api/review/phrases/due');
+  await page.getByRole('button', { name: 'Gapni tekshirish' }).click();
+  await refreshed;
+  await expect(page.getByText('Yodingizda!', { exact: false })).toBeVisible();
+  expect(wordRequests).toBe(before);
+});
+
+test('failed review requests show a retry instead of an empty or completed queue', async ({ page }) => {
+  await setup(page);
+  let broken = true;
+  let completed = 0;
+  await page.route(url => url.pathname === '/api/review/due', route => route.fulfill({
+    status: broken ? 503 : 200, json: broken ? { message: 'Unavailable' } : [],
+  }));
+  await page.route(url => url.pathname === '/api/review/complete-day', route => {
+    completed++;
+    return route.fulfill({ json: {} });
+  });
+  await page.goto('/');
+  await expect(page.getByRole('heading', { name: "Takrorlashni yuklab bo'lmadi" })).toBeVisible();
+  expect(completed).toBe(0);
+  broken = false;
+  await page.getByRole('button', { name: 'Qayta urinish', exact: true }).click();
+  await expect(page.getByRole('heading', { name: "Lug'atingiz hali bo'sh" })).toBeVisible();
+});
+
+test('scene progress identifies the current step and offers a clear return to today', async ({ page }) => {
+  await setup(page);
+  await page.goto('/topic');
+  const steps = page.getByRole('list', { name: 'Sahna qadamlari' });
+  await expect(steps.locator('[aria-current="step"]')).toContainText("So'zlar");
+  await page.getByRole('button', { name: /Boshlash|O.rganishni boshlash/ }).click();
+  await page.getByRole('button', { name: /Dialogga o.tish/ }).click();
+  await expect(steps.locator('[aria-current="step"]')).toContainText('Dialog');
+  await page.getByRole('navigation', { name: 'Sahifa yo‘li' }).getByRole('link', { name: 'Bugun' }).click();
+  await expect(page).toHaveURL('/');
+});
+
+test('initial conversation speech plays once under StrictMode', async ({ page }) => {
+  await setup(page);
+  await page.addInitScript(() => {
+    window.playedSpeech = [];
+    Object.defineProperty(window, 'speechSynthesis', { configurable: true, value: {
+      getVoices: () => [], cancel() {}, addEventListener() {},
+      speak(message) { window.playedSpeech.push(message.text); },
+    } });
+    window.SpeechSynthesisUtterance = class { constructor(text) { this.text = text; } };
+  });
+  await page.route(url => url.pathname === '/api/speak/today', route => route.fulfill({ json: {
+    sceneDone: true, canStartNew: true, conversation: {
+      id: 'conversation1', status: 'active', topicUz: 'Salomlashish', partner: { name: 'Anna', emoji: '👋' },
+      targetWords: [], goals: [], turns: [{ role: 'partner', text: 'Hello! How are you?', textUz: 'Salom!' }],
+      userTurns: 0, minTurns: 3, maxTurns: 10, wordsUsed: 0, wordsGoal: 1, canFinish: false,
+    },
+  } }));
+  await page.goto('/speak');
+  await expect(page.getByText('Hello! How are you?', { exact: true })).toBeVisible();
+  await expect.poll(() => page.evaluate(() => window.playedSpeech)).toEqual(['Hello! How are you?']);
+});
+
+test('six scene steps fit a small phone screen', async ({ page }) => {
+  await setup(page);
+  await page.setViewportSize({ width: 320, height: 740 });
+  await page.route(url => url.pathname === '/api/topics/active-words', route => route.fulfill({ json: { items: [{ id: 'active1' }] } }));
+  await page.goto('/topic');
+  await expect(page.getByText('1/6 qadam', { exact: false })).toBeVisible();
+  const size = await page.getByRole('list', { name: 'Sahna qadamlari' }).evaluate(element => ({ width: element.clientWidth, content: element.scrollWidth }));
+  expect(size.content).toBeLessThanOrEqual(size.width);
+  await page.screenshot({ path: 'test-results/scene-mobile.png', fullPage: true });
+});
+
+test('failed listening request offers a retry without claiming the exercise is unavailable', async ({ page }) => {
+  await setup(page);
+  await page.route(url => url.pathname === '/api/listening/session', route => route.fulfill({ status: 503, json: {} }));
+  await page.goto('/listening');
+  await expect(page.getByRole('heading', { name: "Tinglashni yuklab bo'lmadi" })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Qayta urinish' })).toBeVisible();
+});
 test('empty vocabulary learner learns words before the dialogue and quiz', async ({ page }) => {
   await setup(page);
   await page.goto('/topic');

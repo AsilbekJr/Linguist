@@ -17,7 +17,7 @@ import {
 import { RecordCard } from '../components/VoiceDiary/DiaryParts';
 import { PHRASE_MAX_SECONDS } from '../utils/diaryLogic';
 import { useSpeechInput } from '../hooks/useSpeechInput';
-import { playTTSAudio } from '../utils/audio';
+import { playTTSAudio, stopTTSAudio } from '../utils/audio';
 import { burstAt, fireConfetti } from '../utils/celebration';
 import { track, EVENTS } from '../lib/analytics';
 import { Button } from '@/components/ui/button';
@@ -375,7 +375,6 @@ const Conversation = ({ initial, onFinished }) => {
   const chipRefs = useRef({});
   const listRef = useRef(null);
   const startedAtRef = useRef(0);
-  const spokenRef = useRef(new Set());
 
   const [sendTurn, { isLoading: sending }] = useSpeakTurnMutation();
   const [getHint, { isLoading: hinting }] = useSpeakHintMutation();
@@ -387,13 +386,11 @@ const Conversation = ({ initial, onFinished }) => {
   );
   const turnLimitReached = conv.userTurns >= conv.maxTurns;
 
-  // Qahramonning yangi gapi avtomatik ovoz chiqaradi (har gap bir marta)
+  // Cleanup also replaces the pending playback during StrictMode effect replay.
   useEffect(() => {
     const index = conv.turns.length - 1;
     const last = conv.turns[index];
-    if (!last || last.role !== 'partner' || spokenRef.current.has(index)) return;
-    spokenRef.current.add(index);
-    if (soundOn) speak(last.text);
+    if (last?.role === 'partner' && soundOn) return speak(last.text);
   }, [conv.turns, soundOn]);
 
   useEffect(() => {
@@ -427,11 +424,6 @@ const Conversation = ({ initial, onFinished }) => {
 
   const startListening = () => {
     // Qahramon gapirayotgan bo'lsa to'xtatamiz — aks holda mikrofon uni eshitadi
-    try {
-      window.speechSynthesis?.cancel();
-    } catch {
-      // muhim emas
-    }
     startedAtRef.current = Date.now();
     mic.start();
   };
@@ -444,7 +436,7 @@ const Conversation = ({ initial, onFinished }) => {
       } catch {
         // muhim emas
       }
-      if (!next) window.speechSynthesis?.cancel();
+      if (!next) stopTTSAudio();
       return next;
     });
   };
