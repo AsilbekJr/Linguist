@@ -34,10 +34,10 @@ export const ACCOUNT_NAV = [
 ];
 
 export const PRACTICE_PATHS = PRACTICE_NAV.map((i) => i.to);
+const ALL_NAV = [...PRIMARY_NAV, ...PRACTICE_NAV, ...ACCOUNT_NAV, ...HIDDEN_TITLES];
 
 /** Sahifa sarlavhasi (mobil top bar uchun) */
 export const titleForPath = (pathname) => {
-  const all = [...PRIMARY_NAV, ...PRACTICE_NAV, ...ACCOUNT_NAV, ...HIDDEN_TITLES];
-  const match = all.find((i) => (i.end ? pathname === i.to : pathname.startsWith(i.to)));
+  const match = ALL_NAV.find((i) => pathname === i.to || (!i.end && pathname.startsWith(`${i.to}/`)));
   return match?.label || '';
 };

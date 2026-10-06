@@ -1,7 +1,7 @@
 import { useSearchParams } from 'react-router-dom';
 import TopicLibrary from '../components/TopicLibrary';
 import PhraseLibrary from '../components/PhraseLibrary';
-import React, { useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { AnimatePresence } from 'motion/react';
 import { toast } from 'react-hot-toast';
 import { BookOpen, Search, Plus, X, Clock, Flame, CheckCircle2, Layers, SearchX } from 'lucide-react';
@@ -58,7 +58,7 @@ const Vocabulary = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const view = ['topics', 'phrases'].includes(searchParams.get('view')) ? searchParams.get('view') : 'mine';
   const setView = (value) => setSearchParams(value === 'mine' ? {} : { view: value }, { replace: true });
-  const { data: words = [], isLoading } = useGetWordsQuery();
+  const { data: words = [], isLoading, isError, refetch } = useGetWordsQuery();
   const [addWordMutation] = useAddWordMutation();
   const [deleteWordMutation, { isLoading: isDeleting }] = useDeleteWordMutation();
   const [relearnWordMutation] = useRelearnWordMutation();
@@ -185,12 +185,12 @@ const Vocabulary = () => {
     <div>
       <PageHeader
         eyebrow="Lug'at"
-        title="Mening lug'atim"
+        title={view === 'topics' ? 'Mavzular kutubxonasi' : view === 'phrases' ? 'Gaplar kutubxonasi' : "Mening lug'atim"}
         icon={BookOpen}
         description={
           isLoading
             ? 'Yuklanmoqda…'
-            : `${words.length} ta so'z · ${counts.learned} tasi yodlangan · bugun ${counts.due} ta takrorlanadi`
+            : isError ? "Lug'atni yuklab bo'lmadi. Qayta urinib ko'ring." : `${words.length} ta so'z · ${counts.learned} tasi yodlangan · bugun ${counts.due} ta takrorlanadi`
         }
         actions={
           <Button size="lg" onClick={() => setIsAddModalOpen(true)} className="w-full sm:w-auto">
@@ -247,6 +247,8 @@ const Vocabulary = () => {
                 <Skeleton key={i} className="h-64 rounded-2xl" />
               ))}
             </div>
+          ) : isError ? (
+            <EmptyState icon={BookOpen} tone="warning" title="Lug'atni yuklab bo'lmadi" description="Internet aloqasini tekshirib, qayta urinib ko'ring."><Button onClick={refetch}>Qayta urinish</Button></EmptyState>
           ) : words.length === 0 ? (
             <EmptyState
               icon={BookOpen}

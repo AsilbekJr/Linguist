@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { memo, useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { toast } from 'react-hot-toast';
 import { ArrowRight, Check, Eye, Keyboard, Loader2, Mic, MicOff, Quote, Volume2 } from 'lucide-react';
@@ -27,6 +27,8 @@ const PhraseReview = ({ phrases, onChecked, onFinished, finishLabel = "So'zlarga
   const [typed, setTyped] = useState('');
   const [voiceText, setVoiceText] = useState('');
   const [checkPhrase, { isLoading }] = useCheckPhraseMutation();
+  const inputRef = useRef(null);
+  const nextRef = useRef(null);
 
   const card = phrases[index];
 
@@ -44,8 +46,16 @@ const PhraseReview = ({ phrases, onChecked, onFinished, finishLabel = "So'zlarga
 
   const speech = useSpeechInput({ lang: 'en-US', onResult: text => { setTyped(text); setVoiceText(text); setTyping(true); } });
 
+  useEffect(() => {
+    if (!speech.listening) inputRef.current?.focus({ preventScroll: true });
+  }, [typing, index, speech.listening]);
+
+  useEffect(() => {
+    if (result) nextRef.current?.focus({ preventScroll: true });
+  }, [result]);
+
   const next = () => {
-    speech.stop();
+    speech.cancel();
     setResult(null);
     setShowHint(false);
     setTyped('');
@@ -124,13 +134,15 @@ const PhraseReview = ({ phrases, onChecked, onFinished, finishLabel = "So'zlarga
               </p>
             </div>
             <div className="flex justify-end">
-              <Button size="lg" onClick={next}>
+              <Button ref={nextRef} size="lg" onClick={next}>
                 {index + 1 >= phrases.length ? finishLabel : 'Keyingi'} <ArrowRight />
               </Button>
             </div>
           </>
         ) : (
           <>
+            <p className="text-sm text-muted-foreground">Inglizcha gapni ayting yoki yozing, keyin tekshirish tugmasini bosing.</p>
+            {!speech.supported && <p className="text-xs text-muted-foreground">Bu brauzer ovozni matnga aylantira olmaydi. Gapni yozib javob bering.</p>}
             {textMode && (
               <form
                 className="flex gap-2"
@@ -140,7 +152,9 @@ const PhraseReview = ({ phrases, onChecked, onFinished, finishLabel = "So'zlarga
                 }}
               >
                 <input
+                  ref={inputRef}
                   value={typed}
+                  disabled={isLoading || speech.listening}
                   onChange={(e) => setTyped(e.target.value)}
                   placeholder="Inglizcha gap…"
                   maxLength={400}
@@ -150,12 +164,12 @@ const PhraseReview = ({ phrases, onChecked, onFinished, finishLabel = "So'zlarga
                   aria-label="Inglizcha gap"
                 />
                 <Button type="submit" size="lg" disabled={!typed.trim() || isLoading || speech.listening} aria-label="Gapni tekshirish">
-                  {isLoading ? <Loader2 className="animate-spin" /> : <Check />}
+                  {isLoading ? <Loader2 className="animate-spin" /> : <Check />} Tekshirish
                 </Button>
               </form>
             )}
             <div className="flex flex-wrap items-center gap-2">
-              {speech.supported && !typing && (
+              {speech.supported && (
                 <Button
                   size="lg"
                   variant={speech.listening ? 'destructive' : 'brand'}
@@ -175,13 +189,13 @@ const PhraseReview = ({ phrases, onChecked, onFinished, finishLabel = "So'zlarga
               {speech.supported && (
                 <Button
                   variant={typing ? 'soft' : 'ghost'}
-                  size="icon"
+                  size="sm"
                   className="ml-auto"
                   onClick={() => { speech.stop(); setTyping((v) => !v); }}
                   aria-label="Yozib javob berish"
                   aria-pressed={typing}
                 >
-                  <Keyboard />
+                  <Keyboard /> {typing ? 'Yozishni yashirish' : 'Yozib javob'}
                 </Button>
               )}
             </div>
@@ -197,4 +211,4 @@ const PhraseReview = ({ phrases, onChecked, onFinished, finishLabel = "So'zlarga
   );
 };
 
-export default PhraseReview;
+export default memo(PhraseReview);

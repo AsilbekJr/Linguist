@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 import { AnimatePresence, motion } from 'motion/react';
 import { toast } from 'react-hot-toast';
 import {
@@ -17,12 +18,13 @@ import {
 import { RecordCard } from '../components/VoiceDiary/DiaryParts';
 import { PHRASE_MAX_SECONDS } from '../utils/diaryLogic';
 import { useSpeechInput } from '../hooks/useSpeechInput';
-import { playTTSAudio } from '../utils/audio';
+import { playTTSAudio, stopTTSAudio } from '../utils/audio';
 import { burstAt, fireConfetti } from '../utils/celebration';
 import { track, EVENTS } from '../lib/analytics';
 import { Button } from '@/components/ui/button';
 import { FadeIn, IconTile, PageHeader, PageSkeleton, ProgressBar } from '@/components/ui/primitives';
 import { cn } from '@/lib/utils';
+import { dayKeyInZone } from '../utils/dayRefresh';
 
 /**
  * Suhbat — bugungi sahna qahramoni bilan ovozli rolli o'yin.
@@ -375,7 +377,6 @@ const Conversation = ({ initial, onFinished }) => {
   const chipRefs = useRef({});
   const listRef = useRef(null);
   const startedAtRef = useRef(0);
-  const spokenRef = useRef(new Set());
 
   const [sendTurn, { isLoading: sending }] = useSpeakTurnMutation();
   const [getHint, { isLoading: hinting }] = useSpeakHintMutation();
@@ -387,13 +388,11 @@ const Conversation = ({ initial, onFinished }) => {
   );
   const turnLimitReached = conv.userTurns >= conv.maxTurns;
 
-  // Qahramonning yangi gapi avtomatik ovoz chiqaradi (har gap bir marta)
+  // Cleanup also replaces the pending playback during StrictMode effect replay.
   useEffect(() => {
     const index = conv.turns.length - 1;
     const last = conv.turns[index];
-    if (!last || last.role !== 'partner' || spokenRef.current.has(index)) return;
-    spokenRef.current.add(index);
-    if (soundOn) speak(last.text);
+    if (last?.role === 'partner' && soundOn) return speak(last.text);
   }, [conv.turns, soundOn]);
 
   useEffect(() => {
@@ -427,11 +426,6 @@ const Conversation = ({ initial, onFinished }) => {
 
   const startListening = () => {
     // Qahramon gapirayotgan bo'lsa to'xtatamiz — aks holda mikrofon uni eshitadi
-    try {
-      window.speechSynthesis?.cancel();
-    } catch {
-      // muhim emas
-    }
     startedAtRef.current = Date.now();
     mic.start();
   };
@@ -444,7 +438,7 @@ const Conversation = ({ initial, onFinished }) => {
       } catch {
         // muhim emas
       }
-      if (!next) window.speechSynthesis?.cancel();
+      if (!next) stopTTSAudio();
       return next;
     });
   };
@@ -654,7 +648,13 @@ const Conversation = ({ initial, onFinished }) => {
 };
 
 const Speak = () => {
-  const { data, isLoading, isError, refetch } = useGetSpeakTodayQuery();
+  const authTimezone = useSelector(state => state.auth.user?.timezone);
+  const { timezone: profileTimezone } = useGetMeQuery(undefined, {
+    selectFromResult: ({ data }) => ({ timezone: data?.timezone }),
+  });
+  const timezone = profileTimezone || authTimezone;
+  const { data: cachedData, isLoading, isFetching, isError, refetch } = useGetSpeakTodayQuery();
+  const data = cachedData?.dayKey && cachedData.dayKey !== dayKeyInZone(timezone) ? undefined : cachedData;
   const [startSpeak, { isLoading: starting }] = useStartSpeakMutation();
   const [active, setActive] = useState(null);
   const [finished, setFinished] = useState(null);
@@ -675,7 +675,7 @@ const Speak = () => {
     }
   };
 
-  if (isLoading) return <PageSkeleton cards={2} />;
+  if (!data && (isLoading || isFetching)) return <PageSkeleton cards={2} />;
   if (isError || !data) {
     return (
       <div className="surface mx-auto max-w-xl p-6 text-center">

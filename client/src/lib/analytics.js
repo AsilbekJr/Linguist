@@ -134,5 +134,3 @@ export const EVENTS = {
   QUOTA_EXCEEDED: 'quota_exceeded',
   UPGRADE_CLICKED: 'upgrade_clicked',
 };
-
-export const analyticsEnabled = isEnabled;

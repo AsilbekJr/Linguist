@@ -1,11 +1,13 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import { setCredentials, logout } from '../auth/authSlice';
+import { createSessionQuery } from './sessionQuery';
 
 import { API_URL } from '../../lib/apiUrl';
 
 const rawBaseQuery = fetchBaseQuery({
   baseUrl: API_URL,
   credentials: 'include',
+  timeout: 60000,
   prepareHeaders: (headers, { getState }) => {
     const token = getState().auth.token;
     if (token) {
@@ -15,100 +17,17 @@ const rawBaseQuery = fetchBaseQuery({
   },
 });
 
-const getRequestUrl = (args) => (typeof args === 'string' ? args : args?.url || '');
-
-/** Access token talab qilmaydigan so'rovlar — ular oldidan refresh qilinmaydi */
-const isPublicAuthRequest = (url) =>
-  [
-    '/api/auth/login',
-    '/api/auth/register',
-    '/api/auth/refresh',
-    '/api/auth/logout',
-    '/api/auth/forgot-password',
-    '/api/auth/reset-password',
-    '/api/auth/verify-email',
-    '/api/auth/google',
-  ].some((path) => url.includes(path));
-
-let refreshPromise = null;
-
-/**
- * Refresh cookie orqali yangi access token olish.
- *
- * Bir vaqtda faqat bitta so'rov ketadi: server har refresh'da cookie'ni
- * almashtiradi (rotation), shuning uchun parallel so'rovlar bir-biriga
- * xalaqit bermasin. Natija: `{ data }` — muvaffaqiyat, `{ error }` — yo'q.
- */
-const refreshAccessToken = (api, extraOptions) => {
-  if (!refreshPromise) {
-    refreshPromise = rawBaseQuery({ url: '/api/auth/refresh', method: 'POST' }, api, extraOptions)
-      .then((refresh) => {
-        if (refresh.data?.token) {
-          api.dispatch(setCredentials({ user: refresh.data, token: refresh.data.token }));
-        } else if (refresh.error?.status === 401) {
-          /**
-           * Sessiyani uzaytirib bo'lmadi.
-           *
-           * `NO_REFRESH_COOKIE` — refresh cookie brauzerga umuman yetib
-           * bormagan. Frontend va backend turli saytlarda bo'lsa (vercel.app +
-           * onrender.com) bu cookie UCHINCHI TOMON hisoblanadi va brauzer
-           * (ayniqsa Safari) uni bloklaydi. Doimiy yechim — ikkalasini bitta
-           * sayt ostiga olib kelish (README → "Bitta domen").
-           */
-          if (refresh.error?.data?.code === 'NO_REFRESH_COOKIE') {
-            console.error(
-              '[Linguist] Refresh cookie yetib kelmadi. Frontend va backend turli ' +
-                "saytlarda bo'lgani uchun brauzer uni uchinchi tomon cookie sifatida " +
-                "bloklagan bo'lishi mumkin."
-            );
-            try {
-              sessionStorage.setItem('linguist_auth_hint', 'third_party_cookie');
-            } catch {
-              // shaxsiy rejim — muhim emas
-            }
-          }
-          api.dispatch(logout());
-        }
-        // Tarmoq xatosi (oflayn, server uyg'onmoqda) — chiqarib yubormaymiz:
-        // keyingi so'rov yana urinadi, kesh esa ko'rinib turadi
-        return refresh;
-      })
-      .finally(() => {
-        refreshPromise = null;
-      });
-  }
-  return refreshPromise;
-};
-
-/**
- * Access token faqat xotirada turadi (localStorage'da emas — XSS bo'lsa
- * o'g'irlab bo'lmasin). Sahifa qayta yuklanganda token yo'q, lekin
- * `isAuthenticated` saqlangan: birinchi so'rov oldidan jimgina refresh
- * qilinadi, UI esa shu vaqtda keshdan chizilib turadi.
- */
-const baseQueryWithReauth = async (args, api, extraOptions) => {
-  const url = getRequestUrl(args);
-  const isPublic = isPublicAuthRequest(url);
-
-  if (!isPublic) {
-    const { token, isAuthenticated } = api.getState().auth;
-    if (!token && isAuthenticated) {
-      await refreshAccessToken(api, extraOptions);
+const { baseQuery: baseQueryWithReauth, refreshAccessToken } = createSessionQuery(rawBaseQuery, {
+  credentials: setCredentials,
+  logout,
+  onMissingCookie: () => {
+    try {
+      sessionStorage.setItem('linguist_auth_hint', 'third_party_cookie');
+    } catch {
+      // Private browsing may disable storage.
     }
-  }
-
-  let result = await rawBaseQuery(args, api, extraOptions);
-
-  if (result.error?.status === 401 && !isPublic) {
-    const refresh = await refreshAccessToken(api, extraOptions);
-    if (refresh.data?.token) {
-      result = await rawBaseQuery(args, api, extraOptions);
-    }
-  }
-
-  return result;
-};
-
+  },
+});
 export const apiSlice = createApi({
   reducerPath: 'api',
   keepUnusedDataFor: 180,
@@ -116,7 +35,7 @@ export const apiSlice = createApi({
   refetchOnFocus: true,
   refetchOnReconnect: true,
   baseQuery: baseQueryWithReauth,
-  tagTypes: ['Word', 'Topic', 'User', 'Billing', 'Listening', 'Notifications', 'Push', 'Telegram', 'VocabTopic', 'Speak'],
+  tagTypes: ['Word', 'Phrase', 'Topic', 'User', 'Billing', 'Listening', 'Notifications', 'Push', 'Telegram', 'VocabTopic', 'Speak'],
   endpoints: (builder) => ({
     getWords: builder.query({
       query: () => '/api/words',
@@ -136,11 +55,11 @@ export const apiSlice = createApi({
     }),
     getPhrases: builder.query({
       query: () => '/api/review/phrases',
-      providesTags: ['Word'],
+      providesTags: ['Word', 'Phrase'],
     }),
     addPhrase: builder.mutation({
       query: (body) => ({ url: '/api/review/phrases', method: 'POST', body }),
-      invalidatesTags: ['Word', 'User'],
+      invalidatesTags: ['Phrase', 'User'],
     }),
     translatePhrase: builder.mutation({
       query: (body) => ({ url: '/api/review/phrases/translate', method: 'POST', body }),
@@ -163,12 +82,12 @@ export const apiSlice = createApi({
     /** Sahnada yodlangan iboralar — o'zbekcha ma'nodan butun gapni aytish */
     getPhrasesDue: builder.query({
       query: () => '/api/review/phrases/due',
-      providesTags: ['Word'],
+      providesTags: ['Word', 'Phrase'],
       keepUnusedDataFor: 60,
     }),
     checkPhrase: builder.mutation({
       query: ({ id, answer, source }) => ({ url: `/api/review/phrases/${id}/check`, method: 'POST', body: { answer, source } }),
-      invalidatesTags: ['Word', 'User'],
+      invalidatesTags: ['Phrase', 'User'],
     }),
     getReviewDue: builder.query({
       query: () => '/api/review/due',
@@ -183,6 +102,7 @@ export const apiSlice = createApi({
         url: `/api/review/${id}/check`,
         method: 'POST',
         body: mode === 'sentence' ? { mode, sentence, source } : { mode, answer, source },
+        ...(mode === 'recognize' ? { timeout: 20000 } : {}),
       }),
       invalidatesTags: ['Word', 'User'],
     }),
@@ -223,11 +143,6 @@ export const apiSlice = createApi({
       }),
       invalidatesTags: ['User'],
     }),
-    getReviewStats: builder.query({
-      query: () => '/api/review/stats',
-      providesTags: ['Word'],
-      keepUnusedDataFor: 60,
-    }),
     getListeningSession: builder.query({
       query: () => '/api/listening/session',
       providesTags: ['Listening'],
@@ -256,11 +171,6 @@ export const apiSlice = createApi({
     getActiveWords: builder.query({
       query: () => '/api/topics/active-words',
       providesTags: ['Topic'],
-    }),
-    getTopicBacklog: builder.query({
-      query: () => '/api/topics/backlog',
-      providesTags: ['Topic'],
-      keepUnusedDataFor: 120,
     }),
     /**
      * Mini-testni boshlash. Savollar SERVERDA yaratiladi va to'g'ri javob
@@ -384,10 +294,6 @@ export const apiSlice = createApi({
       query: (body) => ({ url: '/api/placement/answer', method: 'POST', body }),
       invalidatesTags: (result) => (result?.done ? ['User', 'Topic', 'Listening'] : []),
     }),
-    getPlacementResult: builder.query({
-      query: () => '/api/placement/result',
-      providesTags: ['User'],
-    }),
     forgotPassword: builder.mutation({
       query: (email) => ({
         url: '/api/auth/forgot-password',
@@ -493,12 +399,6 @@ export const apiSlice = createApi({
       }),
       invalidatesTags: ['User', 'Topic', 'Word', 'Speak', 'Listening'],
     }),
-    refreshToken: builder.mutation({
-      query: () => ({
-        url: '/api/auth/refresh',
-        method: 'POST',
-      }),
-    }),
     logoutSession: builder.mutation({
       query: () => ({
         url: '/api/auth/logout',
@@ -551,7 +451,6 @@ export const {
   useRelearnWordMutation,
   useMarkWordKnownMutation,
   useAnalyzeSentenceMutation,
-  useGetReviewStatsQuery,
   useGetListeningSessionQuery,
   useCheckDictationMutation,
   useCompleteListeningMutation,
@@ -572,12 +471,10 @@ export const {
   useUnsubscribeMutation,
   useStartPlacementMutation,
   useAnswerPlacementMutation,
-  useGetPlacementResultQuery,
   useGetMeQuery,
   useGetReviewDueQuery,
   useGetCurrentTopicQuery,
   useGetActiveWordsQuery,
-  useGetTopicBacklogQuery,
   useStartTopicQuizMutation,
   useSubmitTopicQuizMutation,
   useFinishTopicDayMutation,
@@ -589,7 +486,6 @@ export const {
   useChangePasswordMutation,
   useDeleteAccountMutation,
   useSetTimezoneMutation,
-  useRefreshTokenMutation,
   useLogoutSessionMutation,
   useRestoreSessionMutation,
   useVerifyEmailMutation,

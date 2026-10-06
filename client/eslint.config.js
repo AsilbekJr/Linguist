@@ -47,7 +47,8 @@ export default [
 
       // Aynan shu qoida aniqlanmagan chaqiruvni ushlaydi
       'no-undef': 'error',
-      'no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
+      'no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
+      'react-hooks/exhaustive-deps': 'error',
 
       'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
     },

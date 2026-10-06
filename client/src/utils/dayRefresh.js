@@ -7,10 +7,25 @@ export const dayKeyInZone = (timezone, date = new Date()) => {
   return `${values.year}-${values.month}-${values.day}`;
 };
 
+/** Find the next local midnight, including 23/25-hour daylight-saving days. */
+export const millisecondsUntilNextDay = (timezone, date) => {
+  const today = dayKeyInZone(timezone, date);
+  const start = date.getTime();
+  let low = 1;
+  let high = 27 * 60 * 60 * 1000;
+  while (low < high) {
+    const middle = Math.floor((low + high) / 2);
+    if (dayKeyInZone(timezone, new Date(start + middle)) === today) low = middle + 1;
+    else high = middle;
+  }
+  return low;
+};
+
 /** Check on mount, midnight and return from a sleeping/background tab. */
 export const watchDayChange = ({ timezone, today, refresh, now = () => new Date(),
-  schedule = setInterval, cancel = clearInterval, target = globalThis.document }) => {
+  schedule = setTimeout, cancel = clearTimeout, target = globalThis.document }) => {
   let lastDay = today;
+  let timer;
   const check = () => {
     const day = dayKeyInZone(timezone, now());
     if (day !== lastDay) {
@@ -18,11 +33,16 @@ export const watchDayChange = ({ timezone, today, refresh, now = () => new Date(
       refresh();
     }
   };
+  const arm = () => {
+    if (timer !== undefined) cancel(timer);
+    timer = schedule(() => { check(); arm(); }, millisecondsUntilNextDay(timezone, now()));
+  };
+  const onVisible = () => { check(); arm(); };
   check();
-  const timer = schedule(check, 30000);
-  target?.addEventListener('visibilitychange', check);
+  arm();
+  target?.addEventListener('visibilitychange', onVisible);
   return () => {
     cancel(timer);
-    target?.removeEventListener('visibilitychange', check);
+    target?.removeEventListener('visibilitychange', onVisible);
   };
 };

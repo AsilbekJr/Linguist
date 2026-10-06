@@ -163,6 +163,7 @@ router.get('/today', protect, async (req, res) => {
     ]);
     const limit = dailyLimitFor(req.user);
     res.json({
+      dayKey: ctx.todayKey,
       sceneDone,
       speakCompleted: Boolean(quests.speakCompleted),
       preview: previewFor(ctx),

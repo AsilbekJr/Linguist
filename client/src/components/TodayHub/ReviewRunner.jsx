@@ -345,6 +345,7 @@ const ReviewRunner = ({ words, onChecked, onFinished }) => {
   const [analyzeSentence, { isLoading: isAnalyzing }] = useAnalyzeSentenceMutation();
 
   const inputRef = useRef(null);
+  const sendingRef = useRef(false);
   const nextRef = useRef(null);
   const resultIconRef = useRef(null);
   const shake = useAnimationControls();
@@ -355,7 +356,8 @@ const ReviewRunner = ({ words, onChecked, onFinished }) => {
   const isLast = index >= words.length - 1;
 
   const send = async (payload) => {
-    if (isChecking) return;
+    if (sendingRef.current || result) return;
+    sendingRef.current = true;
     setSendError(null);
     setAnalysis(null);
     setAnalysisError(null);
@@ -369,6 +371,8 @@ const ReviewRunner = ({ words, onChecked, onFinished }) => {
       } else {
         setSendError(err?.data?.message || "Javobni yuborib bo'lmadi. Internetni tekshirib qayta urining.");
       }
+    } finally {
+      sendingRef.current = false;
     }
   };
 
@@ -715,6 +719,9 @@ const ReviewRunner = ({ words, onChecked, onFinished }) => {
                 <WifiOff className="mt-0.5 size-4 shrink-0 text-warning" />
                 <span>{sendError} Javobingiz saqlanib qoldi — qayta yuborishingiz mumkin.</span>
               </p>
+              {mode === 'recognize' && chosen && (
+                <Button variant="outline" size="sm" onClick={() => send({ mode: 'recognize', answer: chosen })}>Javobni qayta yuborish</Button>
+              )}
               <button type="button" onClick={goNext} className="text-xs font-bold text-muted-foreground underline underline-offset-2 hover:text-foreground">
                 {isLast ? 'Hozircha yakunlash' : "Bu so'zni keyinroq takrorlash"}
               </button>
@@ -724,6 +731,9 @@ const ReviewRunner = ({ words, onChecked, onFinished }) => {
       </AnimatePresence>
 
       {/* Natija */}
+      {isChecking && mode === 'recognize' && (
+        <p role="status" className="mt-3 flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="size-4 animate-spin" /> Javob tekshirilmoqda…</p>
+      )}
       <AnimatePresence>
         {result && (
           <motion.div
@@ -842,4 +852,4 @@ const ReviewRunner = ({ words, onChecked, onFinished }) => {
   );
 };
 
-export default ReviewRunner;
+export default React.memo(ReviewRunner);

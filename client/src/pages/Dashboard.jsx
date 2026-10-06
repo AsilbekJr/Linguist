@@ -98,11 +98,18 @@ const Dashboard = () => {
 
   // Butun lug'at (/api/words — 400 so'zda ~180 KB) bu yerda YUKLANMAYDI: sonlar
   // profilda keladi (totalWords, knownWords).
-  const { data: dueWords = [], isLoading: isLoadingDue } = useGetReviewDueQuery();
-  const { data: duePhrases = [] } = useGetPhrasesDueQuery();
-  const { data: speak } = useGetSpeakTodayQuery();
+  const { count: dueWordCount, isLoading: wordsLoading, isError: wordsError } = useGetReviewDueQuery(undefined, {
+    selectFromResult: ({ data, isLoading, isError }) => ({ count: data?.length ?? 0, isLoading, isError }),
+  });
+  const { count: duePhraseCount, isLoading: phrasesLoading, isError: phrasesError } = useGetPhrasesDueQuery(undefined, {
+    selectFromResult: ({ data, isLoading, isError }) => ({ count: data?.length ?? 0, isLoading, isError }),
+  });
+  const { data: speakData, isLoading: speakLoading, isFetching: speakFetching, isError: speakError, refetch: refetchSpeak } = useGetSpeakTodayQuery();
+  const speak = speakData?.dayKey && speakData.dayKey !== user?.today ? undefined : speakData;
   const { entries: diary } = useDiaryEntries();
-  const dueCards = dueWords.length + duePhrases.length;
+  const dueCards = dueWordCount + duePhraseCount;
+  const isLoadingDue = wordsLoading || phrasesLoading;
+  const reviewError = wordsError || phrasesError;
 
   // Profil (login paytida saqlangan yoki keshdagi) bo'lsa skelet ko'rsatilmaydi
   if (!user && isLoadingUser) return <DashboardSkeleton />;
@@ -124,8 +131,8 @@ const Dashboard = () => {
     ? { key: 'topic', label: topicName ? `Sahnani boshlash: ${topicName}` : 'Sahnani boshlash', run: () => navigate('/topic') }
     : !speakDone
       ? { key: 'speak', label: partnerName ? `${partnerName} bilan suhbat` : 'Suhbatga o\'tish', run: () => navigate('/speak') }
-      : !reviewDone && !reviewSkipped && dueCards > 0
-        ? { key: 'review', label: `Takrorlash · ${dueCards} ta karta`, run: scrollToReview }
+      : !reviewDone && !reviewSkipped && (dueCards > 0 || reviewError || isLoadingDue)
+        ? { key: 'review', label: reviewError ? 'Takrorlashni qayta yuklash' : isLoadingDue ? 'Takrorlashni ochish' : `Takrorlash · ${dueCards} ta karta`, run: scrollToReview }
         : null;
 
   return (
@@ -190,7 +197,9 @@ const Dashboard = () => {
                   hint={
                     reviewDone
                       ? 'Bajarildi'
-                      : isLoadingDue
+                      : reviewError
+                        ? "Qayta yuklash kerak"
+                        : isLoadingDue
                         ? 'Yuklanmoqda…'
                         : dueCards
                           ? `${dueCards} ta karta kutmoqda`
@@ -226,6 +235,17 @@ const Dashboard = () => {
       </motion.section>
 
       {/* ── Bugungi suhbat va oxirgi suhbat xatolari ───────────────────── */}
+      {!speak?.preview && (speakLoading || speakFetching || speakError) && (
+        <div className="surface p-5" aria-label="Bugungi suhbat yuklanmoqda" aria-busy={!speakError}>
+          <p className="mb-3 text-xs font-bold uppercase tracking-wide text-primary">Bugungi suhbat</p>
+          {speakError ? (
+            <>
+              <p className="mb-3 text-sm text-muted-foreground">Suhbatni yuklab bo&apos;lmadi</p>
+              <Button variant="outline" disabled={speakFetching} onClick={refetchSpeak}>Qayta urinish</Button>
+            </>
+          ) : <div className="space-y-3"><Skeleton className="h-8 w-40" /><Skeleton className="h-12 w-full" /></div>}
+        </div>
+      )}
       {(speak?.preview || speak?.recent) && (
         <div className={cn('grid gap-3', speak?.recent && speak?.preview && 'lg:grid-cols-2')}>
           <SpeakCard speak={speak} />

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { stopTTSAudio } from '../utils/audio';
 
 /**
  * Mikrofondan inglizcha gap olish.
@@ -24,6 +25,7 @@ export const useSpeechInput = ({ lang = 'en-US', onResult } = {}) => {
 
   const recognitionRef = useRef(null);
   const finalRef = useRef('');
+  const activeRef = useRef(false);
   // onResult har renderda yangi funksiya bo'ladi — effekt uni qayta
   // o'rnatmasligi uchun ref orqali o'qiymiz
   const onResultRef = useRef(onResult);
@@ -41,6 +43,7 @@ export const useSpeechInput = ({ lang = 'en-US', onResult } = {}) => {
     recognition.lang = lang;
 
     recognition.onresult = (event) => {
+      if (!activeRef.current) return;
       let final = '';
       let partial = '';
       for (let i = event.resultIndex; i < event.results.length; i++) {
@@ -52,6 +55,9 @@ export const useSpeechInput = ({ lang = 'en-US', onResult } = {}) => {
     };
 
     recognition.onerror = (event) => {
+      if (!activeRef.current) return;
+      finalRef.current = '';
+      if (event.error === 'aborted') return;
       setListening(false);
       setError(
         event.error === 'not-allowed'
@@ -61,6 +67,7 @@ export const useSpeechInput = ({ lang = 'en-US', onResult } = {}) => {
     };
 
     recognition.onend = () => {
+      activeRef.current = false;
       setListening(false);
       const text = finalRef.current.trim();
       finalRef.current = '';
@@ -80,23 +87,28 @@ export const useSpeechInput = ({ lang = 'en-US', onResult } = {}) => {
         // allaqachon to'xtagan — muhim emas
       }
       recognitionRef.current = null;
+      activeRef.current = false;
+      finalRef.current = '';
     };
   }, [lang]);
 
   const start = useCallback(() => {
     const recognition = recognitionRef.current;
-    if (!recognition || listening) return;
+    if (!recognition || activeRef.current) return;
+    stopTTSAudio();
     setError(null);
     setInterim('');
     finalRef.current = '';
     try {
+      activeRef.current = true;
       recognition.start();
       setListening(true);
     } catch {
-      // start() allaqachon ishlayotgan bo'lsa xato beradi — holatni sinxronlaymiz
+      activeRef.current = false;
       setListening(false);
+      setError("Mikrofonni yoqib bo'lmadi. Qayta urinib ko'ring yoki yozib javob bering.");
     }
-  }, [listening]);
+  }, []);
 
   const stop = useCallback(() => {
     try {
@@ -106,7 +118,18 @@ export const useSpeechInput = ({ lang = 'en-US', onResult } = {}) => {
     }
   }, []);
 
-  return { supported, listening, interim, error, start, stop, toggle: () => (listening ? stop() : start()) };
+  const cancel = useCallback(() => {
+    activeRef.current = false;
+    finalRef.current = '';
+    setListening(false);
+    setInterim('');
+    setError(null);
+    try { recognitionRef.current?.abort(); } catch { /* Already stopped. */ }
+  }, []);
+
+  const toggle = useCallback(() => (activeRef.current ? stop() : start()), [start, stop]);
+
+  return { supported, listening, interim, error, start, stop, cancel, toggle };
 };
 
 export default useSpeechInput;
