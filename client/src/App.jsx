@@ -1,7 +1,6 @@
 import { useState, useEffect, Suspense, lazy } from "react";
 import { Routes, Route, Navigate, useNavigate, useLocation } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
-import { logout } from "./features/auth/authSlice";
 import {
   apiSlice,
   useGetMeQuery,
@@ -39,17 +38,12 @@ const PageLoader = () => <PageSkeleton />;
 function App() {
   const isAuthenticated = useSelector((state) => state.auth.isAuthenticated);
   const token = useSelector((state) => state.auth.token);
-  const lastAuthAt = useSelector((state) => state.auth.lastAuthAt);
   const [loginPrefillEmail, setLoginPrefillEmail] = useState("");
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
 
-  const {
-    data: me,
-    isError: isMeError,
-    error: meError,
-  } = useGetMeQuery(undefined, { skip: !token });
+  const { data: me } = useGetMeQuery(undefined, { skip: !token });
   const [setTimezone] = useSetTimezoneMutation();
   const [restoreSession] = useRestoreSessionMutation();
   const userId = me?._id;
@@ -111,15 +105,6 @@ function App() {
       apiSlice.util.prefetch("getCurrentTopic", undefined, { force: false }),
     );
   }, [isAuthenticated, dispatch]);
-
-  useEffect(() => {
-    if (!token) return;
-    const inAuthGrace = lastAuthAt && Date.now() - lastAuthAt < 8000;
-    if (inAuthGrace) return;
-    if (isMeError && meError?.status === 401) {
-      dispatch(logout());
-    }
-  }, [token, lastAuthAt, isMeError, meError, dispatch]);
 
   // Obunani bekor qilish auth devoridan TASHQARIDA bo'lishi kerak: xatdagi
   // havolani bosgan odam login qilmagan bo'lishi mumkin va uni login sahifasiga

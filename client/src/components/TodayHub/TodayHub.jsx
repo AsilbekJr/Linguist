@@ -29,12 +29,13 @@ const TodayHub = ({ user, totalWords = 0 }) => {
   // javobdan keyin ro'yxat qayta yuklansa ham karta ko'z oldidan yo'qolmasin
   const { data: duePhrases = EMPTY_QUEUE, isLoading: phrasesLoading, isFetching: phrasesFetching, isError: phrasesError, refetch: refetchPhrases } = useGetPhrasesDueQuery();
   const [phraseSession, setPhraseSession] = useState(null);
+  const [session, setSession] = useState(null);
   const reviewedPhraseIdsRef = useRef(new Set());
   useEffect(() => {
-    if (phraseSession || phrasesFetching) return;
+    if (phraseSession || session || phrasesFetching || isFetching || isError || phrasesError) return;
     const fresh = duePhrases.filter(phrase => !reviewedPhraseIdsRef.current.has(phrase._id));
     if (fresh.length) setPhraseSession(fresh);
-  }, [duePhrases, phraseSession, phrasesFetching]);
+  }, [duePhrases, phraseSession, session, phrasesFetching, isFetching, isError, phrasesError]);
   const phrasesActive = Boolean(phraseSession?.length);
 
   const [finished, setFinished] = useState(false);
@@ -49,20 +50,20 @@ const TodayHub = ({ user, totalWords = 0 }) => {
    * natijani ko'rsatishga ulgurmasdan yo'q bo'ladi. Foydalanuvchi javobi
    * to'g'ri chiqdimi yoki yo'qmi — bilmay qolardi.
    */
-  const [session, setSession] = useState(null);
   // Shu ochilishda takrorlangan so'zlar. Sessiya tugagach navbat qayta
   // yuklanadi va unda hali eski (keshdagi) so'zlar bo'lishi mumkin — ular
   // yangi sessiyaga qayta tushmasligi kerak.
   const reviewedIdsRef = useRef(new Set());
 
   useEffect(() => {
-    if (session || isFetching) return;
+    if (session || phraseSession || isFetching || phrasesFetching || isError || phrasesError) return;
+    if (duePhrases.some(phrase => !reviewedPhraseIdsRef.current.has(phrase._id))) return;
     const fresh = dueWords.filter((w) => !reviewedIdsRef.current.has(w._id));
     if (fresh.length > 0) {
       setFinished(false);
       setSession(fresh);
     }
-  }, [dueWords, session, isFetching]);
+  }, [dueWords, duePhrases, session, phraseSession, isFetching, phrasesFetching, isError, phrasesError]);
 
   // "Bugun" — foydalanuvchi zonasidagi kun, SERVER hisoblaydi. Ilgari bu yerda
   // UTC sana olinardi va Toshkentda 00:00–05:00 oralig'ida belgi noto'g'ri edi.

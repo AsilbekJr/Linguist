@@ -56,7 +56,11 @@ const createSession = async (userId, req, res, { familyId } = {}) => {
 /** Oiladagi eng so'nggi sessiya — `replacedBy` zanjiri bo'ylab */
 const followReplacements = async (session) => {
   let current = session;
-  for (let i = 0; i < 5 && current?.replacedBy; i += 1) {
+  const visited = new Set();
+  while (current?.replacedBy) {
+    const id = String(current._id);
+    if (visited.has(id)) return null;
+    visited.add(id);
     current = await Session.findById(current.replacedBy);
   }
   return current;
@@ -95,36 +99,45 @@ const rotateSession = async (rawToken, req, res) => {
     return { error: 'REFRESH_REUSED' };
   }
 
-  // Atomik: ikki parallel so'rovdan faqat bittasi almashtira oladi
+  // Avval yangi yozuvni saqlaymiz: eski sessiya hech qachon hali mavjud
+  // bo'lmagan replacedBy yozuviga ishora qilmasin. Saqlash xatosida eski
+  // cookie amal qilishda davom etadi.
+  const refreshToken = generateRefreshToken();
   const next = new Session({
     user: session.user,
     familyId: session.familyId || session._id,
-    refreshTokenHash: 'pending',
+    refreshTokenHash: hashToken(refreshToken),
     expiresAt: new Date(Date.now() + REFRESH_MS),
     ...clientMeta(req),
   });
+  await next.save();
   const now = Date.now();
-  const claimed = await Session.findOneAndUpdate(
-    { _id: session._id, revokedAt: null },
-    {
-      revokedAt: new Date(now),
-      revokedReason: 'rotated',
-      replacedBy: next._id,
-      lastUsedAt: new Date(now),
-      expiresAt: new Date(Math.min(session.expiresAt.getTime(), now + ROTATED_RETENTION_MS)),
-    },
-    { returnDocument: 'after' }
-  );
+  let claimed;
+  try {
+    // Atomik: ikki parallel so'rovdan faqat bittasi almashtira oladi
+    claimed = await Session.findOneAndUpdate(
+      { _id: session._id, revokedAt: null },
+      {
+        revokedAt: new Date(now),
+        revokedReason: 'rotated',
+        replacedBy: next._id,
+        lastUsedAt: new Date(now),
+        expiresAt: new Date(Math.min(session.expiresAt.getTime(), now + ROTATED_RETENTION_MS)),
+      },
+      { returnDocument: 'after' }
+    );
+  } catch (error) {
+    await Session.deleteOne({ _id: next._id });
+    throw error;
+  }
   if (!claimed) {
+    await Session.deleteOne({ _id: next._id });
     // Boshqa so'rov bizdan oldin almashtirdi — parallel holat
     const latest = await followReplacements(await Session.findById(session._id));
     if (isAlive(latest)) return { session: latest, reused: true };
     return { error: 'INVALID_REFRESH' };
   }
 
-  const refreshToken = generateRefreshToken();
-  next.refreshTokenHash = hashToken(refreshToken);
-  await next.save();
   setRefreshCookie(res, refreshToken);
   return { session: next };
 };

@@ -104,7 +104,8 @@ const Dashboard = () => {
   const { count: duePhraseCount, isLoading: phrasesLoading, isError: phrasesError } = useGetPhrasesDueQuery(undefined, {
     selectFromResult: ({ data, isLoading, isError }) => ({ count: data?.length ?? 0, isLoading, isError }),
   });
-  const { data: speak } = useGetSpeakTodayQuery();
+  const { data: speakData, isLoading: speakLoading, isFetching: speakFetching, isError: speakError, refetch: refetchSpeak } = useGetSpeakTodayQuery();
+  const speak = speakData?.dayKey && speakData.dayKey !== user?.today ? undefined : speakData;
   const { entries: diary } = useDiaryEntries();
   const dueCards = dueWordCount + duePhraseCount;
   const isLoadingDue = wordsLoading || phrasesLoading;
@@ -234,6 +235,17 @@ const Dashboard = () => {
       </motion.section>
 
       {/* ── Bugungi suhbat va oxirgi suhbat xatolari ───────────────────── */}
+      {!speak?.preview && (speakLoading || speakFetching || speakError) && (
+        <div className="surface p-5" aria-label="Bugungi suhbat yuklanmoqda" aria-busy={!speakError}>
+          <p className="mb-3 text-xs font-bold uppercase tracking-wide text-primary">Bugungi suhbat</p>
+          {speakError ? (
+            <>
+              <p className="mb-3 text-sm text-muted-foreground">Suhbatni yuklab bo&apos;lmadi</p>
+              <Button variant="outline" disabled={speakFetching} onClick={refetchSpeak}>Qayta urinish</Button>
+            </>
+          ) : <div className="space-y-3"><Skeleton className="h-8 w-40" /><Skeleton className="h-12 w-full" /></div>}
+        </div>
+      )}
       {(speak?.preview || speak?.recent) && (
         <div className={cn('grid gap-3', speak?.recent && speak?.preview && 'lg:grid-cols-2')}>
           <SpeakCard speak={speak} />

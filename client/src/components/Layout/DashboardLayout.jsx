@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useLocation, useOutlet } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { AnimatePresence, motion } from 'motion/react';
@@ -8,7 +8,9 @@ import InstallPrompt from '../InstallPrompt';
 import { SplashScreen } from '../brand/SplashScreen';
 import { MobileTopBar, MobileTabBar } from './MobileNav';
 import { apiSlice, useGetMeQuery } from '../../features/api/apiSlice';
-import { watchDayChange } from '../../utils/dayRefresh';
+import { dayKeyInZone, watchDayChange } from '../../utils/dayRefresh';
+import { PageSkeleton } from '../ui/primitives';
+import { Button } from '../ui/button';
 import EmailVerifyBanner from '../EmailVerifyBanner';
 import { stopTTSAudio } from '../../utils/audio';
 import { titleForPath } from './nav';
@@ -26,21 +28,28 @@ import { ChevronRight } from 'lucide-react';
 const DashboardLayout = () => {
   const dispatch = useDispatch();
   const authUser = useSelector((state) => state.auth.user);
-  const token = useSelector((state) => state.auth.token);
   const location = useLocation();
   const outlet = useOutlet();
 
-  const { data: fullUser, isLoading } = useGetMeQuery(undefined, { skip: !token });
+  const { data: fullUser, isLoading, isError, isFetching, refetch } = useGetMeQuery();
   const user = fullUser || authUser;
+  const [currentDay, setCurrentDay] = useState(() => dayKeyInZone(user?.timezone));
+  const staleDay = Boolean(user?.today && user.today !== currentDay);
+  const dailyPage = ['/', '/topic', '/speak', '/listening'].includes(location.pathname);
+  const menuUser = staleDay ? { ...user, today: currentDay, dailyQuests: {}, week: [] } : user;
   const isOnboardingComplete = user?.onboarding?.completed === true;
 
   useEffect(() => {
-    if (!token || !user?.today) return;
+    setCurrentDay(dayKeyInZone(user?.timezone));
+    if (!user?.today) return;
     return watchDayChange({
       timezone: user.timezone, today: user.today,
-      refresh: () => dispatch(apiSlice.util.invalidateTags(['User', 'Topic', 'Word', 'Speak', 'Listening'])),
+      refresh: () => {
+        setCurrentDay(dayKeyInZone(user.timezone));
+        dispatch(apiSlice.util.invalidateTags(['User', 'Topic', 'Word', 'Speak', 'Listening']));
+      },
     });
-  }, [dispatch, token, user?.timezone, user?.today]);
+  }, [dispatch, user?.timezone, user?.today]);
 
   // Yangi sahifa tepadan boshlansin
   useEffect(() => {
@@ -73,8 +82,8 @@ const DashboardLayout = () => {
   return (
     <div className="app-backdrop min-h-dvh bg-background text-foreground">
       <a href="#main" className="sr-only z-50 rounded-xl bg-card px-4 py-3 font-bold focus:not-sr-only focus:fixed focus:left-4 focus:top-4">Asosiy mazmunga o'tish</a>
-      <Sidebar user={user} />
-      <MobileTopBar user={user} />
+      <Sidebar user={menuUser} />
+      <MobileTopBar user={menuUser} />
 
       <div className="lg:pl-[272px]">
         <main
@@ -98,7 +107,17 @@ const DashboardLayout = () => {
               exit={{ opacity: 0, y: -6 }}
               transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
             >
-              {outlet}
+              {staleDay && dailyPage ? (
+                <div>
+                  <p role="status" className="mb-4 text-sm text-muted-foreground">Bugungi kun yuklanmoqda…</p>
+                  {isError ? (
+                    <div className="surface p-5">
+                      <p className="mb-3">Bugungi kunni yuklab bo&apos;lmadi. Internetni tekshirib qayta urining.</p>
+                      <Button disabled={isFetching} onClick={refetch}>Qayta urinish</Button>
+                    </div>
+                  ) : <PageSkeleton cards={2} />}
+                </div>
+              ) : outlet}
             </motion.div>
           </AnimatePresence>
         </main>

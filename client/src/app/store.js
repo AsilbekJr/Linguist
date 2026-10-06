@@ -17,8 +17,8 @@ import authReducer from '../features/auth/authSlice';
 import { sanitizePersistedApi } from './persistedApi';
 
 const apiTransform = createTransform(
-  sanitizePersistedApi,
-  sanitizePersistedApi,
+  state => sanitizePersistedApi(state),
+  state => sanitizePersistedApi(state),
   { whitelist: [apiSlice.reducerPath] }
 );
 

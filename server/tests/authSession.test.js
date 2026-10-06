@@ -46,6 +46,55 @@ const registerRaw = async (email = uniqueEmail()) => {
   return { ...res, email };
 };
 
+test('a refresh arriving while its replacement is being saved keeps the session valid', async () => {
+  const reg = await registerRaw();
+  const originalSave = Session.prototype.save;
+  let entered;
+  let release;
+  const saving = new Promise(resolve => { entered = resolve; });
+  const gate = new Promise(resolve => { release = resolve; });
+  let delayed = false;
+  Session.prototype.save = async function (...args) {
+    if (!delayed && String(this.user) === reg.data._id) {
+      delayed = true;
+      entered();
+      await gate;
+    }
+    return originalSave.apply(this, args);
+  };
+  try {
+    const firstRequest = raw('POST', '/api/auth/refresh', { cookie: reg.cookie });
+    await saving;
+    const second = await raw('POST', '/api/auth/refresh', { cookie: reg.cookie });
+    release();
+    const first = await firstRequest;
+    assert.equal(second.status, 200, JSON.stringify(second.data));
+    assert.equal(first.status, 200, JSON.stringify(first.data));
+    const winner = first.cookie || second.cookie;
+    assert.ok(winner);
+    assert.equal((await raw('POST', '/api/auth/refresh', { cookie: winner })).status, 200);
+    assert.equal(await Session.countDocuments({ user: reg.data._id, revokedAt: null }), 1);
+  } finally {
+    release();
+    Session.prototype.save = originalSave;
+  }
+});
+
+test('a failed replacement save does not revoke the usable refresh cookie', async () => {
+  const reg = await registerRaw();
+  const originalSave = Session.prototype.save;
+  Session.prototype.save = function (...args) {
+    if (String(this.user) === reg.data._id) return Promise.reject(new Error('temporary database failure'));
+    return originalSave.apply(this, args);
+  };
+  try {
+    assert.equal((await raw('POST', '/api/auth/refresh', { cookie: reg.cookie })).status, 500);
+  } finally {
+    Session.prototype.save = originalSave;
+  }
+  assert.equal((await raw('POST', '/api/auth/refresh', { cookie: reg.cookie })).status, 200);
+});
+
 test('access token sessiyaga bog\'langan (sid) va /me ishlaydi', async () => {
   const reg = await registerRaw();
   const decoded = jwt.decode(reg.data.token);
@@ -83,6 +132,22 @@ test('parallel refresh (qisqa oraliq) foydalanuvchini chiqarib yubormaydi', asyn
   // Birinchi so'rovdan kelgan cookie ishlashda davom etadi
   const next = await raw('POST', '/api/auth/refresh', { cookie: first.cookie });
   assert.equal(next.status, 200);
+});
+
+test('a delayed tab can follow more than five rapid refresh rotations', async () => {
+  const reg = await registerRaw();
+  let cookie = reg.cookie;
+  let latest;
+  for (let i = 0; i < 7; i++) {
+    latest = await raw('POST', '/api/auth/refresh', { cookie });
+    assert.equal(latest.status, 200);
+    cookie = latest.cookie;
+  }
+  const delayed = await raw('POST', '/api/auth/refresh', { cookie: reg.cookie });
+  assert.equal(delayed.status, 200, JSON.stringify(delayed.data));
+  assert.equal(delayed.cookie, null);
+  assert.equal(jwt.decode(delayed.data.token).sid, jwt.decode(latest.data.token).sid);
+  assert.equal((await raw('POST', '/api/auth/refresh', { cookie })).status, 200);
 });
 
 test('eski refresh token keyinroq qayta kelsa — butun oila yopiladi', async () => {

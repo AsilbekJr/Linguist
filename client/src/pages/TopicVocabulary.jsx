@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { AnimatePresence, motion } from 'motion/react';
 import {
   useGetCurrentTopicQuery,
+  useGetMeQuery,
   apiSlice,
   useStartTopicQuizMutation,
   useSubmitTopicQuizMutation,
@@ -39,6 +40,7 @@ import { toast } from 'react-hot-toast';
 import { playTTSAudio } from '../utils/audio';
 import { fireConfetti } from '../utils/celebration';
 import { track, EVENTS } from '../lib/analytics';
+import { dayKeyInZone } from '../utils/dayRefresh';
 import Memorize from '../components/Memorize';
 import ActiveWords from '../components/ActiveWords';
 
@@ -828,7 +830,13 @@ const TopicLesson = ({ topicData }) => {
 // Query responses arrive independently of the profile. Recreate the lesson
 // only when its own daily identity changes, including a previously cached day.
 const TopicVocabulary = () => {
-  const { data, isLoading, isError, refetch } = useGetCurrentTopicQuery();
+  const authTimezone = useSelector(state => state.auth.user?.timezone);
+  const { timezone: profileTimezone } = useGetMeQuery(undefined, {
+    selectFromResult: ({ data }) => ({ timezone: data?.timezone }),
+  });
+  const timezone = profileTimezone || authTimezone;
+  const { data: cachedData, isLoading, isError, refetch } = useGetCurrentTopicQuery();
+  const data = cachedData?.dayKey && cachedData.dayKey !== dayKeyInZone(timezone) ? undefined : cachedData;
   if (!data && isLoading) return <PageSkeleton cards={2} />;
   if (!data && isError) return <EmptyState icon={AlertTriangle} title="Sahnani yuklab bo'lmadi" description="Internet aloqasini tekshirib, qayta urinib ko'ring."><Button onClick={refetch}>Qayta urinish</Button></EmptyState>;
   if (!data) return <PageSkeleton cards={2} />;

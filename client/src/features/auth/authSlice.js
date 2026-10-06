@@ -9,7 +9,6 @@ const initialState = {
   user: null,
   token: null,
   isAuthenticated: false,
-  lastAuthAt: null,
 };
 
 export const authSlice = createSlice({
@@ -21,13 +20,11 @@ export const authSlice = createSlice({
       state.user = user;
       state.token = token;
       state.isAuthenticated = !!token;
-      if (token) state.lastAuthAt = Date.now();
     },
     logout: (state) => {
       state.user = null;
       state.token = null;
       state.isAuthenticated = false;
-      state.lastAuthAt = null;
     },
   },
 });

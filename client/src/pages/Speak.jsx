@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 import { AnimatePresence, motion } from 'motion/react';
 import { toast } from 'react-hot-toast';
 import {
@@ -23,6 +24,7 @@ import { track, EVENTS } from '../lib/analytics';
 import { Button } from '@/components/ui/button';
 import { FadeIn, IconTile, PageHeader, PageSkeleton, ProgressBar } from '@/components/ui/primitives';
 import { cn } from '@/lib/utils';
+import { dayKeyInZone } from '../utils/dayRefresh';
 
 /**
  * Suhbat — bugungi sahna qahramoni bilan ovozli rolli o'yin.
@@ -646,7 +648,13 @@ const Conversation = ({ initial, onFinished }) => {
 };
 
 const Speak = () => {
-  const { data, isLoading, isError, refetch } = useGetSpeakTodayQuery();
+  const authTimezone = useSelector(state => state.auth.user?.timezone);
+  const { timezone: profileTimezone } = useGetMeQuery(undefined, {
+    selectFromResult: ({ data }) => ({ timezone: data?.timezone }),
+  });
+  const timezone = profileTimezone || authTimezone;
+  const { data: cachedData, isLoading, isFetching, isError, refetch } = useGetSpeakTodayQuery();
+  const data = cachedData?.dayKey && cachedData.dayKey !== dayKeyInZone(timezone) ? undefined : cachedData;
   const [startSpeak, { isLoading: starting }] = useStartSpeakMutation();
   const [active, setActive] = useState(null);
   const [finished, setFinished] = useState(null);
@@ -667,7 +675,7 @@ const Speak = () => {
     }
   };
 
-  if (isLoading) return <PageSkeleton cards={2} />;
+  if (!data && (isLoading || isFetching)) return <PageSkeleton cards={2} />;
   if (isError || !data) {
     return (
       <div className="surface mx-auto max-w-xl p-6 text-center">

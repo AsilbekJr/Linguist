@@ -9,6 +9,7 @@ const profile = {
   week: [{ day: '2026-10-03', weekday: 'Sh', status: 'today' }],
 };
 async function setup(page) {
+  await page.clock.setFixedTime(new Date('2026-10-03T07:00:00Z'));
   await page.addInitScript(() => localStorage.setItem('persist:linguist-root', JSON.stringify({
     auth: JSON.stringify({ user: { onboarding: { completed: true } }, token: null, isAuthenticated: true }),
     _persist: JSON.stringify({ version: -1, rehydrated: true }),
